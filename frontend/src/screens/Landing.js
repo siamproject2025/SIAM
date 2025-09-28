@@ -93,7 +93,7 @@ const LandingPage = () => {
             <div className="col-lg-8">
               <div className="hero-content animate-fade-in-up">
                 <h1 className="hero-title">
-                  S.I.A.M. - Sistema Integrado 
+                  S.I.A.M. - Sistema Educativo 
                   <span className="text-gradient"> Administrativo Musical</span>
                 </h1>
                 <p className="hero-subtitle">
