@@ -15,6 +15,7 @@ import {
   Linkedin,
   ExternalLink
 } from 'lucide-react';
+import '../styles/Landingpage/landing.css';
 
 // === COMPONENTE PRINCIPAL LANDING PAGE S.I.A.M. ===
 const LandingPage = () => {
@@ -83,7 +84,7 @@ const LandingPage = () => {
                     <ExternalLink className="ms-2" size={20} />
                   </button>
                   <button className="btn btn-outline-light btn-lg">
-                    Ver Demo
+                    Empezamos?
                   </button>
                 </div>
               </div>
@@ -315,9 +316,9 @@ const LandingPage = () => {
               <div className="tech-grid">
                 <div className="tech-item">
                   <div className="tech-logo">
-                    <span className="fw-bold">L</span>
+                    <span className="fw-bold">R</span>
                   </div>
-                  <div>Laravel</div>
+                  <div>React</div>
                 </div>
                 <div className="tech-item">
                   <div className="tech-logo">
@@ -327,15 +328,15 @@ const LandingPage = () => {
                 </div>
                 <div className="tech-item">
                   <div className="tech-logo">
-                    <span className="fw-bold">TS</span>
+                    <span className="fw-bold">JS</span>
                   </div>
-                  <div>TypeScript</div>
+                  <div>Javascript</div>
                 </div>
                 <div className="tech-item">
                   <div className="tech-logo">
                     <span className="fw-bold">DB</span>
                   </div>
-                  <div>MySQL</div>
+                  <div>Mongo</div>
                 </div>
               </div>
             </div>
