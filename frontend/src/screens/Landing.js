@@ -15,21 +15,46 @@ import {
   Linkedin,
   ExternalLink
 } from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
+
 import '../styles/Landingpage/landing.css';
 
 // === COMPONENTE PRINCIPAL LANDING PAGE S.I.A.M. ===
 const LandingPage = () => {
+  
   const [isScrolled, setIsScrolled] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
 
   // Efecto para detectar scroll y cambiar navbar
   useEffect(() => {
+    //Verificacion si hay usuario logeado
+    const checkAuthStatus = () => {
+      const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('userData');
+      if (token && userData) {
+        setUser({...JSON.parse(userData)});
+       } else {
+        setUser( null);
+       }
+      };
+      checkAuthStatus();
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    
+    }, []);
+
+    const scrlltoSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    };
 
   return (
     <div className="landing-page">
@@ -54,8 +79,8 @@ const LandingPage = () => {
 
             {/* Botones de acción */}
             <div className="d-flex gap-2">
-              <button className="btn btn-outline-primary">Iniciar Sesión</button>
-              <button className="btn btn-primary">Registro</button>
+              <button className="btn btn-outline-primary" onClick={() => navigate('/login')}>Iniciar Sesión</button>
+              <button className="btn btn-primary" onClick={()=> navigate('/#')}>Registro</button>
             </div>
           </div>
         </div>
