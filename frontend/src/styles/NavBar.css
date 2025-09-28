@@ -1,0 +1,80 @@
+
+
+  .App .navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    min-height: 8vh;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    color: #3d3d3d;
+    background: rgb(255, 255, 255);
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    padding: 0!important;
+  }
+  
+  .App .navbar p{
+    margin: 0 0 0 0;
+  }
+
+  .App .navbar .nav-links>a{
+    color: #6d6d6d;
+    font-weight: 1000;
+    text-decoration: none;
+    margin-top: 22px;
+    margin: 0 auto;
+  }
+
+  .App .navbar .nav-links>a:hover{
+    color: #297fb9;
+  }
+
+  .offcanvas-body {
+    text-align: left;
+  }
+
+  .offcanvas-backdrop.show {
+    opacity: none;
+    width: 0;
+}
+
+.side-link>a{
+  color: #585858;
+  font-weight: 1000;
+  text-decoration: none;
+  margin-top: 22px;
+  padding: auto;
+  margin: auto;
+  
+}
+
+.side-link{
+  width: 100%;
+  border-radius: 5px;
+  background-color: rgb(240, 240, 240);
+  padding-left: 0;
+}
+
+.side-link>a:hover{
+  color: #297fb9;
+  font-weight: 700;
+}
+
+.navTitle{
+  font-weight:900;
+  align-content: center;
+}
+
+/* Estilo para mostrar la hora en el reloj */
+.navbar .flocus-clock   {
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff; 
+  text-align: center;
+  text-decoration: none;
+  background-color: rgba(0, 0, 0, 0.5); 
+  padding: 6px 30px;
+  border-radius:70px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
