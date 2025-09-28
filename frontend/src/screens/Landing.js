@@ -486,11 +486,11 @@ const LandingPage = () => {
               <h3>Contacto</h3>
               <div className="d-flex align-items-center mb-2">
                 <Phone size={16} className="me-2" />
-                <span>+504 9999-9999</span>
+                <span>+504 9979-4964</span>
               </div>
               <div className="d-flex align-items-center mb-2">
                 <Mail size={16} className="me-2" />
-                <span>info@siam.edu.hn</span>
+                <span>siamproject2025@gmail.com</span>
               </div>
               <div className="d-flex align-items-center">
                 <MapPin size={16} className="me-2" />
