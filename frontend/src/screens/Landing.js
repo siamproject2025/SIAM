@@ -118,7 +118,7 @@ const LandingPage = () => {
               {/* Imagen del mockup o estudiantes */}
               <div className="hero-image">
                 <img 
-                  src="https://images.pexels.com/photos/45243/saxophone-music-gold-gloss-45243.jpeg?_gl=1*1ox7gv2*_ga*MTY4MDAyMzg4Ni4xNzU0MjAzOTUx*_ga_8JE65Q40S6*czE3NTkwNDA3OTMkbzgkZzEkdDE3NTkwNDA4MzMkajIwJGwwJGgw" 
+                  src="https://images.pexels.com/photos/210764/pexels-photo-210764.jpeg?_gl=1*y0crf9*_ga*MTY4MDAyMzg4Ni4xNzU0MjAzOTUx*_ga_8JE65Q40S6*czE3NTkxMDI3NzIkbzEwJGcxJHQxNzU5MTAyODIxJGoxMSRsMCRoMA.." 
                   alt="Estudiantes de música" 
                   className="img-fluid rounded-3 shadow-lg"
                 />
