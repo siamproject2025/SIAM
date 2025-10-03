@@ -1,0 +1,46 @@
+/* 📁 OrdenesApp.css */
+
+.container {
+  padding: 20px;
+  max-width: 100%;
+}
+
+.orden-lista button {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Tabla responsiva */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  /* Inputs y botones en columna */
+  input, select, button {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  /* Cambiar tabla a formato cards en móvil */
+  table {
+    display: none;
+  }
+
+  .items-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .item-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background: #f9f9f9;
+  }
+
+  .item-card p {
+    margin: 5px 0;
+  }
+}

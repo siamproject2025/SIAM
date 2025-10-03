@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const path = require("path");
 const cors = require('cors');
 
-const orden_compra = require('./Routes/ordenCompra'); 
+const ordencompra = require('./Routes/ordenCompra'); 
 
 const app = express();
 
@@ -27,7 +27,7 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch((error) => console.error("❌ Error conectando a MongoDB:", error));
 
 // 📌 Rutas organizadas correctamente
-app.use('/api/compras',orden_compra);
+app.use('/api/compras',ordencompra);
 
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
