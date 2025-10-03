@@ -1,4 +1,5 @@
 import React from "react";
+import OrdenCompra from "../components/ordencompra";
 
 const Home = () => {
   return (
@@ -12,7 +13,7 @@ const Home = () => {
         <h2>Resumen general</h2>
         <div style={styles.cardsContainer}>
           <div style={styles.card}>
-            <h3>Proyectos</h3>
+            <button><OrdenCompra /></button>
             <p>5 activos</p>
           </div>
           <div style={styles.card}>
