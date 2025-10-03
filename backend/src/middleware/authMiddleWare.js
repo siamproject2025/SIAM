@@ -1,10 +1,11 @@
 const admin = require('firebase-admin');
 
+var serviceAccount = require("../config/firebase-service-account.json");
 // Inicializar Firebase Admin SDK
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.applicationDefault(), // Asegúrate de tener configuradas las credenciales del SDK
-  });
+  credential: admin.credential.cert(serviceAccount)
+});
 }
 
 const authenticateUser = async (req, res, next) => {

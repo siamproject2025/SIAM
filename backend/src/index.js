@@ -4,7 +4,8 @@ const mongoose = require('mongoose');
 const path = require("path");
 const cors = require('cors');
 
-const orden_compra = require('./Routes/orden_compra'); 
+const orden_compra = require('./Routes/orden_compra');
+const usuarios_route = require('./Routes/usuario_ruta'); 
 
 const app = express();
 
@@ -28,6 +29,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
 // 📌 Rutas organizadas correctamente
 app.use('/api/compras',orden_compra);
+app.use('/api/',usuarios_route);
 
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
