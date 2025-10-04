@@ -1,97 +1,184 @@
+/* === CONTENEDOR PRINCIPAL === */
 .orden-container {
   padding: 2rem;
-}
-
-.orden-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 2rem;
+  font-family: 'Inter', sans-serif;
   color: var(--text-primary);
 }
 
-.orden-busqueda {
-  margin-bottom: 1.5rem;
-  padding: 0.75rem;
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
-.orden-formulario input {
-  display: block;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  width: 100%;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
-
-.btn-agregar,
-.btn-crear,
-.orden-botones button {
-  margin-top: 1rem;
-  margin-right: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-  color: white;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.btn-agregar:hover,
-.btn-crear:hover,
-.orden-botones button:hover {
-  transform: translateY(-2px);
-}
-
-.orden-items {
-  list-style: none;
-  padding-left: 0;
-  margin-top: 1rem;
-}
-
-.orden-items li {
+/* === ENCABEZADO === */
+.orden-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
-.orden-listado {
+.orden-header p {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.orden-busqueda-bar {
   display: flex;
-  flex-wrap: wrap;
   gap: 1rem;
-  margin-top: 2rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.orden-busqueda {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.btn-nueva-orden {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.btn-nueva-orden:hover {
+  transform: translateY(-2px);
+}
+
+/* === LISTADO DE ÓRDENES === */
+.orden-subtitulo {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.orden-listado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
 }
 
 .orden-card {
   background: white;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 12px;
   box-shadow: var(--shadow-light);
-  flex: 1 1 200px;
-  text-align: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
 }
 
-.orden-card button {
-  background: var(--accent-color);
+.orden-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-medium);
+}
+
+.orden-card-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.orden-total {
+  color: var(--success-color);
+}
+
+.orden-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* === MODAL GENERAL === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(31, 41, 55, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: var(--shadow-heavy);
+  animation: fadeInUp 0.4s ease-out;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+/* === FORMULARIOS === */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input,
+select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+/* === ÍTEMS === */
+.item-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn-cancel-item {
+  background: var(--error-color);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-agregar {
+  background: var(--primary-color);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  margin-top: 0.5rem;
+  font-weight: 600;
   cursor: pointer;
+  margin-bottom: 1rem;
 }
 
-.orden-detalle {
-  margin-top: 3rem;
-  padding: 2rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: var(--shadow-medium);
-  border: 1px solid var(--border-color);
+.item-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 1rem;
 }
 
+.item-list li {
+  margin-bottom: 0.5rem;
+}
+
+/* === TABLA DE ÍTEMS === */
 .orden-tabla {
   width: 100%;
   border-collapse: collapse;
@@ -105,9 +192,65 @@
   text-align: left;
 }
 
-.orden-botones {
-  margin-top: 1.5rem;
+.orden-tabla input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+/* === BOTONES MODAL === */
+.modal-actions {
   display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
+}
+
+.btn-cancelar,
+.btn-cerrar {
+  background: var(--dark-color);
+  color: white;
+}
+
+.btn-crear,
+.btn-guardar {
+  background: var(--success-color);
+  color: white;
+}
+
+.btn-eliminar {
+  background: var(--error-color);
+  color: white;
+}
+
+.btn-descargar {
+  background: var(--accent-color);
+  color: white;
+}
+
+.modal-actions button {
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.modal-actions button:hover {
+  transform: translateY(-2px);
+}
+
+/* === ANIMACIÓN === */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

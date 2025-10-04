@@ -3,8 +3,141 @@ import React, { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import "../../styles/Models/ordencompra.css"
+import ModalCrearOrden from '../Models/OrdenCompra/ModalCrearOrden';
+import ModalDetalleOrden from '../Models/OrdenCompra/ModalDetalleOrden';
 
 const API_URL = "http://localhost:5000/api/compras";
+
+
+
+const OrdenCompra = () => {
+  const [ordenes, setOrdenes] = useState([]);
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+
+  useEffect(() => {
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => setOrdenes(data))
+      .catch(err => console.error('Error al obtener órdenes:', err));
+  }, []);
+
+  const handleCrearOrden = async (nuevaOrden) => {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nuevaOrden)
+      });
+      if (!res.ok) throw new Error('Error al crear la orden');
+      const ordenCreada = await res.json();
+      setOrdenes([...ordenes, ordenCreada]);
+      setMostrarModalCrear(false);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const handleEditarOrden = async (ordenActualizada) => {
+    try {
+      const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ordenActualizada)
+      });
+      if (!res.ok) throw new Error('Error al editar la orden');
+      const actualizada = await res.json();
+      setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
+      setOrdenSeleccionada(null);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const handleEliminarOrden = async (id) => {
+    if (!window.confirm("¿Seguro que deseas eliminar esta orden?")) return;
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar la orden');
+      setOrdenes(ordenes.filter(o => o._id !== id));
+      setOrdenSeleccionada(null);
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  const ordenesFiltradas = ordenes.filter(o =>
+    o.numero.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  return (
+    <div className="orden-container">
+      <div className="orden-header">
+        <h2>Sistema de Órdenes de Compra</h2>
+        <p>Gestiona y controla todas tus órdenes de manera eficiente</p>
+        <div className="orden-busqueda-bar">
+          <input
+            type="text"
+            className="orden-busqueda"
+            placeholder="Buscar por número de orden..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+          <button className="btn-nueva-orden" onClick={() => setMostrarModalCrear(true)}>
+            + Nueva Orden
+          </button>
+        </div>
+      </div>
+
+      <h3 className="orden-subtitulo">Lista de Órdenes</h3>
+      {ordenesFiltradas.length === 0 ? (
+        <p className="orden-vacio">No hay órdenes registradas.</p>
+      ) : (
+        <div className="orden-listado">
+          {ordenesFiltradas.map((orden) => {
+            const total = orden.items.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0).toFixed(2);
+            return (
+              <div key={orden._id} className="orden-card" onClick={() => setOrdenSeleccionada(orden)}>
+                <div className="orden-card-header">
+                  <span className="orden-numero">{orden.numero}</span>
+                  <span className="orden-total">${total}</span>
+                </div>
+                <div className="orden-card-body">
+                  <div className="orden-info-row">
+                    <span><strong>Proveedor:</strong> {orden.proveedor_id}</span>
+                    <span><strong>Fecha:</strong> {orden.fecha || '—'}</span>
+                  </div>
+                  <div className="orden-info-row">
+                    <span><strong>Ítems:</strong> {orden.items.length}</span>
+                    <span><strong>Estado:</strong> {orden.estado}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {mostrarModalCrear && (
+        <ModalCrearOrden
+          onClose={() => setMostrarModalCrear(false)}
+          onCreate={handleCrearOrden}
+        />
+      )}
+
+      {ordenSeleccionada && (
+        <ModalDetalleOrden
+          orden={ordenSeleccionada}
+          onClose={() => setOrdenSeleccionada(null)}
+          onUpdate={handleEditarOrden}
+          onDelete={handleEliminarOrden}
+        />
+      )}
+    </div>
+  );
+};
+
 
 /*Seguridad
 const OrdenCompra = () => {
@@ -342,9 +475,9 @@ const OrdenCompra = () => {
     </div>
   );
 };
-*/
 
 
+Segunda copia
 const OrdenCompra = () => {
   const [ordenes, setOrdenes] = useState([]);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
@@ -476,8 +609,9 @@ const OrdenCompra = () => {
 
   return (
     <div className="orden-container">
-      <h2 className="orden-title">Órdenes de Compra</h2>
-
+      <h2 className="orden-title">Sistema de Órdenes de Compra</h2>
+      <h3>Gestiona y controla todas tus ordenes de manera eficiente</h3>
+      
       <input
         type="text"
         className="orden-busqueda"
@@ -485,6 +619,21 @@ const OrdenCompra = () => {
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
       />
+      
+      <h3>Listado de Órdenes</h3>
+      {ordenesFiltradas.length === 0 ? (
+        <p>No hay órdenes registradas.</p>
+      ) : (
+        <div className="orden-listado">
+          {ordenesFiltradas.map((orden) => (
+            <div key={orden._id} className="orden-card">
+              <button onClick={() => setOrdenSeleccionada(orden)}>
+                {orden.numero}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="orden-formulario">
         <h3>Crear nueva orden</h3>
@@ -537,20 +686,7 @@ const OrdenCompra = () => {
         <button className="btn-crear" onClick={handleCrearOrden}>Crear Orden</button>
       </div>
 
-      <h3>Listado de Órdenes</h3>
-      {ordenesFiltradas.length === 0 ? (
-        <p>No hay órdenes registradas.</p>
-      ) : (
-        <div className="orden-listado">
-          {ordenesFiltradas.map((orden) => (
-            <div key={orden._id} className="orden-card">
-              <button onClick={() => setOrdenSeleccionada(orden)}>
-                {orden.numero}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      
 
       {ordenSeleccionada && (
         <div className="orden-detalle">
@@ -621,6 +757,6 @@ const OrdenCompra = () => {
   </div>
 );
 };
-
+*/
 
 export default OrdenCompra;
