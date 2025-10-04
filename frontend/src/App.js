@@ -13,6 +13,11 @@ import Landing from "./screens/Landing"
 import Home from "./screens/Home";
 import Footer from "./components/Footer";
 import PublicRoute from './components/routes/PublicRoute';
+
+//Models
+import OrdenCompra from './screens/Models/ordencompra';
+
+
 const auth = getAuth(appFirebase);
 function App() {
    const [user, setUser] = useState(null);
@@ -37,6 +42,7 @@ function App() {
                 {/* Rutas privadas */}
                 <Route element={<PrivateRoute />}>
                   <Route path="/home" element={<Home />} />
+                  <Route path='/ordencompra' element={<OrdenCompra />} />
                 </Route>
 
                 {/* Ruta de aterrizaje pública */}
