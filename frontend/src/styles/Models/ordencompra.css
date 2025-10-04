@@ -1,46 +1,113 @@
-/* 📁 OrdenesApp.css */
-
-.container {
-  padding: 20px;
-  max-width: 100%;
+.orden-container {
+  padding: 2rem;
 }
 
-.orden-lista button {
+.orden-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: var(--text-primary);
+}
+
+.orden-busqueda {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
   width: 100%;
-  margin-bottom: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
 }
 
-/* Tabla responsiva */
-.table-wrapper {
-  overflow-x: auto;
+.orden-formulario input {
+  display: block;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
 }
 
-@media (max-width: 768px) {
-  /* Inputs y botones en columna */
-  input, select, button {
-    width: 100%;
-    margin-bottom: 8px;
-  }
+.btn-agregar,
+.btn-crear,
+.orden-botones button {
+  margin-top: 1rem;
+  margin-right: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
 
-  /* Cambiar tabla a formato cards en móvil */
-  table {
-    display: none;
-  }
+.btn-agregar:hover,
+.btn-crear:hover,
+.orden-botones button:hover {
+  transform: translateY(-2px);
+}
 
-  .items-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
+.orden-items {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 1rem;
+}
 
-  .item-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    background: #f9f9f9;
-  }
+.orden-items li {
+  margin-bottom: 0.5rem;
+}
 
-  .item-card p {
-    margin: 5px 0;
-  }
+.orden-listado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.orden-card {
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: var(--shadow-light);
+  flex: 1 1 200px;
+  text-align: center;
+}
+
+.orden-card button {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.orden-detalle {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-medium);
+  border: 1px solid var(--border-color);
+}
+
+.orden-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.orden-tabla th,
+.orden-tabla td {
+  border: 1px solid var(--border-color);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.orden-botones {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
