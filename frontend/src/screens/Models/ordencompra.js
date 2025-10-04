@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import './ordencompra.css'
+import "../../styles/Models/ordencompra.css"
 
 const API_URL = "http://localhost:5000/api/compras";
 
