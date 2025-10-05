@@ -1,5 +1,7 @@
 import React from "react";
-
+import { Link } from 'react-router-dom';
+import OrdenCompra from "./Models/ordencompra";
+import Bienes from './Models/Bienes';
 const Home = () => {
   return (
     <div style={styles.container}>
@@ -9,12 +11,24 @@ const Home = () => {
       </header>
 
       <section style={styles.section}>
-        <h2>Resumen general</h2>
+        <h2>Dashboard
+        </h2>
         <div style={styles.cardsContainer}>
-          <div style={styles.card}>
-            <h3>Proyectos</h3>
-            <p>5 activos</p>
-          </div>
+
+
+         <div style={styles.card}>
+      <Link to="/ordencompra" style={{ textDecoration: 'none' }}>
+        <p>Modulo orden</p>
+      </Link>
+    </div>
+
+    <div style={styles.card}>
+      <Link to="/Bienes" style={{ textDecoration: 'none' }}>
+        <p>Modulo Bienes</p>
+      </Link>
+    </div>
+
+
           <div style={styles.card}>
             <h3>Tareas</h3>
             <p>14 pendientes</p>

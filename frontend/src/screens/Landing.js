@@ -93,7 +93,7 @@ const LandingPage = () => {
             <div className="col-lg-8">
               <div className="hero-content animate-fade-in-up">
                 <h1 className="hero-title">
-                  S.I.A.M. - Sistema Integrado 
+                  S.I.A.M. - Sistema Educativo 
                   <span className="text-gradient"> Administrativo Musical</span>
                 </h1>
                 <p className="hero-subtitle">
@@ -118,7 +118,7 @@ const LandingPage = () => {
               {/* Imagen del mockup o estudiantes */}
               <div className="hero-image">
                 <img 
-                  src="https://images.pexels.com/photos/45243/saxophone-music-gold-gloss-45243.jpeg?_gl=1*1ox7gv2*_ga*MTY4MDAyMzg4Ni4xNzU0MjAzOTUx*_ga_8JE65Q40S6*czE3NTkwNDA3OTMkbzgkZzEkdDE3NTkwNDA4MzMkajIwJGwwJGgw" 
+                  src="https://images.pexels.com/photos/210764/pexels-photo-210764.jpeg?_gl=1*y0crf9*_ga*MTY4MDAyMzg4Ni4xNzU0MjAzOTUx*_ga_8JE65Q40S6*czE3NTkxMDI3NzIkbzEwJGcxJHQxNzU5MTAyODIxJGoxMSRsMCRoMA.." 
                   alt="Estudiantes de música" 
                   className="img-fluid rounded-3 shadow-lg"
                 />
@@ -486,11 +486,11 @@ const LandingPage = () => {
               <h3>Contacto</h3>
               <div className="d-flex align-items-center mb-2">
                 <Phone size={16} className="me-2" />
-                <span>+504 9999-9999</span>
+                <span>+504 9979-4964</span>
               </div>
               <div className="d-flex align-items-center mb-2">
                 <Mail size={16} className="me-2" />
-                <span>info@siam.edu.hn</span>
+                <span>siamproject2025@gmail.com</span>
               </div>
               <div className="d-flex align-items-center">
                 <MapPin size={16} className="me-2" />
