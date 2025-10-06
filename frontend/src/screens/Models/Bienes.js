@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ModalCrearBien from './Bienes/ModalCrearBien';
 import ModalDetalleBien from './Bienes/ModalDetalleBien';
-import '../../styles/Models/Bienes.css'
+import '../../styles/Models/Bienes.css';
 
 const API_URL = "http://localhost:5000/api/bienes";
 
@@ -66,6 +66,41 @@ const Bienes = () => {
     b.codigo?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
+  const bienesActivos = bienesFiltrados.filter(b => b.estado === "ACTIVO");
+  const bienesMantenimiento = bienesFiltrados.filter(b => b.estado === "MANTENIMIENTO");
+  const bienesInactivos = bienesFiltrados.filter(b => b.estado === "INACTIVO");
+  const bienesPrestados = bienesFiltrados.filter(b => b.estado === "PRESTAMO");
+
+  const renderGrupoBienes = (titulo, lista) => (
+    <>
+      <h3 className="bien-subtitulo">{titulo}</h3>
+      {lista.length === 0 ? (
+        <p className="bien-vacio">No hay bienes en esta categoría.</p>
+      ) : (
+        <div className="bien-listado">
+          {lista.map((bien) => (
+            <div key={bien._id} className="bien-card" onClick={() => setBienSeleccionado(bien)}>
+              <div className="bien-card-header">
+                <span className="bien-codigo">{bien.codigo}</span>
+              </div>
+              <div className="bien-card-body">
+                <div className="bien-info-row">
+                  <span><strong>Nombre:</strong> {bien.nombre}</span>
+                  <span><strong>Descripción:</strong> {bien.descripcion}</span>
+                  <span><strong>Categoría:</strong> {bien.categoria || '—'}</span>
+                </div>
+                <div className="bien-info-row">
+                  <span><strong>Valor:</strong> {bien.valor}</span>
+                  <span><strong>Estado:</strong> {bien.estado}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="bien-container">
       <div className="bien-header">
@@ -85,30 +120,10 @@ const Bienes = () => {
         </div>
       </div>
 
-      <h3 className="bien-subtitulo">Lista de bienes</h3>
-      {bienesFiltrados.length === 0 ? (
-        <p className="bien-vacio">No hay bienes registrados.</p>
-      ) : (
-        <div className="bien-listado">
-          {bienesFiltrados.map((bien) => (
-            <div key={bien._id} className="bien-card" onClick={() => setBienSeleccionado(bien)}>
-              <div className="bien-card-header">
-                <span className="bien-codigo">{bien.codigo}</span>
-              </div>
-              <div className="bien-card-body">
-                <div className="bien-info-row">
-                  <span><strong>Descripción:</strong> {bien.descripcion}</span>
-                  <span><strong>Categoría:</strong> {bien.categoria || '—'}</span>
-                </div>
-                <div className="bien-info-row">
-                  <span><strong>Valor:</strong> {bien.valor}</span>
-                  <span><strong>Estado:</strong> {bien.estado}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {renderGrupoBienes("Lista de bienes en uso", bienesActivos)}
+      {renderGrupoBienes("Lista de bienes en MANTENIMIENTO", bienesMantenimiento)}
+      {renderGrupoBienes("Bienes inactivos", bienesInactivos)}
+      {renderGrupoBienes("Bienes PRESTADOS", bienesPrestados)}
 
       {mostrarModalCrear && (
         <ModalCrearBien
@@ -130,3 +145,7 @@ const Bienes = () => {
 };
 
 export default Bienes;
+
+
+
+
