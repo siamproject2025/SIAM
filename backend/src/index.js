@@ -4,9 +4,12 @@ const mongoose = require('mongoose');
 const path = require("path");
 const cors = require('cors');
 
-const orden_compra = require('./Routes/orden_compra');
+
+const ordencompra = require('./Routes/ordenCompra'); 
+const bienesRoutes = require( "./routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
 const dashboard_route = require('./Routes/dashboard_ruta'); 
+
 
 const app = express();
 
@@ -29,7 +32,8 @@ mongoose.connect(process.env.MONGO_URI, {
   .catch((error) => console.error("❌ Error conectando a MongoDB:", error));
 
 // 📌 Rutas organizadas correctamente
-app.use('/api/compras',orden_compra);
+app.use('/api/compras',ordencompra);
+app.use("/api/bienes", bienesRoutes);
 app.use('/api/',usuarios_route);
 app.use('/api/',dashboard_route);
 

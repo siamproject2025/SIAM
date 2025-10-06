@@ -38,15 +38,15 @@ const DashboardCards = () => {
         const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile; // Icono dinámico
 
         return (
-          <div key={modulo._id} className="dashboard-card">
-            <a  style={{
-    cursor: "pointer",            // Cambia el cursor a mano
-    transition: "transform 0.2s, box-shadow 0.2s"
-  }} onClick={() => navigate(modulo.link)}>
+          <div key={modulo._id} className="dashboard-card" style={{
+                  cursor: "pointer",            // Cambia el cursor a mano
+                  transition: "transform 0.2s, box-shadow 0.2s"
+                }} onClick={() => navigate(modulo.link)}>
+            
             <IconComponent size={40} />
             <h3>{modulo.titulo}</h3>
             <p>{modulo.descripcion}</p>
-            </a>
+            
           </div>
         );
       })}
