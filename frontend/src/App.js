@@ -16,7 +16,7 @@ import PublicRoute from './components/routes/PublicRoute';
 
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
-
+import Bienes from './screens/Models/Bienes';
 
 const auth = getAuth(appFirebase);
 function App() {
@@ -43,6 +43,7 @@ function App() {
                 <Route element={<PrivateRoute />}>
                   <Route path="/home" element={<Home />} />
                   <Route path='/ordencompra' element={<OrdenCompra />} />
+                  <Route path='/Bienes' element={<Bienes />} />
                 </Route>
 
                 {/* Ruta de aterrizaje pública */}
