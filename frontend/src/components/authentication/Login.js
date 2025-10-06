@@ -34,7 +34,7 @@ const Login = () => {
     // Información del usuario
     const user = result.user;
     if (user) {
-          navigate("/home"); // Redirige a Kanban después de iniciar sesión
+          navigate("/dashboard"); // Redirige a Kanban después de iniciar sesión
         }
     // Obtener el Token de ID
     const token = await user.getIdToken();
@@ -57,7 +57,7 @@ const Login = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-          navigate("/home"); // Redirige a Kanban después de iniciar sesión
+          navigate("/dashboard"); // Redirige a Kanban después de iniciar sesión
         
         // Actualizar el perfil del usuario en Firebase
         await updateProfile(user, { displayName: name });
@@ -82,7 +82,7 @@ const Login = () => {
          const userCredential = await signInWithEmailAndPassword(auth, email, password);
          const user = userCredential.user;
          if (user) {
-          navigate("/home"); // Redirige a Kanban después de iniciar sesión
+          navigate("/dashboard"); // Redirige a Kanban después de iniciar sesión
         }
           // Obtener el Token de ID
           const token = await user.getIdToken();

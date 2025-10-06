@@ -15,7 +15,6 @@
     "bootstrap": "^5.3.8",
     "cors": "^2.8.5",
     "firebase": "^12.3.0",
-    "jsdf": "^0.3.2",
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.544.0",

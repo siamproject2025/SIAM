@@ -6,10 +6,10 @@ import { RiFileEditFill } from "react-icons/ri";
 import { Music } from 'lucide-react';
 
 const links = [
-    {
+    /*{
       name: "Home",
       href: "/home"
-    },
+    },*/
     {
       name: "Dashboard",
       href: "/dashboard"
