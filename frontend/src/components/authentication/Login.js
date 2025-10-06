@@ -15,6 +15,7 @@ import { auth } from "../authentication/Auth"; // tu configuración de Firebase
 import { ArrowBigLeftDash } from 'lucide-react';
 
 
+
 const Login = () => {
   const [ showPassword, setShowPassword ] = useState(false);
   const [ registered, setRegister ] = useState(false);
@@ -116,9 +117,7 @@ const saveUserToAPI = async (user, name, password) => {
       authId: user.uid,
       email: user.email,
       username: name,
-      // Campos faltantes con valores por defecto
-      roles: ["ADMIN"],              // o puedes dejarlo como [] si no asignas nada
-      password_hash: password              // o algún valor por defecto
+      password_hash: password              
     }),
     });
 

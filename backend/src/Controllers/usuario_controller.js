@@ -2,20 +2,20 @@ const Auth = require("../Models/usuario_modelo");
 const argon2 = require('argon2');
 // LLama al usuario
 exports.listarUsuario = async (req, res) => {
-   try {
-        
-        const auth = await Auth.find({});
-        console.log(auth);
-        res.json({
-            
-            Auth: auth // Enviando el usuario obtenido
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error al obtener usuario" }); // Maneja el error
-    }
-};
+  try {
+    // Trae todos los usuarios, excluyendo campos sensibles como contraseña
+    const usuarios = await Auth.find({}, { password: 0 }); // exclude password
 
+    console.log("Usuarios obtenidos:", usuarios);
+
+    res.json({
+      users: usuarios, // Más claro que "Auth"
+    });
+  } catch (err) {
+    console.error("Error al obtener usuarios:", err);
+    res.status(500).json({ message: "Error al obtener usuarios" });
+  }
+};
 //Crea nuevo usuario
 exports.crearUsuario = async (req, res) => {
   try {
@@ -36,7 +36,7 @@ exports.crearUsuario = async (req, res) => {
       const hashedPassword = await argon2.hash(password_hash);
       userData.password_hash = hashedPassword;
     }
-    if (roles) userData.roles = roles;
+      userData.roles = "PADRE";
   
 
     const auth = new Auth(userData);

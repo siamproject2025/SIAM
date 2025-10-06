@@ -236,7 +236,7 @@ body{
   border-radius: 100%;
   display: flex;
   position: fixed;
-  bottom: 0;
+  top: 0;
 }
 
 @media(max-width: 900px){

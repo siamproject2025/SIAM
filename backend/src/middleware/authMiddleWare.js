@@ -7,6 +7,7 @@ if (!admin.apps.length) {
   credential: admin.credential.cert(serviceAccount)
 });
 }
+const Usuario = require('../Models/usuario_modelo'); // tu modelo de usuario
 
 const authenticateUser = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -18,21 +19,22 @@ const authenticateUser = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
-    // Verificar el token con Firebase Admin
+    // Verifica token con Firebase Admin
     const decodedToken = await admin.auth().verifyIdToken(token);
 
-    // Adjuntar la información del usuario al objeto de la solicitud
-    req.user = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      name: decodedToken.name || 'Usuario',
-    };
+    // Trae el usuario completo de MongoDB
+    const usuario = await Usuario.findOne({ authId: decodedToken.uid });
+    if (!usuario) return res.status(401).json({ message: 'Usuario no encontrado' });
 
-    next(); // Continuar con la siguiente función de middleware o ruta
+    // Coloca todo el usuario en req.user (incluye roles)
+    req.user = usuario;
+
+    next();
   } catch (error) {
     console.error('Error al verificar el token:', error.message);
     return res.status(403).json({ message: 'No autorizado. Token inválido o expirado.' });
   }
 };
+
 
 module.exports = { authenticateUser };

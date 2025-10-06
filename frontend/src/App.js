@@ -13,6 +13,8 @@ import Landing from "./screens/Landing"
 import Home from "./screens/Home";
 import Footer from "./components/Footer";
 import PublicRoute from './components/routes/PublicRoute';
+import RestrictedPage from './screens/RestrictedPage';
+import Dashboard from './screens/Dashboard';
 const auth = getAuth(appFirebase);
 function App() {
    const [user, setUser] = useState(null);
@@ -35,20 +37,22 @@ function App() {
                 <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>}/>
                 <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
                 {/* Rutas privadas */}
-                <Route element={<PrivateRoute />}>
+                <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}>
                   <Route path="/home" element={<Home />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                 </Route>
 
                 {/* Ruta de aterrizaje pública */}
                 <Route path="/landing" element={<Landing />} />
+                <Route path="/restricted" element={<RestrictedPage />} />
 
                 {/* Redirigir rutas desconocidas */}
                 <Route path="*" element={<Navigate to="/landing" replace />} />
               </Routes>
 
               {/* Renderiza Footer solo si el usuario está autenticado */}
-              <Footer />
-            </div>
+              
+            </div><Footer />
       </Router>
     </AuthProvider>
   );

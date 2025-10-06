@@ -9,6 +9,10 @@ const links = [
     {
       name: "Home",
       href: "/home"
+    },
+    {
+      name: "Dashboard",
+      href: "/dashboard"
     }
 ]
 
