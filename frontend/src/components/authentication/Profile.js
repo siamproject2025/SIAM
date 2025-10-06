@@ -7,7 +7,7 @@ const Profile = () => {
 
   return (
     <div>
-      <h6>Bienvenido {user ? user.name : ""}</h6>
+      <h6>Bienvenido {user ? user.displayName : ""}</h6>
       {user && <p>Email: {user.email}</p>}
       <LogoutButton />
     </div>

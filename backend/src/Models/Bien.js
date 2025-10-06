@@ -3,9 +3,14 @@ const mongoose = require("mongoose");
 
 const bienSchema = new mongoose.Schema({
   codigo: {
-    type: String,
+    type: String, 
     required: true,
     unique: true,
+    trim: true
+  },
+  nombre:{
+    type: String,
+    required: true,
     trim: true
   },
   descripcion: {
@@ -20,7 +25,7 @@ const bienSchema = new mongoose.Schema({
   estado: {
     type: String,
     required: true,
-    enum: ["ACTIVO", "INACTIVO", "REPARACIÓN", "BAJA"],
+    enum: ["ACTIVO", "INACTIVO", "MANTENIMIENTO", "PRESTAMO"],
     default: "ACTIVO"
   },
   valor: {
