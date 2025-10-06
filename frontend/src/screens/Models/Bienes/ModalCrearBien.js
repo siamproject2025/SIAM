@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 const ModalCrearBien = ({ onClose, onCreate }) => {
   const [nuevoBien, setNuevoBien] = useState({
     codigo: '',
+    nombre: '',
     descripcion: '',
     categoria: '',
     estado: '',
@@ -34,6 +35,15 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
         </div>
 
         <div className="form-group">
+          <label>Nombre</label>
+          <input
+            type="text"
+            value={nuevoBien.nombre}
+            onChange={(e) => setNuevoBien({ ...nuevoBien, nombre: e.target.value })}
+          />
+        </div>
+
+        <div className="form-group">
           <label>Descripción</label>
           <input
             type="text"
@@ -60,8 +70,8 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
             <option value="">Seleccionar</option>
             <option value="ACTIVO">ACTIVO</option>
             <option value="INACTIVO">INACTIVO</option>
-            <option value="EN USO">EN USO</option>
-            <option value="DADO DE BAJA">DADO DE BAJA</option>
+            <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+            <option value="PRESTAMO">PRESTAMO</option>
           </select>
         </div>
 
