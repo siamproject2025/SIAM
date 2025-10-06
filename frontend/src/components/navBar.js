@@ -3,11 +3,16 @@ import "../styles/NavBar.css";
 import { Link } from "react-router-dom";
 import LoginProfile from "./authentication/LoginProfile";
 import { RiFileEditFill } from "react-icons/ri";
+import { Music } from 'lucide-react';
 
 const links = [
     {
       name: "Home",
       href: "/home"
+    },
+    {
+      name: "Dashboard",
+      href: "/dashboard"
     }
 ]
 
@@ -20,8 +25,10 @@ function NavBar(){
 
   return (
     <div className='navbar'>
-    <p className='navTitle'><RiFileEditFill style={{fontSize:"22px",marginBottom:"4px",marginRight:"5px"}}/>
-    SIAM</p>
+    <a href="#inicio" className="logo">
+              <Music size={24} />
+              S.I.A.M.
+            </a>
     {links.map((x,index) =>(
                   
         <div className="nav-links" key={index}>
