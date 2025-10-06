@@ -45,7 +45,7 @@ function App() {
                 <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>}/>
                 <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
                 {/* Rutas privadas */}
-                <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}>
+                <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
                   <Route path="/home" element={<Home />} />
 
                   <Route path='/ordencompra' element={<OrdenCompra />} />

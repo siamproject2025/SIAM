@@ -7,9 +7,6 @@ const cors = require('cors');
 
 const ordencompra = require('./Routes/ordenCompra'); 
 const bienesRoutes = require( "./routes/bienesRoutes");
-
-
-const orden_compra = require('./Routes/orden_compra');
 const usuarios_route = require('./Routes/usuario_ruta'); 
 const dashboard_route = require('./Routes/dashboard_ruta'); 
 
@@ -37,8 +34,6 @@ mongoose.connect(process.env.MONGO_URI, {
 // 📌 Rutas organizadas correctamente
 app.use('/api/compras',ordencompra);
 app.use("/api/bienes", bienesRoutes);
-=======
-app.use('/api/compras',orden_compra);
 app.use('/api/',usuarios_route);
 app.use('/api/',dashboard_route);
 
