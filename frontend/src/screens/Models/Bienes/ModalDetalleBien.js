@@ -32,6 +32,15 @@ const ModalDetalleBien = ({ bien, onClose, onUpdate, onDelete }) => {
           />
         </div>
 
+         <div className="form-group">
+          <label>Nombre</label>
+          <input
+            type="text"
+            value={bienEditado.nombre}
+            onChange={(e) => setBienEditado({ ...bienEditado, nombre: e.target.value })}
+          />
+        </div>
+
         <div className="form-group">
           <label>Descripción</label>
           <input
@@ -58,8 +67,8 @@ const ModalDetalleBien = ({ bien, onClose, onUpdate, onDelete }) => {
           >
             <option value="ACTIVO">ACTIVO</option>
             <option value="INACTIVO">INACTIVO</option>
-            <option value="EN USO">EN USO</option>
-            <option value="DADO DE BAJA">DADO DE BAJA</option>
+            <option value="MANTENIMIENTO">MANTENIMIENTO</option>
+            <option value="PRESTAMO">PRESTAMO</option>
           </select>
         </div>
 

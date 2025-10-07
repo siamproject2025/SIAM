@@ -23,7 +23,7 @@ body{
 
 .login-main{
   display: flex;
-  background: linear-gradient(90deg, #5fb2ff59, #fe7be241);
+  background: linear-gradient( #5389ff, #6dc2ff);
 
 }
 
@@ -195,7 +195,7 @@ body{
 }
 
 .login-center-buttons button:nth-child(2):hover{
-  background-color: #c4c4c457;
+  background-color: #ececec;
 }
 
 .login-bottom-p{
@@ -225,6 +225,18 @@ body{
 .messageWidth{
   width: 100%;
   overflow: hidden;
+}
+
+.login-back{
+  margin: 10px;
+  padding: 7px;
+  width: 50px;
+  height: 50px;
+  background-color: rgb(63, 117, 254);
+  border-radius: 100%;
+  display: flex;
+  position: fixed;
+  top: 0;
 }
 
 @media(max-width: 900px){

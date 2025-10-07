@@ -7,7 +7,7 @@ const PublicRoute = ({ children }) => {
 
   if (user) {
     // Si ya hay usuario logueado, redirige a home
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
