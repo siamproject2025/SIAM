@@ -1,5 +1,17 @@
+.with-margin {
+  margin-top: 8vh;
+}
+
+.no-margin {
+  margin-top: 0;
+}
+
+
 .App {
+  
   text-align: center;
+  min-height: 92vh;
+  
 }
 
 .App-logo {

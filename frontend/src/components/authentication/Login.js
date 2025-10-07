@@ -12,6 +12,7 @@ import axios from "axios";
 import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile  } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../authentication/Auth"; // tu configuración de Firebase
+import { ArrowBigLeftDash } from 'lucide-react';
 
 
 
@@ -19,7 +20,7 @@ const Login = () => {
   const [ showPassword, setShowPassword ] = useState(false);
   const [ registered, setRegister ] = useState(false);
   const [error, setError] = useState(null);
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, formState: { errors } } = useForm();
   const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
@@ -33,12 +34,14 @@ const Login = () => {
     // Información del usuario
     const user = result.user;
     if (user) {
-          navigate("/home"); // Redirige a Kanban después de iniciar sesión
+          navigate("/dashboard"); // Redirige a Kanban después de iniciar sesión
         }
     // Obtener el Token de ID
     const token = await user.getIdToken();
+    const displayName = user.displayName;
     console.log("Token de ID:", token); // Envía este token al backend
     console.log("Usuario logueado con Google:", user);
+    await saveUserToAPI(user, displayName, null);
   } catch (error) {
     console.error("Error en login con Google:", error.message);
   }
@@ -54,13 +57,13 @@ const Login = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-          navigate("/home"); // Redirige a Kanban después de iniciar sesión
+          navigate("/dashboard"); // Redirige a Kanban después de iniciar sesión
         
         // Actualizar el perfil del usuario en Firebase
         await updateProfile(user, { displayName: name });
   
         // Enviar el usuario registrado a la API
-        /*await saveUserToAPI(user, name);*/
+        await saveUserToAPI(user, name, password);
 
   
         alert("Usuario registrado exitosamente");
@@ -79,7 +82,7 @@ const Login = () => {
          const userCredential = await signInWithEmailAndPassword(auth, email, password);
          const user = userCredential.user;
          if (user) {
-          navigate("/home"); // Redirige a Kanban después de iniciar sesión
+          navigate("/dashboard"); // Redirige a Kanban después de iniciar sesión
         }
           // Obtener el Token de ID
           const token = await user.getIdToken();
@@ -99,19 +102,33 @@ const Login = () => {
     reset();
   };
 // Función para guardar el usuario en la 
-/*const saveUserToAPI = async (user, name) => {
+const saveUserToAPI = async (user, name, password) => {
   try {
-    const response = await axios.post("http://localhost:5000/api/profile", {
-      email: user.email,
+    if (!user) throw new Error("No hay usuario autenticado");
+
+    const token = await user.getIdToken();
+    const response = await fetch("http://localhost:5000/api/usuarios", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
       authId: user.uid,
-      name: name, // Pasar el nombre del formulario
+      email: user.email,
+      username: name,
+      password_hash: password              
+    }),
     });
-    console.log("Usuario guardado en la API:", response.data);
+
+    const data = await response.json();
+    console.log("Usuario guardado en la API:", data);
+
   } catch (error) {
     console.error("Error al guardar el usuario en la API:", error);
     setError("Error al guardar el usuario. Intenta nuevamente más tarde.");
   }
-};*/
+};
 
   const onSubmit = (data) => {
     functAuth(data); // Pasamos los datos de formulario a la función functAuth
@@ -213,7 +230,10 @@ const Login = () => {
               </div>
               <div className="login-center-buttons">
                 <button className="button">{registered ? "Registrate" : "Inicia sesion"}</button>
-                <button className="button" onClick={handleGoogleLogin}>
+                <button className="button" onClick={(e) => {
+                      e.preventDefault(); // evita que se haga submit
+                      handleGoogleLogin();
+                    }}>
                       <FcGoogle style={{ marginRight: "8px" }} />
                   Ingresar con Google
                 </button>
@@ -228,6 +248,11 @@ const Login = () => {
           </p>
         </div>
       </div>
+        <div className="login-back"><a href="/landing" >
+              
+              <ArrowBigLeftDash size={"100%"}/>
+            </a>
+            </div>
     </div>
   );
 };

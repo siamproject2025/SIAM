@@ -1,0 +1,81 @@
+.restricted-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #fff; /* fondo blanco simple */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.restricted-content {
+  text-align: center;
+}
+
+.lock-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #ff6b6b, #f06595);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.restricted-text {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #ff6b6b, #f06595);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pin-button {
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #f06595;
+  border: 2px solid #f06595;
+  border-radius: 40px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pin-button:hover {
+  background-color: #f06595;
+  color: white;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .restricted-text {
+    font-size: 2rem;
+  }
+
+  .lock-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .pin-button {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .restricted-text {
+    font-size: 1.5rem;
+  }
+
+  .lock-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .pin-button {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+}
