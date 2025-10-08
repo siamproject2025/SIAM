@@ -13,4 +13,8 @@ router.get('/usuarios', authenticateUser, checkRole(['ADMIN']), usuarioControlle
 router.get("/usuarios/role", authenticateUser,(req, res) => {
   res.json({ role: req.user.roles[0] }); // devuelve el primer rol
 });
+
+// 🔹 Nueva ruta: asignar roles (solo ADMIN)
+router.put('/usuarios/:id/rol', authenticateUser, checkRole(['ADMIN']), usuarioController.asignarRol);
+
 module.exports = router;

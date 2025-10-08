@@ -1,47 +1,58 @@
-import React, {useEffect,useState} from 'react'
+import React, { useState } from "react";
 import "../styles/NavBar.css";
 import { Link } from "react-router-dom";
 import LoginProfile from "./authentication/LoginProfile";
-import { RiFileEditFill } from "react-icons/ri";
-import { Music } from 'lucide-react';
+import { Music } from "lucide-react";
 
 const links = [
-    /*{
-      name: "Home",
-      href: "/home"
-    },*/
-    {
-      name: "Dashboard",
-      href: "/dashboard"
-    }
-]
+  {
+    name: "Dashboard",
+    href: "/dashboard",
+  }/*,
+  {
+    name: "Usuarios",
+    href: "/usuarios",
+  },
+  {
+    name: "Reportes",
+    href: "/reportes",
+  }*/,
+];
 
-function NavBar(){
-
-  useEffect(() => {
-    // Limpiar el intervalo cuando el componente se desmonte
-    
-  }, []);
+function NavBar() {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className='navbar'>
-    <a href="#inicio" className="logo">
-              <Music size={24} />
-              S.I.A.M.
-            </a>
-    {links.map((x,index) =>(
-                  
-        <div className="nav-links" key={index}>
-        <Link  to={x.href}>{x.name}</Link>
-        
-        </div>
-        
-      ))}
-     
+    <nav className="navbar">
+      {/* Botón hamburguesa */}
+      <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)}>
+        ☰
+      </button>
 
-      <LoginProfile/>        
-    </div>
-  )
+      {/* Logo */}
+      <a href="#inicio" className="logo">
+        <Music size={24} />
+        <span className="logo-text">S.I.A.M.</span>
+      </a>
+
+      
+      {/* Links */}
+      <div className={`nav-links ${menuOpen ? "open" : ""}`}>
+        {links.map((x, index) => (
+          <Link
+            key={index}
+            to={x.href}
+            onClick={() => setMenuOpen(false)} // Cierra menú al hacer clic
+          >
+            {x.name}
+          </Link>
+        ))}
+      </div>
+
+      {/* Perfil de usuario */}
+      <LoginProfile />
+    </nav>
+  );
 }
 
-export default NavBar
+export default NavBar;

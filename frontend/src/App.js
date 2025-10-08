@@ -21,6 +21,7 @@ import Bienes from './screens/Models/Bienes';
 
 import RestrictedPage from './screens/RestrictedPage';
 import Dashboard from './screens/Dashboard';
+import AsignarRol from './screens/AsignarRol';
 
 const auth = getAuth(appFirebase);
 function App() {
@@ -52,6 +53,7 @@ function App() {
 
                   <Route path='/ordencompra' element={<OrdenCompra />} />
                   <Route path='/Bienes' element={<Bienes />} />
+                  <Route path='/seguridad' element={<AsignarRol />} />
 
                   <Route path="/dashboard" element={<Dashboard />} />
 

@@ -48,3 +48,34 @@ exports.crearUsuario = async (req, res) => {
   }
 };
 
+// 🔹 Asignar o modificar roles de un usuario (solo ADMIN)
+exports.asignarRol = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roles } = req.body;
+
+    // Validar que 'roles' sea un array
+    if (!Array.isArray(roles)) {
+      return res.status(400).json({ message: 'El campo roles debe ser un array.' });
+    }
+
+    // Buscar y actualizar usuario
+    const usuarioActualizado = await Auth.findByIdAndUpdate(
+      id,
+      { roles },
+      { new: true }
+    );
+
+    if (!usuarioActualizado) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    res.json({
+      message: 'Roles actualizados correctamente.',
+      usuario: usuarioActualizado
+    });
+  } catch (error) {
+    console.error('Error al asignar roles:', error);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
+};
