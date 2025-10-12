@@ -1,4 +1,4 @@
-const Auth = require("../Models/usuario_modelo");
+const Auth = require('../../src/Models/usuario_modelo');
 const argon2 = require('argon2');
 // LLama al usuario
 exports.listarUsuario = async (req, res) => {
