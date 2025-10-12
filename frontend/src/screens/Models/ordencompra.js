@@ -1,20 +1,18 @@
-// 📁 OrdenesApp.js
 import React, { useEffect, useState } from 'react';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import "../../styles/Models/ordencompra.css"
-import ModalCrearOrden from '../Models/OrdenCompra/ModalCrearOrden';
-import ModalDetalleOrden from '../Models/OrdenCompra/ModalDetalleOrden';
+import ModalCrearOrden from './OrdenCompra/ModalCrearOrden';
+import ModalDetalleOrden from './OrdenCompra/ModalDetalleOrden';
+import Notification from '../../components/Notification';
+import '../../styles/Models/ordencompra.css';
 
 const API_URL = "http://localhost:5000/api/compras";
-
-
 
 const OrdenCompra = () => {
   const [ordenes, setOrdenes] = useState([]);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
   const [busqueda, setBusqueda] = useState('');
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
   useEffect(() => {
     fetch(API_URL)
@@ -23,52 +21,192 @@ const OrdenCompra = () => {
       .catch(err => console.error('Error al obtener órdenes:', err));
   }, []);
 
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+  };
+
   const handleCrearOrden = async (nuevaOrden) => {
     try {
+      // Validaciones
+      if (!nuevaOrden.numero.trim()) {
+        showNotification('El número de orden es obligatorio', 'error');
+        return;
+      }
+      if (!nuevaOrden.proveedor_id.trim()) {
+        showNotification('El ID del proveedor es obligatorio', 'error');
+        return;
+      }
+      if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
+        showNotification('Debe agregar al menos un ítem a la orden', 'error');
+        return;
+      }
+
+      // Verificar si el número ya existe
+      const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
+      if (numeroExistente) {
+        showNotification('Ya existe una orden con este número', 'error');
+        return;
+      }
+
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(nuevaOrden)
       });
-      if (!res.ok) throw new Error('Error al crear la orden');
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al crear la orden');
+      }
+      
       const ordenCreada = await res.json();
       setOrdenes([...ordenes, ordenCreada]);
       setMostrarModalCrear(false);
+      showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
     } catch (err) {
       console.error(err.message);
+      showNotification(err.message || 'Error al crear la orden', 'error');
     }
   };
 
   const handleEditarOrden = async (ordenActualizada) => {
     try {
+      // Validaciones
+      if (!ordenActualizada.numero.trim()) {
+        showNotification('El número de orden es obligatorio', 'error');
+        return;
+      }
+      if (!ordenActualizada.proveedor_id.trim()) {
+        showNotification('El ID del proveedor es obligatorio', 'error');
+        return;
+      }
+      if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
+        showNotification('La orden debe tener al menos un ítem', 'error');
+        return;
+      }
+
+      // Asegurar que la fecha se mantenga si no se ha especificado
+      const ordenParaEnviar = {
+        ...ordenActualizada,
+        fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
+      };
+
       const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ordenActualizada)
+        body: JSON.stringify(ordenParaEnviar)
       });
-      if (!res.ok) throw new Error('Error al editar la orden');
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al editar la orden');
+      }
+      
       const actualizada = await res.json();
       setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
       setOrdenSeleccionada(null);
+      showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
     } catch (err) {
       console.error(err.message);
+      showNotification(err.message || 'Error al editar la orden', 'error');
     }
   };
 
   const handleEliminarOrden = async (id) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta orden?")) return;
+    const ordenAEliminar = ordenes.find(o => o._id === id);
+    if (!window.confirm(`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`)) return;
+    
     try {
       const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar la orden');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al eliminar la orden');
+      }
+      
       setOrdenes(ordenes.filter(o => o._id !== id));
       setOrdenSeleccionada(null);
+      showNotification(`Orden "${ordenAEliminar?.numero}" eliminada exitosamente`, 'success');
     } catch (err) {
       console.error(err.message);
+      showNotification(err.message || 'Error al eliminar la orden', 'error');
     }
   };
 
-  const ordenesFiltradas = ordenes.filter(o =>
-    o.numero.toLowerCase().includes(busqueda.toLowerCase())
+  const handleVolverDashboard = () => {
+    // Redirigir al dashboard
+    window.location.href = '/dashboard';
+  };
+
+  const ordenesFiltradas = ordenes.filter(o => {
+    const terminoBusqueda = busqueda.toLowerCase();
+    return (
+      o.numero?.toLowerCase().includes(terminoBusqueda) ||
+      o.proveedor_id?.toLowerCase().includes(terminoBusqueda) ||
+      o.estado?.toLowerCase().includes(terminoBusqueda)
+    );
+  });
+
+  const ordenesBorrador = ordenesFiltradas.filter(o => o.estado === "BORRADOR");
+  const ordenesEnviadas = ordenesFiltradas.filter(o => o.estado === "ENVIADA");
+  const ordenesRecibidas = ordenesFiltradas.filter(o => o.estado === "RECIBIDA");
+  const ordenesCerradas = ordenesFiltradas.filter(o => o.estado === "CERRADA");
+
+  const renderGrupoOrdenes = (titulo, lista) => (
+    <div className="orden-categoria-section">
+      <h3 className="orden-subtitulo">{titulo}</h3>
+      {lista.length === 0 ? (
+        <p className="orden-vacio">No hay órdenes en esta categoría.</p>
+      ) : (
+        <div className="orden-listado">
+          {lista.map((orden) => {
+            const total = orden.items?.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0).toFixed(2) || 0;
+            return (
+              <div key={orden._id} className="orden-card" onClick={() => setOrdenSeleccionada(orden)}>
+                <div className="orden-card-header">
+                  <span className="orden-numero">{orden.numero}</span>
+                  <span className={`orden-estado-badge ${orden.estado}`}>{orden.estado}</span>
+                </div>
+                <div className="orden-card-body">
+                  <div className="orden-info-item">
+                    <span className="orden-info-label">Proveedor</span>
+                    <span className="orden-info-value">{orden.proveedor_id}</span>
+                  </div>
+                  <div className="orden-info-item">
+                    <span className="orden-info-label">Fecha</span>
+                    <span className="orden-info-value">{orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-ES') : '—'}</span>
+                  </div>
+                  <div className="orden-info-item">
+                    <span className="orden-info-label">Total</span>
+                    <span className="orden-info-value orden-total">${total}</span>
+                  </div>
+                </div>
+                
+                {/* Mostrar ítems de la orden */}
+                {orden.items && orden.items.length > 0 && (
+                  <div className="orden-items-preview">
+                    <h5>📦 Ítems ({orden.items.length}):</h5>
+                    <div className="orden-items-list">
+                      {orden.items.slice(0, 3).map((item, idx) => (
+                        <div key={idx} className="orden-item-preview">
+                          <span className="item-descripcion">{item.descripcion}</span>
+                          <span className="item-cantidad">Cant: {item.cantidad}</span>
+                          <span className="item-subtotal">${(item.cantidad * item.costoUnit).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {orden.items.length > 3 && (
+                        <div className="orden-item-more">
+                          +{orden.items.length - 3} ítems más...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 
   return (
@@ -80,49 +218,31 @@ const OrdenCompra = () => {
           <input
             type="text"
             className="orden-busqueda"
-            placeholder="Buscar por número de orden..."
+                    placeholder="Buscar por número, proveedor o estado..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
           />
+                  <button className="btn-ayuda" onClick={() => setMostrarAyuda(true)} title="Ver ayuda">
+                    ❓ Ayuda
+                  </button>
           <button className="btn-nueva-orden" onClick={() => setMostrarModalCrear(true)}>
             + Nueva Orden
           </button>
         </div>
       </div>
 
-      <h3 className="orden-subtitulo">Lista de Órdenes</h3>
-      {ordenesFiltradas.length === 0 ? (
-        <p className="orden-vacio">No hay órdenes registradas.</p>
-      ) : (
-        <div className="orden-listado">
-          {ordenesFiltradas.map((orden) => {
-            const total = orden.items.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0).toFixed(2);
-            return (
-              <div key={orden._id} className="orden-card" onClick={() => setOrdenSeleccionada(orden)}>
-                <div className="orden-card-header">
-                  <span className="orden-numero">{orden.numero}</span>
-                  <span className="orden-total">${total}</span>
-                </div>
-                <div className="orden-card-body">
-                  <div className="orden-info-row">
-                    <span><strong>Proveedor:</strong> {orden.proveedor_id}</span>
-                    <span><strong>Fecha:</strong> {orden.fecha || '—'}</span>
-                  </div>
-                  <div className="orden-info-row">
-                    <span><strong>Ítems:</strong> {orden.items.length}</span>
-                    <span><strong>Estado:</strong> {orden.estado}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      <div className="orden-categorias-container">
+        {renderGrupoOrdenes("Órdenes en borrador", ordenesBorrador)}
+        {renderGrupoOrdenes("Órdenes enviadas", ordenesEnviadas)}
+        {renderGrupoOrdenes("Órdenes recibidas", ordenesRecibidas)}
+        {renderGrupoOrdenes("Órdenes cerradas", ordenesCerradas)}
         </div>
-      )}
 
       {mostrarModalCrear && (
         <ModalCrearOrden
           onClose={() => setMostrarModalCrear(false)}
           onCreate={handleCrearOrden}
+          ordenesExistentes={ordenes}
         />
       )}
 
@@ -134,629 +254,60 @@ const OrdenCompra = () => {
           onDelete={handleEliminarOrden}
         />
       )}
-    </div>
-  );
-};
 
-
-/*Seguridad
-const OrdenCompra = () => {
-  const [ordenes, setOrdenes] = useState([]);
-  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
-  const [busqueda, setBusqueda] = useState("");
-
-  const [nuevaOrden, setNuevaOrden] = useState({
-    numero: '',
-    proveedor_id: '',
-    estado: 'BORRADOR',
-    items: [],
-    recepciones: []
-  });
-
-  const [nuevoItem, setNuevoItem] = useState({
-    descripcion: '',
-    cantidad: '',
-    costoUnit: ''
-  });
-
-  // Obtener órdenes al cargar
-  useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => setOrdenes(data))
-      .catch(err => console.error('Error al obtener órdenes:', err));
-  }, []);
-
-  // Agregar ítem
-  const handleAgregarItem = () => {
-    if (!nuevoItem.descripcion || !nuevoItem.cantidad || !nuevoItem.costoUnit) return;
-    const item = {
-      descripcion: nuevoItem.descripcion,
-      cantidad: parseFloat(nuevoItem.cantidad),
-      costoUnit: parseFloat(nuevoItem.costoUnit)
-    };
-    setNuevaOrden({
-      ...nuevaOrden,
-      items: [...nuevaOrden.items, item]
-    });
-    setNuevoItem({ descripcion: '', cantidad: '', costoUnit: '' });
-  };
-
-  // Crear orden
-  const handleCrearOrden = async () => {
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevaOrden)
-      });
-
-      if (!res.ok) throw new Error('Error al crear la orden');
-      const ordenCreada = await res.json();
-      setOrdenes([...ordenes, ordenCreada]);
-      setNuevaOrden({
-        numero: '',
-        proveedor_id: '',
-        estado: 'BORRADOR',
-        items: [],
-        recepciones: []
-      });
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  // Editar orden (incluye ítems y estado)
-  const handleEditarOrden = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ordenSeleccionada)
-      });
-      if (!res.ok) throw new Error('Error al editar la orden');
-      const ordenActualizada = await res.json();
-      setOrdenes(ordenes.map(o => o._id === id ? ordenActualizada : o));
-      alert("Orden actualizada con éxito");
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  // Eliminar orden
-  const handleEliminarOrden = async (id) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta orden?")) return;
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar la orden');
-      setOrdenes(ordenes.filter(o => o._id !== id));
-      setOrdenSeleccionada(null);
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  // Descargar PDF
-  const handleDescargarPDF = (orden) => {
-    const doc = new jsPDF();
-    doc.text(`Orden de Compra - ${orden.numero}`, 14, 20);
-    doc.text(`Proveedor ID: ${orden.proveedor_id}`, 14, 30);
-    doc.text(`Estado: ${orden.estado}`, 14, 40);
-
-    const rows = orden.items.map(item => [
-      item.descripcion,
-      item.cantidad,
-      `$${item.costoUnit.toFixed(2)}`,
-      `$${(item.cantidad * item.costoUnit).toFixed(2)}`
-    ]);
-
-    doc.autoTable({
-      startY: 50,
-      head: [['Descripción', 'Cantidad', 'Costo Unitario', 'Subtotal']],
-      body: rows
-    });
-
-    const total = orden.items.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0);
-    doc.text(`Total: $${total.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
-
-    doc.save(`orden_${orden.numero}.pdf`);
-  };
-
-  const calcularTotal = (items) => {
-    return items?.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0).toFixed(2);
-  };
-
-  // Manejar edición de ítems dentro de la orden seleccionada
-  const handleEditarItem = (idx, campo, valor) => {
-    const nuevosItems = ordenSeleccionada.items.map((item, i) =>
-      i === idx ? { ...item, [campo]: campo === "cantidad" || campo === "costoUnit" ? parseFloat(valor) || 0 : valor } : item
-    );
-    setOrdenSeleccionada({ ...ordenSeleccionada, items: nuevosItems });
-  };
-
-  // Filtrar órdenes
-  const ordenesFiltradas = ordenes.filter(o =>
-    o.numero.toLowerCase().includes(busqueda.toLowerCase())
-  );
-//Segunda parte
-  return (
-    <div style={{ padding: '20px' }}>
-      <h2>Órdenes de Compra</h2>
-
-    
-      <input
-        type="text"
-        placeholder="Buscar por número..."
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-        style={{ marginBottom: '15px', padding: '5px' }}
-      />
-
- 
-      <h3>Crear nueva orden</h3>
-      <input
-        type="text"
-        name="numero"
-        placeholder="Número"
-        value={nuevaOrden.numero}
-        onChange={(e) => setNuevaOrden({ ...nuevaOrden, numero: e.target.value })}
-      />
-      <input
-        type="text"
-        name="proveedor_id"
-        placeholder="Proveedor ID"
-        value={nuevaOrden.proveedor_id}
-        onChange={(e) => setNuevaOrden({ ...nuevaOrden, proveedor_id: e.target.value })}
-      />
-
-  
-      <div style={{ marginTop: '10px' }}>
-        <h4>Agregar ítem</h4>
-        <input
-          type="text"
-          placeholder="Descripción"
-          value={nuevoItem.descripcion}
-          onChange={(e) => setNuevoItem({ ...nuevoItem, descripcion: e.target.value })}
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
         />
-        <input
-          type="number"
-          placeholder="Cantidad"
-          value={nuevoItem.cantidad}
-          onChange={(e) => setNuevoItem({ ...nuevoItem, cantidad: e.target.value })}
-        />
-        <input
-          type="number"
-          placeholder="Costo Unitario"
-          value={nuevoItem.costoUnit}
-          onChange={(e) => setNuevoItem({ ...nuevoItem, costoUnit: e.target.value })}
-        />
-        <button onClick={handleAgregarItem}>Agregar Ítem</button>
+      )}
+
+      {mostrarAyuda && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 className="modal-title">📚 Guía de Uso - Sistema de Órdenes</h3>
+            
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>🔍 Búsqueda</h4>
+              <p>Puedes buscar órdenes por:</p>
+              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                <li><strong>Número:</strong> ORD-001, ORD-002, etc.</li>
+                <li><strong>Proveedor:</strong> ID del proveedor</li>
+                <li><strong>Estado:</strong> BORRADOR, ENVIADA, etc.</li>
+              </ul>
       </div>
 
-    
-      {nuevaOrden.items.length > 0 && (
-        <div style={{ marginTop: '10px' }}>
-          <h5>Ítems agregados:</h5>
-          <ul>
-            {nuevaOrden.items.map((item, idx) => (
-              <li key={idx}>
-                {item.descripcion} – Cant: {item.cantidad} – $ {item.costoUnit.toFixed(2)}
-              </li>
-            ))}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>📋 Estados de Órdenes</h4>
+              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                <li><strong>📝 BORRADOR:</strong> Órdenes en proceso de creación</li>
+                <li><strong>📤 ENVIADA:</strong> Órdenes enviadas al proveedor</li>
+                <li><strong>📦 RECIBIDA:</strong> Órdenes recibidas y verificadas</li>
+                <li><strong>✅ CERRADA:</strong> Órdenes completadas</li>
           </ul>
         </div>
-      )}
 
-      <button onClick={handleCrearOrden} style={{ marginTop: '10px' }}>
-        Crear Orden
-      </button>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>✨ Funciones Principales</h4>
+              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                <li><strong>Crear Orden:</strong> Agregar nuevas órdenes de compra</li>
+                <li><strong>Editar:</strong> Hacer clic en cualquier orden para editarla</li>
+                <li><strong>Eliminar:</strong> Opción disponible en el modal de edición</li>
+                <li><strong>PDF:</strong> Descargar órdenes en formato PDF</li>
+              </ul>
+</div>
 
-      <hr />
-
-      
-      <h3>Listado de Órdenes</h3>
-      {ordenesFiltradas.length === 0 ? (
-        <p>No hay órdenes registradas.</p>
-      ) : (
-        <div>
-          {ordenesFiltradas.map((orden) => (
-            <div key={orden._id} style={{ marginBottom: '10px' }}>
-              <button onClick={() => setOrdenSeleccionada(orden)}>
-                {orden.numero}
+            <div className="modal-actions">
+              <button className="btn-cerrar" onClick={() => setMostrarAyuda(false)}>
+                ✅ Entendido
               </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <hr />
-
-     
-      {ordenSeleccionada && (
-        <div style={{ marginTop: '20px' }}>
-          <h3>Detalle de la Orden</h3>
-          <p><strong>Número:</strong> {ordenSeleccionada.numero}</p>
-          <p><strong>Proveedor ID:</strong> {ordenSeleccionada.proveedor_id}</p>
-
-       
-          <label><strong>Estado:</strong></label>
-          <select
-            value={ordenSeleccionada.estado}
-            onChange={(e) => setOrdenSeleccionada({ ...ordenSeleccionada, estado: e.target.value })}
-          >
-            <option value="BORRADOR">BORRADOR</option>
-            <option value="ENVIADA">ENVIADA</option>
-            <option value="RECIBIDA">RECIBIDA</option>
-            <option value="CERRADA">CERRADA</option>
-          </select>
-
-
-<h4>Ítems (editar):</h4>
-<div className="table-wrapper">
-  <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
-    <thead>
-      <tr>
-        <th>Descripción</th>
-        <th>Cantidad</th>
-        <th>Costo Unitario</th>
-        <th>Subtotal</th>
-      </tr>
-    </thead>
-    <tbody>
-      {ordenSeleccionada.items.map((item, idx) => (
-        <tr key={idx}>
-          <td>
-            <input
-              type="text"
-              value={item.descripcion}
-              onChange={(e) => handleEditarItem(idx, "descripcion", e.target.value)}
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={item.cantidad}
-              onChange={(e) => handleEditarItem(idx, "cantidad", e.target.value)}
-            />
-          </td>
-          <td>
-            <input
-              type="number"
-              value={item.costoUnit}
-              onChange={(e) => handleEditarItem(idx, "costoUnit", e.target.value)}
-            />
-          </td>
-          <td>${(item.cantidad * item.costoUnit).toFixed(2)}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
 </div>
-
-
-<div className="items-cards">
-  {ordenSeleccionada.items.map((item, idx) => (
-    <div key={idx} className="item-card">
-      <p><strong>Descripción:</strong></p>
-      <input
-        type="text"
-        value={item.descripcion}
-        onChange={(e) => handleEditarItem(idx, "descripcion", e.target.value)}
-      />
-      <p><strong>Cantidad:</strong></p>
-      <input
-        type="number"
-        value={item.cantidad}
-        onChange={(e) => handleEditarItem(idx, "cantidad", e.target.value)}
-      />
-      <p><strong>Costo Unitario:</strong></p>
-      <input
-        type="number"
-        value={item.costoUnit}
-        onChange={(e) => handleEditarItem(idx, "costoUnit", e.target.value)}
-      />
-      <p><strong>Subtotal:</strong> ${(item.cantidad * item.costoUnit).toFixed(2)}</p>
-    </div>
-  ))}
-</div>
-
-          <h4 style={{ marginTop: '10px' }}>
-            Total: ${calcularTotal(ordenSeleccionada.items)}
-          </h4>
-
-          <div style={{ marginTop: '15px' }}>
-            <button onClick={() => handleEditarOrden(ordenSeleccionada._id)}>Guardar Cambios</button>
-            <button onClick={() => handleEliminarOrden(ordenSeleccionada._id)} style={{ marginLeft: '10px' }}>Eliminar</button>
-            <button onClick={() => handleDescargarPDF(ordenSeleccionada)} style={{ marginLeft: '10px' }}>Descargar PDF</button>
-            <button onClick={() => setOrdenSeleccionada(null)} style={{ marginLeft: '10px' }}>Cerrar</button>
           </div>
         </div>
       )}
     </div>
   );
 };
-
-
-Segunda copia
-const OrdenCompra = () => {
-  const [ordenes, setOrdenes] = useState([]);
-  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
-  const [busqueda, setBusqueda] = useState("");
-
-  const [nuevaOrden, setNuevaOrden] = useState({
-    numero: '',
-    proveedor_id: '',
-    estado: 'BORRADOR',
-    items: [],
-    recepciones: []
-  });
-
-  const [nuevoItem, setNuevoItem] = useState({
-    descripcion: '',
-    cantidad: '',
-    costoUnit: ''
-  });
-
-  useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => setOrdenes(data))
-      .catch(err => console.error('Error al obtener órdenes:', err));
-  }, []);
-
-  const handleAgregarItem = () => {
-    if (!nuevoItem.descripcion || !nuevoItem.cantidad || !nuevoItem.costoUnit) return;
-    const item = {
-      descripcion: nuevoItem.descripcion,
-      cantidad: parseFloat(nuevoItem.cantidad),
-      costoUnit: parseFloat(nuevoItem.costoUnit)
-    };
-    setNuevaOrden({
-      ...nuevaOrden,
-      items: [...nuevaOrden.items, item]
-    });
-    setNuevoItem({ descripcion: '', cantidad: '', costoUnit: '' });
-  };
-
-  const handleCrearOrden = async () => {
-    try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevaOrden)
-      });
-      if (!res.ok) throw new Error('Error al crear la orden');
-      const ordenCreada = await res.json();
-      setOrdenes([...ordenes, ordenCreada]);
-      setNuevaOrden({
-        numero: '',
-        proveedor_id: '',
-        estado: 'BORRADOR',
-        items: [],
-        recepciones: []
-      });
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  const handleEditarOrden = async (id) => {
-    try {
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ordenSeleccionada)
-      });
-      if (!res.ok) throw new Error('Error al editar la orden');
-      const ordenActualizada = await res.json();
-      setOrdenes(ordenes.map(o => o._id === id ? ordenActualizada : o));
-      alert("Orden actualizada con éxito");
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  const handleEliminarOrden = async (id) => {
-    if (!window.confirm("¿Seguro que deseas eliminar esta orden?")) return;
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar la orden');
-      setOrdenes(ordenes.filter(o => o._id !== id));
-      setOrdenSeleccionada(null);
-    } catch (err) {
-      console.error(err.message);
-    }
-  };
-
-  const handleDescargarPDF = (orden) => {
-    const doc = new jsPDF();
-    doc.text(`Orden de Compra - ${orden.numero}`, 14, 20);
-    doc.text(`Proveedor ID: ${orden.proveedor_id}`, 14, 30);
-    doc.text(`Estado: ${orden.estado}`, 14, 40);
-
-    const rows = orden.items.map(item => [
-      item.descripcion,
-      item.cantidad,
-      `$${item.costoUnit.toFixed(2)}`,
-      `$${(item.cantidad * item.costoUnit).toFixed(2)}`
-    ]);
-
-    doc.autoTable({
-      startY: 50,
-      head: [['Descripción', 'Cantidad', 'Costo Unitario', 'Subtotal']],
-      body: rows
-    });
-
-    const total = orden.items.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0);
-    doc.text(`Total: $${total.toFixed(2)}`, 14, doc.lastAutoTable.finalY + 10);
-    doc.save(`orden_${orden.numero}.pdf`);
-  };
-
-  const calcularTotal = (items) => {
-    return items?.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0).toFixed(2);
-  };
-
-  const handleEditarItem = (idx, campo, valor) => {
-    const nuevosItems = ordenSeleccionada.items.map((item, i) =>
-      i === idx ? { ...item, [campo]: campo === "cantidad" || campo === "costoUnit" ? parseFloat(valor) || 0 : valor } : item
-    );
-    setOrdenSeleccionada({ ...ordenSeleccionada, items: nuevosItems });
-  };
-
-  const ordenesFiltradas = ordenes.filter(o =>
-    o.numero.toLowerCase().includes(busqueda.toLowerCase())
-  );
-
-  return (
-    <div className="orden-container">
-      <h2 className="orden-title">Sistema de Órdenes de Compra</h2>
-      <h3>Gestiona y controla todas tus ordenes de manera eficiente</h3>
-      
-      <input
-        type="text"
-        className="orden-busqueda"
-        placeholder="Buscar por número..."
-        value={busqueda}
-        onChange={(e) => setBusqueda(e.target.value)}
-      />
-      
-      <h3>Listado de Órdenes</h3>
-      {ordenesFiltradas.length === 0 ? (
-        <p>No hay órdenes registradas.</p>
-      ) : (
-        <div className="orden-listado">
-          {ordenesFiltradas.map((orden) => (
-            <div key={orden._id} className="orden-card">
-              <button onClick={() => setOrdenSeleccionada(orden)}>
-                {orden.numero}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="orden-formulario">
-        <h3>Crear nueva orden</h3>
-        <input
-          type="text"
-          name="numero"
-          placeholder="Número"
-          value={nuevaOrden.numero}
-          onChange={(e) => setNuevaOrden({ ...nuevaOrden, numero: e.target.value })}
-        />
-        <input
-          type="text"
-          name="proveedor_id"
-          placeholder="Proveedor ID"
-          value={nuevaOrden.proveedor_id}
-          onChange={(e) => setNuevaOrden({ ...nuevaOrden, proveedor_id: e.target.value })}
-        />
-
-        <h4>Agregar ítem</h4>
-        <input
-          type="text"
-          placeholder="Descripción"
-          value={nuevoItem.descripcion}
-          onChange={(e) => setNuevoItem({ ...nuevoItem, descripcion: e.target.value })}
-        />
-        <input
-          type="number"
-          placeholder="Cantidad"
-          value={nuevoItem.cantidad}
-          onChange={(e) => setNuevoItem({ ...nuevoItem, cantidad: e.target.value })}
-        />
-        <input
-          type="number"
-          placeholder="Costo Unitario"
-          value={nuevoItem.costoUnit}
-          onChange={(e) => setNuevoItem({ ...nuevoItem, costoUnit: e.target.value })}
-        />
-        <button className="btn-agregar" onClick={handleAgregarItem}>Agregar Ítem</button>
-
-        {nuevaOrden.items.length > 0 && (
-          <ul className="orden-items">
-            {nuevaOrden.items.map((item, idx) => (
-              <li key={idx}>
-                {item.descripcion} – Cant: {item.cantidad} – $ {item.costoUnit.toFixed(2)}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <button className="btn-crear" onClick={handleCrearOrden}>Crear Orden</button>
-      </div>
-
-      
-
-      {ordenSeleccionada && (
-        <div className="orden-detalle">
-          <h3>Detalle de la Orden</h3>
-          <p><strong>Número:</strong> {ordenSeleccionada.numero}</p>
-          <p><strong>Proveedor ID:</strong> {ordenSeleccionada.proveedor_id}</p>
-
-          <label><strong>Estado:</strong></label>
-          <select
-            value={ordenSeleccionada.estado}
-            onChange={(e) => setOrdenSeleccionada({ ...ordenSeleccionada, estado: e.target.value })}
-          >
-            <option value="BORRADOR">BORRADOR</option>
-            <option value="ENVIADA">ENVIADA</option>
-            <option value="RECIBIDA">RECIBIDA</option>
-            <option value="CERRADA">CERRADA</option>
-          </select>
-
-          <table className="orden-tabla">
-            <thead>
-              <tr>
-                <th>Descripción</th>
-                <th>Cantidad</th>
-                <th>Costo Unitario</th>
-                <th>Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ordenSeleccionada.items.map((item, idx) => (
-                <tr key={idx}>
-                  <td>
-                                      <input
-                    type="text"
-                    value={item.descripcion}
-                    onChange={(e) => handleEditarItem(idx, "descripcion", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={item.cantidad}
-                    onChange={(e) => handleEditarItem(idx, "cantidad", e.target.value)}
-                  />
-                </td>
-                <td>
-                  <input
-                    type="number"
-                    value={item.costoUnit}
-                    onChange={(e) => handleEditarItem(idx, "costoUnit", e.target.value)}
-                  />
-                </td>
-                <td>${(item.cantidad * item.costoUnit).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <h4>Total: ${calcularTotal(ordenSeleccionada.items)}</h4>
-
-        <div className="orden-botones">
-          <button onClick={() => handleEditarOrden(ordenSeleccionada._id)}>Guardar Cambios</button>
-          <button onClick={() => handleEliminarOrden(ordenSeleccionada._id)}>Eliminar</button>
-          <button onClick={() => handleDescargarPDF(ordenSeleccionada)}>Descargar PDF</button>
-          <button onClick={() => setOrdenSeleccionada(null)}>Cerrar</button>
-        </div>
-      </div>
-    )}
-  </div>
-);
-};
-*/
 
 export default OrdenCompra;
