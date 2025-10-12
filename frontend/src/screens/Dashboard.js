@@ -1,13 +1,12 @@
-
 import { FiUsers, FiInbox, FiCalendar, FiFile, FiGift, FiPackage, FiBookOpen, FiMessageSquare, FiShield } from 'react-icons/fi';
-// src/components/DashboardCards.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as FiIcons from "react-icons/fi";
-import '../styles/Dashboard.css'; // Importamos el CSS externo
+import '../styles/Dashboard.css';
 import { auth } from "../components/authentication/Auth";
 
+const API_URL = "http://localhost:5000/";
 const DashboardCards = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
@@ -17,12 +16,12 @@ const DashboardCards = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get("http://localhost:5000/api/dashboard", {
+        const res = await axios.get(`${API_URL}api/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-        setModulos(res.data.modulos); // Datos filtrados por rol desde el backend
+        setModulos(res.data.modulos);
       } catch (err) {
         console.error("Error al cargar módulos:", err);
       }
@@ -32,25 +31,45 @@ const DashboardCards = () => {
   }, []);
 
   return (
-    <div className='dashBack'>
-    <div className="dashboard-grid">
-      {modulos.map((modulo) => {
-        const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile; // Icono dinámico
+    <div className="dashboard-container">
+      {/* Sidebar */}
+      
+      <div className="dashboard-sidebar">
+        <h2>Panel</h2>
+        <ul>
+          {modulos.map((modulo) => {
+            const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
+            return (
+              <li key={modulo._id} onClick={() => navigate(modulo.link)}>
+                <IconComponent size={20} style={{ marginRight: "10px" }} />
+                {modulo.titulo}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
-        return (
-          <div key={modulo._id} className="dashboard-card" style={{
-                  cursor: "pointer",            // Cambia el cursor a mano
-                  transition: "transform 0.2s, box-shadow 0.2s"
-                }} onClick={() => navigate(modulo.link)}>
-            
-            <IconComponent size={40} />
-            <h3>{modulo.titulo}</h3>
-            <p>{modulo.descripcion}</p>
-            
-          </div>
-        );
-      })}
-    </div>
+      {/* Cards principales */}
+      <div className="dashboard-main">
+        <div className="dashboard-grid">
+          {modulos.map((modulo) => {
+            const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
+            return (
+              <div
+                key={modulo._id}
+                className="dashboard-card"
+                onClick={() => navigate(modulo.link)}
+              >
+                <IconComponent size={40} />
+                <h3>{modulo.titulo}</h3>
+                <p>{modulo.descripcion}</p>
+              </div>
+            );
+          })}
+        
+        
+      </div>
+      </div>
     </div>
   );
 };
