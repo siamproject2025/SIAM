@@ -6,6 +6,7 @@ import * as FiIcons from "react-icons/fi";
 import '../styles/Dashboard.css';
 import { auth } from "../components/authentication/Auth";
 
+const API_URL = "http://localhost:5000/";
 const DashboardCards = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const DashboardCards = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get("http://localhost:5000/api/dashboard", {
+        const res = await axios.get(`${API_URL}api/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

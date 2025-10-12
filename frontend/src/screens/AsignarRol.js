@@ -4,8 +4,9 @@ import "../styles/AsignarRol.css";
 import { auth } from "../components/authentication/Auth";
 import { FiTrash2, FiMail, FiUser, FiKey } from "react-icons/fi";
 import UsuariosChart from '../components/UsuariosChart';
+import { HiMiniMagnifyingGlassCircle } from "react-icons/hi2";
 
-const API_URL = "http://localhost:5000/api/usuarios";
+const API_URL = "http://localhost:5000/";
 
 const AsignarRol = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -13,6 +14,7 @@ const AsignarRol = () => {
   const [filtroRol, setFiltroRol] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(true);
+  const [actualizarChart, setActualizarChart] = useState(false);
 
   const [paginaActual, setPaginaActual] = useState(1);
   const usuariosPorPagina = 15;
@@ -25,7 +27,7 @@ const AsignarRol = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(API_URL, {
+        const res = await axios.get(`${API_URL}api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsuarios(res.data.users);
@@ -44,48 +46,66 @@ const AsignarRol = () => {
     try {
       const user = auth.currentUser;
       const token = await user.getIdToken();
-      await axios.put(`${API_URL}/${id}/rol`, { roles: [nuevoRol] }, {
+      await axios.put(`${API_URL}api/usuarios/${id}/rol`, { roles: [nuevoRol] }, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
       const usuarioActualizado = usuarios.find((u) => u._id === id);
-      setMensaje(
-        <>
-          ✅ Rol actualizado correctamente para{" "}
-          <strong>{usuarioActualizado?.username || "usuario desconocido"}</strong>{" "}
-          (Email: <strong>{usuarioActualizado?.email || "sin email"}</strong>)
-        </>
-      );
+      alert(
+      `✅ Rol actualizado correctamente para ${usuarioActualizado?.username || "usuario desconocido"} ` +
+      `(Email: ${usuarioActualizado?.email || "sin email"})`
+    );
 
       setUsuarios((prev) =>
         prev.map((u) => (u._id === id ? { ...u, roles: [nuevoRol] } : u))
       );
+       // 🔹 Forzar actualización del chart
+      setActualizarChart((prev) => !prev);
     } catch (error) {
       console.error("Error al asignar rol:", error);
-      setMensaje(error.response?.data?.message || "❌ No se pudo actualizar el rol.");
+      alert(error.response?.data?.message || "❌ No se pudo actualizar el rol.");
     }
   };
 
-  // 🔹 Eliminar usuario
+
+
+  // Función para eliminar un usuario
   const eliminarUsuario = async (id) => {
+    // Confirmación
     if (!window.confirm("⚠️ ¿Seguro que deseas eliminar este usuario?")) return;
 
     try {
+      // Obtener token del usuario actual
       const user = auth.currentUser;
       const token = await user.getIdToken();
-      await axios.delete(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 
+      // Petición DELETE a la API
+      await axios.delete(`${API_URL}api/usuarios/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+ 
+      // Buscar el usuario eliminado para el mensaje
       const usuarioEliminado = usuarios.find((u) => u._id === id);
+      const nombre = usuarioEliminado?.username || "desconocido";
+      console.log("AYUDAA",usuarios.find((u) => u._id === id));
+      // Mostrar mensaje de éxito
       setMensaje(
-        <span>
-          🗑 Usuario <strong>{usuarioEliminado?.username}</strong> eliminado correctamente
-        </span>
+        <span>🗑 Usuario <strong>{nombre}</strong> eliminado correctamente</span>
       );
 
+      // Actualizar lista de usuarios en frontend
       setUsuarios((prev) => prev.filter((u) => u._id !== id));
+       // 🔹 Forzar actualización del chart
+      setActualizarChart((prev) => !prev);
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
-      setMensaje("❌ No se pudo eliminar el usuario.");
+
+      // Mensaje de error
+      if (error.response && error.response.data?.message) {
+        setMensaje(`❌ ${error.response.data.message}`);
+      } else {
+        setMensaje("❌ No se pudo eliminar el usuario.");
+      }
     }
   };
 
@@ -111,13 +131,13 @@ const AsignarRol = () => {
   return (
     <>
       <div className="headerRoles">
-        <h2 className="asignarRol-title">Gestión de roles</h2>
+        <h2 className="asignarRol-title">Gestión de roles y usuarios</h2>
       </div>
-       <div className='dashMain'><UsuariosChart></UsuariosChart></div>
+       <div className='dashMain'><UsuariosChart  actualizar={actualizarChart}/></div>
        <div className="headerRoles">
         <h2 className="asignarRol-title">Asignación de roles</h2>
       </div>
-      <div className="asignarRol-container">
+      <div className="asignarRol-container">        <HiMiniMagnifyingGlassCircle size={50} color={"#3b3b3bff"} />
         {mensaje && <p className="asignarRol-message">{mensaje}</p>}
 
         {/* 🔍 Filtros */}

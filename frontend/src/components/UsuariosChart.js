@@ -4,11 +4,11 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Ba
 import { auth } from "../components/authentication/Auth";
 import "../styles/UsuariosChart.css";
 
-const API_URL = "http://localhost:5000/api/usuarios";
+const API_URL = "http://localhost:5000/";
 
 const COLORS = ["#323232ff", "#a600ffff", "#1369fdff"];
 
-const UsuariosChart = () => {
+const UsuariosChart = (actualizar) => {
   const [usuarios, setUsuarios] = useState([]);
   const [cargando, setCargando] = useState(true);
 
@@ -17,7 +17,7 @@ const UsuariosChart = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(API_URL, {
+        const res = await axios.get(`${API_URL}api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsuarios(res.data.users);
@@ -29,7 +29,7 @@ const UsuariosChart = () => {
     };
 
     obtenerUsuarios();
-  }, []);
+  }, [actualizar]);
 
   if (cargando) return <p>Cargando datos...</p>;
 
@@ -70,7 +70,7 @@ const UsuariosChart = () => {
           <XAxis dataKey="name" />
           <YAxis />
           <Tooltip />
-          <Bar dataKey="value" fill="#000000ff" />
+          <Bar dataKey="value" fill="#323232ff" />
         </BarChart>
       </ResponsiveContainer>
     </div>

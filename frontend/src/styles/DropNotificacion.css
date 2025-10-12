@@ -39,8 +39,7 @@
 .drop-notification p,.drop-notification h6 {
   color: rgb(56, 56, 56);
   padding: 5px;
-  border-radius: 10px;
-  background-color: rgb(241, 241, 241);
+  border-bottom:1px solid #383838;
 }
 
 .drop-notification p{
