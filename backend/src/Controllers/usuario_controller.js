@@ -1,4 +1,4 @@
-const Auth = require("../Models/usuario_modelo");
+const Auth = require('../../src/Models/usuario_modelo');
 const argon2 = require('argon2');
 const admin = require('../config/firebaseAdmin'); // importamos la instancia inicializada
 
