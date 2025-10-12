@@ -2,12 +2,13 @@ import { FiUsers, FiInbox, FiCalendar, FiFile, FiGift, FiPackage, FiBookOpen, Fi
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import '../styles/SideBar.css';
+import { auth } from "./authentication/Auth";
 import * as FiIcons from "react-icons/fi";
-import '../styles/Dashboard.css';
-import { auth } from "../components/authentication/Auth";
 
 const API_URL = "http://localhost:5000/";
-const DashboardCards = () => {
+
+const SideBar = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
 
@@ -31,29 +32,22 @@ const DashboardCards = () => {
   }, []);
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-main">
-        <div className="dashboard-grid">
+
+      <div className="dashboard-sidebar">
+        <h2>Panel</h2>
+        <ul>
           {modulos.map((modulo) => {
             const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
             return (
-              <div
-                key={modulo._id}
-                className="dashboard-card"
-                onClick={() => navigate(modulo.link)}
-              >
-                <IconComponent size={40} />
-                <h3>{modulo.titulo}</h3>
-                <p>{modulo.descripcion}</p>
-              </div>
+              <li key={modulo._id} onClick={() => navigate(modulo.link)}>
+                <IconComponent size={20} style={{ marginRight: "10px" }} />
+                {modulo.titulo}
+              </li>
             );
           })}
-        
-        
+        </ul>
       </div>
-      </div>
-    </div>
-  );
+      );
 };
 
-export default DashboardCards;
+export default SideBar;

@@ -22,6 +22,7 @@ import Dashboard from './screens/Dashboard';
 import AsignarRol from './screens/AsignarRol';
 import ResetPassword from './components/authentication/ResetPassword';
 import ResetPasswordSeguro from './components/authentication/ResetPasswordFirebase';
+import SideBar from './components/SideBar';
 
 const auth = getAuth(appFirebase);
 
@@ -104,7 +105,7 @@ function App() {
   return (
     <>
       <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-        {user && <><NavBar /></>}
+        {user && <><NavBar /><SideBar/></>}
 
         {warningVisible && (
           <div className="inactivity-warning" style={{

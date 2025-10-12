@@ -129,7 +129,7 @@ const AsignarRol = () => {
   if (cargando) return <p className="asignarRol-loading">Cargando usuarios...</p>;
 
   return (
-    <>
+    <div className="RolHeader">
       <div className="headerRoles">
         <h2 className="asignarRol-title">Gestión de roles y usuarios</h2>
       </div>
@@ -210,7 +210,7 @@ const AsignarRol = () => {
         )}
        
       </div>
-    </>
+    </div>
   );
 };
 

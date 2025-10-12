@@ -3,6 +3,11 @@
   padding: 2rem;
   font-family: 'Inter', sans-serif;
   color: var(--text-primary);
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer y Edge antiguos */
 }
 
 /* === ENCABEZADO === */
