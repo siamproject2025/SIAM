@@ -11,6 +11,13 @@ const API_URL = "http://localhost:5000/";
 const SideBar = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
+  const [activeLink, setActiveLink] = useState("");
+
+  const handleClick = (link) => {
+    setActiveLink(link);
+    navigate(link);
+  };
+
 
   useEffect(() => {
     const fetchModulos = async () => {
@@ -39,7 +46,7 @@ const SideBar = () => {
           {modulos.map((modulo) => {
             const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
             return (
-              <li key={modulo._id} onClick={() => navigate(modulo.link)}>
+              <li key={modulo._id} onClick={() => handleClick(modulo.link)} className={activeLink === modulo.link ? "active" : ""}>
                 <IconComponent size={20} style={{ marginRight: "10px" }} />
                 {modulo.titulo}
               </li>
