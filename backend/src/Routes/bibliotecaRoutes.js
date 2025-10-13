@@ -15,7 +15,7 @@ const {
 router.get("/", obtenerLibros);
 router.get("/:id", obtenerLibro);
 router.post("/", subida.single('archivo'), crearLibro);
-router.put("/:id", actualizarLibro);
+// router.put("/:id", actualizarLibro); // todo: implementar actualización de recurso
 router.delete("/:id", eliminarLibro);
 
 module.exports = router;
