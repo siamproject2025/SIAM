@@ -1,8 +1,21 @@
-const express = require('express');
+const express = require("express");
+const multer = require("multer");
+const subida = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
-const { crearBiblioteca } = require('../Controllers/bibliotecaController');
+const {
+  obtenerLibros,
+  obtenerLibroPorId,
+  crearLibro,
+  actualizarLibro,
+  eliminarLibro,
+} = require("../Controllers/bibliotecaController");
 
-router.post('/', crearBiblioteca);
-router.post('/:id', crearArchivoBiblioteca);
+// Rutas CRUD completas
+// TODO: Añadir middlewares de roles y auth.
+router.get("/", obtenerLibros);
+router.get("/:id", obtenerLibroPorId);
+router.post("/", subida.single('archivo'), crearLibro);
+router.put("/:id", actualizarLibro);
+router.delete("/:id", eliminarLibro);
 
 module.exports = router;
