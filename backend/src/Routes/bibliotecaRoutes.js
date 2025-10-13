@@ -4,7 +4,7 @@ const subida = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 const {
   obtenerLibros,
-  obtenerLibroPorId,
+  obtenerLibro,
   crearLibro,
   actualizarLibro,
   eliminarLibro,
@@ -13,7 +13,7 @@ const {
 // Rutas CRUD completas
 // TODO: Añadir middlewares de roles y auth.
 router.get("/", obtenerLibros);
-router.get("/:id", obtenerLibroPorId);
+router.get("/:id", obtenerLibro);
 router.post("/", subida.single('archivo'), crearLibro);
 router.put("/:id", actualizarLibro);
 router.delete("/:id", eliminarLibro);
