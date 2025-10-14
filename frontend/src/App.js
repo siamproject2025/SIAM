@@ -12,6 +12,7 @@ import Landing from "./screens/Landing";
 import Home from "./screens/Home";
 import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
+import BibliotecaTest from './components/BibliotecaTest';
 
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
@@ -19,6 +20,12 @@ import Bienes from './screens/Models/Bienes';
 
 import RestrictedPage from './screens/RestrictedPage';
 import Dashboard from './screens/Dashboard';
+import AsignarRol from './screens/AsignarRol';
+import ResetPassword from './components/authentication/ResetPassword';
+import ResetPasswordSeguro from './components/authentication/ResetPasswordFirebase';
+import SideBar from './components/SideBar';
+import ActividadesPage from './components/ActividadesPage';
+import CalendarioActividades from './components/CalendarioActividades';
 
 const auth = getAuth(appFirebase);
 
@@ -99,25 +106,46 @@ function App() {
   }, [user]);
 
   return (
-    <> {/* Se movio al index el authprovider y el router que envuelve la app*/}
-       <div  className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-              {/* Renderiza NavBar solo si el usuario está autenticado */}
-              
-              {user && <><NavBar />{/*<Sidebar/>*/}</>}
-              <Routes>
-                {/* Rutas públicas */}
-                <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>}/>
-                <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
-                {/* Rutas privadas */}
-                <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
-                  <Route path="/home" element={<Home />} />
+    <>
+      <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
+        {user && <><NavBar /><SideBar/></>}
 
-                  <Route path='/ordencompra' element={<OrdenCompra />} />
-                  <Route path='/Bienes' element={<Bienes />} />
+        {warningVisible && (
+          <div className="inactivity-warning" style={{
+            position: 'fixed',
+            bottom: 20,
+            right: 20,
+            padding: '15px 20px',
+            backgroundColor: '#ffc107',
+            color: '#000',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            zIndex: 9999
+          }}>
+            ⚠️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
+          </div>
+        )}
 
-                  <Route path="/dashboard" element={<Dashboard />} />
+        <Routes>
+          {/* Rutas públicas */}
+          <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>} />
+          <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
+          <Route path='/ResetPassword' element={<PublicRoute> <ResetPassword/> </PublicRoute>} />
+          <Route path='/ResetPasswordSeguro' element={<PublicRoute> <ResetPasswordSeguro/> </PublicRoute>} />
 
-                </Route>
+
+          {/* Rutas privadas */}
+          <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
+            <Route path="/home" element={<Home />} />
+            <Route path='/ordencompra' element={<OrdenCompra />} />
+            <Route path='/Bienes' element={<Bienes />} />
+            <Route path='/seguridad' element={<AsignarRol />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path='/Actividades' element={<ActividadesPage/>}/>
+            <Route path='/biblioteca' element={<BibliotecaTest/>}/>
+           
+            <Route path='/Calendario' element={<CalendarioActividades/>}/>
+          </Route>
 
           <Route path="/restricted" element={<RestrictedPage />} />
 
