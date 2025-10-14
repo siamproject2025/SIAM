@@ -173,8 +173,10 @@ const OrdenCompra = () => {
                   </div>
                   <div className="orden-info-item">
                     <span className="orden-info-label">Fecha</span>
-                    <span className="orden-info-value">{orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-ES') : '—'}</span>
-                  </div>
+                    <span className="orden-info-value">
+  {orden.fecha ? new Date(orden.fecha).toISOString().split('T')[0].split('-').reverse().join('/') : '—'}
+</span>
+</div>
                   <div className="orden-info-item">
                     <span className="orden-info-label">Total</span>
                     <span className="orden-info-value orden-total">${total}</span>

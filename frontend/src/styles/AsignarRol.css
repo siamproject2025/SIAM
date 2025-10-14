@@ -1,4 +1,13 @@
 /* Lista de tarjetas de usuario en columna */
+.RolHeader{
+  width: 100vw;
+  max-height: 92vh;
+  
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer y Edge antiguos */
+}
+
 .asignarRol-container{
   margin: 60px 60px 60px 60px;
 }
@@ -66,7 +75,7 @@ margin: 0px;
 }
 
 .asignarRol-select.caja{
-  background-color: #414141;
+  background-color: #1753c2;
   color: white;
 }
 

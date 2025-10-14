@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from 'react-router-dom';
 import OrdenCompra from "./Models/ordencompra";
 import Bienes from './Models/Bienes';
+import Actividades from '../components/FormularioActividad';
 const Home = () => {
   return (
     <div style={styles.container}>
@@ -28,7 +29,11 @@ const Home = () => {
       </Link>
     </div>
 
-
+ <div style={styles.card}>
+      <Link to="/Actividades" style={{ textDecoration: 'none' }}>
+        <p>Modulo Actividades</p>
+      </Link>
+    </div>
           <div style={styles.card}>
             <h3>Tareas</h3>
             <p>14 pendientes</p>
