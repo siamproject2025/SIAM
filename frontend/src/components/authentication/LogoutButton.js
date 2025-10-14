@@ -24,13 +24,13 @@ const LogoutButton = () => {
 
   return (
     <div>
-      <button
+      <a
         style={{ marginTop: "10px", width: "100px" }}
-        className="btn btn-dark btn-sm"
+        className="buttonExit"
         onClick={handleLogout}
       >
-        Logout
-      </button>
+        Salir
+      </a>
     </div>
   );
 };

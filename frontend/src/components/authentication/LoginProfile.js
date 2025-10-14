@@ -6,24 +6,25 @@ import picture from "../../assets/logo.png";
 import Profile from './Profile';
 
 function LoginProfile() {
-const { user } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   return (
-    
-    <DropdownButton
-      
-      className="drop-notification"
-      
-      title={<><img
-        src={user?.photoURL ? user.photoURL : picture}
-        className="img-box"
-        alt="imagen-perfil"
-      /> </>}
-      /*
-      show={show} 
-      onToggle={handleToggle}*/
-    > 
-       <Profile/>
-    </DropdownButton>
+    <div className="profile-container">
+      <DropdownButton
+        align="end"
+        className="drop-notification"
+        title={
+          <>
+            <img
+              src={user?.photoURL ? user.photoURL : picture}
+              className="img-box"
+              alt="imagen-perfil"
+            />
+          </>
+        }
+      >
+        <Profile />
+      </DropdownButton>
+    </div>
   );
 }
 

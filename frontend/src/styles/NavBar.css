@@ -1,80 +1,90 @@
-
-
-  .App .navbar {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    min-height: 8vh;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    color: #3d3d3d;
-    background: rgb(255, 255, 255);
-    z-index: 1000; /* Asegura que esté por encima de otros elementos */
-    padding: 0!important;
-  }
-  
-  .App .navbar p{
-    margin: 0 0 0 0;
-  }
-
-  .App .navbar .nav-links>a{
-    color: #6d6d6d;
-    font-weight: 1000;
-    text-decoration: none;
-    margin-top: 22px;
-    margin: 0 auto;
-  }
-
-  .App .navbar .nav-links>a:hover{
-    color: #297fb9;
-  }
-
-  .offcanvas-body {
-    text-align: left;
-  }
-
-  .offcanvas-backdrop.show {
-    opacity: none;
-    width: 0;
-}
-
-.side-link>a{
-  color: #585858;
-  font-weight: 1000;
-  text-decoration: none;
-  margin-top: 22px;
-  padding: auto;
-  margin: auto;
-  
-}
-
-.side-link{
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  border-radius: 5px;
-  background-color: rgb(240, 240, 240);
-  padding-left: 0;
+  min-height: 8vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  padding: 0 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
 }
 
-.side-link>a:hover{
-  color: #297fb9;
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #1438da;
+  font-weight: bold;
+  font-size: 1.2rem;
+  gap: 8px;
+}
+
+.logo-text {
   font-weight: 700;
 }
 
-.navTitle{
-  font-weight:900;
-  align-content: center;
+/* Links */
+.nav-links {
+  display: flex;
+  gap: 20px;
 }
 
-/* Estilo para mostrar la hora en el reloj */
-.navbar .flocus-clock   {
-  font-size: 12px;
-  font-weight: bold;
-  color: #fff; 
-  text-align: center;
+.nav-links a {
+  color: #3d3d3d;
   text-decoration: none;
-  background-color: rgba(0, 0, 0, 0.5); 
-  padding: 6px 30px;
-  border-radius:70px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: #297fb9;
+}
+
+/* Botón hamburguesa */
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  color: #3d3d3d;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 8vh;
+    left: 0;
+    width: 100%;
+    background-color: #fff;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links a {
+    padding: 10px 0;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+
+  .nav-links a:last-child {
+    border-bottom: none;
+  }
 }
