@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const dashboardController = require('../Controllers/dashboard_controller');
 const { authenticateUser } = require('../middleware/authMiddleWare');
-const { checkRole } = require('../middleware/checkrole');
+const { checkRole } = require('../middleware/checkRole');
 
 // Listar módulos (solo usuarios autenticados pueden ver)
 router.get('/dashboard', authenticateUser, dashboardController.listarModulos);
