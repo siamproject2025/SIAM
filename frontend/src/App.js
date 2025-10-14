@@ -21,6 +21,7 @@ import Bienes from './screens/Models/Bienes';
 
 import RestrictedPage from './screens/RestrictedPage';
 import Dashboard from './screens/Dashboard';
+import BibliotecaTest from './components/BibliotecaTest';
 
 const auth = getAuth(appFirebase);
 function App() {
@@ -52,7 +53,7 @@ function App() {
 
                   <Route path='/ordencompra' element={<OrdenCompra />} />
                   <Route path='/Bienes' element={<Bienes />} />
-
+<Route path="/biblioteca" element={<BibliotecaTest />} />
                   <Route path="/dashboard" element={<Dashboard />} />
 
                 </Route>

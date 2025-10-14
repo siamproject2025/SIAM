@@ -11,6 +11,7 @@ const dashboard_route = require("./Routes/dashboard_ruta");
 const horarios = require("./Routes/Horarios");
 const biblioteca = require("./Routes/bibliotecaRoutes");
 
+
 const app = express();
 
 app.use(express.json()); // Para poder leer JSON en el body de las solicitudes
@@ -40,6 +41,8 @@ app.use("/api/", usuarios_route);
 app.use("/api/", dashboard_route);
 app.use("/api/horarios", horarios);
 app.use("/api/biblioteca", biblioteca);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 console.log("✅ Conectado.");
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
