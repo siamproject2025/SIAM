@@ -63,7 +63,7 @@ export default function BibliotecaTest() {
               <td className="p-2 border-b">{new Date(libro.fechaCreacion).toLocaleDateString()}</td>
               <td className="p-2 border-b text-center">
                 {libro.archivoUrl ? (
-                  <a href={libro.archivoUrl} download target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm">
+                  <a href={libro.archivoUrl} download target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-700 text-black px-3 py-1 rounded-md text-sm">
                     Descargar
                   </a>
                 ) : (

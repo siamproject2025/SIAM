@@ -46,6 +46,7 @@ app.use("/api/actividades", actividadesRoutes);
 
 app.use("/api/horarios", horarios);
 app.use("/api/biblioteca", biblioteca);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 console.log("✅ Conectado.");
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
