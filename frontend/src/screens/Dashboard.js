@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import * as FiIcons from "react-icons/fi";
 import '../styles/Dashboard.css';
 import { auth } from "../components/authentication/Auth";
+import Home from './Home';
+import AdminOnly from '../components/Plugins/AdminOnly';
 
 const API_URL = "http://localhost:5000/";
 const DashboardCards = () => {
@@ -31,7 +33,8 @@ const DashboardCards = () => {
   }, []);
 
   return (
-    <div className="dashboard-container">
+    <div className="main dashboard-container">
+      <AdminOnly><Home></Home></AdminOnly>
       <div className="dashboard-main">
         <div className="dashboard-grid">
           {modulos.map((modulo) => {

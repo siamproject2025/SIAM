@@ -9,13 +9,6 @@ const bienesRoutes = require( "./routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
 const dashboard_route = require('./Routes/dashboard_ruta'); 
 const actividadesRoutes = require("./Routes/actividades");
-
-
-
-const ordencompra = require("./Routes/ordenCompra");
-const bienesRoutes = require("./Routes/bienesRoutes");
-const usuarios_route = require("./Routes/usuario_ruta");
-const dashboard_route = require("./Routes/dashboard_ruta");
 const horarios = require("./Routes/Horarios");
 const biblioteca = require("./Routes/bibliotecaRoutes");
 
