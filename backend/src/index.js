@@ -6,10 +6,12 @@ const cors = require('cors');
 
 
 const ordencompra = require('./Routes/ordenCompra'); 
-const bienesRoutes = require( "./routes/bienesRoutes");
+const bienesRoutes = require( "./Routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
 const dashboard_route = require('./Routes/dashboard_ruta'); 
-
+const personalRoutes = require('./Routes/personalRoutes'); // 🆕 NUEVA RUTA
+const donacionesRoutes = require('./Routes/donacionesRoutes');
+const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 
 const app = express();
 
@@ -36,7 +38,9 @@ app.use('/api/compras',ordencompra);
 app.use("/api/bienes", bienesRoutes);
 app.use('/api/',usuarios_route);
 app.use('/api/',dashboard_route);
-
+app.use('/api/personal', personalRoutes); 
+app.use('/api/proveedores', proveedoresRoutes); 
+app.use('/api/donaciones', donacionesRoutes); 
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
 app.get('/', (req, res) => {

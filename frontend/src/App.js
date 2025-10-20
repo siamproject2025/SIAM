@@ -16,7 +16,10 @@ import PublicRoute from './components/routes/PublicRoute';
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
 import Bienes from './screens/Models/Bienes';
+import Personal from './screens/Models/personal';
 
+import Proveedores from './screens/Models/proveedores';
+import Donaciones from './screens/Models/donaciones';
 import RestrictedPage from './screens/RestrictedPage';
 import Dashboard from './screens/Dashboard';
 import AsignarRol from './screens/AsignarRol';
@@ -136,7 +139,11 @@ function App() {
             <Route path="/home" element={<Home />} />
             <Route path='/ordencompra' element={<OrdenCompra />} />
             <Route path='/Bienes' element={<Bienes />} />
+            <Route path='/personal' element={<Personal />} />
+           
+            <Route path='/proveedores' element={<Proveedores />} />
             <Route path='/seguridad' element={<AsignarRol />} />
+            <Route path='/donaciones' element={<Donaciones />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
 
