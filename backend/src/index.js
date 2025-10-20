@@ -9,6 +9,9 @@ const bienesRoutes = require("./Routes/bienesRoutes");
 const usuarios_route = require("./Routes/usuario_ruta");
 const dashboard_route = require("./Routes/dashboard_ruta");
 const horarios = require("./Routes/Horarios");
+const aulas = require("./Routes/aulasRoutes");
+const alumnos = require("./Routes/alumnosRoutes");
+const docentes = require("./Routes/docentesRoutes");
 
 const app = express();
 
@@ -37,7 +40,10 @@ app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
 app.use("/api/", usuarios_route);
 app.use("/api/", dashboard_route);
-app.use("/api/horarios", horarios);
+app.use("/api/horario", horarios);
+app.use("/api/aula", aulas);
+app.use("/api/alumno", alumnos);
+app.use("/api/docente", docentes);
 console.log("✅ Conectado.");
 
 // 📌 Ruta de prueba para verificar que el servidor funciona

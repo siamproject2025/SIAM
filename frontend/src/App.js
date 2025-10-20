@@ -17,6 +17,7 @@ import { useLocation } from "react-router-dom";
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
 import Bienes from './screens/Models/Bienes';
+import Horarios from './screens/Models/Horarios';
 
 
 import RestrictedPage from './screens/RestrictedPage';
@@ -52,6 +53,7 @@ function App() {
 
                   <Route path='/ordencompra' element={<OrdenCompra />} />
                   <Route path='/Bienes' element={<Bienes />} />
+                  <Route path="/horarios" element={<Horarios />} />
 
                   <Route path="/dashboard" element={<Dashboard />} />
 
