@@ -5,7 +5,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 import axios from "axios";
-import "../styles/Models/Calendario.css"; // Importamos los estilos
+//import "../styles/Models/Calendario.css"; // Importamos los estilos
 
 /* ============================================
    COMPONENTE CALENDARIO DE ACTIVIDADES
