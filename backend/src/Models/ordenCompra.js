@@ -10,6 +10,7 @@ const ordenCompraSchema = new mongoose.Schema({
   numero: { type: String, required: true },
   proveedor_id: { type: mongoose.Schema.Types.ObjectId, required: true },
   estado: { type: String, required: true },
+  fecha: { type: Date, default: Date.now }, // Aquí agregas la fecha
   items: { type: [itemSchema], required: true },
   recepciones: { type: Array }
 });
