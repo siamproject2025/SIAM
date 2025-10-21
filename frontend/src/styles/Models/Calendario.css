@@ -387,11 +387,9 @@
   margin-bottom: 2px;
 }
 
-/* ============================================
-   MODAL PARA DETALLES DE EVENTO
-   ============================================ */
+/* ===== MODAL PARA DETALLES ===== */
 
-.modal-overlay {
+.calendario-container .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -406,11 +404,11 @@
   transition: opacity 0.3s ease;
 }
 
-.modal-overlay.visible {
+.calendario-container .modal-overlay.visible {
   opacity: 1;
 }
 
-.modal-content {
+.calendario-container .modal-content {
   background: white;
   border-radius: 15px;
   padding: 30px;
@@ -423,11 +421,11 @@
   transition: transform 0.3s ease;
 }
 
-.modal-overlay.visible .modal-content {
+.calendario-container .modal-overlay.visible .modal-content {
   transform: scale(1);
 }
 
-.modal-header {
+.calendario-container .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -436,14 +434,14 @@
   border-bottom: 3px solid #28a745;
 }
 
-.modal-title {
+.calendario-container .modal-title {
   font-size: 24px;
   font-weight: 700;
   color: #2c3e50;
   margin: 0;
 }
 
-.modal-close {
+.calendario-container .modal-close {
   background: none;
   border: none;
   font-size: 28px;
@@ -459,18 +457,18 @@
   transition: all 0.3s ease;
 }
 
-.modal-close:hover {
+.calendario-container .modal-close:hover {
   background: #f0f0f0;
   color: #333;
 }
 
-.modal-body {
+.calendario-container .modal-body {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.modal-item {
+.calendario-container .modal-item {
   display: flex;
   gap: 15px;
   padding: 12px;
@@ -478,17 +476,17 @@
   border-radius: 8px;
 }
 
-.modal-item-icon {
+.calendario-container .modal-item-icon {
   font-size: 24px;
   color: #28a745;
   min-width: 30px;
 }
 
-.modal-item-content {
+.calendario-container .modal-item-content {
   flex: 1;
 }
 
-.modal-item-label {
+.calendario-container .modal-item-label {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -496,7 +494,7 @@
   margin-bottom: 5px;
 }
 
-.modal-item-value {
+.calendario-container .modal-item-value {
   font-size: 15px;
   color: #2c3e50;
   line-height: 1.5;
