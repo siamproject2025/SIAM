@@ -23,4 +23,5 @@ router.get('/estado/:estado', buscarPorEstado);
 router.get('/tipo/:tipo', buscarPorTipo);
 router.get('/calificacion/:calificacion', buscarPorCalificacion);
 
+// Exportación corregida
 module.exports = router;

@@ -1,4 +1,4 @@
-// screens/Models/proveedores.js// screens/Models/proveedores.js
+// screens/Models/proveedores.js
 import React, { useEffect, useState } from "react";
 import Notification from '../../components/Notification';
 import '../../styles/Models/Bienes.css';
@@ -14,6 +14,7 @@ const Proveedores = () => {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
   const [formData, setFormData] = useState({
+    id_proveedor: '',
     nombre: '',
     empresa: '',
     email: '',
@@ -21,18 +22,32 @@ const Proveedores = () => {
     direccion: '',
     ciudad: '',
     pais: '',
+    contacto: '',
+    sitio_web: '',
+    rtn: '',
     tipo_proveedor: 'PRODUCTOS',
     estado: 'ACTIVO',
     calificacion: 5,
-    notas: ''
+    notas: '',
+    condiciones_pago: '',
+    tiempo_entrega_promedio: ''
   });
 
   useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => setProveedores(data))
-      .catch(err => console.error('Error al obtener los proveedores:', err));
-  }, []);
+    cargarProveedores();
+  }, );
+
+  const cargarProveedores = async () => {
+    try {
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Error al cargar proveedores');
+      const data = await res.json();
+      setProveedores(data);
+    } catch (err) {
+      console.error('Error al obtener los proveedores:', err);
+      showNotification('Error al cargar los proveedores', 'error');
+    }
+  };
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -40,6 +55,7 @@ const Proveedores = () => {
 
   const resetForm = () => {
     setFormData({
+      id_proveedor: '',
       nombre: '',
       empresa: '',
       email: '',
@@ -47,17 +63,28 @@ const Proveedores = () => {
       direccion: '',
       ciudad: '',
       pais: '',
+      contacto: '',
+      sitio_web: '',
+      rtn: '',
       tipo_proveedor: 'PRODUCTOS',
       estado: 'ACTIVO',
       calificacion: 5,
-      notas: ''
+      notas: '',
+      condiciones_pago: '',
+      tiempo_entrega_promedio: ''
     });
+  };
+
+  const generarIdProveedor = () => {
+    // Genera un ID único basado en timestamp y número aleatorio
+    return Date.now();
   };
 
   const handleCrearProveedor = async (e) => {
     e.preventDefault();
     
     try {
+      // Validaciones
       if (!formData.nombre.trim()) {
         showNotification('El nombre del proveedor es obligatorio', 'error');
         return;
@@ -71,16 +98,20 @@ const Proveedores = () => {
         return;
       }
 
-      const emailExistente = proveedores.find(p => p.email.toLowerCase() === formData.email.toLowerCase());
-      if (emailExistente) {
-        showNotification('Ya existe un proveedor con este email', 'error');
-        return;
-      }
+      // Preparar datos con ID generado
+      const datosProveedor = {
+        ...formData,
+        id_proveedor: generarIdProveedor(),
+        // Convertir campos numéricos
+        calificacion: parseInt(formData.calificacion) || 5,
+        tiempo_entrega_promedio: formData.tiempo_entrega_promedio ? 
+          parseInt(formData.tiempo_entrega_promedio) : undefined
+      };
 
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(datosProveedor)
       });
       
       if (!res.ok) {
@@ -89,7 +120,7 @@ const Proveedores = () => {
       }
       
       const proveedorCreado = await res.json();
-      setProveedores([...proveedores, proveedorCreado]);
+      setProveedores([proveedorCreado, ...proveedores]);
       setMostrarModalCrear(false);
       resetForm();
       showNotification(`Proveedor "${proveedorCreado.nombre}" creado exitosamente`, 'success');
@@ -116,10 +147,18 @@ const Proveedores = () => {
         return;
       }
 
+      // Preparar datos actualizados
+      const datosActualizados = {
+        ...formData,
+        calificacion: parseInt(formData.calificacion) || 5,
+        tiempo_entrega_promedio: formData.tiempo_entrega_promedio ? 
+          parseInt(formData.tiempo_entrega_promedio) : undefined
+      };
+
       const res = await fetch(`${API_URL}/${proveedorSeleccionado._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(datosActualizados)
       });
       
       if (!res.ok) {
@@ -167,7 +206,8 @@ const Proveedores = () => {
       p.email?.toLowerCase().includes(terminoBusqueda) ||
       p.telefono?.toString().includes(terminoBusqueda) ||
       p.ciudad?.toLowerCase().includes(terminoBusqueda) ||
-      p.pais?.toLowerCase().includes(terminoBusqueda)
+      p.pais?.toLowerCase().includes(terminoBusqueda) ||
+      p.contacto?.toLowerCase().includes(terminoBusqueda)
     );
   });
 
@@ -183,6 +223,7 @@ const Proveedores = () => {
   const handleOpenEditModal = (proveedor) => {
     setProveedorSeleccionado(proveedor);
     setFormData({
+      id_proveedor: proveedor.id_proveedor || '',
       nombre: proveedor.nombre || '',
       empresa: proveedor.empresa || '',
       email: proveedor.email || '',
@@ -190,10 +231,15 @@ const Proveedores = () => {
       direccion: proveedor.direccion || '',
       ciudad: proveedor.ciudad || '',
       pais: proveedor.pais || '',
+      contacto: proveedor.contacto || '',
+      sitio_web: proveedor.sitio_web || '',
+      rtn: proveedor.rtn || '',
       tipo_proveedor: proveedor.tipo_proveedor || 'PRODUCTOS',
       estado: proveedor.estado || 'ACTIVO',
       calificacion: proveedor.calificacion || 5,
-      notas: proveedor.notas || ''
+      notas: proveedor.notas || '',
+      condiciones_pago: proveedor.condiciones_pago || '',
+      tiempo_entrega_promedio: proveedor.tiempo_entrega_promedio || ''
     });
   };
 
@@ -206,7 +252,7 @@ const Proveedores = () => {
   const renderGrupoProveedores = (titulo, lista, colorClase) => (
     <div className={`bien-categoria-section ${colorClase}`}>
       <div className="bien-categoria-header">
-        <h3 className="bien-subtitulo">{titulo}</h3>
+        <h3 className="bien-subtitulo">{titulo} ({lista.length})</h3>
       </div>
       {lista.length === 0 ? (
         <p className="bien-vacio">No hay proveedores en esta categoría.</p>
@@ -221,6 +267,12 @@ const Proveedores = () => {
                 </span>
               </div>
               <div className="bien-card-body">
+                <div className="bien-info-row">
+                  <span className="bien-info-label">ID PROVEEDOR</span>
+                  <span className="bien-info-value" style={{ fontWeight: 'bold', color: '#FF9800' }}>
+                    {proveedor.id_proveedor}
+                  </span>
+                </div>
                 {proveedor.empresa && (
                   <div className="bien-info-row">
                     <span className="bien-info-label">EMPRESA</span>
@@ -277,8 +329,8 @@ const Proveedores = () => {
           <button className="btn-ayuda" onClick={() => setMostrarAyuda(true)} title="Ver ayuda">
             ❓ Ayuda
           </button>
-          <button className="btn-nuevo-bien" onClick={() => setMostrarModalCrear(true)}>
-            + Nuevo Proveedor
+          <button className="btn-ayuda" onClick={() => setMostrarModalCrear(true)} title="Crear nuevo proveedor">
+            ➕ Nuevo Proveedor
           </button>
         </div>
       </div>
@@ -292,53 +344,82 @@ const Proveedores = () => {
       {/* Modal Crear Proveedor */}
       {mostrarModalCrear && (
         <div className="modal-overlay" onClick={handleCloseModals}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: '700px', maxHeight: '90vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">➕ Crear Nuevo Proveedor</h3>
             <form onSubmit={handleCrearProveedor}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Nombre *</label>
-                  <input
-                    type="text"
-                    value={formData.nombre}
-                    onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                    placeholder="Nombre del proveedor"
-                    required
-                  />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Información Básica */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Nombre *</label>
+                    <input
+                      type="text"
+                      value={formData.nombre}
+                      onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                      placeholder="Nombre del proveedor"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Empresa</label>
+                    <input
+                      type="text"
+                      value={formData.empresa}
+                      onChange={(e) => setFormData({...formData, empresa: e.target.value})}
+                      placeholder="Nombre de la empresa"
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Empresa</label>
-                  <input
-                    type="text"
-                    value={formData.empresa}
-                    onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                    placeholder="Nombre de la empresa"
-                  />
+                {/* Contacto */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Email *</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="correo@ejemplo.com"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Teléfono *</label>
+                    <input
+                      type="tel"
+                      value={formData.telefono}
+                      onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                      placeholder="+504 1234-5678"
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Email *</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="correo@ejemplo.com"
-                    required
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Persona de Contacto</label>
+                    <input
+                      type="text"
+                      value={formData.contacto}
+                      onChange={(e) => setFormData({...formData, contacto: e.target.value})}
+                      placeholder="Nombre del contacto"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>RTN</label>
+                    <input
+                      type="text"
+                      value={formData.rtn}
+                      onChange={(e) => setFormData({...formData, rtn: e.target.value})}
+                      placeholder="RTN del proveedor"
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Teléfono *</label>
-                  <input
-                    type="tel"
-                    value={formData.telefono}
-                    onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                    placeholder="+504 1234-5678"
-                    required
-                  />
-                </div>
-
+                {/* Ubicación */}
                 <div className="form-group">
                   <label>Dirección</label>
                   <input
@@ -349,78 +430,119 @@ const Proveedores = () => {
                   />
                 </div>
 
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Ciudad</label>
+                    <input
+                      type="text"
+                      value={formData.ciudad}
+                      onChange={(e) => setFormData({...formData, ciudad: e.target.value})}
+                      placeholder="Ciudad"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>País</label>
+                    <input
+                      type="text"
+                      value={formData.pais}
+                      onChange={(e) => setFormData({...formData, pais: e.target.value})}
+                      placeholder="País"
+                    />
+                  </div>
+                </div>
+
+                {/* Información Comercial */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Tipo</label>
+                    <select
+                      value={formData.tipo_proveedor}
+                      onChange={(e) => setFormData({...formData, tipo_proveedor: e.target.value})}
+                    >
+                      <option value="PRODUCTOS">PRODUCTOS</option>
+                      <option value="SERVICIOS">SERVICIOS</option>
+                      <option value="MIXTO">MIXTO</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Estado</label>
+                    <select
+                      value={formData.estado}
+                      onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                    >
+                      <option value="ACTIVO">ACTIVO</option>
+                      <option value="INACTIVO">INACTIVO</option>
+                      <option value="SUSPENDIDO">SUSPENDIDO</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Calificación</label>
+                    <select
+                      value={formData.calificacion}
+                      onChange={(e) => setFormData({...formData, calificacion: parseInt(e.target.value)})}
+                    >
+                      <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                      <option value="4">⭐⭐⭐⭐ (4)</option>
+                      <option value="3">⭐⭐⭐ (3)</option>
+                      <option value="2">⭐⭐ (2)</option>
+                      <option value="1">⭐ (1)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label>Condiciones de Pago</label>
+                    <input
+                      type="text"
+                      value={formData.condiciones_pago}
+                      onChange={(e) => setFormData({...formData, condiciones_pago: e.target.value})}
+                      placeholder="Ej: 30 días"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Tiempo Entrega (días)</label>
+                    <input
+                      type="number"
+                      value={formData.tiempo_entrega_promedio}
+                      onChange={(e) => setFormData({...formData, tiempo_entrega_promedio: e.target.value})}
+                      placeholder="Días promedio"
+                      min="0"
+                    />
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label>Ciudad</label>
+                  <label>Sitio Web</label>
                   <input
-                    type="text"
-                    value={formData.ciudad}
-                    onChange={(e) => setFormData({...formData, ciudad: e.target.value})}
-                    placeholder="Ciudad"
+                    type="url"
+                    value={formData.sitio_web}
+                    onChange={(e) => setFormData({...formData, sitio_web: e.target.value})}
+                    placeholder="https://www.ejemplo.com"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>País</label>
-                  <input
-                    type="text"
-                    value={formData.pais}
-                    onChange={(e) => setFormData({...formData, pais: e.target.value})}
-                    placeholder="País"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Tipo de Proveedor</label>
-                  <select
-                    value={formData.tipo_proveedor}
-                    onChange={(e) => setFormData({...formData, tipo_proveedor: e.target.value})}
-                  >
-                    <option value="PRODUCTOS">PRODUCTOS</option>
-                    <option value="SERVICIOS">SERVICIOS</option>
-                    <option value="MIXTO">MIXTO</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Estado</label>
-                  <select
-                    value={formData.estado}
-                    onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                  >
-                    <option value="ACTIVO">ACTIVO</option>
-                    <option value="INACTIVO">INACTIVO</option>
-                    <option value="SUSPENDIDO">SUSPENDIDO</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label>Calificación (1-5)</label>
-                  <select
-                    value={formData.calificacion}
-                    onChange={(e) => setFormData({...formData, calificacion: parseInt(e.target.value)})}
-                  >
-                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                    <option value="4">⭐⭐⭐⭐ (4)</option>
-                    <option value="3">⭐⭐⭐ (3)</option>
-                    <option value="2">⭐⭐ (2)</option>
-                    <option value="1">⭐ (1)</option>
-                  </select>
-                </div>
-
-                <div className="form-group full-width">
                   <label>Notas</label>
                   <textarea
                     value={formData.notas}
                     onChange={(e) => setFormData({...formData, notas: e.target.value})}
-                    placeholder="Notas adicionales sobre el proveedor..."
+                    placeholder="Notas adicionales..."
                     rows="3"
                   />
                 </div>
               </div>
 
-              <div className="modal-actions">
+              <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
                 <button type="button" className="btn-cancelar" onClick={handleCloseModals}>
                   ❌ Cancelar
+                </button>
+                <button type="submit" className="btn-guardar">
+                  ✅ Guardar Cambiosar
                 </button>
                 <button type="submit" className="btn-guardar">
                   ✅ Crear Proveedor
@@ -434,7 +556,7 @@ const Proveedores = () => {
       {/* Modal Editar Proveedor */}
       {proveedorSeleccionado && (
         <div className="modal-overlay" onClick={handleCloseModals}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" style={{ maxWidth: '700px', maxHeight: '90vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
             <h3 className="modal-title">✏️ Editar Proveedor</h3>
             <form onSubmit={handleEditarProveedor}>
               <div className="form-grid">
@@ -444,7 +566,6 @@ const Proveedores = () => {
                     type="text"
                     value={formData.nombre}
                     onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                    placeholder="Nombre del proveedor"
                     required
                   />
                 </div>
@@ -455,7 +576,6 @@ const Proveedores = () => {
                     type="text"
                     value={formData.empresa}
                     onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                    placeholder="Nombre de la empresa"
                   />
                 </div>
 
@@ -465,7 +585,6 @@ const Proveedores = () => {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    placeholder="correo@ejemplo.com"
                     required
                   />
                 </div>
@@ -476,18 +595,34 @@ const Proveedores = () => {
                     type="tel"
                     value={formData.telefono}
                     onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                    placeholder="+504 1234-5678"
                     required
                   />
                 </div>
 
                 <div className="form-group">
+                  <label>Contacto</label>
+                  <input
+                    type="text"
+                    value={formData.contacto}
+                    onChange={(e) => setFormData({...formData, contacto: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>RTN</label>
+                  <input
+                    type="text"
+                    value={formData.rtn}
+                    onChange={(e) => setFormData({...formData, rtn: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group full-width">
                   <label>Dirección</label>
                   <input
                     type="text"
                     value={formData.direccion}
                     onChange={(e) => setFormData({...formData, direccion: e.target.value})}
-                    placeholder="Dirección completa"
                   />
                 </div>
 
@@ -497,7 +632,6 @@ const Proveedores = () => {
                     type="text"
                     value={formData.ciudad}
                     onChange={(e) => setFormData({...formData, ciudad: e.target.value})}
-                    placeholder="Ciudad"
                   />
                 </div>
 
@@ -507,12 +641,11 @@ const Proveedores = () => {
                     type="text"
                     value={formData.pais}
                     onChange={(e) => setFormData({...formData, pais: e.target.value})}
-                    placeholder="País"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>Tipo de Proveedor</label>
+                  <label>Tipo</label>
                   <select
                     value={formData.tipo_proveedor}
                     onChange={(e) => setFormData({...formData, tipo_proveedor: e.target.value})}
@@ -536,7 +669,7 @@ const Proveedores = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Calificación (1-5)</label>
+                  <label>Calificación</label>
                   <select
                     value={formData.calificacion}
                     onChange={(e) => setFormData({...formData, calificacion: parseInt(e.target.value)})}
@@ -549,12 +682,39 @@ const Proveedores = () => {
                   </select>
                 </div>
 
+                <div className="form-group">
+                  <label>Condiciones de Pago</label>
+                  <input
+                    type="text"
+                    value={formData.condiciones_pago}
+                    onChange={(e) => setFormData({...formData, condiciones_pago: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Tiempo Entrega (días)</label>
+                  <input
+                    type="number"
+                    value={formData.tiempo_entrega_promedio}
+                    onChange={(e) => setFormData({...formData, tiempo_entrega_promedio: e.target.value})}
+                    min="0"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label>Sitio Web</label>
+                  <input
+                    type="url"
+                    value={formData.sitio_web}
+                    onChange={(e) => setFormData({...formData, sitio_web: e.target.value})}
+                  />
+                </div>
+
                 <div className="form-group full-width">
                   <label>Notas</label>
                   <textarea
                     value={formData.notas}
                     onChange={(e) => setFormData({...formData, notas: e.target.value})}
-                    placeholder="Notas adicionales sobre el proveedor..."
                     rows="3"
                   />
                 </div>
@@ -565,7 +725,7 @@ const Proveedores = () => {
                   🗑️ Eliminar
                 </button>
                 <button type="button" className="btn-cancelar" onClick={handleCloseModals}>
-                  ❌ Cancelar
+                  ❌ Cancel
                 </button>
                 <button type="submit" className="btn-guardar">
                   ✅ Guardar Cambios
