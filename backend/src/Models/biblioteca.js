@@ -8,7 +8,5 @@ const libroSchema = new mongoose.Schema({
   fechaRegistro: { type: Date, default: Date.now }
 });
 
-
-const Libro = mongoose.model('libro', LibroSchema, "libros");
-
+const Libro = mongoose.model('libro', libroSchema, "libros");
 module.exports = Libro;
