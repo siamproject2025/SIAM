@@ -14,28 +14,28 @@ const DashboardCards = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchModulos = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) return;
+      const fetchModulos = async () => {
+        try {
+          const user = auth.currentUser;
+          if (!user) return;
 
-        const token = await user.getIdToken();
+          const token = await user.getIdToken();
 
-        const res = await axios.get("http://localhost:5000/api/dashboard", {
-        headers: {
-            Authorization: `Bearer ${token}`
-          },
-        });
+          const res = await axios.get("http://localhost:5000/api/dashboard", {
+          headers: {
+              Authorization: `Bearer ${token}`
+            },
+          });
 
-        setModulos(res.data.modulos);
-      } catch (err) {
-        console.error("Error al cargar módulos:", err);
-      }
-    };
+          setModulos(res.data.modulos);
+        } catch (err) {
+          console.error("Error al cargar módulos:", err);
+        }
+      };
 
-    fetchModulos();
-  }, []);
-
+      fetchModulos();
+    }, []);
+    
   return (
     <div className="main dashboard-container">
       <AdminOnly><Home></Home></AdminOnly>

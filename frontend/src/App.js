@@ -107,54 +107,13 @@ function App() {
 }, [user]);
 
 
-return (
-  <>
-    <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-      {/* Renderiza NavBar solo si el usuario está autenticado */}
-      {user && (
-        <>
-          <NavBar />
-          {/* <Sidebar /> */}
-        </>
-      )}
+  return (
+    <>
+      <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
+        {user && <><NavBar /><SideBar/></>}
 
-      <Routes>
-        {/* Rutas públicas */}
-        <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/ResetPassword" element={<PublicRoute><ResetPassword /></PublicRoute>} />
-        <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
-
-        {/* Rutas privadas */}
-        <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/ordencompra" element={<OrdenCompra />} />
-          <Route path="/Bienes" element={<Bienes />} />
-          <Route path="/personal" element={<Personal />} />
-          <Route path="/proveedores" element={<Proveedores />} />
-          <Route path="/seguridad" element={<AsignarRol />} />
-          <Route path="/donaciones" element={<Donaciones />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/Actividades" element={<ActividadesPage />} />
-          <Route path="/biblioteca" element={<BibliotecaTest />} />
-          <Route path="/Calendario" element={<CalendarioActividades />} />
-        </Route>
-
-        <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>
-          <Route path="/home" element={<Home />} />
-        </Route>
-
-        <Route path="/restricted" element={<RestrictedPage />} />
-
-        {/* Redirigir rutas desconocidas */}
-        <Route path="*" element={<Navigate to="/landing" replace />} />
-      </Routes>
-
-      {/* Advertencia de inactividad */}
-      {warningVisible && (
-        <div
-          className="inactivity-warning"
-          style={{
+        {warningVisible && (
+          <div className="inactivity-warning" style={{
             position: 'fixed',
             bottom: 20,
             right: 20,
