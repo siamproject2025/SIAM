@@ -1,118 +1,185 @@
-import React from "react";
-import { Link } from 'react-router-dom';
-import OrdenCompra from "./Models/ordencompra";
-import Bienes from './Models/Bienes';
-import Actividades from '../components/FormularioActividad';
-const Home = () => {
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { auth } from "../components/authentication/Auth";
+import { FiUsers, FiShoppingCart, FiBox, FiBook, FiCalendar } from "react-icons/fi";
+import "../styles/Home.css";
+
+const API_URL = "http://localhost:5000/";
+const COLORS = ["#323232", "#a600ff", "#1369fd", "#ffcc00", "#00bcd4"];
+const COLORS2 = [ "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7"];
+
+
+export default function Home() {
+  const [usuarios, setUsuarios] = useState([]);
+  const [compras, setCompras] = useState([]);
+  const [bienes, setBienes] = useState([]);
+  const [libros, setLibros] = useState([]);
+  const [actividades, setActividades] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const obtenerDatos = async () => {
+      try {
+        const user = auth.currentUser;
+        const token = await user.getIdToken();
+
+        const results = await Promise.allSettled([
+          axios.get(`${API_URL}api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}api/compras`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
+          axios.get(`${API_URL}api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
+        ]);
+
+        setUsuarios(results[0].status === "fulfilled" ? results[0].value.data.users : []);
+        setCompras(results[1].status === "fulfilled" ? results[1].value.data : []);
+        setBienes(results[2].status === "fulfilled" ? results[2].value.data : []);
+        setLibros(results[3].status === "fulfilled" ? results[3].value.data : []);
+        setActividades(results[4].status === "fulfilled" ? results[4].value.data : []);
+      } catch (error) {
+        console.error("Error al obtener datos:", error);
+      } finally {
+        setCargando(false);
+      }
+    };
+
+    obtenerDatos();
+  }, []);
+
+  if (cargando) return <p className="dashboard-loading">Cargando datos...</p>;
+
+  // === Datos de Roles ===
+  const rolesDisponibles = ["ADMIN", "DOCENTE", "PADRE"];
+  const dataRoles = rolesDisponibles.map((rol) => ({
+    name: rol,
+    value: usuarios.filter((u) => u.roles.includes(rol)).length,
+  }));
+
+  // === Datos de Bienes por Estado ===
+  const estados = [...new Set(bienes.map((b) => b.estado))];
+  const dataBienes = estados.map((estado) => ({
+    name: estado,
+    value: bienes.filter((b) => b.estado === estado).length,
+  }));
+
+  // === Ordenar actividades por fecha
+  const actividadesOrdenadas = actividades
+    .map((act) => ({ ...act, fechaFormateada: new Date(act.fecha).toLocaleDateString() }))
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1>Pagina Home</h1>
-        <p>Tu sistema inteligente de administración y monitoreo.</p>
-      </header>
+    <div className="plugins-container">
 
-      <section style={styles.section}>
-        <h2>Dashboard
-        </h2>
-        <div style={styles.cardsContainer}>
+      {/* === TOTAL USUARIOS === */}
+      <div className="plugins-card total-card blue-card">
+        <div className="card-icon">
+          <FiUsers size={48} />
+        </div>
+        <div>
+          <h3>Total de Usuarios</h3>
+          <p className="total-number">{usuarios.length}</p>
+        </div>
+      </div>
+      
+      {/* === GRÁFICA DE ROLES === */}
+      <div className="plugins-card chart-card">
+        <div className="chart-wrapper">
+          <ResponsiveContainer width="100%" height={195}>
+            <PieChart>
+              <Pie data={dataRoles} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={40} label>
+                {dataRoles.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
+      {/* === TOTAL COMPRAS === */}
+      <div className="plugins-card total-card purple-card">
+        <div className="card-icon">
+          <FiShoppingCart size={48} />
+        </div>
+        <div>
+          <h3>Total de Ordenes</h3>
+          <p className="total-number">{compras.length}</p>
+        </div>
+      </div>
 
-         <div style={styles.card}>
-      <Link to="/ordencompra" style={{ textDecoration: 'none' }}>
-        <p>Modulo orden</p>
-      </Link>
-    </div>
+      {/* === TOTAL LIBROS === */}
+      <div className="plugins-card total-card blue-card">
+        <div className="card-icon">
+          <FiBook size={48} />
+        </div>
+        <div>
+          <h3>Total de Libros</h3>
+          <p className="total-number">{libros.length}</p>
+        </div>
+      </div>
 
-    <div style={styles.card}>
-      <Link to="/Bienes" style={{ textDecoration: 'none' }}>
-        <p>Modulo Bienes</p>
-      </Link>
-    </div>
+      {/* === BIENES POR ESTADO === */}
+            <div className="plugins-card chart-card wide-card">
+        <div className="chart-header">
+          <FiBox size={28} style={{ marginRight: "8px", color: "#1369fd" }} />
+          <h3>Bienes</h3>
+        </div>
+        <div className="chart-wrapper">
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={dataBienes}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="value">
+                {dataBienes.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS2[index % COLORS2.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
- <div style={styles.card}>
-      <Link to="/Actividades" style={{ textDecoration: 'none' }}>
-        <p>Modulo Actividades</p>
-      </Link>
-    </div>
-          <div style={styles.card}>
-            <h3>Tareas</h3>
-            <p>14 pendientes</p>
+              {/* === ACTIVIDADES CALENDARIO === */}
+        <div className="plugins-card wide-card actividades-card">
+          <div className="chart-header actividades-header">
+            <FiCalendar size={28} style={{ marginRight: "10px", color: "#a600ff" }} />
+            <h3>Próximas Actividades</h3>
           </div>
-          <div style={styles.card}>
-            <h3>Colaboradores</h3>
-            <p>8 conectados</p>
-          </div>
-          <div style={styles.card}>
-            <h3>Proyectos</h3>
-            <p>5 activos</p>
-          </div>
-          <div style={styles.card}>
-            <h3>Tareas</h3>
-            <p>14 pendientes</p>
-          </div>
-          <div style={styles.card}>
-            <h3>Colaboradores</h3>
-            <p>8 conectados</p>
-          </div>
-          <div style={styles.card}>
-            <h3>Proyectos</h3>
-            <p>5 activos</p>
-          </div>
-          <div style={styles.card}>
-            <h3>Tareas</h3>
-            <p>14 pendientes</p>
-          </div>
-          <div style={styles.card}>
-            <h3>Colaboradores</h3>
-            <p>8 conectados</p>
+          <div className="chart-wrapper actividades-wrapper">
+            {actividadesOrdenadas.length === 0 ? (
+              <p className="no-actividades">No hay actividades próximas.</p>
+            ) : (
+              <ul className="actividades-list">
+                {actividadesOrdenadas.map((act) => (
+                  <li key={act._id} className="actividad-item">
+                    <div className="actividad-info">
+                      <strong className="actividad-nombre" style={{ textTransform: "capitalize" }}>{act.nombre}</strong>
+                      <span className="actividad-fecha">{act.fechaFormateada}</span>
+                    </div>
+                    <div className="actividad-lugar" style={{ textTransform: "capitalize" }}>{act.lugar}</div>
+                    <p className="actividad-desc" style={{ textTransform: "capitalize" }}>{act.descripcion}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
-      </section>
 
-      <section style={styles.section}>
-        <h2>Últimas actividades</h2>
-        <ul style={styles.activityList}>
-          <li>✔️ Juan actualizó el proyecto “Marketing 2025”.</li>
-          <li>📌 Nueva tarea asignada a María.</li>
-          <li>🕒 Reunión programada para el 28 de septiembre.</li>
-        </ul>
-      </section>
     </div>
   );
-};
-
-const styles = {
-  container: {
-    backgroundColor: "#edededff",
-    marginTop: "8vh",
-    padding: "30px",
-    fontFamily: "Arial, sans-serif",
-    color: "#333",
-  },
-  header: {
-    marginBottom: "40px",
-  },
-  section: {
-    marginBottom: "40px",
-  },
-  cardsContainer: {
-    display: "flex",
-    gap: "20px",
-    flexWrap: "wrap",
-    marginTop: "20px",
-  },
-  card: {
-    flex: "1 1 200px",
-    backgroundColor: "#f5f5f5",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 0 10px rgba(0,0,0,0.05)",
-  },
-  activityList: {
-    listStyle: "none",
-    paddingLeft: 0,
-    lineHeight: "1.8em",
-  },
-};
-
-export default Home;
+}

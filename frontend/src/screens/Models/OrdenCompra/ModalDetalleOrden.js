@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
   const [ordenEditada, setOrdenEditada] = useState({ ...orden });
@@ -10,14 +10,20 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
     costoUnit: ''
   });
 
+    // 🕒 Obtener fecha y hora actual en Honduras
+  const fechaActual = new Date().toLocaleString("es-ES", {
+    timeZone: "America/Tegucigalpa",
+  });
+
   const handleEditarItem = (idx, campo, valor) => {
     const nuevosItems = ordenEditada.items.map((item, i) =>
       i === idx
         ? {
             ...item,
-            [campo]: campo === 'cantidad' || campo === 'costoUnit'
-              ? parseFloat(valor) || 0
-              : valor,
+            [campo]:
+              campo === 'cantidad' || campo === 'costoUnit'
+                ? parseFloat(valor) || 0
+                : valor,
           }
         : item
     );
@@ -47,7 +53,6 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
     items?.reduce((acc, item) => acc + item.cantidad * item.costoUnit, 0).toFixed(2);
 
   const handleGuardar = () => {
-    // Asegurar que la fecha de creación se mantenga si no se ha cambiado
     const ordenParaGuardar = {
       ...ordenEditada,
       fecha: ordenEditada.fecha || new Date().toISOString().split('T')[0]
@@ -66,8 +71,12 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
     doc.text(`Orden de Compra - ${ordenEditada.numero}`, 14, 20);
     doc.text(`Proveedor ID: ${ordenEditada.proveedor_id}`, 14, 30);
     doc.text(`Estado: ${ordenEditada.estado}`, 14, 40);
-    doc.text(`Fecha: ${ordenEditada.fecha || 'No especificada'}`, 14, 50);
+    // Obtener fecha y hora actuales en formato DD/MM/YYYY HH:MM
+    const fechaHoraActual = new Date();
+    const fechaFormateada = fechaHoraActual.toLocaleDateString("es-ES"); // DD/MM/YYYY
+    const horaFormateada = fechaHoraActual.toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' }); // HH:MM
 
+doc.text(`Fecha: ${fechaFormateada} ${horaFormateada}`, 14, 50);
     const rows = ordenEditada.items.map((item) => [
       item.descripcion,
       item.cantidad,
@@ -75,17 +84,19 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
       `$${(item.cantidad * item.costoUnit).toFixed(2)}`
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: 60,
       head: [['Descripción', 'Cantidad', 'Costo Unitario', 'Subtotal']],
       body: rows
     });
 
+    // 🟢 Agregado: calcular total antes de imprimirlo
     const total = calcularTotal(ordenEditada.items);
-    doc.text(`Total: $${total}`, 14, doc.lastAutoTable.finalY + 10);
+    const finalY = doc.lastAutoTable?.finalY || 60;
+
+    doc.text(`Total: $${total}`, 14, finalY + 10);
     doc.save(`orden_${ordenEditada.numero}.pdf`);
   };
-
 
   return (
     <div className="modal-overlay">
@@ -137,47 +148,7 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
         </div>
 
         <h4>📦 Ítems de la Orden</h4>
-        
-        {/* Sección para agregar nuevos ítems 
-        <div className="agregar-item-section">
-          <h5>➕ Agregar Nuevo Ítem</h5>
-          <div className="item-row">
-            <input
-              type="text"
-              placeholder="Descripción del ítem"
-              value={nuevoItem.descripcion}
-              onChange={(e) => setNuevoItem({ ...nuevoItem, descripcion: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Cantidad"
-              value={nuevoItem.cantidad}
-              onChange={(e) => setNuevoItem({ ...nuevoItem, cantidad: e.target.value })}
-              min="1"
-              step="1"
-            />
-            <input
-              type="number"
-              placeholder="Costo Unitario ($)"
-              value={nuevoItem.costoUnit}
-              onChange={(e) => setNuevoItem({ ...nuevoItem, costoUnit: e.target.value })}
-              min="0"
-              step="0.01"
-            />
-            <button
-              className="btn-cancel-item"
-              onClick={() => setNuevoItem({ descripcion: '', cantidad: '', costoUnit: '' })}
-              title="Limpiar campos"
-            >
-              ✖
-            </button>
-          </div>
-          <button className="btn-agregar" onClick={handleAgregarItem}>
-            ➕ Agregar Ítem
-          </button>
-        </div>*/}
 
-        {/* Tabla de ítems existentes */}
         <div className="orden-tabla-container">
           <table className="orden-tabla">
             <thead>
@@ -197,7 +168,6 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
                       type="text"
                       value={item.descripcion}
                       onChange={(e) => handleEditarItem(idx, 'descripcion', e.target.value)}
-                      placeholder="Descripción del ítem"
                     />
                   </td>
                   <td>
@@ -220,8 +190,8 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
                   </td>
                   <td className="subtotal-cell">${(item.cantidad * item.costoUnit).toFixed(2)}</td>
                   <td>
-                    <button 
-                      className="btn-eliminar-item" 
+                    <button
+                      className="btn-eliminar-item"
                       onClick={() => handleEliminarItem(idx)}
                       title="Eliminar ítem"
                     >

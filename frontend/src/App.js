@@ -44,65 +44,63 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!user) return; // solo activa timers si hay usuario
+  if (!user) return;
 
-    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutos
-    const WARNING_TIME = 1 * 60 * 1000; // 1 minuto antes
-    let inactivityTimer;
-    let warningTimer;
+  const INACTIVITY_LIMIT = 15* 60 * 1000; // 15 minutos
+  const WARNING_TIME = 1 * 60 * 1000; // 1 minuto antes
 
-    const logoutUser = async () => {
-      try {
-        // Llamada al backend para revocar token
-        await axios.post("/api/auth/revoke-token", { uid: user.uid });
-      } catch (error) {
-        console.error("Error revocando token en backend:", error);
-      }
+  let inactivityTimer;
+  let warningTimer;
 
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.error("Error cerrando sesión en Firebase:", error);
-      }
+  const logoutUser = async () => {
+    try {
+      await axios.post("/api/auth/revoke-token", { uid: user.uid });
+    } catch (error) {
+      console.error("Error revocando token:", error);
+    }
 
-      window.location.href = "/login";
-    };
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error cerrando sesión en Firebase:", error);
+    }
 
-    const resetTimer = () => {
-      clearTimeout(inactivityTimer);
-      clearTimeout(warningTimer);
+    window.location.href = "/login";
+  };
 
-      // Mostrar aviso 1 minuto antes
-      warningTimer = setTimeout(() => setWarningVisible(true), INACTIVITY_LIMIT - WARNING_TIME);
+  const resetTimer = () => {
+    clearTimeout(inactivityTimer);
+    clearTimeout(warningTimer);
+    setWarningVisible(false); // oculta el aviso inmediatamente
 
-      // Cerrar sesión al llegar al límite
-      inactivityTimer = setTimeout(() => logoutUser(), INACTIVITY_LIMIT);
-      setWarningVisible(false);
-    };
+    // mostrar aviso 1 min antes
+    warningTimer = setTimeout(() => {
+      setWarningVisible(true);
+    }, INACTIVITY_LIMIT - WARNING_TIME);
 
-    // Escuchar actividad
-    window.addEventListener("mousemove", resetTimer);
-    window.addEventListener("keydown", resetTimer);
-    window.addEventListener("click", resetTimer);
-    window.addEventListener("touchstart", resetTimer);
-    window.addEventListener("scroll", resetTimer);
+    // cerrar sesión al llegar al límite
+    inactivityTimer = setTimeout(() => {
+      logoutUser();
+    }, INACTIVITY_LIMIT);
+  };
 
-    // Sincronizar múltiples pestañas
-    window.addEventListener("storage", resetTimer);
+  // Escucha de actividad del usuario
+  const activityEvents = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+  activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
 
-    resetTimer(); // inicializa timer al montar
+  // sincroniza con otras pestañas
+  window.addEventListener("storage", resetTimer);
 
-    return () => {
-      window.removeEventListener("mousemove", resetTimer);
-      window.removeEventListener("keydown", resetTimer);
-      window.removeEventListener("click", resetTimer);
-      window.removeEventListener("touchstart", resetTimer);
-      window.removeEventListener("scroll", resetTimer);
-      window.removeEventListener("storage", resetTimer);
-      clearTimeout(inactivityTimer);
-      clearTimeout(warningTimer);
-    };
-  }, [user]);
+  resetTimer(); // inicializa al entrar
+
+  return () => {
+    activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+    window.removeEventListener("storage", resetTimer);
+    clearTimeout(inactivityTimer);
+    clearTimeout(warningTimer);
+  };
+}, [user]);
+
 
   return (
     <>
@@ -135,7 +133,7 @@ function App() {
 
           {/* Rutas privadas */}
           <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
-            <Route path="/home" element={<Home />} />
+           
             <Route path='/ordencompra' element={<OrdenCompra />} />
             <Route path='/Bienes' element={<Bienes />} />
             <Route path='/seguridad' element={<AsignarRol />} />
@@ -143,7 +141,8 @@ function App() {
             <Route path='/Actividades' element={<ActividadesPage/>}/>
             <Route path='/Calendario' element={<CalendarioActividades/>}/>
           </Route>
-
+          <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}></Route>
+              <Route path="/home" element={<Home />} />
           <Route path="/restricted" element={<RestrictedPage />} />
 
           {/* Redirigir rutas desconocidas */}
