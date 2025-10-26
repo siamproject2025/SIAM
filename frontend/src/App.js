@@ -107,46 +107,54 @@ function App() {
 }, [user]);
 
 
-  return (
-    <> {/* Se movio al index el authprovider y el router que envuelve la app*/}
-       <div  className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-              {/* Renderiza NavBar solo si el usuario está autenticado */}
-              
-              {user && <><NavBar />{/*<Sidebar/>*/}</>}
-              <Routes>
-                {/* Rutas públicas */}
-                <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>}/>
-                <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
-                {/* Rutas privadas */}
-                <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
-                  <Route path="/home" element={<Home />} />
+return (
+  <>
+    <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
+      {/* Renderiza NavBar solo si el usuario está autenticado */}
+      {user && (
+        <>
+          <NavBar />
+          {/* <Sidebar /> */}
+        </>
+      )}
 
-                  <Route path='/ordencompra' element={<OrdenCompra />} />
-                  <Route path='/Bienes' element={<Bienes />} />
-                  <Route path="/horarios" element={<Horarios />} />
+      <Routes>
+        {/* Rutas públicas */}
+        <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/ResetPassword" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+        <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
 
-                  <Route path="/dashboard" element={<Dashboard />} />
+        {/* Rutas privadas */}
+        <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/ordencompra" element={<OrdenCompra />} />
+          <Route path="/Bienes" element={<Bienes />} />
+          <Route path="/personal" element={<Personal />} />
+          <Route path="/proveedores" element={<Proveedores />} />
+          <Route path="/seguridad" element={<AsignarRol />} />
+          <Route path="/donaciones" element={<Donaciones />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/Actividades" element={<ActividadesPage />} />
+          <Route path="/biblioteca" element={<BibliotecaTest />} />
+          <Route path="/Calendario" element={<CalendarioActividades />} />
+        </Route>
 
-                </Route>
+        <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>
+          <Route path="/home" element={<Home />} />
+        </Route>
 
-                {/* Ruta de aterrizaje pública */}
-                <Route path="/landing" element={<Landing />} />
-                <Route path="/restricted" element={<RestrictedPage />} />
+        <Route path="/restricted" element={<RestrictedPage />} />
 
-                {/* Redirigir rutas desconocidas */}
-                <Route path="*" element={<Navigate to="/landing" replace />} />
-              </Routes>
+        {/* Redirigir rutas desconocidas */}
+        <Route path="*" element={<Navigate to="/landing" replace />} />
+      </Routes>
 
-              {/* Renderiza Footer solo si el usuario está autenticado */}
-              
-            </div><Footer />
-      </>
-    <>
-      <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-        {user && <><NavBar /><SideBar/></>}
-
-        {warningVisible && (
-          <div className="inactivity-warning" style={{
+      {/* Advertencia de inactividad */}
+      {warningVisible && (
+        <div
+          className="inactivity-warning"
+          style={{
             position: 'fixed',
             bottom: 20,
             right: 20,
@@ -155,50 +163,18 @@ function App() {
             color: '#000',
             borderRadius: '8px',
             boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            zIndex: 9999
-          }}>
-            ⚠️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
-          </div>
-        )}
+            zIndex: 9999,
+          }}
+        >
+          ⚠️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
+        </div>
+      )}
+    </div>
 
-        <Routes>
-          {/* Rutas públicas */}
-          <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>} />
-          <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
-          <Route path='/ResetPassword' element={<PublicRoute> <ResetPassword/> </PublicRoute>} />
-          <Route path='/ResetPasswordSeguro' element={<PublicRoute> <ResetPasswordSeguro/> </PublicRoute>} />
+    {/* Footer fuera del contenedor principal */}
+    <Footer />
+  </>
+);
 
-
-          {/* Rutas privadas */}
-          <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
-           
-            <Route path='/ordencompra' element={<OrdenCompra />} />
-            <Route path='/Bienes' element={<Bienes />} />
-            <Route path='/personal' element={<Personal />} />
-           
-            <Route path='/proveedores' element={<Proveedores />} />
-            <Route path='/seguridad' element={<AsignarRol />} />
-            <Route path='/donaciones' element={<Donaciones />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path='/Actividades' element={<ActividadesPage/>}/>
-            <Route path='/biblioteca' element={<BibliotecaTest/>}/>
-           
-            <Route path='/Calendario' element={<CalendarioActividades/>}/>
-          </Route>
-          
-          <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}>
-              <Route path="/home" element={<Home />} />
-          </Route>
-
-          <Route path="/restricted" element={<RestrictedPage />} />
-
-          {/* Redirigir rutas desconocidas */}
-          <Route path="*" element={<Navigate to="/landing" replace />} />
-        </Routes>
-      </div>
-      <Footer />
-    </>
-  );
 }
-
 export default App;
