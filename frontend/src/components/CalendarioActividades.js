@@ -116,7 +116,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
     
     // Filtrar solo eventos futuros o del día actual
     const eventosFuturos = todosLosEventos.filter(evento => {
-      const fechaEvento = new Date(evento.date + "T00:00:00");
+      const fechaEvento = new Date(evento.date || "T00:00:00");
       return fechaEvento >= hoy;
     });
     
@@ -139,12 +139,14 @@ const CalendarioActividades = forwardRef((props, ref) => {
     const evento = info.event;
     const props = evento.extendedProps;
     
-    const fechaFormateada = new Date(evento.start).toLocaleDateString("es-ES", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
+    const fechaFormateada = new Date(evento.start).toLocaleString("es-ES", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+});
 
     setModal({
       visible: true,
@@ -187,12 +189,14 @@ const CalendarioActividades = forwardRef((props, ref) => {
     const props = evento.extendedProps;
     const rect = info.el.getBoundingClientRect();
 
-    const fechaFormateada = new Date(evento.start).toLocaleDateString("es-ES", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric"
-    });
+   const fechaFormateada = new Date(evento.start).toLocaleString("es-ES", {
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+});
 
     const tooltipContent = {
       titulo: evento.title,
@@ -244,7 +248,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
      con día y mes para las cards
   */
   const formatearFechaCard = (fechaString) => {
-    const fecha = new Date(fechaString + "T00:00:00");
+    const fecha = new Date(fechaString || "T00:00:00");
     const dia = fecha.getDate();
     const mes = fecha.toLocaleDateString("es-ES", { month: "short" });
     
@@ -258,11 +262,13 @@ const CalendarioActividades = forwardRef((props, ref) => {
      card del sidebar
   */
   const handleCardClick = (evento) => {
-    const fechaFormateada = new Date(evento.date + "T00:00:00").toLocaleDateString("es-ES", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric"
+    const fechaFormateada = new Date(evento.date || "T00:00:00").toLocaleDateString("es-ES", {
+       weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
     });
 
     setModal({
@@ -454,7 +460,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
                       <div className="detalle-item">
                         <span className="detalle-icon">📅</span>
                         <span className="detalle-text">
-                          {new Date(evento.date + "T00:00:00").toLocaleDateString("es-ES", {
+                          {new Date(evento.date || "T00:00:00").toLocaleDateString("es-ES", {
                             weekday: "long",
                             day: "numeric",
                             month: "long"

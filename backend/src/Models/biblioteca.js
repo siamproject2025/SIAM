@@ -1,12 +1,11 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const libroSchema = new mongoose.Schema({
+const LibroSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   autor: { type: String, required: true },
-  recurso: { type: String, required: false },
-  tipoRecurso: { type: String, required: false},
+  archivoUrl: { type: String },
   fechaCreacion: { type: Date, default: Date.now },
-}, { collection: "biblioteca_virtuals"});
+});
 
 const Libro = mongoose.model('libro', libroSchema, "libros");
 
