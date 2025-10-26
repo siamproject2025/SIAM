@@ -357,7 +357,7 @@ const Donaciones = () => {
 
   useEffect(() => {
     cargarDonaciones();
-  }, []);
+  }, );
 
   const cargarDonaciones = async () => {
     try {

@@ -14,7 +14,7 @@ const personalRoutes = require('./Routes/personalRoutes'); // 🆕 NUEVA RUTA
 const donacionesRoutes = require('./Routes/donacionesRoutes');
 const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 
-const horarios = require('./Routes/Horarios');
+
 
 const actividadesRoutes = require("./Routes/actividades");
 const horarios = require("./Routes/Horarios");
@@ -60,7 +60,7 @@ app.use('/api/horarios',horarios);
 
 app.use("/api/actividades", actividadesRoutes);
 
-app.use("/api/horarios", horarios);
+
 app.use("/api/biblioteca", biblioteca);
 
 

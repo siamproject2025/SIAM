@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 
+
 const ModalCrearBien = ({ onClose, onCreate }) => {
   const [nuevoBien, setNuevoBien] = useState({
     codigo: '',
