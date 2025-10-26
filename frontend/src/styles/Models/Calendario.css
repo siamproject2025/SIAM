@@ -5,12 +5,15 @@
 .calendario-container {
   display: flex;
   gap: 20px;
-  padding: 30px;
+  padding: 0px 30px 80px 30px;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   max-width: 1400px;
   margin: 0 auto;
+  max-height: 92vh;
+  overflow-y: auto;
+  
 }
 
 .calendario-main {
@@ -19,6 +22,7 @@
   padding: 25px;
   border-radius: 10px;
   position: relative;
+  
 }
 
 /* TÍTULO CON FONDO/LÍNEA DEBAJO */
@@ -43,6 +47,7 @@
   max-height: 600px;
   overflow-y: auto;
   padding-right: 10px;
+  margin-top: 60px;
 }
 
 /* NUEVO DISEÑO DE TARJETAS DE EVENTOS */
@@ -391,7 +396,7 @@
    MODAL PARA DETALLES DE EVENTO
    ============================================ */
 
-.modal-overlay {
+.calendario-container .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -406,11 +411,13 @@
   transition: opacity 0.3s ease;
 }
 
-.modal-overlay.visible {
+
+.calendario-container .modal-overlay.visible {
   opacity: 1;
 }
 
-.modal-content {
+
+.calendario-container .modal-content {
   background: white;
   border-radius: 15px;
   padding: 30px;

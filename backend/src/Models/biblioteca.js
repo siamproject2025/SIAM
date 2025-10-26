@@ -8,6 +8,6 @@ const libroSchema = new mongoose.Schema({
   fechaCreacion: { type: Date, default: Date.now },
 }, { collection: "biblioteca_virtuals"});
 
-const Libro = mongoose.model('libro', libroSchema);
+const Libro = mongoose.model('libro', libroSchema, "libros");
 
 module.exports = Libro;
