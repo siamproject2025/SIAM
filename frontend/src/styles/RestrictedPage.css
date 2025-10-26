@@ -2,10 +2,11 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 92vh;
   background: #fff; /* fondo blanco simple */
   padding: 20px;
   box-sizing: border-box;
+  width: 100%;
 }
 
 .restricted-content {
