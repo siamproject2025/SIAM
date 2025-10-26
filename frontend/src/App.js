@@ -144,8 +144,11 @@ function App() {
            
             <Route path='/Calendario' element={<CalendarioActividades/>}/>
           </Route>
-          <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}></Route>
+          
+          <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}>
               <Route path="/home" element={<Home />} />
+          </Route>
+
           <Route path="/restricted" element={<RestrictedPage />} />
 
           {/* Redirigir rutas desconocidas */}
