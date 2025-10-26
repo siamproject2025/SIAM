@@ -39,7 +39,7 @@ export default function Home() {
           axios.get(`${API_URL}api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${API_URL}api/compras`, { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${API_URL}api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
+          axios.get(`${API_URL}api/biblioteca`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
           axios.get(`${API_URL}api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
         ]);
 
