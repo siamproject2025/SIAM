@@ -13,6 +13,7 @@ import { GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword,sig
 import { useNavigate } from "react-router-dom";
 import { auth } from "../authentication/Auth"; // tu configuración de Firebase
 import { ArrowBigLeftDash } from 'lucide-react';
+import ResetPassword from "./ResetPassword";
 
 
 
@@ -224,7 +225,7 @@ const saveUserToAPI = async (user, name, password) => {
                     Recuerdame por 30 días
                   </label>
                 </div>
-                <a href="#" className="forgot-pass-link">
+                <a className="forgot-pass-link" onClick={() => navigate("/ResetPassword")}>
                   ¿Has olvidado tu contraseña?
                 </a>
               </div>

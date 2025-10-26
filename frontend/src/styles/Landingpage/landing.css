@@ -27,7 +27,9 @@ body {
   color: var(--text-primary);
   overflow-x: hidden;
 }
-
+.landing-page{
+  width: 100%;    
+}
 .container-custom {
   max-width: 1200px;
   margin: 0 auto;
@@ -98,7 +100,7 @@ body {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: white;
   padding: 8rem 0 6rem;
-  margin-top: 80px;
+  margin-top: 15px;
   position: relative;
   overflow: hidden;
 }

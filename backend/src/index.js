@@ -12,6 +12,15 @@ const horarios = require("./Routes/Horarios");
 const aulas = require("./Routes/aulasRoutes");
 const alumnos = require("./Routes/alumnosRoutes");
 const docentes = require("./Routes/docentesRoutes");
+const ordencompra = require('./Routes/ordenCompra'); 
+const bienesRoutes = require( "./routes/bienesRoutes");
+const usuarios_route = require('./Routes/usuario_ruta'); 
+const dashboard_route = require('./Routes/dashboard_ruta'); 
+const actividadesRoutes = require("./Routes/actividades");
+
+const horarios = require("./Routes/Horarios");
+const biblioteca = require("./Routes/bibliotecaRoutes");
+
 
 const app = express();
 
@@ -44,6 +53,14 @@ app.use("/api/horario", horarios);
 app.use("/api/aula", aulas);
 app.use("/api/alumno", alumnos);
 app.use("/api/docente", docentes);
+
+app.use('/api/',usuarios_route);
+app.use('/api/',dashboard_route);
+app.use("/api/actividades", actividadesRoutes);
+
+app.use("/api/horarios", horarios);
+app.use("/api/biblioteca", biblioteca);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 console.log("✅ Conectado.");
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
