@@ -4,10 +4,6 @@ const mongoose = require("mongoose");
 const path = require("path");
 const cors = require("cors");
 
-const ordencompra = require("./Routes/ordenCompra");
-const bienesRoutes = require("./Routes/bienesRoutes");
-const usuarios_route = require("./Routes/usuario_ruta");
-const dashboard_route = require("./Routes/dashboard_ruta");
 const horarios = require("./Routes/Horarios");
 const aulas = require("./Routes/aulasRoutes");
 const alumnos = require("./Routes/alumnosRoutes");
