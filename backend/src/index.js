@@ -2,8 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-const cors = require('cors');
+const cors = require("cors");
 
+const ordencompra = require("./Routes/ordenCompra");
+const bienesRoutes = require("./Routes/bienesRoutes");
+const usuarios_route = require("./Routes/usuario_ruta");
+const dashboard_route = require("./Routes/dashboard_ruta");
+const horarios = require("./Routes/Horarios");
+const aulas = require("./Routes/aulasRoutes");
+const alumnos = require("./Routes/alumnosRoutes");
+const docentes = require("./Routes/docentesRoutes");
 const ordencompra = require('./Routes/ordenCompra'); 
 const bienesRoutes = require( "./Routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
@@ -17,6 +25,7 @@ const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 
 
 const actividadesRoutes = require("./Routes/actividades");
+
 const horarios = require("./Routes/Horarios");
 const biblioteca = require("./Routes/bibliotecaRoutes");
 
@@ -47,6 +56,12 @@ mongoose
 console.log("🚀 Conectando con rutas.");
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
+app.use("/api/", usuarios_route);
+app.use("/api/", dashboard_route);
+app.use("/api/horario", horarios);
+app.use("/api/aula", aulas);
+app.use("/api/alumno", alumnos);
+app.use("/api/docente", docentes);
 
 app.use('/api/',usuarios_route);
 app.use('/api/',dashboard_route);
@@ -62,7 +77,8 @@ app.use("/api/actividades", actividadesRoutes);
 
 
 app.use("/api/biblioteca", biblioteca);
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+console.log("✅ Conectado.");
 
 
 
