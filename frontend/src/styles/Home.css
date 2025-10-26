@@ -1,0 +1,207 @@
+.plugins-container {
+  display: grid!important;
+  grid-template-columns: repeat(4, 1fr); /* 🔹 4 columnas fijas */
+  gap: 1.5rem;
+  padding: 2rem;
+  background: #f5f7fa;
+  margin: 0 auto;
+  box-sizing: border-box;
+  margin-top: 15px;
+}
+
+/* === Cards Generales === */
+.plugins-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-height: 300px;
+  width: 100%;        /* ocupa todo el ancho de la columna */
+  max-width: 480px;   /* 🔹 ancho máximo de la card */
+}
+
+.plugins-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* === Totales === */
+.plugins-container .total-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+}
+
+.plugins-container .card-icon {
+  opacity: 0.8;
+}
+
+.blue-card {
+  background: linear-gradient(135deg, #abc0fe, #ddf1f8);
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+
+}
+
+.purple-card{
+  background: linear-gradient(135deg, #e3c1fe, #fbdbff);
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+}
+
+.purple-card h3, .purple-card p{
+    
+}
+
+.total-number {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+/* === Gráficas === */
+.plugins.chart-card {
+  padding: 1rem 1.5rem;
+  min-height: 300px;
+  overflow: hidden;
+}
+
+.chart-wrapper {
+  height: 200px;
+  margin-top: 1rem;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-card h3 {
+  color: #333;
+  font-weight: 600;
+}
+
+.dashboard-loading {
+  text-align: center;
+  font-size: 1.2rem;
+  padding: 2rem;
+}
+
+/* === Card que abarca 2 columnas === */
+.wide-card {
+  grid-column: span 2;
+  min-height: 300px;
+  width: 100%; /* ocupa todo el espacio de las 2 columnas */
+  max-width: none; /* 🔹 permite que se expanda */
+}
+
+/* === Card Actividades === */
+.actividades-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.actividades-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+.actividades-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.actividades-wrapper {
+  max-height: auto;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.actividades-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.actividad-item {
+  background: #e8e8fa;
+  border-radius: 10px;
+  padding: 12px 15px;
+  margin-bottom: 10px;
+  transition: background 0.2s ease;
+}
+
+.actividad-item:hover {
+  background: #f1f0ff;
+}
+
+.actividad-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.actividad-nombre {
+  font-size: 1rem;
+  color: #333;
+}
+
+.actividad-fecha {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.actividad-lugar {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.actividad-desc {
+  font-size: 0.85rem;
+  color: #777;
+  line-height: 1.3;
+}
+
+.no-actividades {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 1rem 0;
+}
+
+@media (max-width: 1400px) {
+  .plugins-container {
+    grid-template-columns: repeat(3, 1fr)!important;
+  }
+}
+
+@media (max-width: 1000px) {
+  .plugins-container {
+    grid-template-columns: repeat(2, 1fr)!important;
+  }
+}
+
+@media (max-width: 700px) {
+  .plugin-container {
+    display: none!important;
+  }
+}

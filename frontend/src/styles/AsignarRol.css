@@ -1,160 +1,236 @@
-/* Lista de tarjetas de usuario en columna */
-.RolHeader{
+/* 🔹 Contenedor general */
+.RolHeader {
   width: 100vw;
   max-height: 92vh;
-  
   overflow-y: auto;
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer y Edge antiguos */
+  -ms-overflow-style: none; /* IE y Edge antiguos */
+  background-color: #f5f7fb;
+  padding-bottom: 60px;
 }
 
-.asignarRol-container{
-  margin: 60px 60px 60px 60px;
+.RolHeader::-webkit-scrollbar {
+  display: none;
 }
+
+/* 🔹 Encabezado superior */
+.headerRoles {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1753c2, #0f2a7b);
+  color: #fff;
+  padding: 14px 0;
+  border-radius: 12px;
+  margin: 30px 60px 25px 60px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.asignarRol-title {
+  font-size: 1.9rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+/* 🔹 Contenedor principal */
+.asignarRol-container {
+  margin: 0 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* 🔍 Filtros */
+.asignarRol-filtros {
+  display: flex;
+  gap: 15px;
+  align-items: center;  
+}
+
+.asignarRol-input {
+  flex: 1;
+  border: 2px solid #aab3d1;
+  height: 45px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #333;
+  transition: border-color 0.3s ease;
+  min-width: 300px;
+}
+
+.asignarRol-input:focus {
+  border-color: #1753c2;
+  outline: none;
+}
+
+.asignarRol-select.caja {
+  background-color: #1753c2;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.asignarRol-select.caja:hover {
+  background-color: #0f2a7b;
+}
+
+/* 🔹 Lista de usuarios */
 .asignarRol-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  margin-top: 50px;
 }
-.asignarRol-input{
-  margin-bottom: 10px;
-  border:4px solid rgb(153, 153, 153);
-  height: 50px;
-}
-/* Tarjeta de usuario horizontal */
+
+/* 💡 Tarjeta de usuario (en fila) */
 .asignarRol-card {
   display: flex;
-  flex-direction: row; /* horizontal */
-  justify-content: space-between;
   align-items: center;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.05);
-  background-color: #fbfbfb;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f8faff, #eef2ff);
+  border: 1px solid #d3d9ff;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  gap: 15px;
 }
 
 .asignarRol-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
-/* Contenido de la tarjeta alineado vertical dentro de cada sección */
-.asignarRol-card-info {
+/* 📋 Datos del usuario */
+.user-info {
   display: flex;
-  flex-direction: row;
+  align-items: center;
+  gap: 40px;
+  flex: 1;
+  color: #1e1e2f;
+  font-weight: 500;
   flex-wrap: wrap;
-  gap: 20px;
-  flex: 1; /* ocupa el espacio disponible */
-  text-align: left;
-  
 }
-.asignarRol-card-info .space{
+
+.user-name{
   width: 200px;
-  margin: 0px;
 }
-.asignarRol-card-info .space2{
-width: 350px;
-margin: 0px;
-}
-.asignarRol-card-info .space3{
-  width: 200px;
-  margin: 0px;
-}
-.iconUser{
-  font-size: 20px;
-  margin-right: 5px;
-}
-.photoUser{
-  width: 33px;
-  height: 33px;
-  color: rgb(40, 40, 179);
+.user-email{
+  width: 320px;
 }
 
-.asignarRol-select.caja{
-  background-color: #1753c2;
-  color: white;
-}
-
-
-/* Select y botón de eliminar */
-.asignarRol-card-actions {
+.user-info span {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  align-items: flex-end;
 }
 
-/* Select dentro de la tarjeta */
-.asignarRol-card select {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 14px;
-  background-color: #414141;
-  color: #fff;
+.user-info svg {
+  color: #1753c2;
+  font-size: 18px;
 }
 
-/* Icono de eliminar */
-.asignarRol-trash {
-  color: #ffffff;
+/* ⚙️ Acciones */
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-select {
+  padding: 8px 12px;
   border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #ffffff;
+  color: #333;
+  font-weight: 500;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.role-select:hover {
+  border-color: #1753c2;
+  box-shadow: 0 0 4px rgba(23, 83, 194, 0.3);
+}
+
+/* 🗑 Botón de eliminar */
+.btn-delete {
+  background: #ff5252;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
   cursor: pointer;
-  font-size: 1.2rem;
-  transition: transform 0.2s ease;
   display: flex;
-  background-color: red;
-  padding: 8px;
-}
-
-.asignarRol-trash:hover {
-  transform: scale(1.2);
-}
-
-.headerRoles{
-  display: flex;
-  background-color: #414141;
-  height: 4vw;
+  align-items: center;
   justify-content: center;
-  align-items: center; 
-}
-.asignarRol-title{
-  color: white;
-  font-size: 2vw;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.asignarRol-pagination .pagina-btn{
-  background-color: #414141;
-  padding: 5px;
-  margin: 5px;
-  color: white;
-  border-radius: 10px;
+.btn-delete:hover {
+  background: #e53935;
+  transform: scale(1.1);
 }
 
-.asignarRol-pagination{
+/* 🧾 Paginación */
+.asignarRol-pagination {
+  display: flex;
+  justify-content: center;
   margin-top: 20px;
+  gap: 10px;
 }
 
-/* Responsive: en móviles la card pasa a vertical */
-@media (max-width: 768px) {
+.asignarRol-pagination .pagina-btn {
+  background-color: #1753c2;
+  padding: 8px 14px;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.asignarRol-pagination .pagina-btn:hover {
+  background-color: #0f2a7b;
+  transform: translateY(-2px);
+}
+
+.asignarRol-pagination .pagina-btn.activo {
+  background-color: #0f2a7b;
+  transform: scale(1.05);
+}
+
+/* 📱 Responsive */
+@media (max-width: 900px) {
   .asignarRol-card {
     flex-direction: column;
     align-items: flex-start;
-    
+    gap: 12px;
   }
 
-  .asignarRol-card-actions {
-    width: 100%;
+  .user-info {
+    flex-direction: column;
     align-items: flex-start;
+    gap: 4px;
   }
-  .asignarRol-title{
-  color: white;
-  font-size: 4vw;
+
+  .user-actions {
+    align-self: flex-end;
   }
-  .headerRoles{
-    height: 8vw;
+
+  .headerRoles {
+    margin: 20px;
+    font-size: 4vw;
+  }
+
+  .asignarRol-title {
+    font-size: 5vw;
+  }
+
+  .asignarRol-container {
+    margin: 0 20px;
   }
 }
