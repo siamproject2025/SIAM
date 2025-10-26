@@ -12,10 +12,12 @@ import Landing from "./screens/Landing";
 import Home from "./screens/Home";
 import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
+import BibliotecaTest from './components/BibliotecaTest';
 
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
 import Bienes from './screens/Models/Bienes';
+import Horarios from './screens/Models/Horarios';
 
 import RestrictedPage from './screens/RestrictedPage';
 import Dashboard from './screens/Dashboard';
@@ -103,6 +105,39 @@ function App() {
 
 
   return (
+    <> {/* Se movio al index el authprovider y el router que envuelve la app*/}
+       <div  className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
+              {/* Renderiza NavBar solo si el usuario está autenticado */}
+              
+              {user && <><NavBar />{/*<Sidebar/>*/}</>}
+              <Routes>
+                {/* Rutas públicas */}
+                <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>}/>
+                <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
+                {/* Rutas privadas */}
+                <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
+                  <Route path="/home" element={<Home />} />
+
+                  <Route path='/ordencompra' element={<OrdenCompra />} />
+                  <Route path='/Bienes' element={<Bienes />} />
+                  <Route path="/horarios" element={<Horarios />} />
+
+                  <Route path="/dashboard" element={<Dashboard />} />
+
+                </Route>
+
+                {/* Ruta de aterrizaje pública */}
+                <Route path="/landing" element={<Landing />} />
+                <Route path="/restricted" element={<RestrictedPage />} />
+
+                {/* Redirigir rutas desconocidas */}
+                <Route path="*" element={<Navigate to="/landing" replace />} />
+              </Routes>
+
+              {/* Renderiza Footer solo si el usuario está autenticado */}
+              
+            </div><Footer />
+      </>
     <>
       <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
         {user && <><NavBar /><SideBar/></>}
@@ -139,6 +174,8 @@ function App() {
             <Route path='/seguridad' element={<AsignarRol />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path='/Actividades' element={<ActividadesPage/>}/>
+            <Route path='/biblioteca' element={<BibliotecaTest/>}/>
+           
             <Route path='/Calendario' element={<CalendarioActividades/>}/>
           </Route>
           
