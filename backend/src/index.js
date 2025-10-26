@@ -9,8 +9,10 @@ const bienesRoutes = require( "./routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
 const dashboard_route = require('./Routes/dashboard_ruta'); 
 const actividadesRoutes = require("./Routes/actividades");
+
 const horarios = require("./Routes/Horarios");
 const biblioteca = require("./Routes/bibliotecaRoutes");
+
 
 const app = express();
 
@@ -44,7 +46,8 @@ app.use("/api/actividades", actividadesRoutes);
 
 app.use("/api/horarios", horarios);
 app.use("/api/biblioteca", biblioteca);
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+console.log("✅ Conectado.");
 
 // 📌 Ruta de prueba para verificar que el servidor funciona
 console.log("🚀 Ruta de prueba para verificar que el servidor funciona");
