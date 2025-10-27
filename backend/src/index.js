@@ -13,7 +13,10 @@ const donacionesRoutes = require('./Routes/donacionesRoutes');
 const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 const actividadesRoutes = require("./Routes/actividades");
 const biblioteca = require("./Routes/bibliotecaRoutes");
-
+const ordencompra = require("./Routes/ordencompra");
+const bienesRoutes = require("./Routes/bienesRoutes");
+const usuarios_route = require("./Routes/usuario_ruta");
+const dashboard_route = require("./Routes/dashboard_ruta");
 
 
 const app = express();
