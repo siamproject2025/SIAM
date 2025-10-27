@@ -3,11 +3,10 @@ const mongoose = require('mongoose');
 const libroSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   autor: { type: String, required: true },
-  recurso: { type: String, required: false },
-  tipoRecurso: { type: String, required: false},
-  fechaCreacion: { type: Date, default: Date.now },
-}, { collection: "biblioteca_virtuals"});
+  categoria: { type: String },
+  disponible: { type: Boolean, default: true },
+  fechaRegistro: { type: Date, default: Date.now }
+});
 
-const Libro = mongoose.model('libro', libroSchema);
-
+const Libro = mongoose.model('libro', libroSchema, "libros");
 module.exports = Libro;
