@@ -12,6 +12,7 @@ import Landing from "./screens/Landing";
 import Home from "./screens/Home";
 import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
+import BibliotecaTest from './components/BibliotecaTest';
 
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
@@ -139,6 +140,8 @@ function App() {
             <Route path='/seguridad' element={<AsignarRol />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path='/Actividades' element={<ActividadesPage/>}/>
+            <Route path='/biblioteca' element={<BibliotecaTest/>}/>
+           
             <Route path='/Calendario' element={<CalendarioActividades/>}/>
           </Route>
           <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}></Route>
