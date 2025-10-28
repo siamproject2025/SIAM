@@ -29,28 +29,21 @@ const upload = multer({ storage });
 // -------------------
 router.post("/", upload.single("archivo"), async (req, res) => {
   try {
-    // 🔹 Depuración
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file);
-
     const { titulo, autor } = req.body;
 
-    // 🔹 Validaciones
-    if (!req.file) {
-      return res.status(400).json({ error: "No se subió ningún archivo" });
-    }
+    if (!req.file) return res.status(400).json({ error: "No se subió ningún archivo" });
+    if (!titulo || !autor) return res.status(400).json({ error: "Título y autor son obligatorios" });
 
-    if (!titulo || !autor) {
-      return res.status(400).json({ error: "Título y autor son obligatorios" });
-    }
-
-    // 🔹 Generar URL pública del archivo
     const archivoUrl = `http://localhost:5000/uploads/libros/${req.file.filename}`;
 
-    // 🔹 Guardar en MongoDB
-    const libro = new Libro({ titulo, autor, archivoUrl });
-    await libro.save();
+    const libro = new Libro({
+      titulo,
+      autor,
+      archivoUrl,
+      nombreArchivo: req.file.filename,
+    });
 
+    await libro.save();
     res.status(201).json(libro);
   } catch (error) {
     console.error("Error al subir libro:", error);
@@ -66,9 +59,31 @@ router.get("/", async (req, res) => {
     const libros = await Libro.find();
     res.json(libros);
   } catch (error) {
-    console.error("Error al obtener libros:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// -------------------
+// DELETE: Eliminar un libro por ID
+// -------------------
+router.delete("/:id", async (req, res) => {
+  try {
+    const libro = await Libro.findById(req.params.id);
+    if (!libro) return res.status(404).json({ message: "Libro no encontrado" });
+
+    // Eliminar archivo físico
+    const filePath = path.join(uploadPath, libro.nombreArchivo);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    // Eliminar registro de MongoDB
+    await Libro.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Libro eliminado correctamente" });
+  } catch (error) {
+    console.error("Error al eliminar libro:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
 module.exports = router;
+//holaaaaa

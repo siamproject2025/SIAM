@@ -1,10 +1,14 @@
 const mongoose = require("mongoose");
 
-const LibroSchema = new mongoose.Schema({
+const libroSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   autor: { type: String, required: true },
-  archivoUrl: { type: String },
+  categoria: { type: String },
+  disponible: { type: Boolean, default: true },
+  archivoUrl: { type: String, required: true }, // ✅ se agrega
+  nombreArchivo: { type: String, required: true }, // ✅ se agrega para eliminar luego
   fechaCreacion: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("Libro", LibroSchema);
+const Libro = mongoose.model("Libro", libroSchema, "libros");
+module.exports = Libro;
