@@ -7,7 +7,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import axios from "axios";
 import NavBar from './components/navBar';
 import Login from './components/authentication/Login';
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Landing from "./screens/Landing";
 import Home from "./screens/Home";
 import Footer from './components/Footer';
@@ -49,101 +49,67 @@ function App() {
   }, []);
 
   useEffect(() => {
-  if (!user) return;
+    if (!user) return;
 
-  const INACTIVITY_LIMIT = 15* 60 * 1000; // 15 minutos
-  const WARNING_TIME = 1 * 60 * 1000; // 1 minuto antes
+    const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutos
+    const WARNING_TIME = 1 * 60 * 1000; // 1 minuto antes
 
-  let inactivityTimer;
-  let warningTimer;
+    let inactivityTimer;
+    let warningTimer;
 
-  const logoutUser = async () => {
-    try {
-      await axios.post("/api/auth/revoke-token", { uid: user.uid });
-    } catch (error) {
-      console.error("Error revocando token:", error);
-    }
+    const logoutUser = async () => {
+      try {
+        await axios.post("/api/auth/revoke-token", { uid: user.uid });
+      } catch (error) {
+        console.error("Error revocando token:", error);
+      }
 
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Error cerrando sesión en Firebase:", error);
-    }
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("Error cerrando sesión en Firebase:", error);
+      }
 
-    window.location.href = "/login";
-  };
+      window.location.href = "/login";
+    };
 
-  const resetTimer = () => {
-    clearTimeout(inactivityTimer);
-    clearTimeout(warningTimer);
-    setWarningVisible(false); // oculta el aviso inmediatamente
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer);
+      clearTimeout(warningTimer);
+      setWarningVisible(false); // oculta el aviso inmediatamente
 
-    // mostrar aviso 1 min antes
-    warningTimer = setTimeout(() => {
-      setWarningVisible(true);
-    }, INACTIVITY_LIMIT - WARNING_TIME);
+      // mostrar aviso 1 min antes
+      warningTimer = setTimeout(() => {
+        setWarningVisible(true);
+      }, INACTIVITY_LIMIT - WARNING_TIME);
 
-    // cerrar sesión al llegar al límite
-    inactivityTimer = setTimeout(() => {
-      logoutUser();
-    }, INACTIVITY_LIMIT);
-  };
+      // cerrar sesión al llegar al límite
+      inactivityTimer = setTimeout(() => {
+        logoutUser();
+      }, INACTIVITY_LIMIT);
+    };
 
-  // Escucha de actividad del usuario
-  const activityEvents = ["mousemove", "keydown", "click", "touchstart", "scroll"];
-  activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
+    // Escucha de actividad del usuario
+    const activityEvents = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    activityEvents.forEach((event) => window.addEventListener(event, resetTimer));
 
-  // sincroniza con otras pestañas
-  window.addEventListener("storage", resetTimer);
+    // sincroniza con otras pestañas
+    window.addEventListener("storage", resetTimer);
 
-  resetTimer(); // inicializa al entrar
+    resetTimer(); // inicializa al entrar
 
-  return () => {
-    activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
-    window.removeEventListener("storage", resetTimer);
-    clearTimeout(inactivityTimer);
-    clearTimeout(warningTimer);
-  };
-}, [user]);
-
+    return () => {
+      activityEvents.forEach((event) => window.removeEventListener(event, resetTimer));
+      window.removeEventListener("storage", resetTimer);
+      clearTimeout(inactivityTimer);
+      clearTimeout(warningTimer);
+    };
+  }, [user]);
 
   return (
-    <> {/* Se movio al index el authprovider y el router que envuelve la app*/}
-       <div  className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-              {/* Renderiza NavBar solo si el usuario está autenticado */}
-              
-              {user && <><NavBar />{/*<Sidebar/>*/}</>}
-              <Routes>
-                {/* Rutas públicas */}
-                <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>}/>
-                <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
-                {/* Rutas privadas */}
-                <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
-                  <Route path="/home" element={<Home />} />
-
-                  <Route path='/ordencompra' element={<OrdenCompra />} />
-                  <Route path='/Bienes' element={<Bienes />} />
-                  <Route path="/horarios" element={<Horarios />} />
-
-                  <Route path="/dashboard" element={<Dashboard />} />
-
-                </Route>
-
-                {/* Ruta de aterrizaje pública */}
-                <Route path="/landing" element={<Landing />} />
-                <Route path="/restricted" element={<RestrictedPage />} />
-
-                {/* Redirigir rutas desconocidas */}
-                <Route path="*" element={<Navigate to="/landing" replace />} />
-              </Routes>
-
-              {/* Renderiza Footer solo si el usuario está autenticado */}
-              
-            </div><Footer />
-      </>
     <>
       <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-        {user && <><NavBar /><SideBar/></>}
+        {user && <><NavBar /><SideBar /></>}
 
         {warningVisible && (
           <div className="inactivity-warning" style={{
@@ -165,29 +131,26 @@ function App() {
           {/* Rutas públicas */}
           <Route path="/landing" element={<PublicRoute> <Landing /> </PublicRoute>} />
           <Route path="/login" element={<PublicRoute> <Login /> </PublicRoute>} />
-          <Route path='/ResetPassword' element={<PublicRoute> <ResetPassword/> </PublicRoute>} />
-          <Route path='/ResetPasswordSeguro' element={<PublicRoute> <ResetPasswordSeguro/> </PublicRoute>} />
-
+          <Route path='/ResetPassword' element={<PublicRoute> <ResetPassword /> </PublicRoute>} />
+          <Route path='/ResetPasswordSeguro' element={<PublicRoute> <ResetPasswordSeguro /> </PublicRoute>} />
 
           {/* Rutas privadas */}
-          <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]}/>}>
-           
+          <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
             <Route path='/ordencompra' element={<OrdenCompra />} />
             <Route path='/Bienes' element={<Bienes />} />
             <Route path='/personal' element={<Personal />} />
-           
+            <Route path="/horarios" element={<Horarios />} />
             <Route path='/proveedores' element={<Proveedores />} />
             <Route path='/seguridad' element={<AsignarRol />} />
             <Route path='/donaciones' element={<Donaciones />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path='/Actividades' element={<ActividadesPage/>}/>
-            <Route path='/biblioteca' element={<BibliotecaTest/>}/>
-           
-            <Route path='/Calendario' element={<CalendarioActividades/>}/>
+            <Route path='/Actividades' element={<ActividadesPage />} />
+            <Route path='/biblioteca' element={<BibliotecaTest />} />
+            <Route path='/Calendario' element={<CalendarioActividades />} />
           </Route>
-          
-          <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]}/>}>
-              <Route path="/home" element={<Home />} />
+
+          <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
+            <Route path="/home" element={<Home />} />
           </Route>
 
           <Route path="/restricted" element={<RestrictedPage />} />

@@ -19,34 +19,332 @@ import {
   Trash2,
   X,
   Save,
-  Check
+  Check,
+  ImagePlus,
+  Upload,
+  AlertCircle,
+  CheckCircle,
+  Sparkles,
+  Heart,
+  Gift,
+  HandHeart
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api/donaciones';
 
-// Estilos CSS integrados
+// Estilos CSS integrados mejorados
 const styles = `
+  * {
+    box-sizing: border-box;
+  }
+
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes iconBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-5px) rotate(-10deg); }
+    50% { transform: translateY(0) rotate(0deg); }
+    75% { transform: translateY(-5px) rotate(10deg); }
+  }
+
+  @keyframes floatAndFade {
+    0% {
+      opacity: 0;
+      transform: translateY(100px) rotate(0deg) scale(0.5);
+    }
+    25% {
+      opacity: 0.3;
+    }
+    50% {
+      opacity: 0.6;
+      transform: translateY(-50px) rotate(180deg) scale(1);
+    }
+    75% {
+      opacity: 0.3;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-200px) rotate(360deg) scale(0.5);
+    }
+  }
+
+  @keyframes floatAndFade2 {
+    0% {
+      opacity: 0;
+      transform: translateY(80px) rotate(0deg) scale(0.3);
+    }
+    30% {
+      opacity: 0.4;
+    }
+    60% {
+      opacity: 0.7;
+      transform: translateY(-80px) rotate(-180deg) scale(1.2);
+    }
+    80% {
+      opacity: 0.2;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-180px) rotate(-360deg) scale(0.3);
+    }
+  }
+
+  @keyframes floatAndFade3 {
+    0% {
+      opacity: 0;
+      transform: translateY(120px) rotate(45deg) scale(0.4);
+    }
+    20% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 0.8;
+      transform: translateY(-60px) rotate(225deg) scale(1.1);
+    }
+    85% {
+      opacity: 0.25;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-220px) rotate(405deg) scale(0.4);
+    }
+  }
+
+  @keyframes floatAndFade4 {
+    0% {
+      opacity: 0;
+      transform: translateY(90px) rotate(-45deg) scale(0.6);
+    }
+    35% {
+      opacity: 0.55;
+    }
+    65% {
+      opacity: 0.75;
+      transform: translateY(-70px) rotate(135deg) scale(1.15);
+    }
+    90% {
+      opacity: 0.15;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-190px) rotate(315deg) scale(0.6);
+    }
+  }
+
+  @keyframes floatAndFade5 {
+    0% {
+      opacity: 0;
+      transform: translateY(110px) rotate(90deg) scale(0.45);
+    }
+    40% {
+      opacity: 0.65;
+    }
+    70% {
+      opacity: 0.85;
+      transform: translateY(-90px) rotate(-90deg) scale(1.3);
+    }
+    95% {
+      opacity: 0.1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-210px) rotate(-270deg) scale(0.45);
+    }
+  }
+
+  @keyframes rotateAndPulse {
+    0%, 100% {
+      transform: rotate(0deg) scale(1);
+      opacity: 0.6;
+    }
+    25% {
+      transform: rotate(90deg) scale(1.1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: rotate(180deg) scale(0.9);
+      opacity: 0.5;
+    }
+    75% {
+      transform: rotate(270deg) scale(1.15);
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes gentleFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 0.4;
+    }
+    50% {
+      transform: translateY(-15px) rotate(5deg);
+      opacity: 0.7;
+    }
+  }
+
+  .floating-icons-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .floating-icon {
+    position: absolute;
+    color: rgba(102, 126, 234, 0.12);
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+  }
+
+  /* Animaciones para los primeros 30 iconos */
+  .floating-icon:nth-child(1) { animation: floatAndFade 12s infinite; animation-delay: 0s; }
+  .floating-icon:nth-child(2) { animation: floatAndFade2 15s infinite; animation-delay: 2s; }
+  .floating-icon:nth-child(3) { animation: floatAndFade3 10s infinite; animation-delay: 4s; }
+  .floating-icon:nth-child(4) { animation: floatAndFade4 14s infinite; animation-delay: 1s; }
+  .floating-icon:nth-child(5) { animation: floatAndFade5 13s infinite; animation-delay: 3s; }
+  .floating-icon:nth-child(6) { animation: floatAndFade 16s infinite; animation-delay: 5s; }
+  .floating-icon:nth-child(7) { animation: floatAndFade2 11s infinite; animation-delay: 6s; }
+  .floating-icon:nth-child(8) { animation: floatAndFade3 17s infinite; animation-delay: 2.5s; }
+  .floating-icon:nth-child(9) { animation: floatAndFade4 12.5s infinite; animation-delay: 4.5s; }
+  .floating-icon:nth-child(10) { animation: floatAndFade5 15.5s infinite; animation-delay: 1.5s; }
+  .floating-icon:nth-child(11) { animation: floatAndFade 13.5s infinite; animation-delay: 3.5s; }
+  .floating-icon:nth-child(12) { animation: floatAndFade2 14.5s infinite; animation-delay: 5.5s; }
+  .floating-icon:nth-child(13) { animation: floatAndFade3 11.5s infinite; animation-delay: 0.5s; }
+  .floating-icon:nth-child(14) { animation: floatAndFade4 16.5s infinite; animation-delay: 2s; }
+  .floating-icon:nth-child(15) { animation: floatAndFade5 10.5s infinite; animation-delay: 4s; }
+  .floating-icon:nth-child(16) { animation: floatAndFade 15s infinite; animation-delay: 1s; }
+  .floating-icon:nth-child(17) { animation: floatAndFade2 12s infinite; animation-delay: 3s; }
+  .floating-icon:nth-child(18) { animation: floatAndFade3 14s infinite; animation-delay: 5s; }
+  .floating-icon:nth-child(19) { animation: floatAndFade4 11s infinite; animation-delay: 0s; }
+  .floating-icon:nth-child(20) { animation: floatAndFade5 13s infinite; animation-delay: 2s; }
+  .floating-icon:nth-child(21) { animation: floatAndFade 14.5s infinite; animation-delay: 4s; }
+  .floating-icon:nth-child(22) { animation: floatAndFade2 11.5s infinite; animation-delay: 1.5s; }
+  .floating-icon:nth-child(23) { animation: floatAndFade3 15.5s infinite; animation-delay: 3.5s; }
+  .floating-icon:nth-child(24) { animation: floatAndFade4 13.5s infinite; animation-delay: 5.5s; }
+  .floating-icon:nth-child(25) { animation: floatAndFade5 16.5s infinite; animation-delay: 0.5s; }
+  .floating-icon:nth-child(26) { animation: floatAndFade 10.5s infinite; animation-delay: 2.5s; }
+  .floating-icon:nth-child(27) { animation: floatAndFade2 13.5s infinite; animation-delay: 4.5s; }
+  .floating-icon:nth-child(28) { animation: floatAndFade3 12.5s infinite; animation-delay: 1s; }
+  .floating-icon:nth-child(29) { animation: floatAndFade4 15s infinite; animation-delay: 3s; }
+  .floating-icon:nth-child(30) { animation: floatAndFade5 14s infinite; animation-delay: 5s; }
+
+  /* Iconos decorativos fijos en el header */
+  .header-decoration-icon {
+    position: absolute;
+    color: rgba(102, 126, 234, 0.15);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header-decoration-icon.pulse {
+    animation: rotateAndPulse 8s ease-in-out infinite;
+  }
+
+  .header-decoration-icon.float {
+    animation: gentleFloat 6s ease-in-out infinite;
+  }
+
+  .header-decoration-icon:nth-child(1) { animation-delay: 0s; }
+  .header-decoration-icon:nth-child(2) { animation-delay: 1s; }
+  .header-decoration-icon:nth-child(3) { animation-delay: 2s; }
+  .header-decoration-icon:nth-child(4) { animation-delay: 3s; }
+  .header-decoration-icon:nth-child(5) { animation-delay: 4s; }
+  .header-decoration-icon:nth-child(6) { animation-delay: 0.5s; }
+  .header-decoration-icon:nth-child(7) { animation-delay: 1.5s; }
+  .header-decoration-icon:nth-child(8) { animation-delay: 2.5s; }
+
+  .btn-nueva-donacion .icon-animated {
+    display: inline-block;
+    animation: iconBounce 3s ease-in-out infinite;
+  }
+
   .bien-container {
-    padding: 2rem;
-    max-width: 100%;
+    padding: 2rem 1.5rem 100px 1.5rem;
+    max-width: none;
     margin: 0 auto;
     width: 100%;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
   }
 
   .bien-header {
-    margin-bottom: 2rem;
+  margin-top: 0.1rem;
+    margin-bottom: 0;
     width: 100%;
+    max-width: 100%;
+    background: white;
+    padding: 3rem 2rem 2rem 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .bien-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+    animation: shimmer 3s infinite;
   }
 
   .bien-header h2 {
-    font-size: 2rem;
-    color: #333;
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: 200% 200%;
+    animation: gradient 3s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .bien-header h2::before {
+    content: '✨';
+    animation: float 3s ease-in-out infinite;
   }
 
   .bien-header p {
     color: #666;
-    font-size: 1rem;
+    font-size: 1.1rem;
+    position: relative;
+    z-index: 1;
   }
 
   .bien-busqueda-bar {
@@ -55,58 +353,141 @@ const styles = `
     margin-top: 1.5rem;
     align-items: center;
     width: 100%;
+    position: relative;
+    z-index: 1;
+  }
+
+  .search-container {
+    flex: 1;
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #667eea;
+    z-index: 1;
+    animation: pulse 2s ease-in-out infinite;
   }
 
   .bien-busqueda {
     flex: 1;
     width: 100%;
-    padding: 0.8rem 1rem;
-    padding-left: 40px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 3px solid transparent;
+    border-radius: 15px;
     font-size: 1rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+    position: relative;
   }
 
   .bien-busqueda:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .bien-busqueda::placeholder {
+    color: #999;
+    font-style: italic;
   }
 
   .btn-ayuda {
-    padding: 0.8rem 1.5rem;
-    background: #667eea;
+    padding: 1rem 1.8rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: 200% 200%;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-weight: 600;
+    border-radius: 15px;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-ayuda::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-ayuda:hover::before {
+    width: 300px;
+    height: 300px;
   }
 
   .btn-ayuda:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    animation: gradient 2s ease infinite;
+  }
+
+  .btn-ayuda:active {
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  .btn-nueva-donacion {
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    background-size: 200% 200%;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    font-size: 1rem;
+  }
+
+  .btn-nueva-donacion:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+    animation: gradient 2s ease infinite;
   }
 
   .bien-categorias-container {
-    margin-top: 1rem;
-    width: 202%;
+    margin-top: 0;
+    width: 203%;
+    max-width: 203%;
   }
 
   .bien-categoria-section {
     margin-bottom: 2rem;
     width: 100%;
+    max-width: 100%;
+    margin-top: 1rem;
   }
 
   .bien-categoria-header {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
     width: 100%;
+    max-width: 100%;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 15px 15px 0 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border-bottom: 3px solid #f0f0f0;
   }
 
   .bien-subtitulo {
@@ -114,24 +495,30 @@ const styles = `
     color: #333;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.7rem;
+    font-weight: 700;
+    margin: 0;
   }
 
   .bien-vacio {
     text-align: center;
-    padding: 3rem;
+    padding: 4rem;
     color: #999;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   }
 
   .tabla-donaciones {
     width: 100%;
+    max-width: 100%;
     background: white;
-    border-radius: 12px;
+    border-radius: 0 0 15px 15px;
     overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    min-height: 400px;
-    max-height: calc(100vh - 300px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    min-height: 500px;
+    max-height: calc(100vh - 320px);
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
@@ -141,15 +528,17 @@ const styles = `
     display: grid;
     grid-template-columns: 80px 1fr 140px 150px 120px 100px;
     gap: 1rem;
-    padding: 1rem 1.5rem;
+    padding: 1.2rem 1.5rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     align-items: center;
     position: sticky;
     top: 0;
     z-index: 10;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .tabla-body {
@@ -157,11 +546,24 @@ const styles = `
     overflow-y: auto;
   }
 
+  .tabla-body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .tabla-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  .tabla-body::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+  }
+
   .tabla-fila {
     display: grid;
     grid-template-columns: 80px 1fr 140px 150px 120px 100px;
     gap: 1rem;
-    padding: 1.2rem 1.5rem;
+    padding: 1.3rem 1.5rem;
     border-bottom: 1px solid #e9ecef;
     align-items: center;
     cursor: pointer;
@@ -175,16 +577,16 @@ const styles = `
     left: 0;
     top: 0;
     height: 100%;
-    width: 3px;
+    width: 4px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     transform: scaleY(0);
     transition: transform 0.3s ease;
   }
 
   .tabla-fila:hover {
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
-    transform: translateX(5px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.08) 0%, rgba(255, 255, 255, 1) 100%);
+    transform: translateX(8px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   }
 
   .tabla-fila:hover::before {
@@ -201,50 +603,82 @@ const styles = `
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
+    padding: 2rem;
   }
 
   .modal-content {
     background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .modal-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  .modal-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
   }
 
   .modal-title {
-    font-size: 1.5rem;
-    color: #333;
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-weight: 800;
+  }
+
+  .form-group {
+    margin-bottom: 1.3rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.6rem;
+    color: #333;
+    font-weight: 700;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
   }
 
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #333;
-    font-weight: 600;
+  .form-group label span {
+    color: #f44336;
   }
 
   .form-group input,
   .form-group select,
   .form-group textarea {
     width: 100%;
-    padding: 0.8rem;
+    padding: 0.9rem;
     border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 1rem;
     transition: all 0.3s ease;
+    font-family: inherit;
   }
 
   .form-group input:focus,
@@ -252,698 +686,844 @@ const styles = `
   .form-group textarea:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
   }
 
   .form-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
   }
 
-  .form-group.full-width {
+  .form-grid-full {
     grid-column: 1 / -1;
+  }
+
+  .foto-upload-area {
+    border: 3px dashed #e0e0e0;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #fafafa;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .foto-upload-area:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.02);
+  }
+
+  .foto-upload-area.has-image {
+    border-style: solid;
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.05);
+  }
+
+  .foto-preview {
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  .btn-upload-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+  }
+
+  .btn-upload-label:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
 
   .modal-actions {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #f0f0f0;
   }
 
-  .btn-guardar,
-  .btn-cancelar,
   .btn-eliminar,
+  .btn-cancelar,
+  .btn-guardar,
   .btn-cerrar {
     padding: 0.8rem 1.5rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     transition: all 0.3s ease;
-  }
-
-  .btn-guardar {
-    background: #4CAF50;
-    color: white;
-  }
-
-  .btn-guardar:hover {
-    background: #45a049;
-  }
-
-  .btn-cancelar {
-    background: #f44336;
-    color: white;
-  }
-
-  .btn-cancelar:hover {
-    background: #da190b;
+    font-size: 0.95rem;
   }
 
   .btn-eliminar {
-    background: #ff9800;
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
     color: white;
   }
 
   .btn-eliminar:hover {
-    background: #fb8c00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+  }
+
+  .btn-cancelar {
+    background: #e0e0e0;
+    color: #333;
+  }
+
+  .btn-cancelar:hover {
+    background: #d0d0d0;
+    transform: translateY(-2px);
+  }
+
+  .btn-guardar {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+  }
+
+  .btn-guardar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
   }
 
   .btn-cerrar {
-    background: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
   }
 
   .btn-cerrar:hover {
-    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .badge-almacen {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: inline-block;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .badge-cantidad {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #4CAF50;
+  }
+
+  .notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    min-width: 300px;
+  }
+
+  .notification.success {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+  }
+
+  .notification.error {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: white;
+  }
+
+  .help-section {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #667eea;
+  }
+
+  .help-section h4 {
+    color: #667eea;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+  }
+
+  .help-section p, .help-section ul {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #555;
+  }
+
+  .help-section ul {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .help-section li {
+    margin-bottom: 0.5rem;
+  }
+
+  .help-section li strong {
+    color: #667eea;
+  }
+
+  @media (max-width: 768px) {
+    .tabla-header,
+    .tabla-fila {
+      grid-template-columns: 60px 1fr 100px 80px;
+    }
+
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .modal-actions {
+      flex-direction: column;
+    }
+
+    .bien-header h2 {
+      font-size: 1.8rem;
+    }
+
+    .bien-busqueda-bar {
+      flex-direction: column;
+    }
   }
 `;
 
 const Donaciones = () => {
   const [donaciones, setDonaciones] = useState([]);
-  const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
   const [busqueda, setBusqueda] = useState('');
-  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+  const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
+  const [notification, setNotification] = useState(null);
   const [formData, setFormData] = useState({
-    id_almacen: '',
-    fecha: new Date().toISOString().split('T')[0],
+    tipo_donacion: '',
     cantidad_donacion: '',
     descripcion: '',
-    tipo_donacion: 'Alimentos',
     observaciones: '',
-    foto_donacion: null,
+    id_almacen: '',
+    fecha: new Date().toISOString().split('T')[0],
+    foto: null,
     foto_preview: null
   });
 
-  const tiposDonacion = [
-    'Alimentos',
-    'Vestimenta',
-    'Medicina',
-    'Enseres',
-    'Bebidas',
-    'Útiles escolares',
-    'Productos de higiene',
-    'Otro'
-  ];
-
+  // Cargar donaciones al montar
   useEffect(() => {
     cargarDonaciones();
   }, );
 
+  // Recargar cada 30 segundos para mantener sincronización
+  useEffect(() => {
+    const interval = setInterval(() => {
+      cargarDonaciones();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, );
+
   const cargarDonaciones = async () => {
     try {
-      setLoading(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Error al cargar donaciones');
-      const data = await res.json();
-      setDonaciones(Array.isArray(data) ? data : data.data || []);
-    } catch (err) {
-      console.error('Error al obtener donaciones:', err);
-      showNotification('Error al cargar las donaciones', 'error');
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error('Error al cargar donaciones');
+      const result = await response.json();
+      
+      // El backend devuelve { success: true, data: [...] }
+      if (result.success && Array.isArray(result.data)) {
+        setDonaciones(result.data);
+      } else if (Array.isArray(result)) {
+        // Por si acaso el backend devuelve directamente el array
+        setDonaciones(result);
+      } else {
+        console.error('Formato de respuesta inesperado:', result);
+        setDonaciones([]);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion('Error al cargar las donaciones', 'error');
       setDonaciones([]);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
+  const mostrarNotificacion = (mensaje, tipo = 'success') => {
+    setNotification({ message: mensaje, type: tipo });
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const resetForm = () => {
-    setFormData({
-      id_almacen: '',
-      fecha: new Date().toISOString().split('T')[0],
-      cantidad_donacion: '',
-      descripcion: '',
-      tipo_donacion: 'Alimentos',
-      observaciones: '',
-      foto_donacion: null,
-      foto_preview: null
-    });
-  };
-
-  const handleCrearDonacion = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.id_almacen || !formData.fecha || !formData.cantidad_donacion) {
-        showNotification('Por favor completa todos los campos obligatorios', 'error');
-        return;
-      }
-
-      const datosDonacion = {
-        id_almacen: parseInt(formData.id_almacen),
-        fecha: formData.fecha,
-        cantidad_donacion: parseFloat(formData.cantidad_donacion),
-        descripcion: formData.descripcion.trim(),
-        tipo_donacion: formData.tipo_donacion,
-        observaciones: formData.observaciones.trim()
-      };
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosDonacion)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear la donación');
-      }
-      
-      await cargarDonaciones();
-      setMostrarModalCrear(false);
-      resetForm();
-      showNotification(`Donación de ${formData.tipo_donacion} registrada exitosamente`, 'success');
-    } catch (err) {
-      console.error('Error al crear:', err);
-      showNotification(err.message || 'Error al crear la donación', 'error');
-    }
-  };
-
-  const handleEditarDonacion = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.id_almacen || !formData.fecha || !formData.cantidad_donacion) {
-        showNotification('Por favor completa todos los campos obligatorios', 'error');
-        return;
-      }
-
-      const idAlmacen = parseInt(formData.id_almacen);
-      const cantidad = parseFloat(formData.cantidad_donacion);
-      
-      if (isNaN(idAlmacen) || idAlmacen < 1) {
-        showNotification('El ID de almacén debe ser un número válido', 'error');
-        return;
-      }
-      
-      if (isNaN(cantidad) || cantidad <= 0) {
-        showNotification('La cantidad debe ser un número válido mayor a 0', 'error');
-        return;
-      }
-
-      const datosActualizados = {
-        id_almacen: idAlmacen,
-        fecha: formData.fecha,
-        cantidad_donacion: cantidad,
-        descripcion: formData.descripcion.trim(),
-        tipo_donacion: formData.tipo_donacion,
-        observaciones: formData.observaciones.trim()
-      };
-
-      const idToUpdate = donacionSeleccionada._id || donacionSeleccionada.id_donacion;
-
-      const res = await fetch(`${API_URL}/${idToUpdate}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosActualizados)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar la donación');
-      }
-      
-      await cargarDonaciones();
-      setDonacionSeleccionada(null);
-      resetForm();
-      showNotification(`Donación actualizada exitosamente`, 'success');
-    } catch (err) {
-      console.error('Error al editar:', err);
-      showNotification(err.message || 'Error al editar la donación', 'error');
-    }
-  };
-
-  const handleEliminarDonacion = async () => {
-    try {
-      const donacionAEliminar = donaciones.find(d => (d._id || d.id_donacion) === (donacionSeleccionada._id || donacionSeleccionada.id_donacion));
-      const idToDelete = donacionSeleccionada._id || donacionSeleccionada.id_donacion;
-      
-      console.log('Eliminando donación ID:', idToDelete);
-
-      const res = await fetch(`${API_URL}/${idToDelete}`, { method: 'DELETE' });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar la donación');
-      }
-      
-      await cargarDonaciones();
-      setDonacionSeleccionada(null);
-      resetForm();
-      showNotification(`Donación eliminada exitosamente`, 'success');
-    } catch (err) {
-      console.error('Error al eliminar:', err);
-      showNotification(err.message || 'Error al eliminar la donación', 'error');
-    }
-  };
-
-  const donacionesFiltradas = donaciones.filter(d => {
-    const terminoBusqueda = busqueda.toLowerCase();
-    return (
-      d.tipo_donacion?.toLowerCase().includes(terminoBusqueda) ||
-      d.descripcion?.toLowerCase().includes(terminoBusqueda) ||
-      d.id_almacen?.toString().includes(terminoBusqueda) ||
-      d.cantidad_donacion?.toString().includes(terminoBusqueda)
-    );
-  });
-
-  const formatDate = (date) => {
-    if (!date) return '-';
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${day}/${month}/${year}`;
-  };
-
-  const getTipoIcon = (tipo) => {
-    const icons = {
-      'Alimentos': <Apple size={18} />,
-      'Vestimenta': <Shirt size={18} />,
-      'Medicina': <Pill size={18} />,
-      'Enseres': <Armchair size={18} />,
-      'Bebidas': <Wine size={18} />,
-      'Útiles escolares': <Book size={18} />,
-      'Productos de higiene': <Droplet size={18} />,
-      'Otro': <Package size={18} />
-    };
-    return icons[tipo] || <Package size={18} />;
-  };
-
-  const handleOpenEditModal = (donacion) => {
-    setDonacionSeleccionada(donacion);
-    
-    let fechaFormateada = '';
-    if (donacion.fecha) {
-      const fecha = new Date(donacion.fecha);
-      const year = fecha.getFullYear();
-      const month = String(fecha.getMonth() + 1).padStart(2, '0');
-      const day = String(fecha.getDate()).padStart(2, '0');
-      fechaFormateada = `${year}-${month}-${day}`;
-    }
-    
-    setFormData({
-      id_almacen: donacion.id_almacen?.toString() || '',
-      fecha: fechaFormateada,
-      cantidad_donacion: donacion.cantidad_donacion?.toString() || '',
-      descripcion: donacion.descripcion || '',
-      tipo_donacion: donacion.tipo_donacion || 'Alimentos',
-      observaciones: donacion.observaciones || '',
-      foto_donacion: null,
-      foto_preview: donacion.foto_donacion || null
-    });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleFotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar que sea una imagen
-      if (!file.type.startsWith('image/')) {
-        showNotification('Por favor selecciona un archivo de imagen válido', 'error');
-        return;
-      }
-      
-      // Validar tamaño (máximo 5MB)
+      // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
-        showNotification('La imagen no debe superar los 5MB', 'error');
+        mostrarNotificacion('La imagen no debe superar 5MB', 'error');
         return;
       }
 
-      // Crear preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({
-          ...formData,
-          foto_donacion: file,
-          foto_preview: reader.result
-        });
-      };
-      reader.readAsDataURL(file);
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        mostrarNotificacion('Solo se permiten imágenes', 'error');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        foto: file,
+        foto_preview: URL.createObjectURL(file)
+      }));
     }
   };
 
   const eliminarFoto = () => {
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
+    setFormData(prev => ({
+      ...prev,
+      foto: null,
+      foto_preview: null
+    }));
+  };
+
+  const handleSubmitNueva = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Validaciones
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+      return;
+    }
+
+    try {
+      const datosEnviar = {
+        tipo_donacion: formData.tipo_donacion,
+        cantidad_donacion: parseInt(formData.cantidad_donacion),
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        id_almacen: parseInt(formData.id_almacen),
+        fecha: new Date().toISOString(),
+        fecha_ingreso: new Date().toISOString()
+      };
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datosEnviar)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear donación');
+      }
+
+      const result = await response.json();
+      
+      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+    }
+  };
+
+  const handleSubmitEditar = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!donacionSeleccionada) return;
+
+    // Validaciones
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+      return;
+    }
+
+    try {
+      const datosEnviar = {
+        tipo_donacion: formData.tipo_donacion,
+        cantidad_donacion: parseInt(formData.cantidad_donacion),
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        id_almacen: parseInt(formData.id_almacen),
+        fecha: formData.fecha || new Date().toISOString()
+      };
+
+      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datosEnviar)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar donación');
+      }
+
+      mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
+    }
+  };
+
+  const handleEliminarDonacion = async () => {
+    if (!donacionSeleccionada) return;
+
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta donación?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar donación');
+      }
+
+      mostrarNotificacion('Donación eliminada exitosamente', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al eliminar la donación', 'error');
+    }
+  };
+
+  const handleCloseModals = () => {
+    setMostrarModal(false);
+    setMostrarModalEditar(false);
+    setDonacionSeleccionada(null);
+    
+    // Limpiar preview
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
+    
     setFormData({
-      ...formData,
-      foto_donacion: null,
+      tipo_donacion: '',
+      cantidad_donacion: '',
+      descripcion: '',
+      observaciones: '',
+      id_almacen: '',
+      fecha: new Date().toISOString().split('T')[0],
+      foto: null,
       foto_preview: null
     });
   };
 
-  const handleCloseModals = () => {
-    setMostrarModalCrear(false);
-    setDonacionSeleccionada(null);
-    resetForm();
+  const handleFilaClick = (donacion) => {
+    setDonacionSeleccionada(donacion);
+    
+    // Cargar datos en el formulario con los nombres correctos
+    setFormData({
+      tipo_donacion: donacion.tipo_donacion || '',
+      cantidad_donacion: donacion.cantidad_donacion || '',
+      descripcion: donacion.descripcion || '',
+      observaciones: donacion.observaciones || '',
+      id_almacen: donacion.id_almacen || '',
+      fecha: donacion.fecha ? new Date(donacion.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      foto: null,
+      foto_preview: donacion.foto ? `http://localhost:5000${donacion.foto}` : null
+    });
+    
+    setMostrarModalEditar(true);
   };
+
+  const handleNuevaDonacion = () => {
+    setFormData({
+      tipo_donacion: '',
+      cantidad_donacion: '',
+      descripcion: '',
+      observaciones: '',
+      id_almacen: '',
+      fecha: new Date().toISOString().split('T')[0],
+      foto: null,
+      foto_preview: null
+    });
+    setMostrarModal(true);
+  };
+
+  const getIconoTipo = (tipo_donacion) => {
+    const iconos = {
+      'Alimentos': <Apple size={20} />,
+      'Vestimenta': <Shirt size={20} />,
+      'Medicina': <Pill size={20} />,
+      'Enseres': <Armchair size={20} />,
+      'Bebidas': <Wine size={20} />,
+      'Útiles escolares': <Book size={20} />,
+      'Productos de higiene': <Droplet size={20} />,
+      'Otro': <Package size={20} />
+    };
+    return iconos[tipo_donacion] || <Package size={20} />;
+  };
+
+  const getColorAlmacen = (id_almacen) => {
+    const colores = {
+      1: '#FF6B6B',
+      2: '#4ECDC4',
+      12: '#45B7D1',
+      23: '#FFA07A',
+      40: '#98D8C8'
+    };
+    return colores[id_almacen] || '#95A5A6';
+  };
+
+  const getNombreAlmacen = (id_almacen) => {
+    const nombres = {
+      1: 'Almacén 1',
+      2: 'Almacén 2',
+      12: 'Almacén 12',
+      23: 'Almacén 23',
+      40: 'Almacén 40'
+    };
+    return nombres[id_almacen] || `Almacén ${id_almacen}`;
+  };
+
+  const donacionesFiltradas = Array.isArray(donaciones) ? donaciones.filter(donacion => {
+    const searchLower = busqueda.toLowerCase();
+    const almacenNombre = getNombreAlmacen(donacion.id_almacen);
+    return (
+      donacion.tipo_donacion?.toLowerCase().includes(searchLower) ||
+      donacion.descripcion?.toLowerCase().includes(searchLower) ||
+      almacenNombre.toLowerCase().includes(searchLower) ||
+      donacion.cantidad_donacion?.toString().includes(searchLower)
+    );
+  }) : [];
 
   return (
     <>
       <style>{styles}</style>
       <div className="bien-container">
+        {/* Iconos flotantes de fondo - 30 iconos */}
+        <div className="floating-icons-background">
+          <div className="floating-icon" style={{ left: '5%', top: '10%' }}><Heart size={80} /></div>
+          <div className="floating-icon" style={{ left: '15%', top: '25%' }}><Gift size={75} /></div>
+          <div className="floating-icon" style={{ left: '25%', top: '15%' }}><HandHeart size={75} /></div>
+          <div className="floating-icon" style={{ left: '35%', top: '30%' }}><Apple size={70} /></div>
+          <div className="floating-icon" style={{ left: '45%', top: '20%' }}><Package size={78} /></div>
+          <div className="floating-icon" style={{ left: '55%', top: '35%' }}><Shirt size={72} /></div>
+          <div className="floating-icon" style={{ left: '65%', top: '25%' }}><Book size={76} /></div>
+          <div className="floating-icon" style={{ left: '75%', top: '40%' }}><Heart size={82} /></div>
+          <div className="floating-icon" style={{ left: '85%', top: '30%' }}><Gift size={74} /></div>
+          <div className="floating-icon" style={{ left: '95%', top: '45%' }}><HandHeart size={80} /></div>
+          
+          <div className="floating-icon" style={{ left: '10%', top: '50%' }}><Pill size={73} /></div>
+          <div className="floating-icon" style={{ left: '20%', top: '65%' }}><Armchair size={77} /></div>
+          <div className="floating-icon" style={{ left: '30%', top: '55%' }}><Wine size={71} /></div>
+          <div className="floating-icon" style={{ left: '40%', top: '70%' }}><Droplet size={79} /></div>
+          <div className="floating-icon" style={{ left: '50%', top: '60%' }}><Heart size={76} /></div>
+          <div className="floating-icon" style={{ left: '60%', top: '75%' }}><Gift size={74} /></div>
+          <div className="floating-icon" style={{ left: '70%', top: '65%' }}><Package size={81} /></div>
+          <div className="floating-icon" style={{ left: '80%', top: '80%' }}><Apple size={75} /></div>
+          <div className="floating-icon" style={{ left: '90%', top: '70%' }}><HandHeart size={78} /></div>
+          
+          <div className="floating-icon" style={{ left: '8%', top: '85%' }}><Book size={72} /></div>
+          <div className="floating-icon" style={{ left: '18%', top: '95%' }}><Shirt size={76} /></div>
+          <div className="floating-icon" style={{ left: '28%', top: '90%' }}><Heart size={80} /></div>
+          <div className="floating-icon" style={{ left: '38%', top: '5%' }}><Gift size={74} /></div>
+          <div className="floating-icon" style={{ left: '48%', top: '95%' }}><Pill size={74} /></div>
+          <div className="floating-icon" style={{ left: '58%', top: '5%' }}><Armchair size={73} /></div>
+          <div className="floating-icon" style={{ left: '68%', top: '90%' }}><Wine size={79} /></div>
+          <div className="floating-icon" style={{ left: '78%', top: '10%' }}><Droplet size={75} /></div>
+          <div className="floating-icon" style={{ left: '88%', top: '95%' }}><Package size={82} /></div>
+          <div className="floating-icon" style={{ left: '12%', top: '40%' }}><HandHeart size={78} /></div>
+          <div className="floating-icon" style={{ left: '92%', top: '55%' }}><Heart size={76} /></div>
+        </div>
+
         <motion.div 
           className="bien-header"
-          initial={{ opacity: 0, y: -30 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+          transition={{ duration: 0.5 }}
         >
+          {/* Iconos decorativos fijos en el header */}
+          <div className="header-decoration-icon pulse" style={{ top: '10px', left: '20px' }}>
+            <Heart size={35} />
+          </div>
+          <div className="header-decoration-icon float" style={{ top: '15px', right: '30px' }}>
+            <Gift size={32} />
+          </div>
+          <div className="header-decoration-icon pulse" style={{ top: '80px', left: '50px' }}>
+            <HandHeart size={28} />
+          </div>
+          <div className="header-decoration-icon float" style={{ top: '70px', right: '60px' }}>
+            <Package size={30} />
+          </div>
+          <div className="header-decoration-icon pulse" style={{ bottom: '80px', left: '30px' }}>
+            <Apple size={33} />
+          </div>
+          <div className="header-decoration-icon float" style={{ bottom: '90px', right: '40px' }}>
+            <Shirt size={29} />
+          </div>
+          <div className="header-decoration-icon pulse" style={{ bottom: '20px', left: '70px' }}>
+            <Book size={31} />
+          </div>
+          <div className="header-decoration-icon float" style={{ bottom: '30px', right: '80px' }}>
+            <Pill size={27} />
+          </div>
+          <div className="header-decoration-icon pulse" style={{ top: '50%', left: '10px', transform: 'translateY(-50%)' }}>
+            <Droplet size={26} />
+          </div>
+          <div className="header-decoration-icon float" style={{ top: '50%', right: '15px', transform: 'translateY(-50%)' }}>
+            <Wine size={28} />
+          </div>
+          <div className="header-decoration-icon pulse" style={{ top: '40px', left: '45%' }}>
+            <Heart size={24} />
+          </div>
+          <div className="header-decoration-icon float" style={{ bottom: '50px', right: '48%' }}>
+            <Gift size={25} />
+          </div>
+
           <motion.h2
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+            transition={{ delay: 0.2 }}
           >
             Sistema de Donaciones
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
           >
             Gestiona y controla todas las donaciones recibidas
           </motion.p>
-          <motion.div 
-            className="bien-busqueda-bar"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            <div style={{ position: 'relative', flex: 1 }}>
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
-              >
-                <Search size={18} />
-              </motion.div>
-              <input
+
+          <div className="bien-busqueda-bar">
+            <div className="search-container">
+              <Search className="search-icon" size={20} />
+              <motion.input
                 type="text"
-                className="bien-busqueda"
                 placeholder="Buscar por tipo, descripción, almacén o cantidad..."
+                className="bien-busqueda"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-            <motion.button 
-              className="btn-ayuda" 
-              onClick={() => setMostrarAyuda(true)} 
-              title="Ver ayuda"
-              whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <HelpCircle size={18} />
-              </motion.div>
-              Ayuda
-            </motion.button>
-            <motion.button 
-              className="btn-ayuda" 
-              onClick={() => setMostrarModalCrear(true)} 
-              title="Registrar nueva donación"
-              whileHover={{ 
-                scale: 1.08, 
-                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <Plus size={18} />
-              </motion.div>
-              Nueva Donación
-            </motion.button>
-          </motion.div>
-        </motion.div>
-
-        {loading && donaciones.length === 0 ? (
-          <motion.div 
-            style={{ textAlign: 'center', padding: '3rem' }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              style={{ display: 'inline-block', marginBottom: '1rem' }}
-            >
-              <Package size={40} color="#667eea" />
-            </motion.div>
-            <p style={{ color: '#667eea', fontWeight: '600' }}>Cargando donaciones...</p>
-          </motion.div>
-        ) : (
-          <motion.div 
-            className="bien-categorias-container"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <motion.div 
-              className="bien-categoria-section"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              <motion.div 
-                className="bien-categoria-header"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h3 className="bien-subtitulo">
-                  <motion.div
-                    initial={{ rotate: -180, scale: 0 }}
-                    animate={{ rotate: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  >
-                    <Package size={20} style={{ color: '#667eea' }} />
-                  </motion.div>
-                  Todas las Donaciones ({donacionesFiltradas.length})
-                </h3>
-              </motion.div>
-          
-              {donacionesFiltradas.length === 0 ? (
-                <motion.p 
-                  className="bien-vacio"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  No hay donaciones registradas.
-                </motion.p>
-              ) : (
-                <motion.div 
-                  className="tabla-donaciones"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                >
-                  <motion.div 
-                    className="tabla-header"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      >
-                        <Hash size={14} />
-                      </motion.div>
-                      ID
-                    </div>
-                    <div>TIPO & DESCRIPCIÓN</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Warehouse size={14} />
-                      ALMACÉN
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Calendar size={14} />
-                      FECHA
-                    </div>
-                    <div style={{ textAlign: 'center' }}>CANTIDAD</div>
-                    <div style={{ textAlign: 'center' }}>ACCIONES</div>
-                  </motion.div>
+                transition={{ delay: 0.6 }}
+                whileFocus={{ scale: 1.02 }}
+              />
+            </div>
+            
+            <motion.button 
+              className="btn-ayuda" 
+              onClick={() => setMostrarAyuda(true)}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <HelpCircle size={18} />
+              <span>Ayuda</span>
+            </motion.button>
 
-                  <div className="tabla-body">
-                    {donacionesFiltradas.map((donacion, index) => (
+            <motion.button 
+              className="btn-nueva-donacion" 
+              onClick={handleNuevaDonacion}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="icon-animated">
+                <Plus size={20} />
+              </span>
+              <span>Nueva Donación</span>
+            </motion.button>
+          </div>
+        </motion.div>
+
+        <div className="bien-categorias-container">
+          {donacionesFiltradas.length === 0 ? (
+            <motion.div 
+              className="bien-vacio"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <Package size={60} color="#ccc" style={{ marginBottom: '1rem' }} />
+              <p>No se encontraron donaciones</p>
+            </motion.div>
+          ) : (
+            <motion.div 
+              className="bien-categoria-section"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="bien-categoria-header">
+                <h3 className="bien-subtitulo">
+                  <Package size={24} />
+                  <span>Todas las Donaciones ({donacionesFiltradas.length})</span>
+                </h3>
+              </div>
+
+              <motion.div 
+                className="tabla-donaciones"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="tabla-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Hash size={14} />
+                    ID
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Package size={14} />
+                    TIPO & DESCRIPCIÓN
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Warehouse size={14} />
+                    ALMACÉN
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Calendar size={14} />
+                    FECHA
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Hash size={14} />
+                    CANTIDAD
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <Edit size={14} style={{ display: 'inline' }} />
+                  </div>
+                </div>
+
+                <div className="tabla-body">
+                  <AnimatePresence>
+                    {donacionesFiltradas.map((donacion, idx) => (
                       <motion.div
                         key={donacion._id || donacion.id_donacion}
                         className="tabla-fila"
-                        initial={{ opacity: 0, x: -50 }}
+                        onClick={() => handleFilaClick(donacion)}
+                        initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ 
-                          delay: Math.min(index * 0.05, 1),
-                          duration: 0.4,
-                          type: "spring",
-                          stiffness: 100
-                        }}
-                        onClick={() => handleOpenEditModal(donacion)}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: idx * 0.02 }}
+                        whileHover={{ scale: 1.01 }}
                       >
-                        <motion.div 
-                          style={{ 
-                            fontWeight: 'bold', 
-                            color: '#FF9800',
-                            fontSize: '0.95rem'
-                          }}
-                          whileHover={{ scale: 1.1 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
-                          #{donacion.id_donacion || donacion._id}
-                        </motion.div>
-
+                        <div style={{ 
+                          fontWeight: '700', 
+                          color: '#667eea',
+                          fontSize: '0.9rem'
+                        }}>
+                          #{donacion.id_donacion || idx + 1}
+                        </div>
+                        
                         <div>
-                          <motion.div 
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '10px',
-                              marginBottom: donacion.descripcion ? '5px' : '0'
-                            }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.05 + 0.2 }}
-                          >
-                            <motion.span 
-                              style={{ display: 'flex', alignItems: 'center' }}
-                              whileHover={{ rotate: 360, scale: 1.2 }}
-                              transition={{ duration: 0.5 }}
-                            >
-                              {getTipoIcon(donacion.tipo_donacion)}
-                            </motion.span>
-                            <span style={{ 
-                              fontWeight: '600',
-                              fontSize: '1rem',
-                              color: '#333'
-                            }}>
-                              {donacion.tipo_donacion}
-                            </span>
-                          </motion.div>
-                          {donacion.descripcion && (
-                            <motion.div 
-                              style={{ 
-                                fontSize: '0.85rem',
-                                color: '#666',
-                                marginLeft: '35px',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.05 + 0.3 }}
-                            >
-                              {donacion.descripcion}
-                            </motion.div>
-                          )}
+                          <div style={{ 
+                            fontWeight: '600', 
+                            marginBottom: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '0.95rem'
+                          }}>
+                            {getIconoTipo(donacion.tipo_donacion)}
+                            {donacion.tipo_donacion}
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.85rem', 
+                            color: '#666',
+                            fontStyle: 'italic'
+                          }}>
+                            {donacion.descripcion || 'Sin descripción'}
+                          </div>
                         </div>
 
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
-                          <span style={{ 
-                            padding: '4px 12px',
-                            background: '#FF9800',
-                            color: 'white',
-                            borderRadius: '20px',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            display: 'inline-block'
-                          }}>
-                            Almacén {donacion.id_almacen}
-                          </span>
-                        </motion.div>
-
-                        <motion.div 
-                          style={{ 
-                            fontSize: '0.9rem',
-                            color: '#555'
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.05 + 0.25 }}
-                        >
-                          {formatDate(donacion.fecha)}
-                        </motion.div>
-
-                        <motion.div 
-                          style={{ 
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            color: '#4CAF50',
-                            fontSize: '1.2rem'
-                          }}
-                          whileHover={{ scale: 1.15, color: '#45a049' }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
-                          {donacion.cantidad_donacion}
-                        </motion.div>
-
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'center',
-                          gap: '8px'
-                        }}>
-                          <motion.button
-                            whileHover={{ 
-                              scale: 1.2,
-                              rotate: 15,
-                              transition: { duration: 0.2 }
+                        <div>
+                          <span 
+                            className="badge-almacen"
+                            style={{ 
+                              background: getColorAlmacen(donacion.id_almacen),
+                              color: 'white'
                             }}
-                            whileTap={{ scale: 0.9, rotate: -15 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEditModal(donacion);
-                            }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#2196F3',
-                              padding: '5px',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}
-                            title="Editar"
                           >
-                            <Edit size={18} />
-                          </motion.button>
+                            {getNombreAlmacen(donacion.id_almacen)}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.9rem', color: '#555' }}>
+                          {new Date(donacion.fecha).toLocaleDateString('es-ES')}
+                        </div>
+
+                        <div className="badge-cantidad">
+                          {donacion.cantidad_donacion}
+                        </div>
+
+                        <div style={{ textAlign: 'center' }}>
+                          <motion.div
+                            whileHover={{ scale: 1.2, rotate: 15 }}
+                            style={{ display: 'inline-block' }}
+                          >
+                            <Edit size={18} color="#667eea" />
+                          </motion.div>
                         </div>
                       </motion.div>
                     ))}
-                  </div>
-                </motion.div>
-              )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </div>
 
-        {/* Modal Crear Donación */}
+        {/* Modal Nueva Donación */}
         <AnimatePresence>
-          {mostrarModalCrear && (
+          {mostrarModal && (
             <motion.div 
               className="modal-overlay" 
               onClick={handleCloseModals}
@@ -953,121 +1533,110 @@ const Donaciones = () => {
             >
               <motion.div 
                 className="modal-content" 
-                style={{ maxWidth: '700px', maxHeight: '90vh', overflow: 'auto' }} 
+                style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 50 }}
+                initial={{ scale: 0.8, y: 50 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ type: "spring", damping: 25 }}
+                exit={{ scale: 0.8, y: 50 }}
+                transition={{ type: "spring", damping: 20 }}
               >
                 <h3 className="modal-title">
-                  <Plus size={20} />
-                  Registrar Nueva Donación
+                  <Plus size={24} />
+                  Nueva Donación
                 </h3>
-                <form onSubmit={handleCrearDonacion}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div className="form-group">
-                        <label>ID Almacén *</label>
-                        <input
-                          type="number"
-                          value={formData.id_almacen}
-                          onChange={(e) => setFormData({...formData, id_almacen: e.target.value})}
-                          placeholder="Número de almacén"
-                          required
-                          min="1"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Fecha *</label>
-                        <input
-                          type="date"
-                          value={formData.fecha}
-                          onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div className="form-group">
-                        <label>Tipo de Donación *</label>
-                        <select
-                          value={formData.tipo_donacion}
-                          onChange={(e) => setFormData({...formData, tipo_donacion: e.target.value})}
-                          required
-                        >
-                          {tiposDonacion.map((tipo) => (
-                            <option key={tipo} value={tipo}>
-                              {tipo}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Cantidad *</label>
-                        <input
-                          type="number"
-                          value={formData.cantidad_donacion}
-                          onChange={(e) => setFormData({...formData, cantidad_donacion: e.target.value})}
-                          placeholder="Cantidad recibida"
-                          required
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
+                
+                <form onSubmit={handleSubmitNueva}>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>
+                        Tipo de Donación <span>*</span>
+                      </label>
+                      <select 
+                        name="tipo_donacion" 
+                        value={formData.tipo_donacion} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Enseres">Enseres</option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Útiles escolares">Utiles Escolares</option>
+                        <option value="Material Audiovisual">Mateial Audiovisual</option>
+                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Productos de higiene">Productos de Higiene</option>
+                        <option value="Otro">Otro</option>
+                      </select>
                     </div>
 
                     <div className="form-group">
+                      <label>
+                        Cantidad <span>*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        name="cantidad_donacion" 
+                        value={formData.cantidad_donacion} 
+                        onChange={handleInputChange}
+                        min="1"
+                        placeholder="Ingrese la cantidad"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group form-grid-full">
                       <label>Descripción</label>
-                      <textarea
-                        value={formData.descripcion}
-                        onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                        placeholder="Describe la donación recibida..."
-                        rows="3"
-                        maxLength={1000}
+                      <textarea 
+                        name="descripcion" 
+                        value={formData.descripcion} 
+                        onChange={handleInputChange}
+                        placeholder="Describe la donación..."
                       />
-                      <small style={{ color: '#666', fontSize: '0.85rem' }}>
-                        {formData.descripcion.length}/1000 caracteres
-                      </small>
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group form-grid-full">
                       <label>Observaciones</label>
-                      <textarea
-                        value={formData.observaciones}
-                        onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
-                        placeholder="Observaciones adicionales..."
-                        rows="2"
-                        maxLength={500}
+                      <textarea 
+                        name="observaciones" 
+                        value={formData.observaciones} 
+                        onChange={handleInputChange}
+                        placeholder="Notas adicionales..."
                       />
-                      <small style={{ color: '#666', fontSize: '0.85rem' }}>
-                        {formData.observaciones.length}/500 caracteres
-                      </small>
                     </div>
 
                     <div className="form-group">
-                      <label>Foto de la Donación</label>
-                      <div style={{ 
-                        border: '2px dashed #e0e0e0', 
-                        borderRadius: '8px', 
-                        padding: '1rem',
-                        textAlign: 'center',
-                        transition: 'all 0.3s ease'
-                      }}>
+                      <label>
+                        Almacén <span>*</span>
+                      </label>
+                      <select 
+                        name="id_almacen" 
+                        value={formData.id_almacen} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar almacén</option>
+                        <option value="1">Almacén 1</option>
+                        <option value="2">Almacén 2</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group form-grid-full">
+                      <label>
+                        <ImagePlus size={16} />
+                        Foto de la Donación
+                      </label>
+                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
                         {formData.foto_preview ? (
                           <div>
                             <img 
                               src={formData.foto_preview} 
                               alt="Preview" 
-                              style={{ 
-                                maxWidth: '100%', 
-                                maxHeight: '200px', 
-                                borderRadius: '8px',
-                                marginBottom: '1rem'
-                              }} 
+                              className="foto-preview"
                             />
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                               <motion.button
@@ -1075,48 +1644,31 @@ const Donaciones = () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                style={{
-                                  padding: '0.5rem 1rem',
-                                  background: '#f44336',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.9rem'
-                                }}
+                                className="btn-eliminar"
                               >
+                                <Trash2 size={16} />
                                 Eliminar foto
                               </motion.button>
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <Package size={40} color="#999" style={{ marginBottom: '0.5rem' }} />
-                            <p style={{ color: '#666', marginBottom: '0.5rem' }}>
-                              Haz clic para seleccionar una imagen
+                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: '#666', marginBottom: '1rem', fontSize: '1rem' }}>
+                              Arrastra una imagen o haz clic para seleccionar
                             </p>
                             <input
                               type="file"
                               accept="image/*"
                               onChange={handleFotoChange}
                               style={{ display: 'none' }}
-                              id="foto-upload-crear"
+                              id="foto-upload-nueva"
                             />
-                            <label 
-                              htmlFor="foto-upload-crear"
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.5rem 1rem',
-                                background: '#667eea',
-                                color: 'white',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem'
-                              }}
-                            >
+                            <label htmlFor="foto-upload-nueva" className="btn-upload-label">
+                              <ImagePlus size={18} />
                               Seleccionar imagen
                             </label>
-                            <small style={{ display: 'block', marginTop: '0.5rem', color: '#999', fontSize: '0.85rem' }}>
+                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
                               Formatos: JPG, PNG, GIF. Máximo 5MB
                             </small>
                           </div>
@@ -1125,7 +1677,7 @@ const Donaciones = () => {
                     </div>
                   </div>
 
-                  <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+                  <div className="modal-actions">
                     <motion.button 
                       type="button" 
                       className="btn-cancelar" 
@@ -1142,8 +1694,8 @@ const Donaciones = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Check size={16} />
-                      Registrar Donación
+                      <Save size={16} />
+                      Guardar Donación
                     </motion.button>
                   </div>
                 </form>
@@ -1154,7 +1706,7 @@ const Donaciones = () => {
 
         {/* Modal Editar Donación */}
         <AnimatePresence>
-          {donacionSeleccionada && (
+          {mostrarModalEditar && donacionSeleccionada && (
             <motion.div 
               className="modal-overlay" 
               onClick={handleCloseModals}
@@ -1164,107 +1716,109 @@ const Donaciones = () => {
             >
               <motion.div 
                 className="modal-content" 
-                style={{ maxWidth: '700px', maxHeight: '90vh', overflow: 'auto' }} 
+                style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 50 }}
+                initial={{ scale: 0.8, y: 50 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ type: "spring", damping: 25 }}
+                exit={{ scale: 0.8, y: 50 }}
+                transition={{ type: "spring", damping: 20 }}
               >
                 <h3 className="modal-title">
-                  <Edit size={20} />
+                  <Edit size={24} />
                   Editar Donación
                 </h3>
-                <form onSubmit={handleEditarDonacion}>
+                
+                <form onSubmit={handleSubmitEditar}>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>ID Almacén *</label>
-                      <input
-                        type="number"
-                        value={formData.id_almacen}
-                        onChange={(e) => setFormData({...formData, id_almacen: e.target.value})}
-                        required
-                        min="1"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Fecha *</label>
-                      <input
-                        type="date"
-                        value={formData.fecha}
-                        onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Tipo de Donación *</label>
-                      <select
-                        value={formData.tipo_donacion}
-                        onChange={(e) => setFormData({...formData, tipo_donacion: e.target.value})}
+                      <label>
+                        Tipo de Donación <span>*</span>
+                      </label>
+                      <select 
+                        name="tipo_donacion" 
+                        value={formData.tipo_donacion} 
+                        onChange={handleInputChange}
                         required
                       >
-                        {tiposDonacion.map((tipo) => (
-                          <option key={tipo} value={tipo}>
-                            {tipo}
-                          </option>
-                        ))}
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Enseres">Enseres</option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Útiles escolares">Utiles Escolares</option>
+                        <option value="Material Audiovisual">Mateial Audiovisual</option>
+                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Productos de higiene">Productos de Higiene</option>
+                        <option value="Otro">Otro</option>
                       </select>
                     </div>
 
                     <div className="form-group">
-                      <label>Cantidad *</label>
-                      <input
-                        type="number"
-                        value={formData.cantidad_donacion}
-                        onChange={(e) => setFormData({...formData, cantidad_donacion: e.target.value})}
+                      <label>
+                        Cantidad <span>*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        name="cantidad_donacion" 
+                        value={formData.cantidad_donacion} 
+                        onChange={handleInputChange}
+                        min="1"
                         required
-                        min="0"
-                        step="0.01"
                       />
                     </div>
 
-                    <div className="form-group full-width">
+                    <div className="form-group form-grid-full">
                       <label>Descripción</label>
-                      <textarea
-                        value={formData.descripcion}
-                        onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                        rows="3"
-                        maxLength={1000}
+                      <textarea 
+                        name="descripcion" 
+                        value={formData.descripcion} 
+                        onChange={handleInputChange}
+                        placeholder="Describe la donación..."
                       />
                     </div>
 
-                    <div className="form-group full-width">
+                    <div className="form-group form-grid-full">
                       <label>Observaciones</label>
-                      <textarea
-                        value={formData.observaciones}
-                        onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
-                        rows="2"
-                        maxLength={500}
+                      <textarea 
+                        name="observaciones" 
+                        value={formData.observaciones} 
+                        onChange={handleInputChange}
+                        placeholder="Notas adicionales..."
                       />
                     </div>
 
-                    <div className="form-group full-width">
-                      <label>Foto de la Donación</label>
-                      <div style={{ 
-                        border: '2px dashed #e0e0e0', 
-                        borderRadius: '8px', 
-                        padding: '1rem',
-                        textAlign: 'center',
-                        transition: 'all 0.3s ease'
-                      }}>
+                    <div className="form-group">
+                      <label>
+                        Almacén <span>*</span>
+                      </label>
+                      <select 
+                        name="id_almacen" 
+                        value={formData.id_almacen} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar almacén</option>
+                        <option value="1">Almacén 1</option>
+                        <option value="2">Almacén 2</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group form-grid-full">
+                      <label>
+                        <ImagePlus size={16} />
+                        Foto de la Donación
+                      </label>
+                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
                         {formData.foto_preview ? (
                           <div>
                             <img 
                               src={formData.foto_preview} 
                               alt="Preview" 
-                              style={{ 
-                                maxWidth: '100%', 
-                                maxHeight: '200px', 
-                                borderRadius: '8px',
-                                marginBottom: '1rem'
-                              }} 
+                              className="foto-preview"
                             />
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                               <motion.button
@@ -1272,25 +1826,32 @@ const Donaciones = () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                style={{
-                                  padding: '0.5rem 1rem',
-                                  background: '#f44336',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.9rem'
-                                }}
+                                className="btn-eliminar"
                               >
+                                <Trash2 size={16} />
                                 Eliminar foto
                               </motion.button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFotoChange}
+                                style={{ display: 'none' }}
+                                id="foto-upload-editar-replace"
+                              />
+                              <label 
+                                htmlFor="foto-upload-editar-replace"
+                                className="btn-upload-label"
+                              >
+                                <Upload size={16} />
+                                Cambiar foto
+                              </label>
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <Package size={40} color="#999" style={{ marginBottom: '0.5rem' }} />
-                            <p style={{ color: '#666', marginBottom: '0.5rem' }}>
-                              Haz clic para seleccionar una imagen
+                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: '#666', marginBottom: '1rem' }}>
+                              Arrastra una imagen o haz clic para seleccionar
                             </p>
                             <input
                               type="file"
@@ -1301,19 +1862,12 @@ const Donaciones = () => {
                             />
                             <label 
                               htmlFor="foto-upload-editar"
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.5rem 1rem',
-                                background: '#667eea',
-                                color: 'white',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem'
-                              }}
+                              className="btn-upload-label"
                             >
+                              <ImagePlus size={18} />
                               Seleccionar imagen
                             </label>
-                            <small style={{ display: 'block', marginTop: '0.5rem', color: '#999', fontSize: '0.85rem' }}>
+                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
                               Formatos: JPG, PNG, GIF. Máximo 5MB
                             </small>
                           </div>
@@ -1326,11 +1880,7 @@ const Donaciones = () => {
                     <motion.button 
                       type="button" 
                       className="btn-eliminar" 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleEliminarDonacion();
-                      }}
+                      onClick={handleEliminarDonacion}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1340,11 +1890,7 @@ const Donaciones = () => {
                     <motion.button 
                       type="button" 
                       className="btn-cancelar" 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleCloseModals();
-                      }}
+                      onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1354,9 +1900,6 @@ const Donaciones = () => {
                     <motion.button 
                       type="submit" 
                       className="btn-guardar"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1374,25 +1917,18 @@ const Donaciones = () => {
         <AnimatePresence>
           {notification && (
             <motion.div
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              style={{
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                zIndex: 10000,
-                background: notification.type === 'success' ? '#4CAF50' : '#f44336',
-                color: 'white',
-                padding: '1rem 1.5rem',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}
+              className={`notification ${notification.type}`}
+              initial={{ opacity: 0, y: -50, x: 100 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: -50, x: 100 }}
+              transition={{ type: "spring", damping: 20 }}
             >
-              {notification.message}
+              {notification.type === 'success' ? (
+                <CheckCircle size={24} />
+              ) : (
+                <AlertCircle size={24} />
+              )}
+              <span>{notification.message}</span>
               <button
                 onClick={() => setNotification(null)}
                 style={{
@@ -1400,7 +1936,7 @@ const Donaciones = () => {
                   border: 'none',
                   color: 'white',
                   cursor: 'pointer',
-                  padding: '2px',
+                  padding: '4px',
                   display: 'flex',
                   alignItems: 'center'
                 }}
@@ -1411,7 +1947,7 @@ const Donaciones = () => {
           )}
         </AnimatePresence>
 
-        {/* Modal Ayuda */}
+        {/* Modal Ayuda Mejorado */}
         <AnimatePresence>
           {mostrarAyuda && (
             <motion.div 
@@ -1423,54 +1959,66 @@ const Donaciones = () => {
             >
               <motion.div 
                 className="modal-content" 
-                style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto', paddingBottom: '80px' }} 
+                style={{ maxWidth: '580px', maxHeight: '85vh' }}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 50 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ type: "spring", damping: 25 }}
+                initial={{ scale: 0.8, rotateX: 90 }}
+                animate={{ scale: 1, rotateX: 0 }}
+                exit={{ scale: 0.8, rotateX: 90 }}
+                transition={{ type: "spring", damping: 20 }}
               >
                 <h3 className="modal-title">
-                  <Book size={20} />
+                  <Sparkles size={24} />
                   Guía de Uso - Sistema de Donaciones
                 </h3>
                 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Search size={16} />
-                    Búsqueda
+                <div className="help-section">
+                  <h4>
+                    <Search size={18} />
+                    Búsqueda Inteligente
                   </h4>
-                  <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por tipo, descripción, almacén o cantidad.</p>
+                  <p>Utiliza la barra de búsqueda para filtrar donaciones por tipo, descripción, almacén o cantidad. Los resultados se actualizan en tiempo real.</p>
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Package size={16} />
-                    Tipos de Donación
+                <div className="help-section">
+                  <h4>
+                    <Package size={18} />
+                    Tipos de Donación Disponibles
                   </h4>
-                  <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    <li><strong>Alimentos:</strong> Donaciones de alimentos</li>
-                    <li><strong>Vestimenta:</strong> Ropa y calzado</li>
-                    <li><strong>Medicina:</strong> Medicamentos y suministros médicos</li>
-                    <li><strong>Enseres:</strong> Muebles y enseres</li>
-                    <li><strong>Bebidas:</strong> Bebidas y líquidos</li>
-                    <li><strong>Útiles escolares:</strong> Material educativo</li>
-                    <li><strong>Productos de higiene:</strong> Artículos de limpieza</li>
-                    <li><strong>Otro:</strong> Otras donaciones</li>
+                  <ul>
+                    <li><strong>Alimentos:</strong> </li>
+                    <li><strong>Instrumentos musicales:</strong> </li>
+                    <li><strong>Medicina:</strong> </li>
+                    <li><strong>Enseres:</strong> </li>
+                    <li><strong>Accesiorios Musuicales:</strong> </li>
+                    <li><strong>Útiles escolares:</strong> </li>
+                    <li><strong>Productos de higiene:</strong> </li>
+                    <li><strong>Material Audiovisual:</strong> </li>
+                    <li><strong>Material didactico:</strong> </li>
+                    <li><strong>Otro:</strong> </li>
                   </ul>
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    ✨ Funciones
+                <div className="help-section">
+                  <h4>
+                    <Sparkles size={18} />
+                    Funciones Principales
                   </h4>
-                  <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    <li>Clic en fila para ver/editar detalles</li>
-                    <li>Registro con fecha automática</li>
-                    <li>Búsqueda en tiempo real</li>
-                    <li>Vista de lista organizada</li>
-                    <li>Iconos visuales por tipo</li>
+                  <ul>
+                    <li><strong>Agregar:</strong> Clic en "Nueva Donación" para registrar</li>
+                    <li><strong>Editar:</strong> Clic en cualquier fila para ver/editar detalles</li>
+                    <li><strong>Eliminar:</strong> Dentro del modal de edición</li>
+                    <li><strong>Fotos:</strong> Adjunta imágenes de hasta 5MB</li>
+                    <li><strong>Auto-guardado:</strong> La fecha se registra automáticamente</li>
+                    <li><strong>Sincronización:</strong> Los datos se actualizan cada 30 segundos</li>
                   </ul>
+                </div>
+
+                <div className="help-section">
+                  <h4>
+                    <Warehouse size={18} />
+                    Almacenes Disponibles
+                  </h4>
+                  <p>Selecciona el almacén donde se almacenará la donación. Cada almacén tiene un color distintivo para fácil identificación visual.</p>
                 </div>
 
                 <div style={{ 
@@ -1478,24 +2026,25 @@ const Donaciones = () => {
                   bottom: '0', 
                   left: '0', 
                   right: '0', 
-                  padding: '1rem', 
+                  padding: '1.5rem', 
                   background: 'white', 
-                  borderTop: '1px solid #e0e0e0',
-                  marginLeft: '-2rem',
-                  marginRight: '-2rem',
-                  marginBottom: '-2rem',
+                  borderTop: '2px solid #f0f0f0',
+                  marginLeft: '-2.5rem',
+                  marginRight: '-2.5rem',
+                  marginBottom: '-2.5rem',
                   display: 'flex',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  gap: '1rem'
                 }}>
                   <motion.button 
                     className="btn-cerrar" 
                     onClick={() => setMostrarAyuda(false)}
-                    style={{ width: '200px' }}
+                    style={{ minWidth: '200px' }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Check size={16} />
-                    Entendido
+                    <Check size={18} />
+                    ¡Entendido!
                   </motion.button>
                 </div>
               </motion.div>

@@ -13,26 +13,31 @@ const DashboardCards = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
+      useEffect(() => {
     const fetchModulos = async () => {
       try {
         const user = auth.currentUser;
+        if (!user) return; // por si no hay usuario autenticado
+
         const token = await user.getIdToken();
-        const res = await axios.get("http://localhost:5000/api/dashboard", {
-        headers: {
+
+        // ✅ llamada correcta al backend
         const res = await axios.get(`${API_URL}api/dashboard`, {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
-        setModulos(res.data.modulos);
+
+        // ✅ actualiza el estado con los módulos recibidos
+        setModulos(res.data.modulos || []);
       } catch (err) {
-        console.error("Error al cargar módulos:", err);
+        console.error("❌ Error al cargar módulos:", err);
       }
     };
 
     fetchModulos();
-  }, []);
+  }, []); 
+
 
   return (
     <div className="main dashboard-container">
