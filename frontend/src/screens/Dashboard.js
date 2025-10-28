@@ -17,12 +17,16 @@ const DashboardCards = () => {
     const fetchModulos = async () => {
       try {
         const user = auth.currentUser;
+        if (!user) return;
+
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}api/dashboard`, {
-          headers: {
+
+        const res = await axios.get("http://localhost:5000/api/dashboard", {
+        headers: {
             Authorization: `Bearer ${token}`
-          }
+          },
         });
+
         setModulos(res.data.modulos);
       } catch (err) {
         console.error("Error al cargar módulos:", err);
