@@ -1,236 +1,205 @@
-/* 🔹 Contenedor general */
+/* --- Layout general --- */
 .RolHeader {
-  width: 100vw;
-  max-height: 92vh;
-  overflow-y: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE y Edge antiguos */
-  background-color: #f5f7fb;
-  padding-bottom: 60px;
+  width: 100%;
+  margin: auto;
+  
+  font-family: "Segoe UI", sans-serif;
+  color: #0a2d56;
+  padding: 30px 40px 40px 40px;
+  background-color: rgb(247, 247, 247);
 }
 
-.RolHeader::-webkit-scrollbar {
-  display: none;
+/* --- Header principal --- */
+.fancy-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: linear-gradient(135deg, #0a66c2, #3b8df5);
+  padding: 15px 25px;
+  border-radius: 12px;
+  color: white;
+}
+.iconHeader {
+  color: white;
+}
+.asignarRol-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 26px;
 }
 
-/* 🔹 Encabezado superior */
-.headerRoles {
+/* --- Filtros --- */
+.filtros-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 20px 0;
+}
+.filtro-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  gap: 10px;
+  border: 2px solid #0a66c2;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+.inputFiltro {
+  border: none;
+  outline: none;
+  width: 220px;
+}
+.selectFiltro {
+  border: 2px solid #0a66c2;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #e8f0fe;
+  cursor: pointer;
+}
+
+/* --- Tabla de Usuarios --- */
+.tabla-container {
+  overflow-x: auto;
+  background: white;
+  border-radius: 14px;
+  padding: 15px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+.tablaUsuarios {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.tablaUsuarios thead {
+   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+.tablaUsuarios thead th {
+  padding: 12px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.tablaUsuarios tbody tr {
+  border-bottom: 1px solid #ddd;
+  transition: .3s ease;
+}
+.tablaUsuarios tbody tr:hover {
+  background: #e1efff;
+  transform: scale(1.01);
+}
+.tablaUsuarios td {
+  padding: 12px;
+  color: #0a2d56;
+}
+
+/* Acciones */
+.acciones {
   display: flex;
   justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #1753c2, #0f2a7b);
-  color: #fff;
-  padding: 14px 0;
-  border-radius: 12px;
-  margin: 30px 60px 25px 60px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-}
-
-.asignarRol-title {
-  font-size: 1.9rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  margin: 0;
-}
-
-/* 🔹 Contenedor principal */
-.asignarRol-container {
-  margin: 0 60px;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-/* 🔍 Filtros */
-.asignarRol-filtros {
-  display: flex;
-  gap: 15px;
-  align-items: center;  
-}
-
-.asignarRol-input {
-  flex: 1;
-  border: 2px solid #aab3d1;
-  height: 45px;
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-size: 15px;
-  color: #333;
-  transition: border-color 0.3s ease;
-  min-width: 300px;
-}
-
-.asignarRol-input:focus {
-  border-color: #1753c2;
-  outline: none;
-}
-
-.asignarRol-select.caja {
-  background-color: #1753c2;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 15px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.asignarRol-select.caja:hover {
-  background-color: #0f2a7b;
-}
-
-/* 🔹 Lista de usuarios */
-.asignarRol-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-/* 💡 Tarjeta de usuario (en fila) */
-.asignarRol-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 25px;
-  padding: 5px 10px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f8faff, #eef2ff);
-  border: 1px solid #d3d9ff;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.asignarRol-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-/* 📋 Datos del usuario */
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  flex: 1;
-  color: #1e1e2f;
-  font-weight: 500;
-  flex-wrap: wrap;
-}
-
-.user-name{
-  width: 200px;
-}
-.user-email{
-  width: 320px;
-}
-
-.user-info span {
-  display: flex;
-  align-items: center;
   gap: 8px;
 }
 
-.user-info svg {
-  color: #1753c2;
+.role-select {
+  border: 1px solid #0a66c2;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-delete {
+  background: #d9534f;
+  border: none;
+  padding: 6px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  transition: .3s;
+}
+.btn-delete:hover {
+  background: #b02a37;
+}
+
+/* Sin resultados */
+.asignarRol-empty {
+  margin-top: 10px;
+  text-align: center;
+  font-style: italic;
+  color: #777;
+}
+
+/* --- Loading --- */
+.asignarRol-loading {
+  text-align: center;
   font-size: 18px;
 }
 
-/* ⚙️ Acciones */
-.user-actions {
+/* --- Paginación --- */
+.paginacion {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: center;
+  margin-top: 15px;
+  gap: 10px;
 }
-
-.role-select {
-  padding: 8px 12px;
+.pagina-btn {
+  border: 2px solid #0a66c2;
+  background: white;
+  color: #0a66c2;
+  padding: 6px 11px;
   border-radius: 8px;
-  border: 1px solid #ccc;
-  background-color: #ffffff;
-  color: #333;
-  font-weight: 500;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-}
-
-.role-select:hover {
-  border-color: #1753c2;
-  box-shadow: 0 0 4px rgba(23, 83, 194, 0.3);
-}
-
-/* 🗑 Botón de eliminar */
-.btn-delete {
-  background: #ff5252;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 10px;
   cursor: pointer;
+  font-weight: bold;
+  transition: .3s;
+}
+.pagina-btn:hover,
+.pagina-btn.activo {
+  background: #0a66c2;
+  color: white;
+}
+
+/* --- Gráfico --- */
+.chart-section {
+  margin-top: 35px;
+  background: white;
+  padding: 15px;
+  border-radius: 14px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+.chart-title {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.btn-delete:hover {
-  background: #e53935;
-  transform: scale(1.1);
-}
-
-/* 🧾 Paginación */
-.asignarRol-pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
   gap: 10px;
 }
 
-.asignarRol-pagination .pagina-btn {
-  background-color: #1753c2;
-  padding: 8px 14px;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
-}
-
-.asignarRol-pagination .pagina-btn:hover {
-  background-color: #0f2a7b;
-  transform: translateY(-2px);
-}
-
-.asignarRol-pagination .pagina-btn.activo {
-  background-color: #0f2a7b;
-  transform: scale(1.05);
-}
-
-/* 📱 Responsive */
-@media (max-width: 900px) {
-  .asignarRol-card {
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .filtros-container {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
   }
-
-  .user-info {
+  .filtro-item {
+    width: 100%;
+  }
+  .inputFiltro,
+  .selectFiltro {
+    width: 100%;
+  }
+  .tablaUsuarios td,
+  .tablaUsuarios th {
+    padding: 8px;
+    font-size: 13px;
+  }
+  .acciones {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    gap: 5px;
   }
-
-  .user-actions {
-    align-self: flex-end;
+  .pagina-btn {
+    padding: 5px 9px;
   }
-
-  .headerRoles {
-    margin: 20px;
-    font-size: 4vw;
-  }
-
-  .asignarRol-title {
-    font-size: 5vw;
-  }
-
-  .asignarRol-container {
-    margin: 0 20px;
+  .chart-section {
+    padding: 10px;
   }
 }

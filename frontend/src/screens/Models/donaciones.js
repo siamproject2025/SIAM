@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import "..//..//styles/Donaciones.css"
 import { 
   Apple,
   Music,
@@ -18,7 +19,7 @@ import {
   Calendar,
   Hash,
   Edit,
-  Trash2,
+  Trash2, Users,
   X,
   Save,
   Check,
@@ -29,6 +30,7 @@ import {
   Sparkles,
   Heart,
   Gift,
+<<<<<<< HEAD
   HandHeart,
   Filter,
   Mic2,
@@ -39,11 +41,15 @@ import {
   Stethoscope,
   Pencil,
   BookMarked
+=======
+  HandHeart
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api/donaciones';
 
 // Estilos CSS integrados mejorados
+<<<<<<< HEAD
 const styles = `
   * {
     box-sizing: border-box;
@@ -986,6 +992,9 @@ const styles = `
     }
   }
 `;
+=======
+
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
 
 const Donaciones = () => {
   const [donaciones, setDonaciones] = useState([]);
@@ -993,6 +1002,7 @@ const Donaciones = () => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
+<<<<<<< HEAD
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -1003,6 +1013,10 @@ const Donaciones = () => {
     { id: 23, nombre: 'Almacén 23', color: '#FFA07A' },
     { id: 40, nombre: 'Almacén 40', color: '#98D8C8' }
   ]);
+=======
+  const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
+  const [notification, setNotification] = useState(null);
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
   const [formData, setFormData] = useState({
     tipo_donacion: '',
     cantidad_donacion: '',
@@ -1050,6 +1064,10 @@ const Donaciones = () => {
       setDonaciones([]);
     }
   };
+  // Calcular estadísticas
+  const totalDonaciones = donaciones.length;
+  const totalCantidad = donaciones.reduce((sum, d) => sum + (parseFloat(d.cantidad_donacion) || 0), 0);
+  const tiposUnicos = [...new Set(donaciones.map(d => d.tipo_donacion))].length;
 
   const mostrarNotificacion = (mensaje, tipo = 'success') => {
     setNotification({ message: mensaje, type: tipo });
@@ -1116,8 +1134,12 @@ const Donaciones = () => {
         observaciones: formData.observaciones,
         id_almacen: parseInt(formData.id_almacen),
         fecha: new Date().toISOString(),
+<<<<<<< HEAD
         fecha_ingreso: new Date().toISOString(),
         foto: formData.foto || null
+=======
+        fecha_ingreso: new Date().toISOString()
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
       };
 
       const response = await fetch(API_URL, {
@@ -1163,8 +1185,12 @@ const Donaciones = () => {
         descripcion: formData.descripcion,
         observaciones: formData.observaciones,
         id_almacen: parseInt(formData.id_almacen),
+<<<<<<< HEAD
         fecha: formData.fecha || new Date().toISOString(),
         foto: formData.foto || null
+=======
+        fecha: formData.fecha || new Date().toISOString()
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
       };
 
       const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
@@ -1272,6 +1298,7 @@ const Donaciones = () => {
   const getIconoTipo = (tipo_donacion) => {
     const iconos = {
       'Alimentos': <Apple size={20} />,
+<<<<<<< HEAD
       'Instrumentos musicales': <Music size={20} />,
       'Accesorios musicales': <Headphones size={20} />,
       'Enseres': <Armchair size={20} />,
@@ -1281,11 +1308,21 @@ const Donaciones = () => {
       'Material didáctico': <BookOpen size={20} />,
       'Útiles escolares': <GraduationCap size={20} />,
       'Otros': <Package size={20} />
+=======
+      'Vestimenta': <Shirt size={20} />,
+      'Medicina': <Pill size={20} />,
+      'Enseres': <Armchair size={20} />,
+      'Bebidas': <Wine size={20} />,
+      'Útiles escolares': <Book size={20} />,
+      'Productos de higiene': <Droplet size={20} />,
+      'Otro': <Package size={20} />
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
     };
     return iconos[tipo_donacion] || <Package size={20} />;
   };
 
   const getColorAlmacen = (id_almacen) => {
+<<<<<<< HEAD
     const almacen = almacenes.find(a => a.id === id_almacen);
     return almacen ? almacen.color : '#95A5A6';
   };
@@ -1293,6 +1330,27 @@ const Donaciones = () => {
   const getNombreAlmacen = (id_almacen) => {
     const almacen = almacenes.find(a => a.id === id_almacen);
     return almacen ? almacen.nombre : `Almacén ${id_almacen}`;
+=======
+    const colores = {
+      1: '#FF6B6B',
+      2: '#4ECDC4',
+      12: '#45B7D1',
+      23: '#FFA07A',
+      40: '#98D8C8'
+    };
+    return colores[id_almacen] || '#95A5A6';
+  };
+
+  const getNombreAlmacen = (id_almacen) => {
+    const nombres = {
+      1: 'Almacén 1',
+      2: 'Almacén 2',
+      12: 'Almacén 12',
+      23: 'Almacén 23',
+      40: 'Almacén 40'
+    };
+    return nombres[id_almacen] || `Almacén ${id_almacen}`;
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
   };
 
   const donacionesFiltradas = Array.isArray(donaciones) ? donaciones.filter(donacion => {
@@ -1308,6 +1366,7 @@ const Donaciones = () => {
 
   return (
     <>
+<<<<<<< HEAD
       <style>{styles}</style>
       <div className="bien-container">
         {/* Iconos flotantes de fondo - 30 iconos */}
@@ -1349,9 +1408,17 @@ const Donaciones = () => {
         <motion.div 
           className="bien-header"
           initial={{ opacity: 0, y: -20 }}
+=======
+      
+      <div className="donacion-container">
+         <motion.div 
+          className="donacion-header"
+          initial={{ opacity: 0, y: -30 }}
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
+<<<<<<< HEAD
           {/* Iconos decorativos fijos en el header */}
           <div className="header-decoration-icon pulse" style={{ top: '10px', left: '20px' }}>
             <Music size={35} />
@@ -1410,10 +1477,174 @@ const Donaciones = () => {
               <Search className="search-icon" size={20} />
               <motion.input
                 type="text"
+=======
+          <motion.div
+            className="header-gradient"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+          >
+            <div className="header-content">
+              <motion.h2
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                >
+                  <Heart size={36} fill="white" color="white" />
+                </motion.div>
+                Sistema de Donaciones
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Gift size={32} color="white" />
+                </motion.div>
+              </motion.h2>
+              
+              <motion.p
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                Gestiona y controla todas las donaciones recibidas con amor y eficiencia
+              </motion.p>
+
+              <motion.div 
+                className="header-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="stat-icon">
+                    <Package size={20} color="white" />
+                  </div>
+                  <div className="stat-text">
+                    <div className="stat-value">{totalDonaciones}</div>
+                    <div className="stat-label">Total Donaciones</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                >
+                  <div className="stat-icon">
+                    <Users size={20} color="white" />
+                  </div>
+                  <div className="stat-text">
+                    <div className="stat-value">{totalCantidad}</div>
+                    <div className="stat-label">Cantidad Total</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                >
+                  <div className="stat-icon">
+                    <Hash size={20} color="white" />
+                  </div>
+                  <div className="stat-text">
+                    <div className="stat-value">{tiposUnicos}</div>
+                    <div className="stat-label">Tipos Diferentes</div>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div 
+                className="floating-icons"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Shirt size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -15, 0],
+                    rotate: [0, -8, 8, 0]
+                  }}
+                  transition={{ 
+                    duration: 3.5, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                >
+                  <Apple size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -12, 0],
+                    rotate: [0, 10, -10, 0]
+                  }}
+                  transition={{ 
+                    duration: 4.2, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 1
+                  }}
+                >
+                  <Book size={20} color="white" />
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="donacion-busqueda-bar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            style={{ marginTop: '2rem' }}
+          >
+            <div style={{ position: 'relative', flex: 1 }}>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
+              >
+                <Search size={18} />
+              </motion.div>
+              <input
+                type="text"
+                className="donacion-busqueda"
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                 placeholder="Buscar por tipo, descripción, almacén o cantidad..."
                 className="bien-busqueda"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
+<<<<<<< HEAD
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 }}
@@ -1470,19 +1701,79 @@ const Donaciones = () => {
               className="bien-vacio"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
+=======
+              />
+            </div>
+            <motion.button 
+              className="btn-ayuda" 
+              onClick={() => setMostrarAyuda(true)} 
+              title="Ver ayuda"
+              whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <HelpCircle size={18} />
+              </motion.div>
+              Ayuda
+            </motion.button>
+            <motion.button 
+              className="btn-ayuda" 
+              onClick={() => setMostrarModal(true)} 
+              title="Registrar nueva donación"
+              whileHover={{ 
+                scale: 1.08, 
+                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Plus size={18} />
+              </motion.div>
+              Nueva Donación
+            </motion.button>
+          </motion.div>
+        </motion.div>
+
+
+        <div className="donacion-categorias-container">
+          {donacionesFiltradas.length === 0 ? (
+            <motion.div 
+               className="donacion-categorias-container"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
             >
               <Package size={60} color="#ccc" style={{ marginBottom: '1rem' }} />
               <p>No se encontraron donaciones</p>
             </motion.div>
           ) : (
             <motion.div 
+<<<<<<< HEAD
               className="bien-categoria-section"
+=======
+              
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
+<<<<<<< HEAD
               <div className="bien-categoria-header">
                 <h3 className="bien-subtitulo">
+=======
+              <div className="donacion-categoria-header">
+                <h3 className="donacion-subtitulo">
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                   <Package size={24} />
                   <span>Todas las Donaciones ({donacionesFiltradas.length})</span>
                 </h3>
@@ -1635,6 +1926,7 @@ const Donaciones = () => {
                         onChange={handleInputChange}
                         required
                       >
+<<<<<<< HEAD
                                                 <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
                         <option value="Instrumentos musicales">Instrumentos musicales</option>
@@ -1646,6 +1938,19 @@ const Donaciones = () => {
                         <option value="Material didáctico">Material didáctico</option>
                         <option value="Útiles escolares">Útiles escolares</option>
                         <option value="Otros">Otros</option>
+=======
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Enseres">Enseres</option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Útiles escolares">Utiles Escolares</option>
+                        <option value="Material Audiovisual">Mateial Audiovisual</option>
+                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Productos de higiene">Productos de Higiene</option>
+                        <option value="Otro">Otro</option>
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                       </select>
                     </div>
 
@@ -1695,11 +2000,19 @@ const Donaciones = () => {
                         required
                       >
                         <option value="">Seleccionar almacén</option>
+<<<<<<< HEAD
                         {almacenes.map(almacen => (
                           <option key={almacen.id} value={almacen.id}>
                             {almacen.nombre}
                           </option>
                         ))}
+=======
+                        <option value="1">Almacén 1</option>
+                        <option value="2">Almacén 2</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                       </select>
                     </div>
 
@@ -1818,6 +2131,7 @@ const Donaciones = () => {
                         onChange={handleInputChange}
                         required
                       >
+<<<<<<< HEAD
                                                 <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
                         <option value="Instrumentos musicales">Instrumentos musicales</option>
@@ -1885,6 +2199,75 @@ const Donaciones = () => {
                       </select>
                     </div>
 
+=======
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Enseres">Enseres</option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Útiles escolares">Utiles Escolares</option>
+                        <option value="Material Audiovisual">Mateial Audiovisual</option>
+                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Productos de higiene">Productos de Higiene</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        Cantidad <span>*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        name="cantidad_donacion" 
+                        value={formData.cantidad_donacion} 
+                        onChange={handleInputChange}
+                        min="1"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group form-grid-full">
+                      <label>Descripción</label>
+                      <textarea 
+                        name="descripcion" 
+                        value={formData.descripcion} 
+                        onChange={handleInputChange}
+                        placeholder="Describe la donación..."
+                      />
+                    </div>
+
+                    <div className="form-group form-grid-full">
+                      <label>Observaciones</label>
+                      <textarea 
+                        name="observaciones" 
+                        value={formData.observaciones} 
+                        onChange={handleInputChange}
+                        placeholder="Notas adicionales..."
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        Almacén <span>*</span>
+                      </label>
+                      <select 
+                        name="id_almacen" 
+                        value={formData.id_almacen} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar almacén</option>
+                        <option value="1">Almacén 1</option>
+                        <option value="2">Almacén 2</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
+                      </select>
+                    </div>
+
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                     <div className="form-group form-grid-full">
                       <label>
                         <ImagePlus size={16} />
@@ -2065,12 +2448,20 @@ const Donaciones = () => {
                   <ul>
                     <li><strong>Alimentos:</strong> </li>
                     <li><strong>Instrumentos musicales:</strong> </li>
+<<<<<<< HEAD
                     <li><strong>Medicamentos:</strong> </li>
+=======
+                    <li><strong>Medicina:</strong> </li>
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                     <li><strong>Enseres:</strong> </li>
                     <li><strong>Accesiorios Musuicales:</strong> </li>
                     <li><strong>Útiles escolares:</strong> </li>
                     <li><strong>Productos de higiene:</strong> </li>
+<<<<<<< HEAD
                     <li><strong>Material audiovisual:</strong> </li>
+=======
+                    <li><strong>Material Audiovisual:</strong> </li>
+>>>>>>> 0d1b97ac5b6365cf363ae6a1dfacc29bc05eae77
                     <li><strong>Material didactico:</strong> </li>
                     <li><strong>Otro:</strong> </li>
                   </ul>

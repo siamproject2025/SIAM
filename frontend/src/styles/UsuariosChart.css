@@ -1,9 +1,9 @@
 .usuarios-chart-container {
   margin: 0 auto;
   padding: 20px;
-  background:linear-gradient(90deg,  #ccddfd, rgb(227, 214, 255));
+  background:linear-gradient(90deg,  #ffffff, rgb(255, 255, 255));
   border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+ 
   font-family: Arial, sans-serif; flex-basis: 100%; /* fuerza que ocupe toda la línea */
   flex-basis: 100%; 
 }
