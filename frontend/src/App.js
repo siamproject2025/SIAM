@@ -114,7 +114,7 @@ return (
       {user && (
         <>
           <NavBar />
-          {/* <Sidebar /> */}
+          {<SideBar />}
         </>
       )}
 
