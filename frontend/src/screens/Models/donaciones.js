@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Apple,
-  Shirt,
-  Pill,
+  Music,
+  Headphones,
   Armchair,
-  Wine,
-  Book,
-  Droplet,
+  Laptop,
+  Video,
+  Pill,
+  BookOpen,
+  GraduationCap,
   Package,
   Search,
   HelpCircle,
@@ -27,7 +29,16 @@ import {
   Sparkles,
   Heart,
   Gift,
-  HandHeart
+  HandHeart,
+  Filter,
+  Mic2,
+  Guitar,
+  Piano,
+  Monitor,
+  Camera,
+  Stethoscope,
+  Pencil,
+  BookMarked
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api/donaciones';
@@ -214,7 +225,11 @@ const styles = `
 
   .floating-icon {
     position: absolute;
-    color: rgba(102, 126, 234, 0.12);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0.25;
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
   }
@@ -254,7 +269,11 @@ const styles = `
   /* Iconos decorativos fijos en el header */
   .header-decoration-icon {
     position: absolute;
-    color: rgba(102, 126, 234, 0.15);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0.3;
     pointer-events: none;
     z-index: 0;
   }
@@ -464,6 +483,52 @@ const styles = `
     transform: translateY(-3px) scale(1.05);
     box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
     animation: gradient 2s ease infinite;
+  }
+
+  .btn-filtros {
+    padding: 1rem 1.8rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: 200% 200%;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-filtros::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-filtros:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .btn-filtros:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    animation: gradient 2s ease infinite;
+  }
+
+  .btn-filtros:active {
+    transform: translateY(-1px) scale(1.02);
   }
 
   .bien-categorias-container {
@@ -928,8 +993,16 @@ const Donaciones = () => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [almacenes, setAlmacenes] = useState([
+    { id: 1, nombre: 'Almacén 1', color: '#FF6B6B' },
+    { id: 2, nombre: 'Almacén 2', color: '#4ECDC4' },
+    { id: 12, nombre: 'Almacén 12', color: '#45B7D1' },
+    { id: 23, nombre: 'Almacén 23', color: '#FFA07A' },
+    { id: 40, nombre: 'Almacén 40', color: '#98D8C8' }
+  ]);
   const [formData, setFormData] = useState({
     tipo_donacion: '',
     cantidad_donacion: '',
@@ -1043,7 +1116,8 @@ const Donaciones = () => {
         observaciones: formData.observaciones,
         id_almacen: parseInt(formData.id_almacen),
         fecha: new Date().toISOString(),
-        fecha_ingreso: new Date().toISOString()
+        fecha_ingreso: new Date().toISOString(),
+        foto: formData.foto || null
       };
 
       const response = await fetch(API_URL, {
@@ -1089,7 +1163,8 @@ const Donaciones = () => {
         descripcion: formData.descripcion,
         observaciones: formData.observaciones,
         id_almacen: parseInt(formData.id_almacen),
-        fecha: formData.fecha || new Date().toISOString()
+        fecha: formData.fecha || new Date().toISOString(),
+        foto: formData.foto || null
       };
 
       const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
@@ -1197,37 +1272,27 @@ const Donaciones = () => {
   const getIconoTipo = (tipo_donacion) => {
     const iconos = {
       'Alimentos': <Apple size={20} />,
-      'Vestimenta': <Shirt size={20} />,
-      'Medicina': <Pill size={20} />,
+      'Instrumentos musicales': <Music size={20} />,
+      'Accesorios musicales': <Headphones size={20} />,
       'Enseres': <Armchair size={20} />,
-      'Bebidas': <Wine size={20} />,
-      'Útiles escolares': <Book size={20} />,
-      'Productos de higiene': <Droplet size={20} />,
-      'Otro': <Package size={20} />
+      'Tecnología': <Laptop size={20} />,
+      'Material audiovisual': <Video size={20} />,
+      'Medicamentos': <Pill size={20} />,
+      'Material didáctico': <BookOpen size={20} />,
+      'Útiles escolares': <GraduationCap size={20} />,
+      'Otros': <Package size={20} />
     };
     return iconos[tipo_donacion] || <Package size={20} />;
   };
 
   const getColorAlmacen = (id_almacen) => {
-    const colores = {
-      1: '#FF6B6B',
-      2: '#4ECDC4',
-      12: '#45B7D1',
-      23: '#FFA07A',
-      40: '#98D8C8'
-    };
-    return colores[id_almacen] || '#95A5A6';
+    const almacen = almacenes.find(a => a.id === id_almacen);
+    return almacen ? almacen.color : '#95A5A6';
   };
 
   const getNombreAlmacen = (id_almacen) => {
-    const nombres = {
-      1: 'Almacén 1',
-      2: 'Almacén 2',
-      12: 'Almacén 12',
-      23: 'Almacén 23',
-      40: 'Almacén 40'
-    };
-    return nombres[id_almacen] || `Almacén ${id_almacen}`;
+    const almacen = almacenes.find(a => a.id === id_almacen);
+    return almacen ? almacen.nombre : `Almacén ${id_almacen}`;
   };
 
   const donacionesFiltradas = Array.isArray(donaciones) ? donaciones.filter(donacion => {
@@ -1247,38 +1312,38 @@ const Donaciones = () => {
       <div className="bien-container">
         {/* Iconos flotantes de fondo - 30 iconos */}
         <div className="floating-icons-background">
-          <div className="floating-icon" style={{ left: '5%', top: '10%' }}><Heart size={80} /></div>
-          <div className="floating-icon" style={{ left: '15%', top: '25%' }}><Gift size={75} /></div>
-          <div className="floating-icon" style={{ left: '25%', top: '15%' }}><HandHeart size={75} /></div>
-          <div className="floating-icon" style={{ left: '35%', top: '30%' }}><Apple size={70} /></div>
-          <div className="floating-icon" style={{ left: '45%', top: '20%' }}><Package size={78} /></div>
-          <div className="floating-icon" style={{ left: '55%', top: '35%' }}><Shirt size={72} /></div>
-          <div className="floating-icon" style={{ left: '65%', top: '25%' }}><Book size={76} /></div>
-          <div className="floating-icon" style={{ left: '75%', top: '40%' }}><Heart size={82} /></div>
-          <div className="floating-icon" style={{ left: '85%', top: '30%' }}><Gift size={74} /></div>
-          <div className="floating-icon" style={{ left: '95%', top: '45%' }}><HandHeart size={80} /></div>
+          <div className="floating-icon" style={{ left: '5%', top: '10%' }}><Apple size={80} /></div>
+          <div className="floating-icon" style={{ left: '15%', top: '25%' }}><Music size={75} /></div>
+          <div className="floating-icon" style={{ left: '25%', top: '15%' }}><Headphones size={75} /></div>
+          <div className="floating-icon" style={{ left: '35%', top: '30%' }}><Laptop size={70} /></div>
+          <div className="floating-icon" style={{ left: '45%', top: '20%' }}><Video size={78} /></div>
+          <div className="floating-icon" style={{ left: '55%', top: '35%' }}><Pill size={72} /></div>
+          <div className="floating-icon" style={{ left: '65%', top: '25%' }}><BookOpen size={76} /></div>
+          <div className="floating-icon" style={{ left: '75%', top: '40%' }}><GraduationCap size={82} /></div>
+          <div className="floating-icon" style={{ left: '85%', top: '30%' }}><Package size={74} /></div>
+          <div className="floating-icon" style={{ left: '95%', top: '45%' }}><Guitar size={80} /></div>
           
-          <div className="floating-icon" style={{ left: '10%', top: '50%' }}><Pill size={73} /></div>
+          <div className="floating-icon" style={{ left: '10%', top: '50%' }}><Piano size={73} /></div>
           <div className="floating-icon" style={{ left: '20%', top: '65%' }}><Armchair size={77} /></div>
-          <div className="floating-icon" style={{ left: '30%', top: '55%' }}><Wine size={71} /></div>
-          <div className="floating-icon" style={{ left: '40%', top: '70%' }}><Droplet size={79} /></div>
-          <div className="floating-icon" style={{ left: '50%', top: '60%' }}><Heart size={76} /></div>
-          <div className="floating-icon" style={{ left: '60%', top: '75%' }}><Gift size={74} /></div>
-          <div className="floating-icon" style={{ left: '70%', top: '65%' }}><Package size={81} /></div>
+          <div className="floating-icon" style={{ left: '30%', top: '55%' }}><Monitor size={71} /></div>
+          <div className="floating-icon" style={{ left: '40%', top: '70%' }}><Camera size={79} /></div>
+          <div className="floating-icon" style={{ left: '50%', top: '60%' }}><Stethoscope size={76} /></div>
+          <div className="floating-icon" style={{ left: '60%', top: '75%' }}><Pencil size={74} /></div>
+          <div className="floating-icon" style={{ left: '70%', top: '65%' }}><BookMarked size={81} /></div>
           <div className="floating-icon" style={{ left: '80%', top: '80%' }}><Apple size={75} /></div>
-          <div className="floating-icon" style={{ left: '90%', top: '70%' }}><HandHeart size={78} /></div>
+          <div className="floating-icon" style={{ left: '90%', top: '70%' }}><Mic2 size={78} /></div>
           
-          <div className="floating-icon" style={{ left: '8%', top: '85%' }}><Book size={72} /></div>
-          <div className="floating-icon" style={{ left: '18%', top: '95%' }}><Shirt size={76} /></div>
-          <div className="floating-icon" style={{ left: '28%', top: '90%' }}><Heart size={80} /></div>
-          <div className="floating-icon" style={{ left: '38%', top: '5%' }}><Gift size={74} /></div>
+          <div className="floating-icon" style={{ left: '8%', top: '85%' }}><Music size={72} /></div>
+          <div className="floating-icon" style={{ left: '18%', top: '95%' }}><Headphones size={76} /></div>
+          <div className="floating-icon" style={{ left: '28%', top: '90%' }}><Laptop size={80} /></div>
+          <div className="floating-icon" style={{ left: '38%', top: '5%' }}><Video size={74} /></div>
           <div className="floating-icon" style={{ left: '48%', top: '95%' }}><Pill size={74} /></div>
-          <div className="floating-icon" style={{ left: '58%', top: '5%' }}><Armchair size={73} /></div>
-          <div className="floating-icon" style={{ left: '68%', top: '90%' }}><Wine size={79} /></div>
-          <div className="floating-icon" style={{ left: '78%', top: '10%' }}><Droplet size={75} /></div>
-          <div className="floating-icon" style={{ left: '88%', top: '95%' }}><Package size={82} /></div>
-          <div className="floating-icon" style={{ left: '12%', top: '40%' }}><HandHeart size={78} /></div>
-          <div className="floating-icon" style={{ left: '92%', top: '55%' }}><Heart size={76} /></div>
+          <div className="floating-icon" style={{ left: '58%', top: '5%' }}><BookOpen size={73} /></div>
+          <div className="floating-icon" style={{ left: '68%', top: '90%' }}><GraduationCap size={79} /></div>
+          <div className="floating-icon" style={{ left: '78%', top: '10%' }}><Guitar size={75} /></div>
+          <div className="floating-icon" style={{ left: '88%', top: '95%' }}><Piano size={82} /></div>
+          <div className="floating-icon" style={{ left: '12%', top: '40%' }}><Camera size={78} /></div>
+          <div className="floating-icon" style={{ left: '92%', top: '55%' }}><Package size={76} /></div>
         </div>
 
         <motion.div 
@@ -1289,40 +1354,40 @@ const Donaciones = () => {
         >
           {/* Iconos decorativos fijos en el header */}
           <div className="header-decoration-icon pulse" style={{ top: '10px', left: '20px' }}>
-            <Heart size={35} />
+            <Music size={35} />
           </div>
           <div className="header-decoration-icon float" style={{ top: '15px', right: '30px' }}>
-            <Gift size={32} />
+            <Guitar size={32} />
           </div>
           <div className="header-decoration-icon pulse" style={{ top: '80px', left: '50px' }}>
-            <HandHeart size={28} />
+            <Laptop size={28} />
           </div>
           <div className="header-decoration-icon float" style={{ top: '70px', right: '60px' }}>
-            <Package size={30} />
+            <Video size={30} />
           </div>
           <div className="header-decoration-icon pulse" style={{ bottom: '80px', left: '30px' }}>
             <Apple size={33} />
           </div>
           <div className="header-decoration-icon float" style={{ bottom: '90px', right: '40px' }}>
-            <Shirt size={29} />
+            <Pill size={29} />
           </div>
           <div className="header-decoration-icon pulse" style={{ bottom: '20px', left: '70px' }}>
-            <Book size={31} />
+            <BookOpen size={31} />
           </div>
           <div className="header-decoration-icon float" style={{ bottom: '30px', right: '80px' }}>
-            <Pill size={27} />
+            <GraduationCap size={27} />
           </div>
           <div className="header-decoration-icon pulse" style={{ top: '50%', left: '10px', transform: 'translateY(-50%)' }}>
-            <Droplet size={26} />
+            <Headphones size={26} />
           </div>
           <div className="header-decoration-icon float" style={{ top: '50%', right: '15px', transform: 'translateY(-50%)' }}>
-            <Wine size={28} />
+            <Camera size={28} />
           </div>
           <div className="header-decoration-icon pulse" style={{ top: '40px', left: '45%' }}>
-            <Heart size={24} />
+            <Armchair size={24} />
           </div>
           <div className="header-decoration-icon float" style={{ bottom: '50px', right: '48%' }}>
-            <Gift size={25} />
+            <Package size={25} />
           </div>
 
           <motion.h2
@@ -1367,6 +1432,19 @@ const Donaciones = () => {
             >
               <HelpCircle size={18} />
               <span>Ayuda</span>
+            </motion.button>
+
+            <motion.button 
+              className="btn-filtros" 
+              onClick={() => setMostrarFiltros(true)}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Filter size={18} />
+              <span>Filtros</span>
             </motion.button>
 
             <motion.button 
@@ -1557,17 +1635,17 @@ const Donaciones = () => {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Seleccionar tipo</option>
+                                                <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
-                        <option value="Medicina">Medicina</option>
+                        <option value="Instrumentos musicales">Instrumentos musicales</option>
+                        <option value="Accesorios musicales">Accesorios musicales</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
-                        <option value="Útiles escolares">Utiles Escolares</option>
-                        <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
-                        <option value="Productos de higiene">Productos de Higiene</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Tecnología">Tecnología</option>
+                        <option value="Material audiovisual">Material audiovisual</option>
+                        <option value="Medicamentos">Medicamentos</option>
+                        <option value="Material didáctico">Material didáctico</option>
+                        <option value="Útiles escolares">Útiles escolares</option>
+                        <option value="Otros">Otros</option>
                       </select>
                     </div>
 
@@ -1617,11 +1695,11 @@ const Donaciones = () => {
                         required
                       >
                         <option value="">Seleccionar almacén</option>
-                        <option value="1">Almacén 1</option>
-                        <option value="2">Almacén 2</option>
-                        <option value="12">Almacén 12</option>
-                        <option value="23">Almacén 23</option>
-                        <option value="40">Almacén 40</option>
+                        {almacenes.map(almacen => (
+                          <option key={almacen.id} value={almacen.id}>
+                            {almacen.nombre}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -1740,17 +1818,17 @@ const Donaciones = () => {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Seleccionar tipo</option>
+                                                <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
-                        <option value="Medicina">Medicina</option>
+                        <option value="Instrumentos musicales">Instrumentos musicales</option>
+                        <option value="Accesorios musicales">Accesorios musicales</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
-                        <option value="Útiles escolares">Utiles Escolares</option>
-                        <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
-                        <option value="Productos de higiene">Productos de Higiene</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Tecnología">Tecnología</option>
+                        <option value="Material audiovisual">Material audiovisual</option>
+                        <option value="Medicamentos">Medicamentos</option>
+                        <option value="Material didáctico">Material didáctico</option>
+                        <option value="Útiles escolares">Útiles escolares</option>
+                        <option value="Otros">Otros</option>
                       </select>
                     </div>
 
@@ -1799,11 +1877,11 @@ const Donaciones = () => {
                         required
                       >
                         <option value="">Seleccionar almacén</option>
-                        <option value="1">Almacén 1</option>
-                        <option value="2">Almacén 2</option>
-                        <option value="12">Almacén 12</option>
-                        <option value="23">Almacén 23</option>
-                        <option value="40">Almacén 40</option>
+                        {almacenes.map(almacen => (
+                          <option key={almacen.id} value={almacen.id}>
+                            {almacen.nombre}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -1987,12 +2065,12 @@ const Donaciones = () => {
                   <ul>
                     <li><strong>Alimentos:</strong> </li>
                     <li><strong>Instrumentos musicales:</strong> </li>
-                    <li><strong>Medicina:</strong> </li>
+                    <li><strong>Medicamentos:</strong> </li>
                     <li><strong>Enseres:</strong> </li>
                     <li><strong>Accesiorios Musuicales:</strong> </li>
                     <li><strong>Útiles escolares:</strong> </li>
                     <li><strong>Productos de higiene:</strong> </li>
-                    <li><strong>Material Audiovisual:</strong> </li>
+                    <li><strong>Material audiovisual:</strong> </li>
                     <li><strong>Material didactico:</strong> </li>
                     <li><strong>Otro:</strong> </li>
                   </ul>
