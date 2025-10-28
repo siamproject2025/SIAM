@@ -302,7 +302,3 @@ const Bienes = () => {
 };
 
 export default Bienes;
-
-
-
-
