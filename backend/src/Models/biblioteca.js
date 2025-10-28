@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const libroSchema = new mongoose.Schema({
+const LibroSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   autor: { type: String, required: true },
   categoria: { type: String },
