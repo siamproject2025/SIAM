@@ -68,13 +68,19 @@
   }
 
   .proveedor-categorias-container {
-    margin-top: 1rem;
-    width: 205%;
+    
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-bottom: 2rem;
   }
 
   .proveedor-categoria-section {
-    margin-bottom: 2rem;
-    width: 100%;
+     background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-light);
+  transition: transform 0.2s ease;
   }
 
   .proveedor-categoria-header {
@@ -123,11 +129,13 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    width: 100%;
   }
 
   .tabla-body {
     flex: 1;
     overflow-y: auto;
+    width: 100%;
   }
 
   

@@ -109,8 +109,8 @@ const AsignarRol = () => {
   if (cargando) return <p className="asignarRol-loading">Cargando usuarios...</p>;
 
   return (
-    <div className="RolHeader">
-      {/* 🎨 ENCABEZADO MEJORADO */}
+    <div className="RolHeader" >
+      
       <motion.div 
         className="bien-header"
         initial={{ opacity: 0, y: -30 }}
@@ -464,7 +464,7 @@ const AsignarRol = () => {
       </motion.div>
 
       {/* 📌 TABLA (se mantiene igual) */}
-      <div className="tabla-container">
+      <div className="tabla-container" >
         <table className="tablaUsuarios">
           <thead>
             <tr>
@@ -527,7 +527,8 @@ const AsignarRol = () => {
         <h3 className="chart-title">
           <RiUserSettingsLine /> Distribución de roles
         </h3>
-        <UsuariosChart actualizar={actualizarChart} />
+        <UsuariosChart actualizar={actualizarChart} 
+        />
       </div>
     </div>
   );
