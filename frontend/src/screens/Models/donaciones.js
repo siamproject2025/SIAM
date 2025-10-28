@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import "..//..//styles/Donaciones.css"
 import { 
   Apple,
   Shirt,
@@ -16,628 +17,507 @@ import {
   Calendar,
   Hash,
   Edit,
-  Trash2,
+  Trash2, Users,
   X,
   Save,
-  Check
+  Check,
+  ImagePlus,
+  Upload,
+  AlertCircle,
+  CheckCircle,
+  Sparkles,
+  Heart,
+  Gift,
+  HandHeart
 } from 'lucide-react';
 
 const API_URL = 'http://localhost:5000/api/donaciones';
 
-// Estilos CSS integrados
-const styles = `
-  .bien-container {
-    padding: 2rem;
-    max-width: 100%;
-    margin: 0 auto;
-    width: 100%;
-  }
+// Estilos CSS integrados mejorados
 
-  .bien-header {
-    margin-bottom: 2rem;
-    width: 100%;
-  }
-
-  .bien-header h2 {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-  }
-
-  .bien-header p {
-    color: #666;
-    font-size: 1rem;
-  }
-
-  .bien-busqueda-bar {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    align-items: center;
-    width: 100%;
-  }
-
-  .bien-busqueda {
-    flex: 1;
-    width: 100%;
-    padding: 0.8rem 1rem;
-    padding-left: 40px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-  }
-
-  .bien-busqueda:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  .btn-ayuda {
-    padding: 0.8rem 1.5rem;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
-  }
-
-  .btn-ayuda:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  .bien-categorias-container {
-    margin-top: 1rem;
-    width: 202%;
-  }
-
-  .bien-categoria-section {
-    margin-bottom: 2rem;
-    width: 100%;
-  }
-
-  .bien-categoria-header {
-    margin-bottom: 0.75rem;
-    width: 100%;
-  }
-
-  .bien-subtitulo {
-    font-size: 1.3rem;
-    color: #333;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .bien-vacio {
-    text-align: center;
-    padding: 3rem;
-    color: #999;
-    font-size: 1.1rem;
-  }
-
-  .tabla-donaciones {
-    width: 100%;
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    min-height: 400px;
-    max-height: calc(100vh - 300px);
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 2rem;
-  }
-
-  .tabla-header {
-    display: grid;
-    grid-template-columns: 80px 1fr 140px 150px 120px 100px;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-weight: 600;
-    font-size: 0.9rem;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .tabla-body {
-    flex: 1;
-    overflow-y: auto;
-  }
-
-  .tabla-fila {
-    display: grid;
-    grid-template-columns: 80px 1fr 140px 150px 120px 100px;
-    gap: 1rem;
-    padding: 1.2rem 1.5rem;
-    border-bottom: 1px solid #e9ecef;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
-  }
-
-  .tabla-fila::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transform: scaleY(0);
-    transition: transform 0.3s ease;
-  }
-
-  .tabla-fila:hover {
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
-    transform: translateX(5px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
-
-  .tabla-fila:hover::before {
-    transform: scaleY(1);
-  }
-
-  .tabla-fila:last-child {
-    border-bottom: none;
-  }
-
-  .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  .modal-content {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    max-width: 90vw;
-  }
-
-  .modal-title {
-    font-size: 1.5rem;
-    color: #333;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .form-group {
-    margin-bottom: 1rem;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #333;
-    font-weight: 600;
-  }
-
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    width: 100%;
-    padding: 0.8rem;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-
-  .form-group.full-width {
-    grid-column: 1 / -1;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 1.5rem;
-  }
-
-  .btn-guardar,
-  .btn-cancelar,
-  .btn-eliminar,
-  .btn-cerrar {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
-  }
-
-  .btn-guardar {
-    background: #4CAF50;
-    color: white;
-  }
-
-  .btn-guardar:hover {
-    background: #45a049;
-  }
-
-  .btn-cancelar {
-    background: #f44336;
-    color: white;
-  }
-
-  .btn-cancelar:hover {
-    background: #da190b;
-  }
-
-  .btn-eliminar {
-    background: #ff9800;
-    color: white;
-  }
-
-  .btn-eliminar:hover {
-    background: #fb8c00;
-  }
-
-  .btn-cerrar {
-    background: #667eea;
-    color: white;
-  }
-
-  .btn-cerrar:hover {
-    background: #5568d3;
-  }
-`;
 
 const Donaciones = () => {
   const [donaciones, setDonaciones] = useState([]);
-  const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
   const [busqueda, setBusqueda] = useState('');
-  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
-  const [notification, setNotification] = useState(null);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+  const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
+  const [notification, setNotification] = useState(null);
   const [formData, setFormData] = useState({
-    id_almacen: '',
-    fecha: new Date().toISOString().split('T')[0],
+    tipo_donacion: '',
     cantidad_donacion: '',
     descripcion: '',
-    tipo_donacion: 'Alimentos',
     observaciones: '',
-    foto_donacion: null,
+    id_almacen: '',
+    fecha: new Date().toISOString().split('T')[0],
+    foto: null,
     foto_preview: null
   });
 
-  const tiposDonacion = [
-    'Alimentos',
-    'Vestimenta',
-    'Medicina',
-    'Enseres',
-    'Bebidas',
-    'Útiles escolares',
-    'Productos de higiene',
-    'Otro'
-  ];
-
+  // Cargar donaciones al montar
   useEffect(() => {
     cargarDonaciones();
-  }, []);
+  }, );
+
+  // Recargar cada 30 segundos para mantener sincronización
+  useEffect(() => {
+    const interval = setInterval(() => {
+      cargarDonaciones();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, );
 
   const cargarDonaciones = async () => {
     try {
-      setLoading(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Error al cargar donaciones');
-      const data = await res.json();
-      setDonaciones(Array.isArray(data) ? data : data.data || []);
-    } catch (err) {
-      console.error('Error al obtener donaciones:', err);
-      showNotification('Error al cargar las donaciones', 'error');
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error('Error al cargar donaciones');
+      const result = await response.json();
+      
+      // El backend devuelve { success: true, data: [...] }
+      if (result.success && Array.isArray(result.data)) {
+        setDonaciones(result.data);
+      } else if (Array.isArray(result)) {
+        // Por si acaso el backend devuelve directamente el array
+        setDonaciones(result);
+      } else {
+        console.error('Formato de respuesta inesperado:', result);
+        setDonaciones([]);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion('Error al cargar las donaciones', 'error');
       setDonaciones([]);
-    } finally {
-      setLoading(false);
     }
   };
+  // Calcular estadísticas
+  const totalDonaciones = donaciones.length;
+  const totalCantidad = donaciones.reduce((sum, d) => sum + (parseFloat(d.cantidad_donacion) || 0), 0);
+  const tiposUnicos = [...new Set(donaciones.map(d => d.tipo_donacion))].length;
 
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
+  const mostrarNotificacion = (mensaje, tipo = 'success') => {
+    setNotification({ message: mensaje, type: tipo });
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const resetForm = () => {
-    setFormData({
-      id_almacen: '',
-      fecha: new Date().toISOString().split('T')[0],
-      cantidad_donacion: '',
-      descripcion: '',
-      tipo_donacion: 'Alimentos',
-      observaciones: '',
-      foto_donacion: null,
-      foto_preview: null
-    });
-  };
-
-  const handleCrearDonacion = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.id_almacen || !formData.fecha || !formData.cantidad_donacion) {
-        showNotification('Por favor completa todos los campos obligatorios', 'error');
-        return;
-      }
-
-      const datosDonacion = {
-        id_almacen: parseInt(formData.id_almacen),
-        fecha: formData.fecha,
-        cantidad_donacion: parseFloat(formData.cantidad_donacion),
-        descripcion: formData.descripcion.trim(),
-        tipo_donacion: formData.tipo_donacion,
-        observaciones: formData.observaciones.trim()
-      };
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosDonacion)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear la donación');
-      }
-      
-      await cargarDonaciones();
-      setMostrarModalCrear(false);
-      resetForm();
-      showNotification(`Donación de ${formData.tipo_donacion} registrada exitosamente`, 'success');
-    } catch (err) {
-      console.error('Error al crear:', err);
-      showNotification(err.message || 'Error al crear la donación', 'error');
-    }
-  };
-
-  const handleEditarDonacion = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.id_almacen || !formData.fecha || !formData.cantidad_donacion) {
-        showNotification('Por favor completa todos los campos obligatorios', 'error');
-        return;
-      }
-
-      const idAlmacen = parseInt(formData.id_almacen);
-      const cantidad = parseFloat(formData.cantidad_donacion);
-      
-      if (isNaN(idAlmacen) || idAlmacen < 1) {
-        showNotification('El ID de almacén debe ser un número válido', 'error');
-        return;
-      }
-      
-      if (isNaN(cantidad) || cantidad <= 0) {
-        showNotification('La cantidad debe ser un número válido mayor a 0', 'error');
-        return;
-      }
-
-      const datosActualizados = {
-        id_almacen: idAlmacen,
-        fecha: formData.fecha,
-        cantidad_donacion: cantidad,
-        descripcion: formData.descripcion.trim(),
-        tipo_donacion: formData.tipo_donacion,
-        observaciones: formData.observaciones.trim()
-      };
-
-      const idToUpdate = donacionSeleccionada._id || donacionSeleccionada.id_donacion;
-
-      const res = await fetch(`${API_URL}/${idToUpdate}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosActualizados)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar la donación');
-      }
-      
-      await cargarDonaciones();
-      setDonacionSeleccionada(null);
-      resetForm();
-      showNotification(`Donación actualizada exitosamente`, 'success');
-    } catch (err) {
-      console.error('Error al editar:', err);
-      showNotification(err.message || 'Error al editar la donación', 'error');
-    }
-  };
-
-  const handleEliminarDonacion = async () => {
-    try {
-      const donacionAEliminar = donaciones.find(d => (d._id || d.id_donacion) === (donacionSeleccionada._id || donacionSeleccionada.id_donacion));
-      const idToDelete = donacionSeleccionada._id || donacionSeleccionada.id_donacion;
-      
-      console.log('Eliminando donación ID:', idToDelete);
-
-      const res = await fetch(`${API_URL}/${idToDelete}`, { method: 'DELETE' });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar la donación');
-      }
-      
-      await cargarDonaciones();
-      setDonacionSeleccionada(null);
-      resetForm();
-      showNotification(`Donación eliminada exitosamente`, 'success');
-    } catch (err) {
-      console.error('Error al eliminar:', err);
-      showNotification(err.message || 'Error al eliminar la donación', 'error');
-    }
-  };
-
-  const donacionesFiltradas = donaciones.filter(d => {
-    const terminoBusqueda = busqueda.toLowerCase();
-    return (
-      d.tipo_donacion?.toLowerCase().includes(terminoBusqueda) ||
-      d.descripcion?.toLowerCase().includes(terminoBusqueda) ||
-      d.id_almacen?.toString().includes(terminoBusqueda) ||
-      d.cantidad_donacion?.toString().includes(terminoBusqueda)
-    );
-  });
-
-  const formatDate = (date) => {
-    if (!date) return '-';
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${day}/${month}/${year}`;
-  };
-
-  const getTipoIcon = (tipo) => {
-    const icons = {
-      'Alimentos': <Apple size={18} />,
-      'Vestimenta': <Shirt size={18} />,
-      'Medicina': <Pill size={18} />,
-      'Enseres': <Armchair size={18} />,
-      'Bebidas': <Wine size={18} />,
-      'Útiles escolares': <Book size={18} />,
-      'Productos de higiene': <Droplet size={18} />,
-      'Otro': <Package size={18} />
-    };
-    return icons[tipo] || <Package size={18} />;
-  };
-
-  const handleOpenEditModal = (donacion) => {
-    setDonacionSeleccionada(donacion);
-    
-    let fechaFormateada = '';
-    if (donacion.fecha) {
-      const fecha = new Date(donacion.fecha);
-      const year = fecha.getFullYear();
-      const month = String(fecha.getMonth() + 1).padStart(2, '0');
-      const day = String(fecha.getDate()).padStart(2, '0');
-      fechaFormateada = `${year}-${month}-${day}`;
-    }
-    
-    setFormData({
-      id_almacen: donacion.id_almacen?.toString() || '',
-      fecha: fechaFormateada,
-      cantidad_donacion: donacion.cantidad_donacion?.toString() || '',
-      descripcion: donacion.descripcion || '',
-      tipo_donacion: donacion.tipo_donacion || 'Alimentos',
-      observaciones: donacion.observaciones || '',
-      foto_donacion: null,
-      foto_preview: donacion.foto_donacion || null
-    });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleFotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validar que sea una imagen
-      if (!file.type.startsWith('image/')) {
-        showNotification('Por favor selecciona un archivo de imagen válido', 'error');
-        return;
-      }
-      
-      // Validar tamaño (máximo 5MB)
+      // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
-        showNotification('La imagen no debe superar los 5MB', 'error');
+        mostrarNotificacion('La imagen no debe superar 5MB', 'error');
         return;
       }
 
-      // Crear preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({
-          ...formData,
-          foto_donacion: file,
-          foto_preview: reader.result
-        });
-      };
-      reader.readAsDataURL(file);
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        mostrarNotificacion('Solo se permiten imágenes', 'error');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        foto: file,
+        foto_preview: URL.createObjectURL(file)
+      }));
     }
   };
 
   const eliminarFoto = () => {
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
+    setFormData(prev => ({
+      ...prev,
+      foto: null,
+      foto_preview: null
+    }));
+  };
+
+  const handleSubmitNueva = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Validaciones
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+      return;
+    }
+
+    try {
+      const datosEnviar = {
+        tipo_donacion: formData.tipo_donacion,
+        cantidad_donacion: parseInt(formData.cantidad_donacion),
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        id_almacen: parseInt(formData.id_almacen),
+        fecha: new Date().toISOString(),
+        fecha_ingreso: new Date().toISOString()
+      };
+
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datosEnviar)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear donación');
+      }
+
+      const result = await response.json();
+      
+      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+    }
+  };
+
+  const handleSubmitEditar = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!donacionSeleccionada) return;
+
+    // Validaciones
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+      return;
+    }
+
+    try {
+      const datosEnviar = {
+        tipo_donacion: formData.tipo_donacion,
+        cantidad_donacion: parseInt(formData.cantidad_donacion),
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        id_almacen: parseInt(formData.id_almacen),
+        fecha: formData.fecha || new Date().toISOString()
+      };
+
+      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datosEnviar)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar donación');
+      }
+
+      mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
+    }
+  };
+
+  const handleEliminarDonacion = async () => {
+    if (!donacionSeleccionada) return;
+
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta donación?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar donación');
+      }
+
+      mostrarNotificacion('Donación eliminada exitosamente', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al eliminar la donación', 'error');
+    }
+  };
+
+  const handleCloseModals = () => {
+    setMostrarModal(false);
+    setMostrarModalEditar(false);
+    setDonacionSeleccionada(null);
+    
+    // Limpiar preview
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
+    
     setFormData({
-      ...formData,
-      foto_donacion: null,
+      tipo_donacion: '',
+      cantidad_donacion: '',
+      descripcion: '',
+      observaciones: '',
+      id_almacen: '',
+      fecha: new Date().toISOString().split('T')[0],
+      foto: null,
       foto_preview: null
     });
   };
 
-  const handleCloseModals = () => {
-    setMostrarModalCrear(false);
-    setDonacionSeleccionada(null);
-    resetForm();
+  const handleFilaClick = (donacion) => {
+    setDonacionSeleccionada(donacion);
+    
+    // Cargar datos en el formulario con los nombres correctos
+    setFormData({
+      tipo_donacion: donacion.tipo_donacion || '',
+      cantidad_donacion: donacion.cantidad_donacion || '',
+      descripcion: donacion.descripcion || '',
+      observaciones: donacion.observaciones || '',
+      id_almacen: donacion.id_almacen || '',
+      fecha: donacion.fecha ? new Date(donacion.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      foto: null,
+      foto_preview: donacion.foto ? `http://localhost:5000${donacion.foto}` : null
+    });
+    
+    setMostrarModalEditar(true);
   };
+
+  const handleNuevaDonacion = () => {
+    setFormData({
+      tipo_donacion: '',
+      cantidad_donacion: '',
+      descripcion: '',
+      observaciones: '',
+      id_almacen: '',
+      fecha: new Date().toISOString().split('T')[0],
+      foto: null,
+      foto_preview: null
+    });
+    setMostrarModal(true);
+  };
+
+  const getIconoTipo = (tipo_donacion) => {
+    const iconos = {
+      'Alimentos': <Apple size={20} />,
+      'Vestimenta': <Shirt size={20} />,
+      'Medicina': <Pill size={20} />,
+      'Enseres': <Armchair size={20} />,
+      'Bebidas': <Wine size={20} />,
+      'Útiles escolares': <Book size={20} />,
+      'Productos de higiene': <Droplet size={20} />,
+      'Otro': <Package size={20} />
+    };
+    return iconos[tipo_donacion] || <Package size={20} />;
+  };
+
+  const getColorAlmacen = (id_almacen) => {
+    const colores = {
+      1: '#FF6B6B',
+      2: '#4ECDC4',
+      12: '#45B7D1',
+      23: '#FFA07A',
+      40: '#98D8C8'
+    };
+    return colores[id_almacen] || '#95A5A6';
+  };
+
+  const getNombreAlmacen = (id_almacen) => {
+    const nombres = {
+      1: 'Almacén 1',
+      2: 'Almacén 2',
+      12: 'Almacén 12',
+      23: 'Almacén 23',
+      40: 'Almacén 40'
+    };
+    return nombres[id_almacen] || `Almacén ${id_almacen}`;
+  };
+
+  const donacionesFiltradas = Array.isArray(donaciones) ? donaciones.filter(donacion => {
+    const searchLower = busqueda.toLowerCase();
+    const almacenNombre = getNombreAlmacen(donacion.id_almacen);
+    return (
+      donacion.tipo_donacion?.toLowerCase().includes(searchLower) ||
+      donacion.descripcion?.toLowerCase().includes(searchLower) ||
+      almacenNombre.toLowerCase().includes(searchLower) ||
+      donacion.cantidad_donacion?.toString().includes(searchLower)
+    );
+  }) : [];
 
   return (
     <>
-      <style>{styles}</style>
+      
       <div className="bien-container">
-        <motion.div 
+         <motion.div 
           className="bien-header"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
         >
-          <motion.h2
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
+          <motion.div
+            className="header-gradient"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
           >
-            Sistema de Donaciones
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            Gestiona y controla todas las donaciones recibidas
-          </motion.p>
+            <div className="header-content">
+              <motion.h2
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                >
+                  <Heart size={36} fill="white" color="white" />
+                </motion.div>
+                Sistema de Donaciones
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Gift size={32} color="white" />
+                </motion.div>
+              </motion.h2>
+              
+              <motion.p
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                Gestiona y controla todas las donaciones recibidas con amor y eficiencia
+              </motion.p>
+
+              <motion.div 
+                className="header-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="stat-icon">
+                    <Package size={20} color="white" />
+                  </div>
+                  <div className="stat-text">
+                    <div className="stat-value">{totalDonaciones}</div>
+                    <div className="stat-label">Total Donaciones</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                >
+                  <div className="stat-icon">
+                    <Users size={20} color="white" />
+                  </div>
+                  <div className="stat-text">
+                    <div className="stat-value">{totalCantidad}</div>
+                    <div className="stat-label">Cantidad Total</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                >
+                  <div className="stat-icon">
+                    <Hash size={20} color="white" />
+                  </div>
+                  <div className="stat-text">
+                    <div className="stat-value">{tiposUnicos}</div>
+                    <div className="stat-label">Tipos Diferentes</div>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div 
+                className="floating-icons"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Shirt size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -15, 0],
+                    rotate: [0, -8, 8, 0]
+                  }}
+                  transition={{ 
+                    duration: 3.5, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                >
+                  <Apple size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -12, 0],
+                    rotate: [0, 10, -10, 0]
+                  }}
+                  transition={{ 
+                    duration: 4.2, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 1
+                  }}
+                >
+                  <Book size={20} color="white" />
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div>
+
           <motion.div 
             className="bien-busqueda-bar"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            style={{ marginTop: '2rem' }}
           >
             <div style={{ position: 'relative', flex: 1 }}>
               <motion.div
@@ -673,7 +553,7 @@ const Donaciones = () => {
             </motion.button>
             <motion.button 
               className="btn-ayuda" 
-              onClick={() => setMostrarModalCrear(true)} 
+              onClick={() => setMostrarModal(true)} 
               title="Registrar nueva donación"
               whileHover={{ 
                 scale: 1.08, 
@@ -694,256 +574,146 @@ const Donaciones = () => {
           </motion.div>
         </motion.div>
 
-        {loading && donaciones.length === 0 ? (
-          <motion.div 
-            style={{ textAlign: 'center', padding: '3rem' }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              style={{ display: 'inline-block', marginBottom: '1rem' }}
-            >
-              <Package size={40} color="#667eea" />
-            </motion.div>
-            <p style={{ color: '#667eea', fontWeight: '600' }}>Cargando donaciones...</p>
-          </motion.div>
-        ) : (
-          <motion.div 
-            className="bien-categorias-container"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <motion.div 
-              className="bien-categoria-section"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              <motion.div 
-                className="bien-categoria-header"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h3 className="bien-subtitulo">
-                  <motion.div
-                    initial={{ rotate: -180, scale: 0 }}
-                    animate={{ rotate: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  >
-                    <Package size={20} style={{ color: '#667eea' }} />
-                  </motion.div>
-                  Todas las Donaciones ({donacionesFiltradas.length})
-                </h3>
-              </motion.div>
-          
-              {donacionesFiltradas.length === 0 ? (
-                <motion.p 
-                  className="bien-vacio"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 }}
-                >
-                  No hay donaciones registradas.
-                </motion.p>
-              ) : (
-                <motion.div 
-                  className="tabla-donaciones"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5 }}
-                >
-                  <motion.div 
-                    className="tabla-header"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <motion.div
-                        animate={{ rotate: [0, 360] }}
-                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      >
-                        <Hash size={14} />
-                      </motion.div>
-                      ID
-                    </div>
-                    <div>TIPO & DESCRIPCIÓN</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Warehouse size={14} />
-                      ALMACÉN
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Calendar size={14} />
-                      FECHA
-                    </div>
-                    <div style={{ textAlign: 'center' }}>CANTIDAD</div>
-                    <div style={{ textAlign: 'center' }}>ACCIONES</div>
-                  </motion.div>
 
-                  <div className="tabla-body">
-                    {donacionesFiltradas.map((donacion, index) => (
+        <div className="bien-categorias-container">
+          {donacionesFiltradas.length === 0 ? (
+            <motion.div 
+               className="bien-categorias-container"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+            >
+              <Package size={60} color="#ccc" style={{ marginBottom: '1rem' }} />
+              <p>No se encontraron donaciones</p>
+            </motion.div>
+          ) : (
+            <motion.div 
+              
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="bien-categoria-header">
+                <h3 className="bien-subtitulo">
+                  <Package size={24} />
+                  <span>Todas las Donaciones ({donacionesFiltradas.length})</span>
+                </h3>
+              </div>
+
+              <motion.div 
+                className="tabla-donaciones"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="tabla-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Hash size={14} />
+                    ID
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Package size={14} />
+                    TIPO & DESCRIPCIÓN
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Warehouse size={14} />
+                    ALMACÉN
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Calendar size={14} />
+                    FECHA
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Hash size={14} />
+                    CANTIDAD
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <Edit size={14} style={{ display: 'inline' }} />
+                  </div>
+                </div>
+
+                <div className="tabla-body">
+                  <AnimatePresence>
+                    {donacionesFiltradas.map((donacion, idx) => (
                       <motion.div
                         key={donacion._id || donacion.id_donacion}
                         className="tabla-fila"
-                        initial={{ opacity: 0, x: -50 }}
+                        onClick={() => handleFilaClick(donacion)}
+                        initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ 
-                          delay: Math.min(index * 0.05, 1),
-                          duration: 0.4,
-                          type: "spring",
-                          stiffness: 100
-                        }}
-                        onClick={() => handleOpenEditModal(donacion)}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ delay: idx * 0.02 }}
+                        whileHover={{ scale: 1.01 }}
                       >
-                        <motion.div 
-                          style={{ 
-                            fontWeight: 'bold', 
-                            color: '#FF9800',
-                            fontSize: '0.95rem'
-                          }}
-                          whileHover={{ scale: 1.1 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
-                          #{donacion.id_donacion || donacion._id}
-                        </motion.div>
-
+                        <div style={{ 
+                          fontWeight: '700', 
+                          color: '#667eea',
+                          fontSize: '0.9rem'
+                        }}>
+                          #{donacion.id_donacion || idx + 1}
+                        </div>
+                        
                         <div>
-                          <motion.div 
-                            style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '10px',
-                              marginBottom: donacion.descripcion ? '5px' : '0'
-                            }}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.05 + 0.2 }}
-                          >
-                            <motion.span 
-                              style={{ display: 'flex', alignItems: 'center' }}
-                              whileHover={{ rotate: 360, scale: 1.2 }}
-                              transition={{ duration: 0.5 }}
-                            >
-                              {getTipoIcon(donacion.tipo_donacion)}
-                            </motion.span>
-                            <span style={{ 
-                              fontWeight: '600',
-                              fontSize: '1rem',
-                              color: '#333'
-                            }}>
-                              {donacion.tipo_donacion}
-                            </span>
-                          </motion.div>
-                          {donacion.descripcion && (
-                            <motion.div 
-                              style={{ 
-                                fontSize: '0.85rem',
-                                color: '#666',
-                                marginLeft: '35px',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                              }}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: index * 0.05 + 0.3 }}
-                            >
-                              {donacion.descripcion}
-                            </motion.div>
-                          )}
+                          <div style={{ 
+                            fontWeight: '600', 
+                            marginBottom: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '0.95rem'
+                          }}>
+                            {getIconoTipo(donacion.tipo_donacion)}
+                            {donacion.tipo_donacion}
+                          </div>
+                          <div style={{ 
+                            fontSize: '0.85rem', 
+                            color: '#666',
+                            fontStyle: 'italic'
+                          }}>
+                            {donacion.descripcion || 'Sin descripción'}
+                          </div>
                         </div>
 
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
-                          <span style={{ 
-                            padding: '4px 12px',
-                            background: '#FF9800',
-                            color: 'white',
-                            borderRadius: '20px',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            display: 'inline-block'
-                          }}>
-                            Almacén {donacion.id_almacen}
-                          </span>
-                        </motion.div>
-
-                        <motion.div 
-                          style={{ 
-                            fontSize: '0.9rem',
-                            color: '#555'
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.05 + 0.25 }}
-                        >
-                          {formatDate(donacion.fecha)}
-                        </motion.div>
-
-                        <motion.div 
-                          style={{ 
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            color: '#4CAF50',
-                            fontSize: '1.2rem'
-                          }}
-                          whileHover={{ scale: 1.15, color: '#45a049' }}
-                          transition={{ type: "spring", stiffness: 300 }}
-                        >
-                          {donacion.cantidad_donacion}
-                        </motion.div>
-
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'center',
-                          gap: '8px'
-                        }}>
-                          <motion.button
-                            whileHover={{ 
-                              scale: 1.2,
-                              rotate: 15,
-                              transition: { duration: 0.2 }
+                        <div>
+                          <span 
+                            className="badge-almacen"
+                            style={{ 
+                              background: getColorAlmacen(donacion.id_almacen),
+                              color: 'white'
                             }}
-                            whileTap={{ scale: 0.9, rotate: -15 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEditModal(donacion);
-                            }}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#2196F3',
-                              padding: '5px',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}
-                            title="Editar"
                           >
-                            <Edit size={18} />
-                          </motion.button>
+                            {getNombreAlmacen(donacion.id_almacen)}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '0.9rem', color: '#555' }}>
+                          {new Date(donacion.fecha).toLocaleDateString('es-ES')}
+                        </div>
+
+                        <div className="badge-cantidad">
+                          {donacion.cantidad_donacion}
+                        </div>
+
+                        <div style={{ textAlign: 'center' }}>
+                          <motion.div
+                            whileHover={{ scale: 1.2, rotate: 15 }}
+                            style={{ display: 'inline-block' }}
+                          >
+                            <Edit size={18} color="#667eea" />
+                          </motion.div>
                         </div>
                       </motion.div>
                     ))}
-                  </div>
-                </motion.div>
-              )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </div>
 
-        {/* Modal Crear Donación */}
+        {/* Modal Nueva Donación */}
         <AnimatePresence>
-          {mostrarModalCrear && (
+          {mostrarModal && (
             <motion.div 
               className="modal-overlay" 
               onClick={handleCloseModals}
@@ -953,121 +723,110 @@ const Donaciones = () => {
             >
               <motion.div 
                 className="modal-content" 
-                style={{ maxWidth: '700px', maxHeight: '90vh', overflow: 'auto' }} 
+                style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 50 }}
+                initial={{ scale: 0.8, y: 50 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ type: "spring", damping: 25 }}
+                exit={{ scale: 0.8, y: 50 }}
+                transition={{ type: "spring", damping: 20 }}
               >
                 <h3 className="modal-title">
-                  <Plus size={20} />
-                  Registrar Nueva Donación
+                  <Plus size={24} />
+                  Nueva Donación
                 </h3>
-                <form onSubmit={handleCrearDonacion}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div className="form-group">
-                        <label>ID Almacén *</label>
-                        <input
-                          type="number"
-                          value={formData.id_almacen}
-                          onChange={(e) => setFormData({...formData, id_almacen: e.target.value})}
-                          placeholder="Número de almacén"
-                          required
-                          min="1"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Fecha *</label>
-                        <input
-                          type="date"
-                          value={formData.fecha}
-                          onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div className="form-group">
-                        <label>Tipo de Donación *</label>
-                        <select
-                          value={formData.tipo_donacion}
-                          onChange={(e) => setFormData({...formData, tipo_donacion: e.target.value})}
-                          required
-                        >
-                          {tiposDonacion.map((tipo) => (
-                            <option key={tipo} value={tipo}>
-                              {tipo}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label>Cantidad *</label>
-                        <input
-                          type="number"
-                          value={formData.cantidad_donacion}
-                          onChange={(e) => setFormData({...formData, cantidad_donacion: e.target.value})}
-                          placeholder="Cantidad recibida"
-                          required
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
+                
+                <form onSubmit={handleSubmitNueva}>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>
+                        Tipo de Donación <span>*</span>
+                      </label>
+                      <select 
+                        name="tipo_donacion" 
+                        value={formData.tipo_donacion} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Enseres">Enseres</option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Útiles escolares">Utiles Escolares</option>
+                        <option value="Material Audiovisual">Mateial Audiovisual</option>
+                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Productos de higiene">Productos de Higiene</option>
+                        <option value="Otro">Otro</option>
+                      </select>
                     </div>
 
                     <div className="form-group">
+                      <label>
+                        Cantidad <span>*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        name="cantidad_donacion" 
+                        value={formData.cantidad_donacion} 
+                        onChange={handleInputChange}
+                        min="1"
+                        placeholder="Ingrese la cantidad"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group form-grid-full">
                       <label>Descripción</label>
-                      <textarea
-                        value={formData.descripcion}
-                        onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                        placeholder="Describe la donación recibida..."
-                        rows="3"
-                        maxLength={1000}
+                      <textarea 
+                        name="descripcion" 
+                        value={formData.descripcion} 
+                        onChange={handleInputChange}
+                        placeholder="Describe la donación..."
                       />
-                      <small style={{ color: '#666', fontSize: '0.85rem' }}>
-                        {formData.descripcion.length}/1000 caracteres
-                      </small>
                     </div>
 
-                    <div className="form-group">
+                    <div className="form-group form-grid-full">
                       <label>Observaciones</label>
-                      <textarea
-                        value={formData.observaciones}
-                        onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
-                        placeholder="Observaciones adicionales..."
-                        rows="2"
-                        maxLength={500}
+                      <textarea 
+                        name="observaciones" 
+                        value={formData.observaciones} 
+                        onChange={handleInputChange}
+                        placeholder="Notas adicionales..."
                       />
-                      <small style={{ color: '#666', fontSize: '0.85rem' }}>
-                        {formData.observaciones.length}/500 caracteres
-                      </small>
                     </div>
 
                     <div className="form-group">
-                      <label>Foto de la Donación</label>
-                      <div style={{ 
-                        border: '2px dashed #e0e0e0', 
-                        borderRadius: '8px', 
-                        padding: '1rem',
-                        textAlign: 'center',
-                        transition: 'all 0.3s ease'
-                      }}>
+                      <label>
+                        Almacén <span>*</span>
+                      </label>
+                      <select 
+                        name="id_almacen" 
+                        value={formData.id_almacen} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar almacén</option>
+                        <option value="1">Almacén 1</option>
+                        <option value="2">Almacén 2</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group form-grid-full">
+                      <label>
+                        <ImagePlus size={16} />
+                        Foto de la Donación
+                      </label>
+                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
                         {formData.foto_preview ? (
                           <div>
                             <img 
                               src={formData.foto_preview} 
                               alt="Preview" 
-                              style={{ 
-                                maxWidth: '100%', 
-                                maxHeight: '200px', 
-                                borderRadius: '8px',
-                                marginBottom: '1rem'
-                              }} 
+                              className="foto-preview"
                             />
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                               <motion.button
@@ -1075,48 +834,31 @@ const Donaciones = () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                style={{
-                                  padding: '0.5rem 1rem',
-                                  background: '#f44336',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.9rem'
-                                }}
+                                className="btn-eliminar"
                               >
+                                <Trash2 size={16} />
                                 Eliminar foto
                               </motion.button>
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <Package size={40} color="#999" style={{ marginBottom: '0.5rem' }} />
-                            <p style={{ color: '#666', marginBottom: '0.5rem' }}>
-                              Haz clic para seleccionar una imagen
+                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: '#666', marginBottom: '1rem', fontSize: '1rem' }}>
+                              Arrastra una imagen o haz clic para seleccionar
                             </p>
                             <input
                               type="file"
                               accept="image/*"
                               onChange={handleFotoChange}
                               style={{ display: 'none' }}
-                              id="foto-upload-crear"
+                              id="foto-upload-nueva"
                             />
-                            <label 
-                              htmlFor="foto-upload-crear"
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.5rem 1rem',
-                                background: '#667eea',
-                                color: 'white',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem'
-                              }}
-                            >
+                            <label htmlFor="foto-upload-nueva" className="btn-upload-label">
+                              <ImagePlus size={18} />
                               Seleccionar imagen
                             </label>
-                            <small style={{ display: 'block', marginTop: '0.5rem', color: '#999', fontSize: '0.85rem' }}>
+                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
                               Formatos: JPG, PNG, GIF. Máximo 5MB
                             </small>
                           </div>
@@ -1125,7 +867,7 @@ const Donaciones = () => {
                     </div>
                   </div>
 
-                  <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+                  <div className="modal-actions">
                     <motion.button 
                       type="button" 
                       className="btn-cancelar" 
@@ -1142,8 +884,8 @@ const Donaciones = () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Check size={16} />
-                      Registrar Donación
+                      <Save size={16} />
+                      Guardar Donación
                     </motion.button>
                   </div>
                 </form>
@@ -1154,7 +896,7 @@ const Donaciones = () => {
 
         {/* Modal Editar Donación */}
         <AnimatePresence>
-          {donacionSeleccionada && (
+          {mostrarModalEditar && donacionSeleccionada && (
             <motion.div 
               className="modal-overlay" 
               onClick={handleCloseModals}
@@ -1164,107 +906,109 @@ const Donaciones = () => {
             >
               <motion.div 
                 className="modal-content" 
-                style={{ maxWidth: '700px', maxHeight: '90vh', overflow: 'auto' }} 
+                style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 50 }}
+                initial={{ scale: 0.8, y: 50 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ type: "spring", damping: 25 }}
+                exit={{ scale: 0.8, y: 50 }}
+                transition={{ type: "spring", damping: 20 }}
               >
                 <h3 className="modal-title">
-                  <Edit size={20} />
+                  <Edit size={24} />
                   Editar Donación
                 </h3>
-                <form onSubmit={handleEditarDonacion}>
+                
+                <form onSubmit={handleSubmitEditar}>
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>ID Almacén *</label>
-                      <input
-                        type="number"
-                        value={formData.id_almacen}
-                        onChange={(e) => setFormData({...formData, id_almacen: e.target.value})}
-                        required
-                        min="1"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Fecha *</label>
-                      <input
-                        type="date"
-                        value={formData.fecha}
-                        onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Tipo de Donación *</label>
-                      <select
-                        value={formData.tipo_donacion}
-                        onChange={(e) => setFormData({...formData, tipo_donacion: e.target.value})}
+                      <label>
+                        Tipo de Donación <span>*</span>
+                      </label>
+                      <select 
+                        name="tipo_donacion" 
+                        value={formData.tipo_donacion} 
+                        onChange={handleInputChange}
                         required
                       >
-                        {tiposDonacion.map((tipo) => (
-                          <option key={tipo} value={tipo}>
-                            {tipo}
-                          </option>
-                        ))}
+                        <option value="">Seleccionar tipo</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Enseres">Enseres</option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Útiles escolares">Utiles Escolares</option>
+                        <option value="Material Audiovisual">Mateial Audiovisual</option>
+                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Productos de higiene">Productos de Higiene</option>
+                        <option value="Otro">Otro</option>
                       </select>
                     </div>
 
                     <div className="form-group">
-                      <label>Cantidad *</label>
-                      <input
-                        type="number"
-                        value={formData.cantidad_donacion}
-                        onChange={(e) => setFormData({...formData, cantidad_donacion: e.target.value})}
+                      <label>
+                        Cantidad <span>*</span>
+                      </label>
+                      <input 
+                        type="number" 
+                        name="cantidad_donacion" 
+                        value={formData.cantidad_donacion} 
+                        onChange={handleInputChange}
+                        min="1"
                         required
-                        min="0"
-                        step="0.01"
                       />
                     </div>
 
-                    <div className="form-group full-width">
+                    <div className="form-group form-grid-full">
                       <label>Descripción</label>
-                      <textarea
-                        value={formData.descripcion}
-                        onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
-                        rows="3"
-                        maxLength={1000}
+                      <textarea 
+                        name="descripcion" 
+                        value={formData.descripcion} 
+                        onChange={handleInputChange}
+                        placeholder="Describe la donación..."
                       />
                     </div>
 
-                    <div className="form-group full-width">
+                    <div className="form-group form-grid-full">
                       <label>Observaciones</label>
-                      <textarea
-                        value={formData.observaciones}
-                        onChange={(e) => setFormData({...formData, observaciones: e.target.value})}
-                        rows="2"
-                        maxLength={500}
+                      <textarea 
+                        name="observaciones" 
+                        value={formData.observaciones} 
+                        onChange={handleInputChange}
+                        placeholder="Notas adicionales..."
                       />
                     </div>
 
-                    <div className="form-group full-width">
-                      <label>Foto de la Donación</label>
-                      <div style={{ 
-                        border: '2px dashed #e0e0e0', 
-                        borderRadius: '8px', 
-                        padding: '1rem',
-                        textAlign: 'center',
-                        transition: 'all 0.3s ease'
-                      }}>
+                    <div className="form-group">
+                      <label>
+                        Almacén <span>*</span>
+                      </label>
+                      <select 
+                        name="id_almacen" 
+                        value={formData.id_almacen} 
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Seleccionar almacén</option>
+                        <option value="1">Almacén 1</option>
+                        <option value="2">Almacén 2</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group form-grid-full">
+                      <label>
+                        <ImagePlus size={16} />
+                        Foto de la Donación
+                      </label>
+                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
                         {formData.foto_preview ? (
                           <div>
                             <img 
                               src={formData.foto_preview} 
                               alt="Preview" 
-                              style={{ 
-                                maxWidth: '100%', 
-                                maxHeight: '200px', 
-                                borderRadius: '8px',
-                                marginBottom: '1rem'
-                              }} 
+                              className="foto-preview"
                             />
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                               <motion.button
@@ -1272,25 +1016,32 @@ const Donaciones = () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                style={{
-                                  padding: '0.5rem 1rem',
-                                  background: '#f44336',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer',
-                                  fontSize: '0.9rem'
-                                }}
+                                className="btn-eliminar"
                               >
+                                <Trash2 size={16} />
                                 Eliminar foto
                               </motion.button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFotoChange}
+                                style={{ display: 'none' }}
+                                id="foto-upload-editar-replace"
+                              />
+                              <label 
+                                htmlFor="foto-upload-editar-replace"
+                                className="btn-upload-label"
+                              >
+                                <Upload size={16} />
+                                Cambiar foto
+                              </label>
                             </div>
                           </div>
                         ) : (
                           <div>
-                            <Package size={40} color="#999" style={{ marginBottom: '0.5rem' }} />
-                            <p style={{ color: '#666', marginBottom: '0.5rem' }}>
-                              Haz clic para seleccionar una imagen
+                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: '#666', marginBottom: '1rem' }}>
+                              Arrastra una imagen o haz clic para seleccionar
                             </p>
                             <input
                               type="file"
@@ -1301,19 +1052,12 @@ const Donaciones = () => {
                             />
                             <label 
                               htmlFor="foto-upload-editar"
-                              style={{
-                                display: 'inline-block',
-                                padding: '0.5rem 1rem',
-                                background: '#667eea',
-                                color: 'white',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem'
-                              }}
+                              className="btn-upload-label"
                             >
+                              <ImagePlus size={18} />
                               Seleccionar imagen
                             </label>
-                            <small style={{ display: 'block', marginTop: '0.5rem', color: '#999', fontSize: '0.85rem' }}>
+                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
                               Formatos: JPG, PNG, GIF. Máximo 5MB
                             </small>
                           </div>
@@ -1326,11 +1070,7 @@ const Donaciones = () => {
                     <motion.button 
                       type="button" 
                       className="btn-eliminar" 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleEliminarDonacion();
-                      }}
+                      onClick={handleEliminarDonacion}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1340,11 +1080,7 @@ const Donaciones = () => {
                     <motion.button 
                       type="button" 
                       className="btn-cancelar" 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleCloseModals();
-                      }}
+                      onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1354,9 +1090,6 @@ const Donaciones = () => {
                     <motion.button 
                       type="submit" 
                       className="btn-guardar"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1374,25 +1107,18 @@ const Donaciones = () => {
         <AnimatePresence>
           {notification && (
             <motion.div
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              style={{
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                zIndex: 10000,
-                background: notification.type === 'success' ? '#4CAF50' : '#f44336',
-                color: 'white',
-                padding: '1rem 1.5rem',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}
+              className={`notification ${notification.type}`}
+              initial={{ opacity: 0, y: -50, x: 100 }}
+              animate={{ opacity: 1, y: 0, x: 0 }}
+              exit={{ opacity: 0, y: -50, x: 100 }}
+              transition={{ type: "spring", damping: 20 }}
             >
-              {notification.message}
+              {notification.type === 'success' ? (
+                <CheckCircle size={24} />
+              ) : (
+                <AlertCircle size={24} />
+              )}
+              <span>{notification.message}</span>
               <button
                 onClick={() => setNotification(null)}
                 style={{
@@ -1400,7 +1126,7 @@ const Donaciones = () => {
                   border: 'none',
                   color: 'white',
                   cursor: 'pointer',
-                  padding: '2px',
+                  padding: '4px',
                   display: 'flex',
                   alignItems: 'center'
                 }}
@@ -1411,7 +1137,7 @@ const Donaciones = () => {
           )}
         </AnimatePresence>
 
-        {/* Modal Ayuda */}
+        {/* Modal Ayuda Mejorado */}
         <AnimatePresence>
           {mostrarAyuda && (
             <motion.div 
@@ -1423,54 +1149,66 @@ const Donaciones = () => {
             >
               <motion.div 
                 className="modal-content" 
-                style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto', paddingBottom: '80px' }} 
+                style={{ maxWidth: '580px', maxHeight: '85vh' }}
                 onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.9, y: 50 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 50 }}
-                transition={{ type: "spring", damping: 25 }}
+                initial={{ scale: 0.8, rotateX: 90 }}
+                animate={{ scale: 1, rotateX: 0 }}
+                exit={{ scale: 0.8, rotateX: 90 }}
+                transition={{ type: "spring", damping: 20 }}
               >
                 <h3 className="modal-title">
-                  <Book size={20} />
+                  <Sparkles size={24} />
                   Guía de Uso - Sistema de Donaciones
                 </h3>
                 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Search size={16} />
-                    Búsqueda
+                <div className="help-section">
+                  <h4>
+                    <Search size={18} />
+                    Búsqueda Inteligente
                   </h4>
-                  <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por tipo, descripción, almacén o cantidad.</p>
+                  <p>Utiliza la barra de búsqueda para filtrar donaciones por tipo, descripción, almacén o cantidad. Los resultados se actualizan en tiempo real.</p>
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Package size={16} />
-                    Tipos de Donación
+                <div className="help-section">
+                  <h4>
+                    <Package size={18} />
+                    Tipos de Donación Disponibles
                   </h4>
-                  <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    <li><strong>Alimentos:</strong> Donaciones de alimentos</li>
-                    <li><strong>Vestimenta:</strong> Ropa y calzado</li>
-                    <li><strong>Medicina:</strong> Medicamentos y suministros médicos</li>
-                    <li><strong>Enseres:</strong> Muebles y enseres</li>
-                    <li><strong>Bebidas:</strong> Bebidas y líquidos</li>
-                    <li><strong>Útiles escolares:</strong> Material educativo</li>
-                    <li><strong>Productos de higiene:</strong> Artículos de limpieza</li>
-                    <li><strong>Otro:</strong> Otras donaciones</li>
+                  <ul>
+                    <li><strong>Alimentos:</strong> </li>
+                    <li><strong>Instrumentos musicales:</strong> </li>
+                    <li><strong>Medicina:</strong> </li>
+                    <li><strong>Enseres:</strong> </li>
+                    <li><strong>Accesiorios Musuicales:</strong> </li>
+                    <li><strong>Útiles escolares:</strong> </li>
+                    <li><strong>Productos de higiene:</strong> </li>
+                    <li><strong>Material Audiovisual:</strong> </li>
+                    <li><strong>Material didactico:</strong> </li>
+                    <li><strong>Otro:</strong> </li>
                   </ul>
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    ✨ Funciones
+                <div className="help-section">
+                  <h4>
+                    <Sparkles size={18} />
+                    Funciones Principales
                   </h4>
-                  <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                    <li>Clic en fila para ver/editar detalles</li>
-                    <li>Registro con fecha automática</li>
-                    <li>Búsqueda en tiempo real</li>
-                    <li>Vista de lista organizada</li>
-                    <li>Iconos visuales por tipo</li>
+                  <ul>
+                    <li><strong>Agregar:</strong> Clic en "Nueva Donación" para registrar</li>
+                    <li><strong>Editar:</strong> Clic en cualquier fila para ver/editar detalles</li>
+                    <li><strong>Eliminar:</strong> Dentro del modal de edición</li>
+                    <li><strong>Fotos:</strong> Adjunta imágenes de hasta 5MB</li>
+                    <li><strong>Auto-guardado:</strong> La fecha se registra automáticamente</li>
+                    <li><strong>Sincronización:</strong> Los datos se actualizan cada 30 segundos</li>
                   </ul>
+                </div>
+
+                <div className="help-section">
+                  <h4>
+                    <Warehouse size={18} />
+                    Almacenes Disponibles
+                  </h4>
+                  <p>Selecciona el almacén donde se almacenará la donación. Cada almacén tiene un color distintivo para fácil identificación visual.</p>
                 </div>
 
                 <div style={{ 
@@ -1478,24 +1216,25 @@ const Donaciones = () => {
                   bottom: '0', 
                   left: '0', 
                   right: '0', 
-                  padding: '1rem', 
+                  padding: '1.5rem', 
                   background: 'white', 
-                  borderTop: '1px solid #e0e0e0',
-                  marginLeft: '-2rem',
-                  marginRight: '-2rem',
-                  marginBottom: '-2rem',
+                  borderTop: '2px solid #f0f0f0',
+                  marginLeft: '-2.5rem',
+                  marginRight: '-2.5rem',
+                  marginBottom: '-2.5rem',
                   display: 'flex',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  gap: '1rem'
                 }}>
                   <motion.button 
                     className="btn-cerrar" 
                     onClick={() => setMostrarAyuda(false)}
-                    style={{ width: '200px' }}
+                    style={{ minWidth: '200px' }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Check size={16} />
-                    Entendido
+                    <Check size={18} />
+                    ¡Entendido!
                   </motion.button>
                 </div>
               </motion.div>
