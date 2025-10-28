@@ -362,9 +362,9 @@ const Donaciones = () => {
   return (
     <>
       
-      <div className="bien-container">
+      <div className="donacion-container">
          <motion.div 
-          className="bien-header"
+          className="donacion-header"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
@@ -513,7 +513,7 @@ const Donaciones = () => {
           </motion.div>
 
           <motion.div 
-            className="bien-busqueda-bar"
+            className="donacion-busqueda-bar"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
@@ -529,7 +529,7 @@ const Donaciones = () => {
               </motion.div>
               <input
                 type="text"
-                className="bien-busqueda"
+                className="donacion-busqueda"
                 placeholder="Buscar por tipo, descripción, almacén o cantidad..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
@@ -575,10 +575,10 @@ const Donaciones = () => {
         </motion.div>
 
 
-        <div className="bien-categorias-container">
+        <div className="donacion-categorias-container">
           {donacionesFiltradas.length === 0 ? (
             <motion.div 
-               className="bien-categorias-container"
+               className="donacion-categorias-container"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
@@ -593,8 +593,8 @@ const Donaciones = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <div className="bien-categoria-header">
-                <h3 className="bien-subtitulo">
+              <div className="donacion-categoria-header">
+                <h3 className="donacion-subtitulo">
                   <Package size={24} />
                   <span>Todas las Donaciones ({donacionesFiltradas.length})</span>
                 </h3>

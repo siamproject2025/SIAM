@@ -10,5 +10,5 @@ const LibroSchema = new mongoose.Schema({
   fechaCreacion: { type: Date, default: Date.now },
 });
 
-const Libro = mongoose.model("Libro", libroSchema, "libros");
+const Libro = mongoose.model("Libro", LibroSchema, "libros");
 module.exports = Libro;
