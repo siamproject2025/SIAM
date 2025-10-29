@@ -13,7 +13,7 @@ const ActividadesPage = () => {
 
   return (
     <div>
-      <h1>📚 Gestión de Actividades</h1>
+     
       <FormularioActividad onActividadCreada={manejarActividadCreada} />
       
     </div>
