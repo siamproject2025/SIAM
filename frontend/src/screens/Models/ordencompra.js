@@ -476,9 +476,9 @@ const OrdenCompra = () => {
                         <td className="cell-numero">{orden.numero}</td>
                       )}
                       {visibleColumns.has("proveedor") && (
-                        <td className="cell-proveedor" title={orden.proveedor_id}>
-                          {orden.proveedor_id}
-                        </td>
+                        <td className="cell-proveedor" title={orden.proveedor_id?.empresa || "Sin empresa"}>
+                           {orden.proveedor_id?.nombre? `${orden.proveedor_id.nombre} (${orden.proveedor_id.empresa})` : "Sin proveedor"}
+                         </td>
                       )}
                       {visibleColumns.has("fecha") && (
                         <td className="cell-fecha">
