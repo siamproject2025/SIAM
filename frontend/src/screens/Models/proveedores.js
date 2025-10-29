@@ -314,18 +314,18 @@ const Proveedores = () => {
 
   const renderTablaProveedores = (titulo, lista, icon) => (
     <motion.div 
-      className="bien-categoria-sectilon"
+      className="proveedor-categoria-sectilon"
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2, duration: 0.6 }}
     >
       <motion.div 
-        className="bien-categoria-header"
+        className="proveedor-categoria-header"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h3 className="bien-subtitulo">
+        <h3 className="proveedor-subtitulo">
           <motion.div
             initial={{ rotate: -180, scale: 0 }}
             animate={{ rotate: 0, scale: 1 }}
@@ -339,7 +339,7 @@ const Proveedores = () => {
 
       {lista.length === 0 ? (
         <motion.p 
-          className="bien-vacio"
+          className="proveedor-vacio"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.4 }}
@@ -563,10 +563,10 @@ const Proveedores = () => {
 
   return (
     <>
-      <div className="bien-container">
+      <div className="proveedor-container">
         {/* 🎨 ENCABEZADO MEJORADO */}
         <motion.div 
-          className="bien-header"
+          className="proveedor-header"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
@@ -851,7 +851,7 @@ const Proveedores = () => {
 
           {/* BARRA DE BÚSQUEDA Y FILTROS */}
           <motion.div 
-            className="bien-busqueda-bar"
+            className="proveedor-busqueda-bar"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
@@ -867,7 +867,7 @@ const Proveedores = () => {
               </motion.div>
               <input
                 type="text"
-                className="bien-busqueda"
+                className="proveedor-busqueda"
                 placeholder="Buscar por nombre, empresa, email, teléfono, ciudad o país..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
@@ -1032,7 +1032,7 @@ const Proveedores = () => {
                 </motion.div>
               ) : (
                 <motion.div 
-                  className="bien-categorias-container"
+                  className="proveedor-categorias-container"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}

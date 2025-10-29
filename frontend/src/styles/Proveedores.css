@@ -1,28 +1,28 @@
 
-  .bien-container {
+  .proveedor-container {
     padding: 2rem;
     max-width: 100%;
     margin: 0 auto;
     width: 100%;
   }
 
-  .bien-header {
+  .proveedor-header {
     margin-bottom: 2rem;
     width: 100%;
   }
 
-  .bien-header h2 {
+  .proveedor-header h2 {
     font-size: 2rem;
     color: #333;
     margin-bottom: 0.5rem;
   }
 
-  .bien-header p {
+  .proveedor-header p {
     color: #666;
     font-size: 1rem;
   }
 
-  .bien-busqueda-bar {
+  .proveedor-busqueda-bar {
     display: flex;
     gap: 1rem;
     margin-top: 1.5rem;
@@ -30,7 +30,7 @@
     width: 100%;
   }
 
-  .bien-busqueda {
+  .proveedor-busqueda {
     flex: 1;
     width: 100%;
     padding: 0.8rem 1rem;
@@ -41,7 +41,7 @@
     transition: all 0.3s ease;
   }
 
-  .bien-busqueda:focus {
+  .proveedor-busqueda:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -67,22 +67,28 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   }
 
-  .bien-categorias-container {
-    margin-top: 1rem;
-    width: 205%;
-  }
-
-  .bien-categoria-section {
+  .proveedor-categorias-container {
+    
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
     margin-bottom: 2rem;
-    width: 100%;
   }
 
-  .bien-categoria-header {
+  .proveedor-categoria-section {
+     background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-light);
+  transition: transform 0.2s ease;
+  }
+
+  .proveedor-categoria-header {
     margin-bottom: 0.75rem;
     width: 100%;
   }
 
-  .bien-subtitulo {
+  .proveedor-subtitulo {
     font-size: 1.3rem;
     color: #333;
     display: flex;
@@ -90,7 +96,7 @@
     gap: 0.5rem;
   }
 
-  .bien-vacio {
+  .proveedor-vacio {
     text-align: center;
     padding: 3rem;
     color: #999;
@@ -123,16 +129,18 @@
     position: sticky;
     top: 0;
     z-index: 10;
+    width: 100%;
   }
 
   .tabla-body {
     flex: 1;
     overflow-y: auto;
+    width: 100%;
   }
 
   
   
-.bien-categorila-section{
+.proveedor-categorila-section{
     width:auto;
 }
 
@@ -198,7 +206,7 @@
     color: white;
   }
 
-  .modal-overlay {
+  .proveedor-container .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -211,7 +219,7 @@
     z-index: 1000;
   }
 
-  .modal-content {
+   .proveedor-container  .modal-content {
     background: white;
     border-radius: 12px;
     padding: 2rem;
@@ -219,7 +227,7 @@
     max-width: 90vw;
   }
 
-  .modal-title {
+   .proveedor-container  .modal-title {
     font-size: 1.5rem;
     color: #333;
     margin-bottom: 1.5rem;
