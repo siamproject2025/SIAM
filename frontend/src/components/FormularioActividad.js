@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from 'framer-motion';
 import ModalCrearActividad from '../screens/Models/Actividades/ModalCrearActividad';
 import ModalDetalleActividad from '../screens/Models/Actividades/ModalDetalleActividad';
 import Notification from '../components/Notification';
 import '../../src/styles/Models/Actividades.css';
+import { 
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  Award,
+  Plus,
+  HelpCircle,
+  Search,
+  Star,
+  Target,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
 
 const API_URL = "http://localhost:5000/api/actividades";
 
@@ -20,6 +35,13 @@ const Actividades = () => {
       .then(data => setActividades(data))
       .catch(err => console.error('Error al obtener las actividades:', err));
   }, []);
+
+  // Calcular estadísticas
+  const totalActividades = actividades.length;
+  const actividadesHoyCount = actividades.filter(a => categorizarActividad(a.fecha) === 'HOY').length;
+  const actividadesProximasCount = actividades.filter(a => categorizarActividad(a.fecha) === 'PROXIMA').length;
+  const actividadesFuturasCount = actividades.filter(a => categorizarActividad(a.fecha) === 'FUTURA').length;
+  const actividadesFinalizadasCount = actividades.filter(a => categorizarActividad(a.fecha) === 'FINALIZADA').length;
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -135,17 +157,21 @@ const Actividades = () => {
     }
   };
 
-  // Función para categorizar actividades por estado temporal
-  const categorizarActividad = (fecha) => {
-    const ahora = new Date();
-    const fechaActividad = new Date(fecha);
-    const diferenciaDias = Math.ceil((fechaActividad - ahora) / (1000 * 60 * 60 * 24));
+  // Categorizar actividades según la fecha
+function categorizarActividad(fechaActividad) {
+  const fecha = new Date(fechaActividad);
+  const hoy = new Date();
 
-    if (diferenciaDias < 0) return 'FINALIZADA';
-    if (diferenciaDias === 0) return 'HOY';
-    if (diferenciaDias <= 7) return 'PROXIMA';
-    return 'FUTURA';
-  };
+  hoy.setHours(0, 0, 0, 0);
+  fecha.setHours(0, 0, 0, 0);
+
+  if (fecha.getTime() === hoy.getTime()) return 'HOY';
+  if (fecha > hoy && (fecha - hoy) <= 7 * 24 * 60 * 60 * 1000) return 'PROXIMA';
+  if (fecha > hoy) return 'FUTURA';
+  if (fecha < hoy) return 'FINALIZADA';
+  
+  return 'DESCONOCIDA';
+}
 
   const actividadesFiltradas = actividades.filter(a => {
     const terminoBusqueda = busqueda.toLowerCase();
@@ -171,27 +197,78 @@ const Actividades = () => {
     });
   };
 
-  const renderGrupoActividades = (titulo, lista, icono) => (
-    <div className="actividad-categoria-section">
-      <h3 className="actividad-subtitulo">{icono} {titulo}</h3>
+  const renderGrupoActividades = (titulo, lista, color) => (
+    <motion.div 
+      className="actividad-categoria-section"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div 
+        className="actividad-categoria-header"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h3 className="actividad-subtitulo">
+          <motion.div
+            initial={{ rotate: -180, scale: 0 }}
+            animate={{ rotate: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            style={{ color }}
+          >
+            <Calendar size={20} />
+          </motion.div>
+          {titulo} ({lista.length})
+        </h3>
+      </motion.div>
+
       {lista.length === 0 ? (
-        <p className="actividad-vacio">No hay actividades en esta categoría.</p>
+        <motion.p 
+          className="actividad-vacio"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          No hay actividades en esta categoría.
+        </motion.p>
       ) : (
-        <div className="actividad-listado">
-          {lista.map((actividad) => {
+        <motion.div 
+          className="actividad-listado"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          {lista.map((actividad, index) => {
             const categoria = categorizarActividad(actividad.fecha);
             return (
-              <div 
+              <motion.div 
                 key={actividad._id} 
                 className="actividad-card" 
                 onClick={() => setActividadSeleccionada(actividad)}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ 
+                  delay: Math.min(index * 0.05, 1),
+                  duration: 0.4,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ 
+                  scale: 1.02,
+                  transition: { duration: 0.2 }
+                }}
               >
                 <div className="actividad-card-header">
                   <span className={`actividad-estado-badge ${categoria}`}>
-                    {categoria === 'HOY' && '🔴 HOY'}
-                    {categoria === 'PROXIMA' && '🟡 PRÓXIMA'}
-                    {categoria === 'FUTURA' && '🟢 FUTURA'}
-                    {categoria === 'FINALIZADA' && '⚫ FINALIZADA'}
+                    {categoria === 'HOY' && <AlertCircle size={14} />}
+                    {categoria === 'PROXIMA' && <Clock size={14} />}
+                    {categoria === 'FUTURA' && <Target size={14} />}
+                    {categoria === 'FINALIZADA' && <CheckCircle size={14} />}
+                    {categoria === 'HOY' && 'HOY'}
+                    {categoria === 'PROXIMA' && 'PRÓXIMA'}
+                    {categoria === 'FUTURA' && 'FUTURA'}
+                    {categoria === 'FINALIZADA' && 'FINALIZADA'}
                   </span>
                   <span className="actividad-fecha">{formatearFecha(actividad.fecha)}</span>
                 </div>
@@ -201,51 +278,272 @@ const Actividades = () => {
                     <span className="actividad-info-value actividad-nombre">{actividad.nombre}</span>
                   </div>
                   <div className="actividad-info-item">
-                    <span className="actividad-info-label">📍 Lugar</span>
+                    <span className="actividad-info-label">
+                      <MapPin size={14} />
+                      Lugar
+                    </span>
                     <span className="actividad-info-value">{actividad.lugar}</span>
                   </div>
                   <div className="actividad-info-item full-width">
-                    <span className="actividad-info-label">📝 Descripción</span>
+                    <span className="actividad-info-label">Descripción</span>
                     <span className="actividad-info-value actividad-descripcion">{actividad.descripcion}</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 
   return (
     <div className="actividad-container">
-      <div className="actividad-header">
-        <h2>📅 Sistema de Actividades</h2>
-        <p>Organiza y gestiona todas tus actividades programadas</p>
-        <div className="actividad-busqueda-bar">
-          <input
-            type="text"
-            className="actividad-busqueda"
-            placeholder="Buscar por nombre, lugar o descripción..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-          />
-          <button className="btn-ayuda" onClick={() => setMostrarAyuda(true)} title="Ver ayuda">
-            ❓ Ayuda
-          </button>
-          <button className="btn-nueva-actividad" onClick={() => setMostrarModalCrear(true)}>
-            + Nueva Actividad
-          </button>
-        </div>
-      </div>
+      {/* 🎨 ENCABEZADO MEJORADO */}
+      <motion.div 
+        className="actividad-header"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+      >
+        <motion.div
+          className="header-gradient"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+        >
+          {/* Patrón de fondo */}
+          <div className="header-pattern" />
 
-      <div className="actividad-categorias-container">
-        {renderGrupoActividades("Actividades de Hoy", actividadesHoy, "🔴")}
-        {renderGrupoActividades("Próximos 7 días", actividadesProximas, "🟡")}
-        {renderGrupoActividades("Actividades futuras", actividadesFuturas, "🟢")}
-        {renderGrupoActividades("Actividades finalizadas", actividadesFinalizadas, "⚫")}
-      </div>
+          <div className="header-content">
+            <motion.h2
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <motion.div
+                initial={{ rotate: -180, scale: 0 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+              >
+                <Calendar size={36} fill="white" color="white" />
+              </motion.div>
+              Sistema de Actividades
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                className="floating-main-icon"
+              >
+                <Target size={32} color="white" />
+              </motion.div>
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="header-subtitle"
+            >
+              Organiza y gestiona todas tus actividades programadas de manera profesional
+            </motion.p>
 
+            <motion.div 
+              className="header-stats"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="stat-icon">
+                  <Calendar size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{totalActividades}</div>
+                  <div className="stat-label">Total Actividades</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+              >
+                <div className="stat-icon">
+                  <AlertCircle size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{actividadesHoyCount}</div>
+                  <div className="stat-label">Para Hoy</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+              >
+                <div className="stat-icon">
+                  <Clock size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{actividadesProximasCount}</div>
+                  <div className="stat-label">Próximas</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
+              >
+                <div className="stat-icon">
+                  <CheckCircle size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{actividadesFinalizadasCount}</div>
+                  <div className="stat-label">Finalizadas</div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              className="floating-icons"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Users size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, -8, 8, 0]
+                }}
+                transition={{ 
+                  duration: 3.5, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                <Award size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -12, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 4.2, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              >
+                <Star size={20} color="white" />
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* BARRA DE BÚSQUEDA Y ACCIONES */}
+        <motion.div 
+          className="actividad-busqueda-bar"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <div style={{ position: 'relative', flex: 1 }}>
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
+            >
+              <Search size={18} />
+            </motion.div>
+            <input
+              type="text"
+              className="actividad-busqueda"
+              placeholder="Buscar por nombre, lugar o descripción..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+          
+          <motion.button 
+            className="btn-ayuda" 
+            onClick={() => setMostrarAyuda(true)} 
+            title="Ver ayuda"
+            whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            >
+              <HelpCircle size={18} />
+            </motion.div>
+            Ayuda
+          </motion.button>
+          
+          <motion.button 
+            className="btn-nueva-actividad" 
+            onClick={() => setMostrarModalCrear(true)}
+            whileHover={{ 
+              scale: 1.08, 
+              boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Plus size={18} />
+            </motion.div>
+            Nueva Actividad
+          </motion.button>
+        </motion.div>
+      </motion.div>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <motion.div 
+        className="actividad-categorias-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        {renderGrupoActividades("Actividades de Hoy", actividadesHoy, "#FF6B6B")}
+        {renderGrupoActividades("Próximos 7 días", actividadesProximas, "#FFD93D")}
+        {renderGrupoActividades("Actividades futuras", actividadesFuturas, "#6BCF7F")}
+        {renderGrupoActividades("Actividades finalizadas", actividadesFinalizadas, "#4D4D4D")}
+      </motion.div>
+
+      {/* Modales y notificaciones (mantener igual) */}
       {mostrarModalCrear && (
         <ModalCrearActividad
           onClose={() => setMostrarModalCrear(false)}
@@ -270,6 +568,7 @@ const Actividades = () => {
         />
       )}
 
+      {/* Modal Ayuda (mantener igual) */}
       {mostrarAyuda && (
         <div className="modal-overlay">
           <div className="modal-content">

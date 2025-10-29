@@ -1,16 +1,24 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import ModalCrearOrden from "../Models/OrdenCompra/ModalCrearOrden";
 import ModalDetalleOrden from "../Models/OrdenCompra/ModalDetalleOrden";
 import '../../styles/Models/ordencompra.css';
+import { 
+  Search,
+  HelpCircle,
+  Plus,
+  Users,
+  Award,
+  FileText,
+  Truck,
+  Star,
+  Calendar,
+  DollarSign,
+  Filter,
+  Columns
+} from 'lucide-react';
 
-// Iconos SVG
-const SearchIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="8"/>
-    <path d="m21 21-4.35-4.35"/>
-  </svg>
-);
-
+// Iconos SVG (mantener los existentes)
 const ChevronDownIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="m6 9 6 6 6-6"/>
@@ -93,6 +101,17 @@ const OrdenCompra = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Calcular estadísticas
+  const totalOrdenes = ordenes.length;
+  const ordenesBorrador = ordenes.filter(o => o.estado === "BORRADOR").length;
+  const ordenesEnviadas = ordenes.filter(o => o.estado === "ENVIADA").length;
+  const ordenesRecibidas = ordenes.filter(o => o.estado === "RECIBIDA").length;
+  const ordenesCerradas = ordenes.filter(o => o.estado === "CERRADA").length;
+  const valorTotal = ordenes.reduce((sum, orden) => {
+    const totalOrden = orden.items?.reduce((sumItem, item) => sumItem + item.cantidad * item.costoUnit, 0) || 0;
+    return sum + totalOrden;
+  }, 0);
+
   // Notificaciones
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -145,7 +164,7 @@ const OrdenCompra = () => {
     return sortedItems.slice(start, start + rowsPerPage);
   }, [page, sortedItems, rowsPerPage]);
 
-  // Handlers
+  // Handlers (mantener los mismos)
   const handleSort = (columnKey) => {
     if (!columns.find(c => c.uid === columnKey)?.sortable) return;
     setSortDescriptor(prev => ({
@@ -311,125 +330,491 @@ const OrdenCompra = () => {
 
   return (
     <div className="orden-compra-container">
-      {/* Header */}
-      <div className="orden-header">
-        <h2>Sistema de Órdenes de Compra</h2>
-        <p className="orden-subtitle">Gestiona y controla todas tus órdenes de manera eficiente</p>
-      </div>
+      {/* 🎨 ENCABEZADO MEJORADO */}
+      <motion.div 
+        className="orden-header"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+      >
+        <motion.div
+          className="header-gradient"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          style={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            padding: "2.5rem",
+            borderRadius: "20px",
+            boxShadow: "0 10px 30px rgba(102, 126, 234, 0.3)",
+            position: "relative",
+            overflow: "hidden"
+          }}
+        >
+          {/* Patrón de fondo */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+            opacity: 0.3
+          }} />
 
-      {/* Top Content */}
-      <div className="orden-top-content">
-        <div className="orden-filters-row">
-          {/* Search */}
-          <div className="search-container">
-            <div className="search-icon">
-              <SearchIcon />
-            </div>
-            <input
-              type="text"
-              placeholder="Buscar por número o proveedor..."
-              value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
-              className="search-input"
-            />
-            {filterValue && (
-              <button 
-                className="search-clear"
-                onClick={() => setFilterValue('')}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Status Filter */}
-          <div 
-            className="dropdown-wrapper" 
-            ref={statusMenuRef}
-            onMouseEnter={() => setShowStatusMenu(true)}
-            onMouseLeave={() => setShowStatusMenu(false)}
-          >
-            <button
-              className="filter-button"
-            >
-              Estado <ChevronDownIcon />
-            </button>
-            {showStatusMenu && (
-              <div className="dropdown-menu">
-                {statusOptions.map(status => (
-                  <div
-                    key={status.uid}
-                    onClick={() => toggleStatusFilter(status.uid)}
-                    className={`dropdown-item ${statusFilter.has(status.uid) ? 'active' : ''}`}
-                  >
-                    <span className="checkbox">{statusFilter.has(status.uid) ? '✓' : ''}</span>
-                    {status.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Column Filter */}
-          <div 
-            className="dropdown-wrapper" 
-            ref={columnMenuRef}
-            onMouseEnter={() => setShowColumnMenu(true)}
-            onMouseLeave={() => setShowColumnMenu(false)}
-          >
-            <button
-              className="filter-button"
-            >
-              Columnas <ChevronDownIcon />
-            </button>
-            {showColumnMenu && (
-              <div className="dropdown-menu">
-                {columns.map(col => (
-                  <div
-                    key={col.uid}
-                    onClick={() => toggleColumnVisibility(col.uid)}
-                    className={`dropdown-item ${visibleColumns.has(col.uid) ? 'active' : ''} ${col.uid === 'acciones' ? 'disabled' : ''}`}
-                  >
-                    <span className="checkbox">{visibleColumns.has(col.uid) ? '✓' : ''}</span>
-                    {col.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* New Order Button */}
-          <button
-            className="btn-nueva-orden"
-            onClick={() => setMostrarModalCrear(true)}
-          >
-            + Nueva Orden
-          </button>
-        </div>
-
-        <div className="orden-meta-row">
-          <span className="orden-count">Total: {sortedItems.length} órdenes</span>
-          <div className="rows-per-page">
-            <span>Filas por página:</span>
-            <select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(Number(e.target.value));
-                setPage(1);
+          <div className="header-content" style={{ position: "relative", zIndex: 2 }}>
+            <motion.h2
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              style={{
+                fontSize: "2.8rem",
+                color: "white",
+                marginBottom: "0.5rem",
+                fontWeight: 800,
+                textShadow: "0 2px 10px rgba(0,0,0,0.2)",
+                letterSpacing: "-0.5px",
+                display: "flex",
+                alignItems: "center",
+                gap: "1rem"
               }}
-              className="rows-select"
             >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
-          </div>
-        </div>
-      </div>
+              <motion.div
+                initial={{ rotate: -180, scale: 0 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+              >
+                <FileText size={36} fill="white" color="white" />
+              </motion.div>
+              Sistema de Órdenes de Compra
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                style={{ marginLeft: 'auto' }}
+              >
+                <Truck size={32} color="white" />
+              </motion.div>
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              style={{
+                color: "rgba(255, 255, 255, 0.9)",
+                fontSize: "1.2rem",
+                marginBottom: 0,
+                fontWeight: 500,
+                textShadow: "0 1px 5px rgba(0,0,0,0.1)"
+              }}
+            >
+              Gestiona y controla todas tus órdenes de compra de manera eficiente y profesional
+            </motion.p>
 
-      {/* Table */}
+            <motion.div 
+              className="header-stats"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              style={{
+                display: "flex",
+                gap: "2rem",
+                marginTop: "1.5rem",
+                flexWrap: "wrap"
+              }}
+            >
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  background: "rgba(255, 255, 255, 0.15)",
+                  padding: "0.75rem 1.25rem",
+                  borderRadius: "12px",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)"
+                }}
+              >
+                <div className="stat-icon" style={{
+                  background: "rgba(255, 255, 255, 0.2)",
+                  padding: "0.5rem",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <FileText size={20} color="white" />
+                </div>
+                <div className="stat-text" style={{ color: "white" }}>
+                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                    {totalOrdenes}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                    Total Órdenes
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  background: "rgba(255, 255, 255, 0.15)",
+                  padding: "0.75rem 1.25rem",
+                  borderRadius: "12px",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)"
+                }}
+              >
+                <div className="stat-icon" style={{
+                  background: "rgba(255, 255, 255, 0.2)",
+                  padding: "0.5rem",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <Award size={20} color="white" />
+                </div>
+                <div className="stat-text" style={{ color: "white" }}>
+                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                    {ordenesEnviadas + ordenesRecibidas + ordenesCerradas}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                    Órdenes Activas
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  background: "rgba(255, 255, 255, 0.15)",
+                  padding: "0.75rem 1.25rem",
+                  borderRadius: "12px",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.2)"
+                }}
+              >
+                <div className="stat-icon" style={{
+                  background: "rgba(255, 255, 255, 0.2)",
+                  padding: "0.5rem",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <DollarSign size={20} color="white" />
+                </div>
+                <div className="stat-text" style={{ color: "white" }}>
+                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                    {formatCurrency(valorTotal)}
+                  </div>
+                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                    Valor Total
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              className="floating-icons"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+              style={{
+                position: "absolute",
+                top: "20px",
+                right: "30px",
+                display: "flex",
+                gap: "15px",
+                zIndex: 3
+              }}
+            >
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.2)",
+                  padding: "12px",
+                  borderRadius: "50%",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)"
+                }}
+              >
+                <Calendar size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, -8, 8, 0]
+                }}
+                transition={{ 
+                  duration: 3.5, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.2)",
+                  padding: "12px",
+                  borderRadius: "50%",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)"
+                }}
+              >
+                <Filter size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -12, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 4.2, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+                style={{
+                  background: "rgba(255, 255, 255, 0.2)",
+                  padding: "12px",
+                  borderRadius: "50%",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)"
+                }}
+              >
+                <Star size={20} color="white" />
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* BARRA DE BÚSQUEDA Y FILTROS MEJORADA */}
+        <motion.div 
+          className="orden-top-content"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          style={{ marginTop: "2rem" }}
+        >
+          <div className="orden-filters-row">
+            {/* Search */}
+            <div className="search-container" style={{ position: 'relative', flex: 1 }}>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666', zIndex: 2 }}
+              >
+                <Search size={18} />
+              </motion.div>
+              <input
+                type="text"
+                placeholder="Buscar por número o proveedor..."
+                value={filterValue}
+                onChange={(e) => setFilterValue(e.target.value)}
+                className="search-input"
+                style={{
+                  width: '100%',
+                  padding: '0.8rem 1rem',
+                  paddingLeft: '40px',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  transition: 'all 0.3s ease'
+                }}
+              />
+              {filterValue && (
+                <button 
+                  className="search-clear"
+                  onClick={() => setFilterValue('')}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#666',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Status Filter */}
+            <div 
+              className="dropdown-wrapper" 
+              ref={statusMenuRef}
+              style={{ position: 'relative' }}
+            >
+              <motion.button
+                className="filter-button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowStatusMenu(!showStatusMenu)}
+                style={{
+                  padding: '0.8rem 1.5rem',
+                  background: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Filter size={16} />
+                Estado
+                <ChevronDownIcon />
+              </motion.button>
+              {showStatusMenu && (
+                <div className="dropdown-menu">
+                  {statusOptions.map(status => (
+                    <div
+                      key={status.uid}
+                      onClick={() => toggleStatusFilter(status.uid)}
+                      className={`dropdown-item ${statusFilter.has(status.uid) ? 'active' : ''}`}
+                    >
+                      <span className="checkbox">{statusFilter.has(status.uid) ? '✓' : ''}</span>
+                      {status.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Column Filter */}
+            <div 
+              className="dropdown-wrapper" 
+              ref={columnMenuRef}
+              style={{ position: 'relative' }}
+            >
+              <motion.button
+                className="filter-button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowColumnMenu(!showColumnMenu)}
+                style={{
+                  padding: '0.8rem 1.5rem',
+                  background: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                <Columns size={16} />
+                Columnas
+                <ChevronDownIcon />
+              </motion.button>
+              {showColumnMenu && (
+                <div className="dropdown-menu">
+                  {columns.map(col => (
+                    <div
+                      key={col.uid}
+                      onClick={() => toggleColumnVisibility(col.uid)}
+                      className={`dropdown-item ${visibleColumns.has(col.uid) ? 'active' : ''} ${col.uid === 'acciones' ? 'disabled' : ''}`}
+                    >
+                      <span className="checkbox">{visibleColumns.has(col.uid) ? '✓' : ''}</span>
+                      {col.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* New Order Button */}
+            <motion.button
+              className="btn-nueva-orden"
+              onClick={() => setMostrarModalCrear(true)}
+              whileHover={{ 
+                scale: 1.08, 
+                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              style={{
+                padding: '0.8rem 1.5rem',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Plus size={18} />
+              </motion.div>
+              Nueva Orden
+            </motion.button>
+          </div>
+
+          <div className="orden-meta-row">
+            <span className="orden-count">Total: {sortedItems.length} órdenes</span>
+            <div className="rows-per-page">
+              <span>Filas por página:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rows-select"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+              </select>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* El resto del código (tabla, paginación, modales) se mantiene igual */}
       <div className="table-container">
         <div className="table-wrapper">
           <table className="orden-table">
@@ -593,6 +978,7 @@ const OrdenCompra = () => {
           </div>
         )}
       </div>
+
 
       {/* Modales */}
       {mostrarModalCrear && (

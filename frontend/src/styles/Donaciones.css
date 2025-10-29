@@ -288,7 +288,7 @@
     border-bottom: none;
   }
 
-  .modal-overlay {
+  .donacion-container .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -301,7 +301,8 @@
     z-index: 1000;
   }
 
-  .modal-content {
+
+  .donacion-container .modal-content {
     background: white;
     border-radius: 12px;
     padding: 2rem;
@@ -309,7 +310,8 @@
     max-width: 90vw;
   }
 
-  .modal-title {
+
+  .donacion-container  .modal-title {
     font-size: 1.5rem;
     color: #333;
     margin-bottom: 1.5rem;

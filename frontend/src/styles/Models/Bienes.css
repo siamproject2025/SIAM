@@ -193,8 +193,10 @@
 /* ===== BÚSQUEDA ===== */
 .search-container {
   flex: 1;
-  min-width: 280px;
-  position: relative;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 100%;
 }
 
 .search-icon {
