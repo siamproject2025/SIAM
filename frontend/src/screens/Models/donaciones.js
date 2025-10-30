@@ -51,23 +51,22 @@ const Donaciones = () => {
     observaciones: '',
     id_almacen: '',
     fecha: new Date().toISOString().split('T')[0],
-    foto: null,
+    imagen: null,
     foto_preview: null
   });
 
-  // Cargar donaciones al montar
   useEffect(() => {
-    cargarDonaciones();
-  }, );
+  cargarDonaciones(); // Carga inicial
+  const interval = setInterval(cargarDonaciones, 30000); // Cada 30s
+  return () => clearInterval(interval);
+}, []);
 
-  // Recargar cada 30 segundos para mantener sincronización
   useEffect(() => {
-    const interval = setInterval(() => {
-      cargarDonaciones();
-    }, 30000);
+    return () => {
+      if (formData.foto_preview) URL.revokeObjectURL(formData.foto_preview);
+    };
+  }, [formData.foto_preview]);
 
-    return () => clearInterval(interval);
-  }, );
 
   const cargarDonaciones = async () => {
     try {
@@ -126,7 +125,7 @@ const Donaciones = () => {
 
       setFormData(prev => ({
         ...prev,
-        foto: file,
+        imagen: file,
         foto_preview: URL.createObjectURL(file)
       }));
     }
@@ -138,99 +137,108 @@ const Donaciones = () => {
     }
     setFormData(prev => ({
       ...prev,
-      foto: null,
+      imagen: null,
       foto_preview: null
     }));
   };
 
-  const handleSubmitNueva = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+const handleSubmitNueva = async (e) => {
+  e.preventDefault();
+  
+  // Validaciones mejoradas
+  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    return;
+  }
 
-    // Validaciones
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-      return;
+  try {
+    const formDataToSend = new FormData(); // Nombre más descriptivo
+    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
+    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
+    formDataToSend.append('descripcion', formData.descripcion || '');
+    formDataToSend.append('observaciones', formData.observaciones || '');
+    formDataToSend.append('id_almacen', formData.id_almacen);
+    formDataToSend.append('fecha', new Date().toISOString());
+    
+    // Solo adjuntar foto si existe
+    if (formData.imagen) {
+      formDataToSend.append('imagen', formData.imagen);
     }
 
-    try {
-      const datosEnviar = {
-        tipo_donacion: formData.tipo_donacion,
-        cantidad_donacion: parseInt(formData.cantidad_donacion),
-        descripcion: formData.descripcion,
-        observaciones: formData.observaciones,
-        id_almacen: parseInt(formData.id_almacen),
-        fecha: new Date().toISOString(),
-        fecha_ingreso: new Date().toISOString()
-      };
+    console.log('Enviando datos:', {
+      tipo_donacion: formData.tipo_donacion,
+      cantidad_donacion: formData.cantidad_donacion,
+      id_almacen: formData.id_almacen
+    });
 
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(datosEnviar)
-      });
+    const response = await fetch(`${API_URL}`, {
+      method: 'POST',
+      body: formDataToSend // NO incluir headers Content-Type para FormData
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear donación');
-      }
+    const responseData = await response.json();
+    console.log('Respuesta del servidor:', responseData);
 
-      const result = await response.json();
-      
-      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
-      handleCloseModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+    if (!response.ok) {
+      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
     }
-  };
+
+    mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
+    handleCloseModals();
+    await cargarDonaciones();
+
+  } catch (error) {
+    console.error('Error completo:', error);
+    mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+  }
+};
+
 
   const handleSubmitEditar = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
 
-    if (!donacionSeleccionada) return;
+  if (!donacionSeleccionada) return;
 
-    // Validaciones
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-      return;
+  // Validaciones
+  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    return;
+  }
+
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
+    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
+    formDataToSend.append('descripcion', formData.descripcion || '');
+    formDataToSend.append('observaciones', formData.observaciones || '');
+    formDataToSend.append('id_almacen', formData.id_almacen);
+    formDataToSend.append('fecha', formData.fecha || new Date().toISOString());
+
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formDataToSend.append('imagen', formData.imagen);
     }
 
-    try {
-      const datosEnviar = {
-        tipo_donacion: formData.tipo_donacion,
-        cantidad_donacion: parseInt(formData.cantidad_donacion),
-        descripcion: formData.descripcion,
-        observaciones: formData.observaciones,
-        id_almacen: parseInt(formData.id_almacen),
-        fecha: formData.fecha || new Date().toISOString()
-      };
+    const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+      method: 'PUT',
+      body: formDataToSend, // importante: no usar JSON.stringify
+    });
 
-      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(datosEnviar)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar donación');
-      }
-
-      mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
-      handleCloseModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al actualizar donación');
     }
-  };
+
+    mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
+    handleCloseModals();
+    await cargarDonaciones();
+  } catch (error) {
+    console.error('Error:', error);
+    mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
+  }
+};
+
 
   const handleEliminarDonacion = async () => {
     if (!donacionSeleccionada) return;
@@ -275,7 +283,7 @@ const Donaciones = () => {
       observaciones: '',
       id_almacen: '',
       fecha: new Date().toISOString().split('T')[0],
-      foto: null,
+      imagen: null,
       foto_preview: null
     });
   };
@@ -291,8 +299,9 @@ const Donaciones = () => {
       observaciones: donacion.observaciones || '',
       id_almacen: donacion.id_almacen || '',
       fecha: donacion.fecha ? new Date(donacion.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      foto: null,
-      foto_preview: donacion.foto ? `http://localhost:5000${donacion.foto}` : null
+      imagen: null,
+      foto_preview: donacion.imagen ? `data:image/png;base64,${donacion.imagen}` : null
+
     });
     
     setMostrarModalEditar(true);
@@ -306,7 +315,7 @@ const Donaciones = () => {
       observaciones: '',
       id_almacen: '',
       fecha: new Date().toISOString().split('T')[0],
-      foto: null,
+      imagen: null,
       foto_preview: null
     });
     setMostrarModal(true);
