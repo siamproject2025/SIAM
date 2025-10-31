@@ -1,7 +1,6 @@
 /* Estilos generales del componente */
 .RolHeader {
   padding: 2rem;
-  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -206,7 +205,7 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 /* Tabla de usuarios - VERSIÓN CORREGIDA */
-.tabla-container {
+.tabla-container-roles {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -224,12 +223,14 @@
 }
 
 .tablaUsuarios th {
-  padding: 1.2rem 1rem;
-  text-align: left;
+  padding: 1.0rem 1rem;
+  text-align: center!important;
   color: white;
   font-weight: 600;
   font-size: 1rem;
-  /* QUITADO: display: flex */
+  justify-content: center;
+  align-items: center;
+  
 }
 
 .tablaUsuarios th svg {
@@ -420,11 +421,10 @@
 }
 
 /* --- Tabla de Usuarios --- */
-.tabla-container {
+.tabla-container-roles {
   overflow-x: auto;
   background: white;
   border-radius: 14px;
-  padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.12);
 }
 
@@ -446,6 +446,7 @@
   font-size: 1rem;
   align-items: center;
   gap: 0.5rem;
+  
 }
 
 
@@ -605,7 +606,7 @@
     min-width: 100%;
   }
   
-  .tabla-container {
+  .tabla-container-roles {
     overflow-x: auto;
   }
   

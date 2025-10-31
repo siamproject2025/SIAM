@@ -19,7 +19,7 @@ import OrdenCompra from './screens/Models/ordencompra';
 import Bienes from './screens/Models/Bienes';
 import Personal from './screens/Models/personal';
 import Horarios from './screens/Models/Horarios';
-
+import Directiva from './screens/Models/directiva'; // ← Cambiado a mayúscula
 import Proveedores from './screens/Models/proveedores';
 import Donaciones from './screens/Models/donaciones';
 import RestrictedPage from './screens/RestrictedPage';
@@ -138,6 +138,9 @@ return (
           <Route path="/Actividades" element={<ActividadesPage />} />
           <Route path="/biblioteca" element={<BibliotecaTest />} />
           <Route path="/Calendario" element={<CalendarioActividades />} />
+                   <Route path="/directiva" element={<Directiva />} /> 
+   
+          
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>

@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { upload } = require('../middleware/uploadImage'); // Multer en memoria
+
 const {
   obtenerPersonal,
   obtenerPersonalPorId,
@@ -13,8 +15,8 @@ const {
 // Rutas básicas CRUD
 router.get('/', obtenerPersonal);
 router.get('/:id', obtenerPersonalPorId);
-router.post('/', crearPersonal);
-router.put('/:id', actualizarPersonal);
+router.post('/', upload.single('imagen'), crearPersonal);
+router.put('/:id', upload.single('imagen'), actualizarPersonal);
 router.delete('/:id', eliminarPersonal);
 
 // Rutas de búsqueda específicas
