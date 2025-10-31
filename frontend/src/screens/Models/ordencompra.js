@@ -50,6 +50,7 @@ const OrdenCompra = () => {
   const [notification, setNotification] = useState(null);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+ 
 
   // Referencias para cerrar menús al hacer clic fuera
   const statusMenuRef = useRef(null);
@@ -74,6 +75,15 @@ const OrdenCompra = () => {
     { name: "Recibida", uid: "RECIBIDA" },
     { name: "Cerrada", uid: "CERRADA" }
   ];
+
+//filtro de clic de estado
+const handleStatClick = (estado) => {
+  if (estado === "all") {
+    setStatusFilter(new Set(["all"]));
+  } else {
+    setStatusFilter(new Set([estado]));
+  }
+};
 
   // Cargar datos
   useEffect(() => {
@@ -120,21 +130,21 @@ const OrdenCompra = () => {
 
   // Filtrado
   const filteredItems = useMemo(() => {
-    let filtered = [...ordenes];
+  let filtered = [...ordenes];
 
-    if (filterValue) {
-      filtered = filtered.filter(orden =>
-        orden.numero?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        orden.proveedor_id?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
+  if (filterValue) {
+    filtered = filtered.filter(orden =>
+      orden.numero?.toLowerCase().includes(filterValue.toLowerCase()) ||
+      orden.proveedor_id?.nombre?.toLowerCase().includes(filterValue.toLowerCase())
+    );
+  }
 
-    if (!statusFilter.has("all")) {
-      filtered = filtered.filter(orden => statusFilter.has(orden.estado));
-    }
+  if (!statusFilter.has("all")) {
+    filtered = filtered.filter(orden => statusFilter.has(orden.estado));
+  }
 
-    return filtered;
-  }, [ordenes, filterValue, statusFilter]);
+  return filtered;
+}, [ordenes, filterValue, statusFilter]);
 
   // Ordenamiento
   const sortedItems = useMemo(() => {
@@ -414,6 +424,8 @@ const OrdenCompra = () => {
               Gestiona y controla todas tus órdenes de compra de manera eficiente y profesional
             </motion.p>
 
+              
+
             <motion.div 
               className="header-stats"
               initial={{ opacity: 0, y: 20 }}
@@ -426,75 +438,200 @@ const OrdenCompra = () => {
                 flexWrap: "wrap"
               }}
             >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <FileText size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {totalOrdenes}
-                  </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Total Órdenes
-                  </div>
-                </div>
-              </motion.div>
+              
+              <motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("BORRADOR")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesBorrador}
+    </div>
+    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Borrador
+    </div>
+  </div>
+</motion.div>
 
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <Award size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {ordenesEnviadas + ordenesRecibidas + ordenesCerradas}
-                  </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Órdenes Activas
-                  </div>
-                </div>
-              </motion.div>
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("ENVIADA")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesEnviadas}
+    </div>
+    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Enviadas
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("RECIBIDA")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesRecibidas}
+    </div>
+    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Recibidas
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("CERRADA")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesCerradas}
+    </div>
+    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Cerradas
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300 }}
+  onClick={() => handleStatClick("all")} // 👈 al hacer clic muestra todas las órdenes
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer" // 👈 indica que es clickeable
+  }}
+>
+  <div
+    className="stat-icon"
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <FileText size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div
+      className="stat-value"
+      style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
+    >
+      {totalOrdenes}
+    </div>
+    <div
+      className="stat-label"
+      style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
+    >
+      Total Órdenes
+    </div>
+  </div>
+</motion.div>
 
               <motion.div 
                 className="stat-item"
