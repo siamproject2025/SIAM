@@ -615,7 +615,7 @@ const handleSubmitNueva = async (e) => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <div className="tabla-header">
+                <div className="tabla-header-donaciones">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <Hash size={14} />
                     ID
@@ -641,12 +641,12 @@ const handleSubmitNueva = async (e) => {
                   </div>
                 </div>
 
-                <div className="tabla-body">
+                <div className="tabla-body-donaciones">
                   <AnimatePresence>
                     {donacionesFiltradas.map((donacion, idx) => (
                       <motion.div
                         key={donacion._id || donacion.id_donacion}
-                        className="tabla-fila"
+                        className="tabla-fila-donaciones"
                         onClick={() => handleFilaClick(donacion)}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -724,14 +724,14 @@ const handleSubmitNueva = async (e) => {
         <AnimatePresence>
           {mostrarModal && (
             <motion.div 
-              className="modal-overlay" 
+              className="modal-overlay-donaciones" 
               onClick={handleCloseModals}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content" 
+                className="modal-content-donaciones" 
                 style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, y: 50 }}
@@ -843,7 +843,7 @@ const handleSubmitNueva = async (e) => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar"
+                                className="btn-eliminar-donaciones"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -876,10 +876,10 @@ const handleSubmitNueva = async (e) => {
                     </div>
                   </div>
 
-                  <div className="modal-actions">
+                  <div className="modal-actions-donaciones">
                     <motion.button 
                       type="button" 
-                      className="btn-cancelar" 
+                      className="btn-cancelar-donaciones" 
                       onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -889,7 +889,7 @@ const handleSubmitNueva = async (e) => {
                     </motion.button>
                     <motion.button 
                       type="submit" 
-                      className="btn-guardar"
+                      className="btn-guardar-donaciones"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -907,14 +907,14 @@ const handleSubmitNueva = async (e) => {
         <AnimatePresence>
           {mostrarModalEditar && donacionSeleccionada && (
             <motion.div 
-              className="modal-overlay" 
+              className="modal-overlay-donaciones" 
               onClick={handleCloseModals}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content" 
+                className="modal-content-donaciones" 
                 style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, y: 50 }}
@@ -1025,7 +1025,7 @@ const handleSubmitNueva = async (e) => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar"
+                                className="btn-eliminar-donaciones"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1075,10 +1075,10 @@ const handleSubmitNueva = async (e) => {
                     </div>
                   </div>
 
-                  <div className="modal-actions">
+                  <div className="modal-actions-donaciones">
                     <motion.button 
                       type="button" 
-                      className="btn-eliminar" 
+                      className="btn-eliminar-donaciones" 
                       onClick={handleEliminarDonacion}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -1088,7 +1088,7 @@ const handleSubmitNueva = async (e) => {
                     </motion.button>
                     <motion.button 
                       type="button" 
-                      className="btn-cancelar" 
+                      className="btn-cancelar-donaciones" 
                       onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -1098,7 +1098,7 @@ const handleSubmitNueva = async (e) => {
                     </motion.button>
                     <motion.button 
                       type="submit" 
-                      className="btn-guardar"
+                      className="btn-guardar-donaciones"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1150,14 +1150,14 @@ const handleSubmitNueva = async (e) => {
         <AnimatePresence>
           {mostrarAyuda && (
             <motion.div 
-              className="modal-overlay" 
+              className="modal-overlay-donaciones" 
               onClick={() => setMostrarAyuda(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content" 
+                className="modal-content-donaciones" 
                 style={{ maxWidth: '580px', maxHeight: '85vh' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, rotateX: 90 }}
@@ -1221,22 +1221,19 @@ const handleSubmitNueva = async (e) => {
                 </div>
 
                 <div style={{ 
-                  position: 'sticky', 
+                  position: 'sticky',
                   bottom: '0', 
                   left: '0', 
                   right: '0', 
-                  padding: '1.5rem', 
+                  
                   background: 'white', 
                   borderTop: '2px solid #f0f0f0',
-                  marginLeft: '-2.5rem',
-                  marginRight: '-2.5rem',
-                  marginBottom: '-2.5rem',
+                  
                   display: 'flex',
-                  justifyContent: 'center',
-                  gap: '1rem'
+                  justifyContent: 'center'
                 }}>
                   <motion.button 
-                    className="btn-cerrar" 
+                    className="btn-cerrar-donaciones" 
                     onClick={() => setMostrarAyuda(false)}
                     style={{ minWidth: '200px' }}
                     whileHover={{ scale: 1.05 }}

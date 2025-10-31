@@ -5,7 +5,14 @@ import {
 
   Mail,
   Phone,
-
+  Upload,
+  Heart,
+  Gift,
+  Package,
+  Shirt,
+  Apple,
+  Book,
+  ImagePlus,
   Briefcase,
   Calendar,
   Hash,
@@ -54,12 +61,20 @@ const Personal = () => {
     area_trabajo: '',
     especialidades: '',
     salario: '',
-    fecha_ingreso: new Date().toISOString().split('T')[0]
+    fecha_ingreso: new Date().toISOString().split('T')[0],
+    imagen: null,
+    foto_preview: null
   });
 
+useEffect(() => {
+  cargarPersonal();
+}, []); 
+
   useEffect(() => {
-    cargarPersonal();
-  }, );
+    return () => {
+      if (formData.foto_preview) URL.revokeObjectURL(formData.foto_preview);
+    };
+  }, [formData.foto_preview]);
 
   const cargarPersonal = async () => {
     try {
@@ -103,160 +118,323 @@ const Personal = () => {
       fecha_asignacion: new Date().toISOString().split('T')[0],
       area_trabajo: '',
       especialidades: '',
+      cargo_asignacion: '',
       salario: '',
       fecha_ingreso: new Date().toISOString().split('T')[0]
     });
   };
+const handleFotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validar tamaño (5MB máximo)
+      if (file.size > 5 * 1024 * 1024) {
+        showNotification('La imagen no debe superar 5MB', 'error');
+        return;
+      }
+
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        showNotification('Solo se permiten imágenes', 'error');
+        return;
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        imagen: file,
+        foto_preview: URL.createObjectURL(file)
+      }));
+    }
+  };
+
+  const eliminarFoto = () => {
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
+    setFormData(prev => ({
+      ...prev,
+      imagen: null,
+      foto_preview: null
+    }));
+  };
 
   const handleCrearPersonal = async (e) => {
-    e.preventDefault();
-    
-    try {
+  e.preventDefault();
+
+  try {
+    // Validaciones antes de enviar
       if (!formData.codigo.trim()) {
         showNotification('El código es obligatorio', 'error');
         return;
       }
-      if (!formData.nombres.trim()) {
-        showNotification('Los nombres son obligatorios', 'error');
-        return;
-      }
-      if (!formData.apellidos.trim()) {
-        showNotification('Los apellidos son obligatorios', 'error');
-        return;
-      }
-      if (!formData.numero_identidad.trim()) {
-        showNotification('El número de identidad es obligatorio', 'error');
-        return;
-      }
-      if (!formData.telefono.trim()) {
-        showNotification('El teléfono es obligatorio', 'error');
-        return;
-      }
-      if (!formData.direccion_correo.trim()) {
-        showNotification('El correo electrónico es obligatorio', 'error');
-        return;
-      }
-      if (!formData.cargo.trim()) {
-        showNotification('El cargo es obligatorio', 'error');
+
+      if (!formData.nombres.trim() || formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
+        showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
         return;
       }
 
-      const datosPersonal = {
-        codigo: formData.codigo.trim(),
-        nombres: formData.nombres.trim(),
-        apellidos: formData.apellidos.trim(),
-        numero_identidad: formData.numero_identidad.trim(),
-        tipo_contrato: formData.tipo_contrato,
-        estado: formData.estado,
-        telefono: formData.telefono.trim(),
-        direccion_correo: formData.direccion_correo.trim().toLowerCase(),
-        cargo_asignacion: {
-          cargo: formData.cargo.trim(),
-          horario_preferido: formData.horario_preferido,
-          fecha_asignacion: formData.fecha_asignacion
-        },
-        area_trabajo: formData.area_trabajo.trim(),
-        especialidades: formData.especialidades ? 
-          formData.especialidades.split(',').map(e => e.trim()).filter(e => e) : [],
-        salario: formData.salario ? parseFloat(formData.salario) : undefined,
-        fecha_ingreso: formData.fecha_ingreso
-      };
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosPersonal)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear el empleado');
+      if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2 || formData.apellidos.trim().length > 100) {
+        showNotification('Los apellidos deben tener entre 2 y 100 caracteres', 'error');
+        return;
       }
-      
-      await cargarPersonal();
-      setMostrarModalCrear(false);
-      resetForm();
-      showNotification(`Empleado "${formData.nombres} ${formData.apellidos}" creado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al crear el empleado', 'error');
+
+      if (!formData.numero_identidad.trim() || formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
+        showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
+        return;
+      }
+
+      // Validación tipo_contrato
+      const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
+      if (!tiposContrato.includes(formData.tipo_contrato)) {
+        showNotification('Tipo de contrato inválido', 'error');
+        return;
+      }
+
+      // Validación estado
+      const estados = ['ACTIVO', 'VACACIONES', 'LICENCIA', 'INACTIVO'];
+      if (!estados.includes(formData.estado)) {
+        showNotification('Estado inválido', 'error');
+        return;
+      }
+
+      // Teléfono
+      if (!formData.telefono.trim() || formData.telefono.trim().length < 8 || formData.telefono.trim().length > 20) {
+        showNotification('El teléfono debe tener entre 8 y 20 caracteres', 'error');
+        return;
+      }
+
+      // Correo
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!formData.direccion_correo.trim() || !emailRegex.test(formData.direccion_correo.trim())) {
+        showNotification('Correo electrónico inválido', 'error');
+        return;
+      }
+
+      // Cargo y fecha de asignación
+      if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
+        showNotification('El cargo debe tener entre 2 y 100 caracteres', 'error');
+        return;
+      }
+
+      if (!formData.fecha_asignacion) {
+        showNotification('La fecha de asignación es obligatoria', 'error');
+        return;
+      }
+
+      // Horario preferido (opcional, pero debe ser válido si existe)
+      const horarios = ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE'];
+      if (formData.horario_preferido && !horarios.includes(formData.horario_preferido)) {
+        showNotification('Horario preferido inválido', 'error');
+        return;
+      }
+
+      // Área de trabajo (opcional)
+      if (formData.area_trabajo && formData.area_trabajo.trim().length > 100) {
+        showNotification('El área de trabajo no puede exceder 100 caracteres', 'error');
+        return;
+      }
+
+      // Salario (opcional)
+      if (formData.salario && parseFloat(formData.salario) < 0) {
+        showNotification('El salario no puede ser negativo', 'error');
+        return;
+      }
+
+
+    // ✅ Crear objeto FormData
+    const formDataSend = new FormData();
+    formDataSend.append('codigo', formData.codigo.trim());
+    formDataSend.append('nombres', formData.nombres.trim());
+    formDataSend.append('apellidos', formData.apellidos.trim());
+    formDataSend.append('numero_identidad', formData.numero_identidad.trim());
+    formDataSend.append('tipo_contrato', formData.tipo_contrato);
+    formDataSend.append('estado', formData.estado);
+    formDataSend.append('telefono', formData.telefono.trim());
+    formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
+    const cargoAsignacion = {
+    cargo: formData.cargo,
+    horario_preferido: formData.horario_preferido,
+    fecha_asignacion: formData.fecha_asignacion
+    };
+    // Solo adjuntar foto si existe
+    if (formData.imagen) {
+      formDataSend.append('imagen', formData.imagen);
     }
-  };
+    formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
 
-  const handleEditarPersonal = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.codigo.trim()) {
-        showNotification('El código es obligatorio', 'error');
-        return;
-      }
-      if (!formData.nombres.trim()) {
-        showNotification('Los nombres son obligatorios', 'error');
-        return;
-      }
-      if (!formData.apellidos.trim()) {
-        showNotification('Los apellidos son obligatorios', 'error');
-        return;
-      }
-      if (!formData.numero_identidad.trim()) {
-        showNotification('El número de identidad es obligatorio', 'error');
-        return;
-      }
-      if (!formData.telefono.trim()) {
-        showNotification('El teléfono es obligatorio', 'error');
-        return;
-      }
-      if (!formData.direccion_correo.trim()) {
-        showNotification('El correo electrónico es obligatorio', 'error');
-        return;
-      }
-      if (!formData.cargo.trim()) {
-        showNotification('El cargo es obligatorio', 'error');
-        return;
-      }
+    formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
+    formDataSend.append(
+      'especialidades',
+      formData.especialidades
+        ? formData.especialidades
+            .split(',')
+            .map(e => e.trim())
+            .filter(e => e)
+            .join(',')
+        : ''
+    );
+    if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
+    if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
 
-      const datosActualizados = {
-        codigo: formData.codigo.trim(),
-        nombres: formData.nombres.trim(),
-        apellidos: formData.apellidos.trim(),
-        numero_identidad: formData.numero_identidad.trim(),
-        tipo_contrato: formData.tipo_contrato,
-        estado: formData.estado,
-        telefono: formData.telefono.trim(),
-        direccion_correo: formData.direccion_correo.trim().toLowerCase(),
-        cargo_asignacion: {
-          cargo: formData.cargo.trim(),
-          horario_preferido: formData.horario_preferido,
-          fecha_asignacion: formData.fecha_asignacion
-        },
-        area_trabajo: formData.area_trabajo.trim(),
-        especialidades: formData.especialidades ? 
-          formData.especialidades.split(',').map(e => e.trim()).filter(e => e) : [],
-        salario: formData.salario ? parseFloat(formData.salario) : undefined,
-        fecha_ingreso: formData.fecha_ingreso
-      };
+    // ✅ Enviar al backend
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: formDataSend // sin Content-Type, lo maneja automáticamente FormData
+    });
 
-      const res = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosActualizados)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar el empleado');
-      }
-      
-      await cargarPersonal();
-      setPersonalSeleccionado(null);
-      resetForm();
-      showNotification(`Empleado "${formData.nombres} ${formData.apellidos}" actualizado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al editar el empleado', 'error');
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
     }
-  };
+
+    // ✅ Si se guarda correctamente
+    await cargarPersonal();
+    setMostrarModalCrear(false);
+    resetForm();
+    showNotification(
+      `Empleado "${formData.nombres} ${formData.apellidos}" creado exitosamente`,
+      'success'
+    );
+
+  } catch (error) {
+    console.error('Error al crear el empleado:', error);
+    showNotification(error.message || 'Error al crear el empleado', 'error');
+  }
+};
+
+
+ const handleEditarPersonal = async (e) => {
+  e.preventDefault();
+
+  try {
+    // 🔹 Validaciones (mismas que handleCrearPersonal)
+    if (!formData.codigo.trim()) {
+      showNotification('El código es obligatorio', 'error');
+      return;
+    }
+
+    if (!formData.nombres.trim() || formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
+      showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
+      return;
+    }
+
+    if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2 || formData.apellidos.trim().length > 100) {
+      showNotification('Los apellidos deben tener entre 2 y 100 caracteres', 'error');
+      return;
+    }
+
+    if (!formData.numero_identidad.trim() || formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
+      showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
+      return;
+    }
+
+    const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
+    if (!tiposContrato.includes(formData.tipo_contrato)) {
+      showNotification('Tipo de contrato inválido', 'error');
+      return;
+    }
+
+    const estados = ['ACTIVO', 'VACACIONES', 'LICENCIA', 'INACTIVO'];
+    if (!estados.includes(formData.estado)) {
+      showNotification('Estado inválido', 'error');
+      return;
+    }
+
+    if (!formData.telefono.trim() || formData.telefono.trim().length < 8 || formData.telefono.trim().length > 20) {
+      showNotification('El teléfono debe tener entre 8 y 20 caracteres', 'error');
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!formData.direccion_correo.trim() || !emailRegex.test(formData.direccion_correo.trim())) {
+      showNotification('Correo electrónico inválido', 'error');
+      return;
+    }
+
+    if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
+      showNotification('El cargo debe tener entre 2 y 100 caracteres', 'error');
+      return;
+    }
+
+    if (!formData.fecha_asignacion) {
+      showNotification('La fecha de asignación es obligatoria', 'error');
+      return;
+    }
+
+    const horarios = ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE'];
+    if (formData.horario_preferido && !horarios.includes(formData.horario_preferido)) {
+      showNotification('Horario preferido inválido', 'error');
+      return;
+    }
+
+    if (formData.area_trabajo && formData.area_trabajo.trim().length > 100) {
+      showNotification('El área de trabajo no puede exceder 100 caracteres', 'error');
+      return;
+    }
+
+    if (formData.salario && parseFloat(formData.salario) < 0) {
+      showNotification('El salario no puede ser negativo', 'error');
+      return;
+    }
+
+    // 🔹 Crear FormData igual que handleCrearPersonal
+    const formDataSend = new FormData();
+    formDataSend.append('codigo', formData.codigo.trim());
+    formDataSend.append('nombres', formData.nombres.trim());
+    formDataSend.append('apellidos', formData.apellidos.trim());
+    formDataSend.append('numero_identidad', formData.numero_identidad.trim());
+    formDataSend.append('tipo_contrato', formData.tipo_contrato);
+    formDataSend.append('estado', formData.estado);
+    formDataSend.append('telefono', formData.telefono.trim());
+    formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
+
+    const cargoAsignacion = {
+      cargo: formData.cargo.trim(),
+      horario_preferido: formData.horario_preferido,
+      fecha_asignacion: formData.fecha_asignacion
+    };
+    formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
+
+    formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
+    formDataSend.append(
+      'especialidades',
+      formData.especialidades
+        ? formData.especialidades.split(',').map(e => e.trim()).filter(e => e).join(',')
+        : ''
+    );
+
+    if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
+    if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
+
+    // Solo adjuntar imagen si se modificó
+    if (formData.imagen) {
+      formDataSend.append('imagen', formData.imagen);
+    }
+
+    // 🔹 Enviar al backend
+    const response = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
+      method: 'PUT',
+      body: formDataSend // FormData maneja el Content-Type automáticamente
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    // 🔹 Si se guarda correctamente
+    await cargarPersonal();
+    setPersonalSeleccionado(null);
+    resetForm();
+    showNotification(`Empleado "${formData.nombres} ${formData.apellidos}" actualizado exitosamente`, 'success');
+
+  } catch (error) {
+    console.error('Error al editar el empleado:', error);
+    showNotification(error.message || 'Error al editar el empleado', 'error');
+  }
+};
+
 
   const handleEliminarPersonal = async () => {
     const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
@@ -324,35 +502,49 @@ const Personal = () => {
     return icons[tipo] || <Briefcase size={18} />;
   };
 
-  const handleOpenEditModal = (empleado) => {
-    setPersonalSeleccionado(empleado);
-    setFormData({
-      codigo: empleado.codigo || '',
-      nombres: empleado.nombres || '',
-      apellidos: empleado.apellidos || '',
-      numero_identidad: empleado.numero_identidad || '',
-      tipo_contrato: empleado.tipo_contrato || 'TIEMPO_COMPLETO',
-      estado: empleado.estado || 'ACTIVO',
-      telefono: empleado.telefono || '',
-      direccion_correo: empleado.direccion_correo || '',
-      cargo: empleado.cargo_asignacion?.cargo || '',
-      horario_preferido: empleado.cargo_asignacion?.horario_preferido || 'MATUTINO',
-      fecha_asignacion: empleado.cargo_asignacion?.fecha_asignacion ? 
-        new Date(empleado.cargo_asignacion.fecha_asignacion).toISOString().split('T')[0] : 
-        new Date().toISOString().split('T')[0],
-      area_trabajo: empleado.area_trabajo || '',
-      especialidades: empleado.especialidades?.join(', ') || '',
-      salario: empleado.salario || '',
-      fecha_ingreso: empleado.fecha_ingreso ? 
-        new Date(empleado.fecha_ingreso).toISOString().split('T')[0] : 
-        new Date().toISOString().split('T')[0]
-    });
+const handleOpenEditModal = (empleado) => {
+  setPersonalSeleccionado(empleado);
+
+  // ✅ Preparar los datos del empleado para edición
+  const formDataSend = {
+    codigo: empleado.codigo || '',
+    nombres: empleado.nombres || '',
+    apellidos: empleado.apellidos || '',
+    numero_identidad: empleado.numero_identidad || '',
+    tipo_contrato: empleado.tipo_contrato || 'TIEMPO_COMPLETO',
+    estado: empleado.estado || 'ACTIVO',
+    telefono: empleado.telefono || '',
+    direccion_correo: empleado.direccion_correo || '',
+    cargo: empleado.cargo_asignacion?.cargo || '',
+    horario_preferido: empleado.cargo_asignacion?.horario_preferido || 'MATUTINO',
+    fecha_asignacion: empleado.cargo_asignacion?.fecha_asignacion
+      ? new Date(empleado.cargo_asignacion.fecha_asignacion).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0],
+    area_trabajo: empleado.area_trabajo || '',
+    especialidades: empleado.especialidades?.join(', ') || '',
+    salario: empleado.salario || '',
+    fecha_ingreso: empleado.fecha_ingreso
+      ? new Date(empleado.fecha_ingreso).toISOString().split('T')[0]
+      : new Date().toISOString().split('T')[0],
+    foto_preview: empleado.imagen
+      ? `data:image/png;base64,${empleado.imagen}`
+      : null,
+    imagen: null // 
   };
+
+
+  setFormData(formDataSend);
+};
+;
 
   const handleCloseModals = () => {
     setMostrarModalCrear(false);
     setPersonalSeleccionado(null);
     resetForm();
+    // Limpiar preview
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
   };
 
   const formatearSalario = (salario) => {
@@ -367,58 +559,179 @@ const Personal = () => {
     <>
       <div className="personal-container">
         {/* Header con estadísticas */}
+         <motion.div 
+          className="donacion-header"
+          style={{marginBottom:'0'}}
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+        >
+          <motion.div
+            className="header-gradient"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+          >
+            <div className="header-content">
+              <motion.h2
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                >
+                  <Heart size={36} fill="white" color="white" />
+                </motion.div>
+                Sistema de Gestión de Personal
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Gift size={32} color="white" />
+                </motion.div>
+              </motion.h2>
+              
+              <motion.p
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                Administra tu equipo de trabajo de manera eficiente
+              </motion.p>
+
+              <motion.div 
+                className="header-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+            
+                
+              </motion.div>
+
+              <motion.div 
+                className="floating-icons"
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 4, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  <Shirt size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -15, 0],
+                    rotate: [0, -8, 8, 0]
+                  }}
+                  transition={{ 
+                    duration: 3.5, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 0.5
+                  }}
+                >
+                  <Apple size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                  className="floating-icon"
+                  animate={{ 
+                    y: [0, -12, 0],
+                    rotate: [0, 10, -10, 0]
+                  }}
+                  transition={{ 
+                    duration: 4.2, 
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: 1
+                  }}
+                >
+                  <Book size={20} color="white" />
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="donacion-busqueda-bar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            style={{ marginTop: '2rem' }}
+          >
+           
+           
+            
+          </motion.div> 
+        </motion.div>
         <motion.div 
           className="personal-header"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h2>Sistema de Gestión de Personal</h2>
-          <p>Administra tu equipo de trabajo de manera eficiente</p>
-
+          
           {/* Tarjetas de estadísticas */}
           <div className="personal-stats">
             <motion.div 
-              className="stat-card"
+              className="stat-card-personal"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <Users size={24} />
               <div className="stat-info">
-                <span className="stat-value">{totalPersonal}</span>
+                <span className="stat-value-personal">{totalPersonal}</span>
                 <span className="stat-label">Total</span>
               </div>
             </motion.div>
             <motion.div 
-              className="stat-card active"
+              className="stat-card-personal active"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <Check size={24} />
               <div className="stat-info">
-                <span className="stat-value">{personalActivo}</span>
+                <span className="stat-value-personal">{personalActivo}</span>
                 <span className="stat-label">Activos</span>
               </div>
             </motion.div>
             <motion.div 
-              className="stat-card vacaciones"
+              className="stat-card-personal vacaciones"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <Calendar size={24} />
               <div className="stat-info">
-                <span className="stat-value">{personalVacaciones}</span>
+                <span className="stat-value-personal">{personalVacaciones}</span>
                 <span className="stat-label">Vacaciones</span>
               </div>
             </motion.div>
             <motion.div 
-              className="stat-card licencia"
+              className="stat-card-personal licencia"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <FileText size={24} />
               <div className="stat-info">
-                <span className="stat-value">{personalLicencia}</span>
+                <span className="stat-value-personal">{personalLicencia}</span>
                 <span className="stat-label">Licencia</span>
               </div>
             </motion.div>
@@ -553,16 +866,7 @@ const Personal = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <h3 className="personal-subtitulo">
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              >
-                <Users size={20} />
-              </motion.div>
-              Personal ({personalOrdenado.length})
-            </h3>
+            
           </motion.div>
 
           {personalOrdenado.length === 0 ? (
@@ -582,7 +886,7 @@ const Personal = () => {
               transition={{ delay: 0.4, duration: 0.5 }}
             >
               <motion.div 
-                className="tabla-header"
+                className="tabla-header-personal"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
@@ -622,11 +926,11 @@ const Personal = () => {
                 <div style={{ textAlign: 'center' }}>ACCIONES</div>
               </motion.div>
 
-              <div className="tabla-body">
+              <div className="tabla-body-personal">
                 {personalOrdenado.map((empleado, index) => (
                   <motion.div
                     key={empleado._id}
-                    className="tabla-fila"
+                    className="tabla-fila-personal"
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ 
@@ -687,7 +991,7 @@ const Personal = () => {
                           animate={{ opacity: 1 }}
                           transition={{ delay: index * 0.05 + 0.3 }}
                         >
-                          ID: {empleado.numero_identidad}
+                         
                         </motion.div>
                       )}
                     </div>
@@ -723,17 +1027,13 @@ const Personal = () => {
                     </div>
 
                     <motion.div 
-                      style={{ fontSize: '0.9rem', color: '#555' }}
+                      style={{ fontSize: '0.9rem', color: '#555', textAlign:'left' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.05 + 0.25 }}
                     >
-                      {empleado.cargo_asignacion?.cargo || '—'}
-                      {empleado.area_trabajo && (
-                        <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '2px' }}>
-                          {empleado.area_trabajo}
-                        </div>
-                      )}
+                     
+                      {empleado.area_trabajo}
                     </motion.div>
 
                     <motion.div 
@@ -995,6 +1295,56 @@ const Personal = () => {
                       placeholder="React, Node.js, MongoDB"
                     />
                   </div>
+                <div className="form-group form-grid-full">
+                      <label>
+                        <ImagePlus size={16} />
+                        Foto del empleado
+                      </label>
+                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
+                        {formData.foto_preview ? (
+                          <div>
+                            <img 
+                              src={formData.foto_preview} 
+                              alt="Preview" 
+                              className="foto-preview"
+                            />
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                              <motion.button
+                                type="button"
+                                onClick={eliminarFoto}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="btn-eliminar-personal"
+                              >
+                                <Trash2 size={16} />
+                                Eliminar foto
+                              </motion.button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: '#666', marginBottom: '1rem', fontSize: '1rem' }}>
+                              Arrastra una imagen o haz clic para seleccionar
+                            </p>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFotoChange}
+                              style={{ display: 'none' }}
+                              id="foto-upload-nueva"
+                            />
+                            <label htmlFor="foto-upload-nueva" className="btn-upload-label">
+                              <ImagePlus size={18} />
+                              Seleccionar imagen
+                            </label>
+                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
+                              Formatos: JPG, PNG, GIF. Máximo 5MB
+                            </small>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                 </div>
 
                 <div className="modal-actions">
@@ -1196,12 +1546,79 @@ const Personal = () => {
                       placeholder="React, Node.js, MongoDB"
                     />
                   </div>
+<div className="form-group form-grid-full">
+                      <label>
+                        <ImagePlus size={16} />
+                        Foto del personal
+                      </label>
+                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
+                        {formData.foto_preview ? (
+                          <div>
+                            <img 
+                              src={formData.foto_preview} 
+                              alt="Preview" 
+                              className="foto-preview"
+                            />
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                              <motion.button
+                                type="button"
+                                onClick={eliminarFoto}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="btn-eliminar-personal"
+                              >
+                                <Trash2 size={16} />
+                                Eliminar foto
+                              </motion.button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFotoChange}
+                                style={{ display: 'none' }}
+                                id="foto-upload-editar-replace"
+                              />
+                              <label 
+                                htmlFor="foto-upload-editar-replace"
+                                className="btn-upload-label"
+                              >
+                                <Upload size={16} />
+                                Cambiar foto
+                              </label>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                            <p style={{ color: '#666', marginBottom: '1rem' }}>
+                              Arrastra una imagen o haz clic para seleccionar
+                            </p>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFotoChange}
+                              style={{ display: 'none' }}
+                              id="foto-upload-editar"
+                            />
+                            <label 
+                              htmlFor="foto-upload-editar"
+                              className="btn-upload-label"
+                            >
+                              <ImagePlus size={18} />
+                              Seleccionar imagen
+                            </label>
+                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
+                              Formatos: JPG, PNG, GIF. Máximo 5MB
+                            </small>
+                          </div>
+                        )}
+                      </div>
+                    </div>                  
                 </div>
 
                 <div className="modal-actions">
                   <motion.button 
                     type="button" 
-                    className="btn-eliminar" 
+                    className="btn-eliminar-personal" 
                     onClick={handleEliminarPersonal}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -1280,7 +1697,7 @@ const Personal = () => {
       <AnimatePresence>
         {mostrarAyuda && (
           <motion.div 
-            className="modal-overlay" 
+            className="modal-overlay-personal" 
             onClick={() => setMostrarAyuda(false)}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1355,9 +1772,7 @@ const Personal = () => {
                 padding: '1rem', 
                 background: 'white', 
                 borderTop: '1px solid #e0e0e0',
-                marginLeft: '-2rem',
-                marginRight: '-2rem',
-                marginBottom: '-2rem',
+               
                 display: 'flex',
                 justifyContent: 'center'
               }}>
