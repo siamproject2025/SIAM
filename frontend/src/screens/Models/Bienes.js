@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import ModalCrearBien from './Bienes/ModalCrearBien';
 import ModalDetalleBien from './Bienes/ModalDetalleBien';
@@ -19,7 +19,6 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
-
 
 // Iconos SVG
 const SearchIcon = () => (
@@ -68,6 +67,8 @@ const Bienes = () => {
   const [showActionMenu, setShowActionMenu] = useState(null);
   const [showEstadoMenu, setShowEstadoMenu] = useState(false);
   const [showCategoriaMenu, setShowCategoriaMenu] = useState(false);
+  const [mostrarAyuda, setMostrarAyuda] = useState(false);
+  
   
   const actionMenuRef = useRef(null);
   const estadoMenuRef = useRef(null);
@@ -100,12 +101,70 @@ const Bienes = () => {
       .catch(err => console.error('Error al obtener los bienes:', err));
   }, []);
 
+  // Filtrado
+  const filteredItems = useMemo(() => {
+    let filtered = [...bienes];
+
+    // Filtro por búsqueda
+    if (filterValue) {
+      filtered = filtered.filter(bien =>
+        bien.codigo?.toLowerCase().includes(filterValue.toLowerCase()) ||
+        bien.nombre?.toLowerCase().includes(filterValue.toLowerCase()) ||
+        bien.categoria?.toLowerCase().includes(filterValue.toLowerCase()) ||
+        bien.descripcion?.toLowerCase().includes(filterValue.toLowerCase())
+      );
+    }
+
+    // Filtro por estado - CORREGIDO
+    if (estadoFiltro !== 'all') {
+      filtered = filtered.filter(bien => {
+        // Normalizar ambos valores para comparación
+        const estadoBien = bien.estado?.toUpperCase().trim();
+        const filtroEstado = estadoFiltro?.toUpperCase().trim();
+        return estadoBien === filtroEstado;
+      });
+    }
+
+    // Filtro por categoría
+    if (categoriaFiltro !== 'all') {
+      filtered = filtered.filter(bien => bien.categoria === categoriaFiltro);
+    }
+
+    return filtered;
+  }, [bienes, filterValue, estadoFiltro, categoriaFiltro]);
+
+  //Filtros de categoria y estado
+  useEffect(() => {
+    console.log("👉 Estado seleccionado en filtro:", estadoFiltro);
+    console.log("👉 Categoría seleccionada en filtro:", categoriaFiltro);
+    console.log("👉 Estados en bienes:", [...new Set(bienes.map(b => b.estado))]);
+    console.log("👉 Categorías en bienes:", [...new Set(bienes.map(b => b.categoria))]);
+    console.log("👉 Total bienes:", bienes.length);
+    console.log("👉 Bienes filtrados:", filteredItems.length);
+  }, [estadoFiltro, categoriaFiltro, bienes, filteredItems]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (estadoMenuRef.current && !estadoMenuRef.current.contains(event.target)) {
+        setShowEstadoMenu(false);
+      }
+      if (categoriaMenuRef.current && !categoriaMenuRef.current.contains(event.target)) {
+        setShowCategoriaMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   // Calcular estadísticas
   const totalBienes = bienes.length;
-  const bienesActivosCount = bienes.filter(b => b.estado === "ACTIVO").length;
-  const bienesMantenimientoCount = bienes.filter(b => b.estado === "MANTENIMIENTO").length;
-  const bienesInactivosCount = bienes.filter(b => b.estado === "INACTIVO").length;
-  const bienesPrestadosCount = bienes.filter(b => b.estado === "PRESTAMO").length;
+  const bienesActivosCount = bienes.filter(b => b.estado?.toUpperCase() === "ACTIVO").length;
+  const bienesMantenimientoCount = bienes.filter(b => b.estado?.toUpperCase() === "MANTENIMIENTO").length;
+  const bienesInactivosCount = bienes.filter(b => b.estado?.toUpperCase() === "INACTIVO").length;
+  const bienesPrestadosCount = bienes.filter(b => b.estado?.toUpperCase() === "PRESTAMO").length;
   const valorTotal = bienes.reduce((sum, b) => sum + (parseFloat(b.valor) || 0), 0);
 
   const showNotification = (message, type) => {
@@ -113,13 +172,13 @@ const Bienes = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Calcular métricas
+  // Calcular métricas - CORREGIDO
   const metrics = useMemo(() => {
     return {
-      activos: bienes.filter(b => b.estado === "ACTIVO").length,
-      mantenimiento: bienes.filter(b => b.estado === "MANTENIMIENTO").length,
-      inactivos: bienes.filter(b => b.estado === "INACTIVO").length,
-      prestados: bienes.filter(b => b.estado === "PRESTAMO").length,
+      activos: bienes.filter(b => b.estado?.toUpperCase() === "ACTIVO").length,
+      mantenimiento: bienes.filter(b => b.estado?.toUpperCase() === "MANTENIMIENTO").length,
+      inactivos: bienes.filter(b => b.estado?.toUpperCase() === "INACTIVO").length,
+      prestados: bienes.filter(b => b.estado?.toUpperCase() === "PRESTAMO").length,
       total: bienes.length
     };
   }, [bienes]);
@@ -238,33 +297,6 @@ const Bienes = () => {
     }
   };
 
-  // Filtrado
-  const filteredItems = useMemo(() => {
-    let filtered = [...bienes];
-
-    // Filtro por búsqueda
-    if (filterValue) {
-      filtered = filtered.filter(bien =>
-        bien.codigo?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        bien.nombre?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        bien.categoria?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        bien.descripcion?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
-
-    // Filtro por estado
-    if (estadoFiltro !== 'all') {
-      filtered = filtered.filter(bien => bien.estado === estadoFiltro);
-    }
-
-    // Filtro por categoría
-    if (categoriaFiltro !== 'all') {
-      filtered = filtered.filter(bien => bien.categoria === categoriaFiltro);
-    }
-
-    return filtered;
-  }, [bienes, filterValue, estadoFiltro, categoriaFiltro]);
-
   // Ordenamiento
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
@@ -318,182 +350,6 @@ const Bienes = () => {
 
   return (
     <div className="bienes-container">
-      {/* Header */}
-      <div className="bienes-header">
-        <h2>Sistema de Gestión de Bienes</h2>
-        <p className="bienes-subtitle">Controla y administra el inventario de bienes institucionales</p>
-      </div>
-
-      {/* Cards Métricas */}
-      <div className="metrics-cards-container">
-        <div 
-          className={`metric-card metric-activo ${estadoFiltro === 'ACTIVO' ? 'active' : ''}`}
-          onClick={() => {
-            setEstadoFiltro(estadoFiltro === 'ACTIVO' ? 'all' : 'ACTIVO');
-            setPage(1);
-          }}
-        >
-          <div className="metric-icon">🟢</div>
-          <div className="metric-content">
-            <div className="metric-value">{metrics.activos}</div>
-            <div className="metric-label">En Uso</div>
-          </div>
-        </div>
-
-        <div 
-          className={`metric-card metric-mantenimiento ${estadoFiltro === 'MANTENIMIENTO' ? 'active' : ''}`}
-          onClick={() => {
-            setEstadoFiltro(estadoFiltro === 'MANTENIMIENTO' ? 'all' : 'MANTENIMIENTO');
-            setPage(1);
-          }}
-        >
-          <div className="metric-icon">🟡</div>
-          <div className="metric-content">
-            <div className="metric-value">{metrics.mantenimiento}</div>
-            <div className="metric-label">Mantenimiento</div>
-          </div>
-        </div>
-
-        <div 
-          className={`metric-card metric-inactivo ${estadoFiltro === 'INACTIVO' ? 'active' : ''}`}
-          onClick={() => {
-            setEstadoFiltro(estadoFiltro === 'INACTIVO' ? 'all' : 'INACTIVO');
-            setPage(1);
-          }}
-        >
-          <div className="metric-icon">🔴</div>
-          <div className="metric-content">
-            <div className="metric-value">{metrics.inactivos}</div>
-            <div className="metric-label">Inactivos</div>
-          </div>
-        </div>
-
-        <div 
-          className={`metric-card metric-prestamo ${estadoFiltro === 'PRESTAMO' ? 'active' : ''}`}
-          onClick={() => {
-            setEstadoFiltro(estadoFiltro === 'PRESTAMO' ? 'all' : 'PRESTAMO');
-            setPage(1);
-          }}
-        >
-          <div className="metric-icon">🔵</div>
-          <div className="metric-content">
-            <div className="metric-value">{metrics.prestados}</div>
-            <div className="metric-label">Prestados</div>
-          </div>
-        </div>
-
-        <div 
-          className={`metric-card metric-total ${estadoFiltro === 'all' ? 'active' : ''}`}
-          onClick={() => {
-            setEstadoFiltro('all');
-            setPage(1);
-          }}
-        >
-          <div className="metric-icon">📊</div>
-          <div className="metric-content">
-            <div className="metric-value">{metrics.total}</div>
-            <div className="metric-label">Total Bienes</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Content - Filtros */}
-      <div className="bienes-top-content">
-        <div className="bienes-filters-row">
-          {/* Search */}
-          <div className="search-container">
-            <div className="search-icon">
-              <SearchIcon />
-            </div>
-            <input
-              type="text"
-              placeholder="Buscar por código, nombre, categoría o descripción..."
-              value={filterValue}
-              onChange={(e) => {
-                setFilterValue(e.target.value);
-                setPage(1);
-              }}
-              className="search-input"
-            />
-            {filterValue && (
-              <button 
-                className="search-clear"
-                onClick={() => setFilterValue('')}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Filtro Estado */}
-          <div className="dropdown-wrapper" ref={estadoMenuRef}>
-            <button
-              onClick={() => setShowEstadoMenu(!showEstadoMenu)}
-              className="filter-button"
-            >
-              Estado <ChevronDownIcon />
-            </button>
-            {showEstadoMenu && (
-              <div className="dropdown-menu">
-                {estadosOptions.map(estado => (
-                  <div
-                    key={estado.uid}
-                    onClick={() => {
-                      setEstadoFiltro(estado.uid);
-                      setShowEstadoMenu(false);
-                      setPage(1);
-                    }}
-                    className={`dropdown-item ${estadoFiltro === estado.uid ? 'active' : ''}`}
-                  >
-                    <span className="checkbox">{estadoFiltro === estado.uid ? '✓' : ''}</span>
-                    {estado.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Filtro Categoría */}
-          <div className="dropdown-wrapper" ref={categoriaMenuRef}>
-            <button
-              onClick={() => setShowCategoriaMenu(!showCategoriaMenu)}
-              className="filter-button"
-            >
-              Categoría <ChevronDownIcon />
-            </button>
-            {showCategoriaMenu && (
-              <div className="dropdown-menu">
-                <div
-                  onClick={() => {
-                    setCategoriaFiltro('all');
-                    setShowCategoriaMenu(false);
-                    setPage(1);
-                  }}
-                  className={`dropdown-item ${categoriaFiltro === 'all' ? 'active' : ''}`}
-                >
-                  <span className="checkbox">{categoriaFiltro === 'all' ? '✓' : ''}</span>
-                  Todas
-                </div>
-                {categorias.map(cat => (
-                  <div
-                    key={cat}
-                    onClick={() => {
-                      setCategoriaFiltro(cat);
-                      setShowCategoriaMenu(false);
-                      setPage(1);
-                    }}
-                    className={`dropdown-item ${categoriaFiltro === cat ? 'active' : ''}`}
-                  >
-                    <span className="checkbox">{categoriaFiltro === cat ? '✓' : ''}</span>
-                    {cat}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-  return (
-    <div className="bien-container">
       {/* 🎨 ENCABEZADO MEJORADO */}
       <motion.div 
         className="bien-header"
@@ -577,7 +433,6 @@ const Bienes = () => {
             >
               Gestiona y controla todos tus bienes de manera eficiente y profesional
             </motion.p>
-
             <motion.div 
               className="header-stats"
               initial={{ opacity: 0, y: 20 }}
@@ -590,77 +445,227 @@ const Bienes = () => {
                 flexWrap: "wrap"
               }}
             >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <Package size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {totalBienes}
-                  </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Total Bienes
-                  </div>
-                </div>
-              </motion.div>
+        
 
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <Award size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {bienesActivosCount}
-                  </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Bienes Activos
-                  </div>
-                </div>
-              </motion.div>
+              
+              
 
-              <motion.div 
+<motion.div
+  className={`stat-item ${estadoFiltro === 'ACTIVO' ? 'active' : ''}`}
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+  onClick={() => {
+    setEstadoFiltro(estadoFiltro === 'ACTIVO' ? 'all' : 'ACTIVO');
+    setPage(1);
+  }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div
+    className="stat-icon"
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <span role="img" aria-label="activo">🟢</span>
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div
+      className="stat-value"
+      style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
+    >
+      {metrics.activos}
+    </div>
+    <div
+      className="stat-label"
+      style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
+    >
+      En Uso
+    </div>
+  </div>
+</motion.div>
+<motion.div
+  className={`stat-item ${estadoFiltro === 'MANTENIMIENTO' ? 'active' : ''}`}
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+  onClick={() => {
+    setEstadoFiltro(estadoFiltro === 'MANTENIMIENTO' ? 'all' : 'MANTENIMIENTO');
+    setPage(1);
+  }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <span role="img" aria-label="mantenimiento">🟡</span>
+  </div>
+  <div style={{ color: "white" }}>
+    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {metrics.mantenimiento}
+    </div>
+    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Mantenimiento
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className={`stat-item ${estadoFiltro === 'INACTIVO' ? 'active' : ''}`}
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+  onClick={() => {
+    setEstadoFiltro(estadoFiltro === 'INACTIVO' ? 'all' : 'INACTIVO');
+    setPage(1);
+  }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <span role="img" aria-label="inactivo">🔴</span>
+  </div>
+  <div style={{ color: "white" }}>
+    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {metrics.inactivos}
+    </div>
+    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Inactivos
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className={`stat-item ${estadoFiltro === 'PRESTAMO' ? 'active' : ''}`}
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+  onClick={() => {
+    setEstadoFiltro(estadoFiltro === 'PRESTAMO' ? 'all' : 'PRESTAMO');
+    setPage(1);
+  }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <span role="img" aria-label="prestamo">🔵</span>
+  </div>
+  <div style={{ color: "white" }}>
+    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {metrics.prestados}
+    </div>
+    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Prestados
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className={`stat-item ${estadoFiltro === 'all' ? 'active' : ''}`}
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+  onClick={() => {
+    setEstadoFiltro('all');
+    setPage(1);
+  }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <span role="img" aria-label="total">📊</span>
+  </div>
+  <div style={{ color: "white" }}>
+    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {metrics.total}
+    </div>
+    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Total Bienes
+    </div>
+  </div>
+</motion.div> 
+<motion.div 
                 className="stat-item"
                 whileHover={{ scale: 1.05, y: -2 }}
                 transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
@@ -694,8 +699,10 @@ const Bienes = () => {
                   </div>
                 </div>
               </motion.div>
-            </motion.div>
 
+            </motion.div> 
+           
+{/* Íconos flotantes decorativos*/}
             <motion.div 
               className="floating-icons"
               initial={{ opacity: 0, scale: 0 }}
@@ -778,78 +785,378 @@ const Bienes = () => {
             </motion.div>
           </div>
         </motion.div>
-
-        {/* BARRA DE BÚSQUEDA Y ACCIONES */}
-        <motion.div 
-          className="bien-busqueda-bar"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          style={{ marginTop: "2rem" }}
-        >
-          <div style={{ position: 'relative', flex: 1 }}>
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
-            >
-              <Search size={18} />
-            </motion.div>
-            <input
-              type="text"
-              className="bien-busqueda"
-              placeholder="Buscar por código, nombre, categoría o descripción..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-            />
-          </div>
-          
-          <motion.button 
-            className="btn-ayuda" 
-            onClick={() => setMostrarAyuda(true)} 
-            title="Ver ayuda"
-            whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <motion.div
-              animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-            >
-              <HelpCircle size={18} />
-            </motion.div>
-            Ayuda
-          </motion.button>
-          
-          <motion.button 
-            className="btn-nueva-bien" 
-            onClick={() => setMostrarModalCrear(true)} 
-            title="Crear nuevo bien"
-            whileHover={{ 
-              scale: 1.08, 
-              boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-            }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            >
-              <Plus size={18} />
-            </motion.div>
-            Nuevo Bien
-          </motion.button>
-        </motion.div>
       </motion.div>
 
-      {/* El resto del código se mantiene igual */}
-      <div className="bien-categorias-container">
-        {renderGrupoBienes("Bienes en uso", bienesActivos)}
-        {renderGrupoBienes("Bienes en mantenimiento", bienesMantenimiento)}
-        {renderGrupoBienes("Bienes inactivos", bienesInactivos)}
-        {renderGrupoBienes("Bienes prestados", bienesPrestados)}
+     
+      {/* BARRA DE BÚSQUEDA Y ACCIONES */}
+      <motion.div 
+        className="bien-busqueda-bar"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+        style={{ 
+          marginTop: "2rem",
+          display: "flex",
+          gap: "1rem",
+          flexWrap: "wrap",
+          alignItems: "center"
+        }}
+      >
+        <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
+          <motion.div
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
+          >
+            <Search size={18} />
+          </motion.div>
+          <input
+            type="text"
+            className="bien-busqueda"
+            placeholder="Buscar por código, nombre, categoría o descripción..."
+            value={filterValue}
+            onChange={(e) => {
+              setFilterValue(e.target.value);
+              setPage(1);
+            }}
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem 0.75rem 2.5rem',
+              border: '2px solid #e0e0e0',
+              borderRadius: '10px',
+              fontSize: '1rem',
+              transition: 'all 0.3s ease'
+            }}
+          />
+          {filterValue && (
+            <button 
+              className="search-clear"
+              onClick={() => setFilterValue('')}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '1.2rem',
+                color: '#999'
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Filtro Estado */}
+        <div className="dropdown-wrapper" ref={estadoMenuRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowEstadoMenu(!showEstadoMenu)}
+            className="filter-button"
+            style={{
+              padding: '0.75rem 1.5rem',
+              border: '2px solid #667eea',
+              borderRadius: '10px',
+              background: 'white',
+              color: '#667eea',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Estado <ChevronDownIcon />
+          </button>
+          {showEstadoMenu && (
+            <div className="dropdown-menu" style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: '0.5rem',
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '10px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              minWidth: '200px',
+              zIndex: 1000
+            }}>
+              {estadosOptions.map(estado => (
+                <div
+                  key={estado.uid}
+                  onClick={() => {
+                    setEstadoFiltro(estado.uid);
+                    setShowEstadoMenu(false);
+                    setPage(1);
+                  }}
+                  className={`dropdown-item ${estadoFiltro === estado.uid ? 'active' : ''}`}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: estadoFiltro === estado.uid ? '#f0f0f0' : 'transparent',
+                    transition: 'background 0.2s ease'
+                  }}
+                >
+                  <span className="checkbox" style={{ width: '20px' }}>
+                    {estadoFiltro === estado.uid ? '✓' : ''}
+                  </span>
+                  {estado.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <motion.button 
+          className="btn-ayuda" 
+          onClick={() => setMostrarAyuda(true)} 
+          title="Ver ayuda"
+          whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <motion.div
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
+            <HelpCircle size={18} />
+          </motion.div>
+          Ayuda
+        </motion.button>
+        
+        <motion.button 
+          className="btn-nueva-bien" 
+          onClick={() => setMostrarModalCrear(true)} 
+          title="Crear nuevo bien"
+          whileHover={{ 
+            scale: 1.08, 
+            boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 300 }}
+          style={{
+            padding: '0.75rem 1.5rem',
+            border: 'none',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          >
+            <Plus size={18} />
+          </motion.div>
+          Nuevo Bien
+        </motion.button>
+      </motion.div>
+
+      {/* TABLA DE BIENES */}
+      <div className="bienes-table-container" style={{ 
+        marginTop: '2rem',
+        background: 'white',
+        borderRadius: '15px',
+        padding: '1.5rem',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="bienes-table" style={{ 
+            width: '100%',
+            borderCollapse: 'collapse'
+          }}>
+            <thead>
+              <tr style={{ 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}>
+                {columns.map(column => (
+                  <th 
+                    key={column.uid}
+                    onClick={() => handleSort(column.uid)}
+                    style={{ 
+                      padding: '1rem',
+                      textAlign: 'left',
+                      cursor: column.sortable ? 'pointer' : 'default',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {column.name}
+                    {column.sortable && sortDescriptor.column === column.uid && (
+                      <span style={{ marginLeft: '5px' }}>
+                        {sortDescriptor.direction === 'ascending' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.length > 0 ? (
+                items.map((bien, index) => (
+                  <tr 
+                    key={bien._id}
+                    style={{ 
+                      borderBottom: '1px solid #f0f0f0',
+                      transition: 'background 0.2s ease',
+                      background: index % 2 === 0 ? 'white' : '#f9f9f9'
+                    }}
+                  >
+                    <td style={{ padding: '1rem', fontWeight: 600, color: '#667eea' }}>
+                      {bien.codigo}
+                    </td>
+                    <td style={{ padding: '1rem' }}>{bien.nombre}</td>
+                    <td style={{ padding: '1rem' }}>
+                      <span style={{
+                        background: '#e8eaf6',
+                        color: '#667eea',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '20px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600
+                      }}>
+                        {bien.categoria}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem', maxWidth: '300px' }}>
+                      {bien.descripcion}
+                    </td>
+                    <td style={{ padding: '1rem', fontWeight: 600 }}>
+                      {formatCurrency(bien.valor)}
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <span className={getEstadoBadgeClass(bien.estado)} style={{
+                        padding: '0.4rem 0.8rem',
+                        borderRadius: '20px',
+                        fontSize: '0.85rem',
+                        fontWeight: 600
+                      }}>
+                        {bien.estado}
+                      </span>
+                    </td>
+                    <td style={{ padding: '1rem' }}>
+                      <button 
+                        onClick={() => setBienSeleccionado(bien)}
+                        className="btn-action"
+                        style={{
+                          padding: '0.5rem 1rem',
+                          border: '2px solid #667eea',
+                          borderRadius: '8px',
+                          background: 'white',
+                          color: '#667eea',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease'
+                        }}
+                      >
+                        Ver detalles
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} style={{ 
+                    padding: '3rem',
+                    textAlign: 'center',
+                    color: '#999',
+                    fontSize: '1.1rem'
+                  }}>
+                    No se encontraron bienes
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Paginación */}
+        {pages > 1 && (
+          <div className="pagination" style={{ 
+            marginTop: '1.5rem',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '1rem'
+          }}>
+            <button 
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="btn-page"
+              style={{
+                padding: '0.5rem 1rem',
+                border: '2px solid #667eea',
+                borderRadius: '8px',
+                background: page === 1 ? '#f0f0f0' : 'white',
+                color: page === 1 ? '#999' : '#667eea',
+                fontWeight: 600,
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              ← Anterior
+            </button>
+            <span style={{ 
+              padding: '0.5rem 1rem',
+              fontWeight: 600,
+              color: '#667eea'
+            }}>
+              Página {page} de {pages}
+            </span>
+            <button 
+              onClick={() => setPage(p => Math.min(pages, p + 1))}
+              disabled={page === pages}
+              className="btn-page"
+              style={{
+                padding: '0.5rem 1rem',
+                border: '2px solid #667eea',
+                borderRadius: '8px',
+                background: page === pages ? '#f0f0f0' : 'white',
+                color: page === pages ? '#999' : '#667eea',
+                fontWeight: 600,
+                cursor: page === pages ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Siguiente →
+            </button>
+          </div>
+        )}
+
+        {/* Información de resultados */}
+        <div style={{
+          marginTop: '1rem',
+          textAlign: 'center',
+          color: '#666',
+          fontSize: '0.9rem'
+        }}>
+          Mostrando {items.length} de {sortedItems.length} bienes
+          {filterValue && ` (filtrado de ${bienes.length} total)`}
+        </div>
       </div>
 
       {/* Modales */}
@@ -878,16 +1185,58 @@ const Bienes = () => {
         />
       )}
 
-      {/* Modal Ayuda se mantiene igual */}
+      {/* Modal Ayuda */}
       {mostrarAyuda && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">📚 Guía de Uso - Sistema de Bienes</h3>
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div className="modal-content" style={{
+            background: 'white',
+            borderRadius: '15px',
+            padding: '2rem',
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            overflowY: 'auto',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+          }}>
+            <h3 className="modal-title" style={{
+              fontSize: '1.8rem',
+              marginBottom: '1.5rem',
+              color: '#667eea',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              📚 Guía de Uso - Sistema de Bienes
+            </h3>
             
             <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>🔍 Búsqueda</h4>
-              <p>Puedes buscar bienes por:</p>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+              <h4 style={{ 
+                color: '#667eea',
+                marginBottom: '0.5rem',
+                fontSize: '1.2rem',
+                fontWeight: 600
+              }}>
+                🔍 Búsqueda
+              </h4>
+              <p style={{ marginBottom: '0.5rem', color: '#666' }}>
+                Puedes buscar bienes por:
+              </p>
+              <ul style={{ 
+                marginLeft: '1.5rem',
+                marginBottom: '1rem',
+                color: '#666',
+                lineHeight: 1.8
+              }}>
                 <li><strong>Código:</strong> BIEN-001, BIEN-002, etc.</li>
                 <li><strong>Nombre:</strong> Laptop, Mesa, Silla, etc.</li>
                 <li><strong>Categoría:</strong> Tecnología, Mobiliario, etc.</li>
@@ -896,27 +1245,70 @@ const Bienes = () => {
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>📋 Categorías de Bienes</h4>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                <li><strong>🟢 En Uso:</strong> Bienes activos y disponibles</li>
+              <h4 style={{ 
+                color: '#667eea',
+                marginBottom: '0.5rem',
+                fontSize: '1.2rem',
+                fontWeight: 600
+              }}>
+                📋 Estados de Bienes
+              </h4>
+              <ul style={{ 
+                marginLeft: '1.5rem',
+                marginBottom: '1rem',
+                color: '#666',
+                lineHeight: 1.8
+              }}>
+                <li><strong>🟢 Activo:</strong> Bienes en uso y disponibles</li>
                 <li><strong>🟡 Mantenimiento:</strong> Bienes en reparación o mantenimiento</li>
-                <li><strong>🔴 Inactivos:</strong> Bienes no disponibles o retirados</li>
-                <li><strong>🔵 Prestados:</strong> Bienes prestados a terceros</li>
+                <li><strong>🔴 Inactivo:</strong> Bienes no disponibles o retirados</li>
+                <li><strong>🔵 Préstamo:</strong> Bienes prestados a terceros</li>
               </ul>
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>✨ Funciones Principales</h4>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+              <h4 style={{ 
+                color: '#667eea',
+                marginBottom: '0.5rem',
+                fontSize: '1.2rem',
+                fontWeight: 600
+              }}>
+                ✨ Funciones Principales
+              </h4>
+              <ul style={{ 
+                marginLeft: '1.5rem',
+                marginBottom: '1rem',
+                color: '#666',
+                lineHeight: 1.8
+              }}>
                 <li><strong>Crear Bien:</strong> Agregar nuevos bienes al inventario</li>
-                <li><strong>Editar:</strong> Hacer clic en cualquier bien para editarlo</li>
+                <li><strong>Editar:</strong> Hacer clic en "Ver detalles" para editar</li>
                 <li><strong>Eliminar:</strong> Opción disponible en el modal de edición</li>
-                <li><strong>Filtrar:</strong> Usa la barra de búsqueda para encontrar bienes</li>
+                <li><strong>Filtrar:</strong> Usa los filtros de estado y categoría</li>
+                <li><strong>Ordenar:</strong> Haz clic en los encabezados de columna</li>
               </ul>
             </div>
 
-            <div className="modal-actions">
-              <button className="btn-cerrar" onClick={() => setMostrarAyuda(false)}>
+            <div className="modal-actions" style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: '2rem'
+            }}>
+              <button 
+                className="btn-cerrar" 
+                onClick={() => setMostrarAyuda(false)}
+                style={{
+                  padding: '0.75rem 2rem',
+                  border: 'none',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease'
+                }}
+              >
                 ✅ Entendido
               </button>
             </div>
