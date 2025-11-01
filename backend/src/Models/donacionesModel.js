@@ -15,7 +15,7 @@ const donacionSchema = new mongoose.Schema({
   },
   fecha: {
     type: Date,
-    required: [true, 'La fecha de donación es obligatoria']
+    required: [false, 'La fecha de donación es obligatoria']
   },
   cantidad_donacion: {
     type: Number,
@@ -33,12 +33,16 @@ const donacionSchema = new mongoose.Schema({
     enum: {
       values: [
         'Alimentos',
+        'Instrumentos Escolares',
+        'Accesorios Musicales',
         'Vestimenta',
         'Medicina',
         'Enseres',
         'Bebidas',
-        'Útiles escolares',
-        'Productos de higiene',
+        'Útiles Escolares',
+        'Productos de Higiene',
+        'Material Audiovisual',
+        'Material Didactico',
         'Otro'
       ],
       message: '{VALUE} no es un tipo de donación válido'
@@ -46,13 +50,22 @@ const donacionSchema = new mongoose.Schema({
   },
   fecha_ingreso: {
     type: Date,
-    required: [true, 'La fecha de ingreso es obligatoria'],
+    required: [false, 'La fecha de ingreso es obligatoria'],
     default: Date.now
   },
   observaciones: {
     type: String,
     maxlength: [500, 'Las observaciones no pueden exceder 500 caracteres'],
     trim: true
+  },
+  // NUEVOS CAMPOS PARA IMAGEN
+  imagen: {
+    type: String, // Guardará la imagen en Base64
+    default: null
+  },
+  tipo_imagen: {
+    type: String, // Guardará el tipo MIME, ej. image/png
+    default: null
   }
 }, {
   timestamps: true,
