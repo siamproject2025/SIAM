@@ -295,7 +295,7 @@ const AsignarRol = () => {
       </motion.div>
 
       {/* TABLA */}
-      <div className="tabla-container">
+      <div className="tabla-container-roles">
         <table className="tablaUsuarios">
           <thead>
             <tr>
