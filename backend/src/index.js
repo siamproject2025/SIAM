@@ -18,7 +18,7 @@ const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 const actividadesRoutes = require("./Routes/actividades");
 const biblioteca = require("./Routes/bibliotecaRoutes");
 const directivaRoutes = require("./Routes/directivaRoutes");
-
+const question = require("./Routes/questionRoutes");
 
 
 const app = express();
@@ -62,6 +62,8 @@ app.use('/api/horarios',horarios);
 app.use("/api/actividades", actividadesRoutes);
 app.use("/api/horarios", horarios);
 app.use("/api/biblioteca", biblioteca);
+app.use("/api/questions", question);
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 console.log("✅ Conectado.");
 
