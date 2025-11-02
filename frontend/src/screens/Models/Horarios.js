@@ -5,6 +5,7 @@ import BusquedaTablaHorarios from "../../components/Horarios/TablaHorario";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Apple, Book, Calendar, Table2 } from "lucide-react";
+import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
 
 const API_HOST = "http://localhost:5000";
 const API_HORARIO = `${API_HOST}/api/horario`;
@@ -275,6 +276,12 @@ const Horarios = () => {
                 onDetalleAlumnos={clickDetalleAlumnosHandler}
                 onCrearHorario={clickCrearModeloHandler}
                 onEliminarHorario={clickEliminarModeloHandler}
+              />
+            )}
+            {calendarioContent && (
+              <CalendarioHorarios
+                horarios={horarios}
+                onDetalleHorario={clickDetalleHorarioHandler}
               />
             )}
           </AnimatePresence>
