@@ -1,47 +1,29 @@
 import { useEffect, useState, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from 'framer-motion';
 import axios from "axios";
 import "../styles/Models/Biblioteca.css";
+import { 
+  Search,
+  Upload,
+  Download,
+  Book,
+  X,
+  Filter,
+  Users,
+  Award,
+  FileText,
+  BookIcon,
+  DownloadIcon,
+  Star,
+  Calendar,
+  BookOpen
+} from 'lucide-react';
 
-const SearchIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="8"/>
-    <path d="m21 21-4.35-4.35"/>
-  </svg>
-);
-
-const UploadIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="17 8 12 3 7 8"/>
-    <line x1="12" y1="3" x2="12" y2="15"/>
-  </svg>
-);
-
-const DownloadIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-);
-
-const BookIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-  </svg>
-);
-
+// Mantener los iconos SVG existentes para compatibilidad
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="18" y1="6" x2="6" y2="18"/>
     <line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-
-const FilterIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
   </svg>
 );
 
@@ -71,6 +53,17 @@ export default function BibliotecaTest() {
   useEffect(() => {
     cargarLibros();
   }, []);
+
+  // Calcular estadísticas
+  const totalLibros = libros.length;
+  const librosPDF = libros.filter(libro => libro.archivoUrl?.endsWith('.pdf')).length;
+  const librosEPUB = libros.filter(libro => libro.archivoUrl?.endsWith('.epub')).length;
+  const librosRecientes = libros.filter(libro => {
+    const fechaLibro = new Date(libro.fechaCreacion);
+    const hace30Dias = new Date();
+    hace30Dias.setDate(hace30Dias.getDate() - 30);
+    return fechaLibro > hace30Dias;
+  }).length;
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -191,89 +184,256 @@ export default function BibliotecaTest() {
 
   return (
     <div className="biblioteca-container">
-      {/* Header */}
-      <div className="biblioteca-header">
-        <div className="header-icon">📚</div>
-        <div>
-          <h2>Biblioteca Digital</h2>
-          <p className="biblioteca-subtitle">Gestiona tu colección de libros digitales</p>
-        </div>
-      </div>
+      {/* 🎨 ENCABEZADO MEJORADO */}
+      <motion.div 
+        className="biblioteca-header"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+      >
+        <motion.div
+          className="header-gradient"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+        >
+          {/* Patrón de fondo */}
+          <div className="header-pattern" />
 
-      {/* Top Content */}
-      <div className="biblioteca-top-content">
-        <div className="biblioteca-filters-row">
-          {/* Search */}
-          <div className="search-container">
-            <div className="search-icon">
-              <SearchIcon />
-            </div>
-            <input
-              type="text"
-              placeholder="Buscar por título o autor..."
-              value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
-              className="search-input"
-            />
-            {filterValue && (
-              <button 
-                className="search-clear"
-                onClick={() => setFilterValue('')}
+          <div className="header-content">
+            <motion.h2
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <motion.div
+                initial={{ rotate: -180, scale: 0 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
               >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {/* Filtro por tipo */}
-          <div className="filter-tipo-wrapper">
-            <FilterIcon />
-            <select
-              value={tipoFiltro}
-              onChange={(e) => setTipoFiltro(e.target.value)}
-              className="filter-select"
+                <Book size={36} fill="white" color="white" />
+              </motion.div>
+              Biblioteca Digital
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                className="floating-main-icon"
+              >
+                <BookOpen size={32} color="white" />
+              </motion.div>
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="header-subtitle"
             >
-              <option value="todos">Todos los formatos</option>
-              <option value="pdf">PDF</option>
-              <option value="epub">EPUB</option>
-            </select>
+              Gestiona tu colección de libros digitales de manera profesional
+            </motion.p>
+
+            <motion.div 
+              className="header-stats"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="stat-icon">
+                  <Book size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{totalLibros}</div>
+                  <div className="stat-label">Total Libros</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+              >
+                <div className="stat-icon">
+                  <FileText size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{librosPDF}</div>
+                  <div className="stat-label">Libros PDF</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+              >
+                <div className="stat-icon">
+                  <Award size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value">{librosRecientes}</div>
+                  <div className="stat-label">Recientes</div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              className="floating-icons"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <FileText size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, -8, 8, 0]
+                }}
+                transition={{ 
+                  duration: 3.5, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                <Calendar size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -12, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 4.2, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              >
+                <Star size={20} color="white" />
+              </motion.div>
+            </motion.div>
           </div>
+        </motion.div>
 
-          {/* Botón subir libro */}
-          <button
-            className="btn-subir-libro"
-            onClick={() => setMostrarModal(true)}
-          >
-            <UploadIcon />
-            Subir Libro
-          </button>
-        </div>
+        {/* BARRA DE BÚSQUEDA Y FILTROS MEJORADA */}
+        <motion.div 
+          className="biblioteca-top-content"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <div className="biblioteca-filters-row">
+            {/* Search */}
+            <div className="search-container">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="search-icon-animated"
+              >
+                <Search size={18} />
+              </motion.div>
+              <input
+                type="text"
+                placeholder="Buscar por título o autor..."
+                value={filterValue}
+                onChange={(e) => setFilterValue(e.target.value)}
+                className="search-input"
+              />
+              {filterValue && (
+                <button 
+                  className="search-clear"
+                  onClick={() => setFilterValue('')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-        <div className="biblioteca-meta-row">
-          <span className="libro-count">
-            Total: {sortedItems.length} {sortedItems.length === 1 ? 'libro' : 'libros'}
-          </span>
-          <div className="rows-per-page">
-            <span>Filas por página:</span>
-            <select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(Number(e.target.value));
-                setPage(1);
+            {/* Filtro por tipo */}
+            <div className="filter-tipo-wrapper">
+              <Filter size={18} />
+              <select
+                value={tipoFiltro}
+                onChange={(e) => setTipoFiltro(e.target.value)}
+                className="filter-select"
+              >
+                <option value="todos">Todos los formatos</option>
+                <option value="pdf">PDF</option>
+                <option value="epub">EPUB</option>
+              </select>
+            </div>
+
+            {/* Botón subir libro */}
+            <motion.button
+              className="btn-subir-libro"
+              onClick={() => setMostrarModal(true)}
+              whileHover={{ 
+                scale: 1.08, 
+                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
               }}
-              className="rows-select"
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-            </select>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Upload size={18} />
+              </motion.div>
+              Subir Libro
+            </motion.button>
           </div>
-        </div>
-      </div>
 
-      {/* Table */}
-      <div className="table-container">
+          <div className="biblioteca-meta-row">
+            <span className="libro-count">
+              Total: {sortedItems.length} {sortedItems.length === 1 ? 'libro' : 'libros'}
+            </span>
+            <div className="rows-per-page">
+              <span>Filas por página:</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rows-select"
+              >
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="15">15</option>
+                <option value="20">20</option>
+              </select>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* El resto del código se mantiene igual */}
+       <div className="table-container">
         <div className="table-wrapper">
           <table className="biblioteca-table">
             <thead>
@@ -439,7 +599,7 @@ export default function BibliotecaTest() {
             <div className="modal-header">
               <h3>📤 Subir Nuevo Libro</h3>
               <button onClick={() => setMostrarModal(false)} className="modal-close">
-                <CloseIcon />
+                <X size={20} />
               </button>
             </div>
             
@@ -496,7 +656,7 @@ export default function BibliotecaTest() {
                   Cancelar
                 </button>
                 <button type="submit" className="btn-guardar">
-                  <UploadIcon />
+                  <Upload size={16} />
                   Subir Libro
                 </button>
               </div>
