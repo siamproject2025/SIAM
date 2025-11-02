@@ -479,6 +479,7 @@ const OrdenCompra = () => {
     display: "flex",
     alignItems: "center",
     gap: "0.75rem",
+    color: "rgba(255, 255, 255, 0.9)",
     background: "rgba(255, 255, 255, 0.15)",
     padding: "0.75rem 1.25rem",
     borderRadius: "12px",
@@ -489,6 +490,7 @@ const OrdenCompra = () => {
 >
   <div className="stat-icon" style={{
     background: "rgba(255, 255, 255, 0.2)",
+    color: "rgba(255, 255, 255, 0.9)",
     padding: "0.5rem",
     borderRadius: "10px",
     display: "flex",
