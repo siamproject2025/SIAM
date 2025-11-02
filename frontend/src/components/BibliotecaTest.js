@@ -1,6 +1,10 @@
+// src/components/BibliotecaTest.jsx
+
 import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from "axios";
+// 1. 🎣 Importar el Custom Hook
+import useUserRole from "./hooks/useUserRole"; 
 import "../styles/Models/Biblioteca.css";
 import { 
   Search,
@@ -28,6 +32,11 @@ const CloseIcon = () => (
 );
 
 export default function BibliotecaTest() {
+  // ==========================================================
+  // 2. 🚀 LLAMADAS A HOOKS SIEMPRE AL PRINCIPIO (TOP LEVEL)
+  const { userRole, cargando } = useUserRole();
+
+  // Estados originales (Tus 10 estados)
   const [libros, setLibros] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
@@ -40,6 +49,13 @@ export default function BibliotecaTest() {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [notification, setNotification] = useState(null);
   const fileInputRef = useRef(null);
+  // ==========================================================
+
+  // --- LÓGICA DE PERMISOS (Derivada del rol) ---
+  // El rol 'ADMIN' y 'DOCENTE' puede subir. Solo 'ADMIN' puede eliminar.
+  const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
+  const canDelete = userRole === "ADMIN";
+  // ---------------------------------------------
 
   const cargarLibros = async () => {
     try {
@@ -50,11 +66,14 @@ export default function BibliotecaTest() {
     }
   };
 
+  // 3. 🔄 useEffect para cargar libros DESPUÉS de obtener el rol
   useEffect(() => {
-    cargarLibros();
-  }, []);
+    if (!cargando) { 
+      cargarLibros();
+    }
+  }, [cargando]); // Se ejecuta solo cuando `cargando` cambia y es false
 
-  // Calcular estadísticas
+  // Calcular estadísticas (código sin cambios)
   const totalLibros = libros.length;
   const librosPDF = libros.filter(libro => libro.archivoUrl?.endsWith('.pdf')).length;
   const librosEPUB = libros.filter(libro => libro.archivoUrl?.endsWith('.epub')).length;
@@ -73,6 +92,13 @@ export default function BibliotecaTest() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // 🛑 Validación de permiso de subida
+    if (!canUpload) {
+      showNotification("No tienes permiso para subir libros", "error");
+      setMostrarModal(false);
+      return;
+    }
+
     if (!titulo.trim()) {
       showNotification("El título es obligatorio", "error");
       return;
@@ -111,6 +137,12 @@ export default function BibliotecaTest() {
   };
 
   const handleEliminar = async (id, titulo) => {
+    // 🛑 Validación de permiso de eliminación
+    if (!canDelete) {
+        showNotification("No tienes permiso para eliminar libros", "error");
+        return;
+    }
+
     if (!window.confirm(`¿Seguro que deseas eliminar "${titulo}"?`)) return;
     
     try {
@@ -122,7 +154,7 @@ export default function BibliotecaTest() {
     }
   };
 
-  // Filtrado
+  // Filtrado (useMemo) - Se mantiene completo
   const filteredItems = useMemo(() => {
     let filtered = [...libros];
 
@@ -144,7 +176,7 @@ export default function BibliotecaTest() {
     return filtered;
   }, [libros, filterValue, tipoFiltro]);
 
-  // Ordenamiento
+  // Ordenamiento (useMemo) - Se mantiene completo
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
       let first = a[sortDescriptor.column];
@@ -160,7 +192,7 @@ export default function BibliotecaTest() {
     });
   }, [filteredItems, sortDescriptor]);
 
-  // Paginación
+  // Paginación (useMemo) - Se mantiene completo
   const pages = Math.ceil(sortedItems.length / rowsPerPage) || 1;
   const items = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -182,6 +214,20 @@ export default function BibliotecaTest() {
     return "📄";
   };
 
+  // 4. 🛑 RETURN CONDICIONAL DE CARGA (después de todos los Hooks)
+  if (cargando) {
+      return (
+          <div className="biblioteca-loading">
+              <svg className="spinner" viewBox="0 0 50 50">
+                  <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle>
+              </svg>
+              Cargando permisos y biblioteca...
+          </div>
+      );
+  }
+
+  // A partir de aquí, el código de renderizado es el mismo que me enviaste, 
+  // ¡pero con las condicionales de permisos añadidas!
   return (
     <div className="biblioteca-container">
       {/* 🎨 ENCABEZADO MEJORADO */}
@@ -232,7 +278,7 @@ export default function BibliotecaTest() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="header-subtitle"
             >
-              Gestiona tu colección de libros digitales de manera profesional
+              Gestiona tu colección de libros digitales de manera profesional. Rol actual: **{userRole}**
             </motion.p>
 
             <motion.div 
@@ -241,47 +287,39 @@ export default function BibliotecaTest() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className="stat-icon">
-                  <Book size={20} color="white" />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value">{totalLibros}</div>
-                  <div className="stat-label">Total Libros</div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-              >
-                <div className="stat-icon">
-                  <FileText size={20} color="white" />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value">{librosPDF}</div>
-                  <div className="stat-label">Libros PDF</div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-              >
-                <div className="stat-icon">
-                  <Award size={20} color="white" />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value">{librosRecientes}</div>
-                  <div className="stat-label">Recientes</div>
-                </div>
-              </motion.div>
+                <motion.div 
+                    className="stat-item"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                >
+                    <div className="stat-icon"><Book size={20} color="white" /></div>
+                    <div className="stat-text">
+                        <div className="stat-value">{totalLibros}</div>
+                        <div className="stat-label">Total Libros</div>
+                    </div>
+                </motion.div>
+                <motion.div 
+                    className="stat-item"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                >
+                    <div className="stat-icon"><FileText size={20} color="white" /></div>
+                    <div className="stat-text">
+                        <div className="stat-value">{librosPDF}</div>
+                        <div className="stat-label">Libros PDF</div>
+                    </div>
+                </motion.div>
+                <motion.div 
+                    className="stat-item"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                >
+                    <div className="stat-icon"><Award size={20} color="white" /></div>
+                    <div className="stat-text">
+                        <div className="stat-value">{librosRecientes}</div>
+                        <div className="stat-label">Recientes</div>
+                    </div>
+                </motion.div>
             </motion.div>
 
             <motion.div 
@@ -290,50 +328,50 @@ export default function BibliotecaTest() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6, duration: 0.5 }}
             >
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <FileText size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0]
-                }}
-                transition={{ 
-                  duration: 3.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-              >
-                <Calendar size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ 
-                  duration: 4.2, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-              >
-                <Star size={20} color="white" />
-              </motion.div>
+                <motion.div 
+                    className="floating-icon"
+                    animate={{ 
+                        y: [0, -10, 0],
+                        rotate: [0, 5, -5, 0]
+                    }}
+                    transition={{ 
+                        duration: 4, 
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                    }}
+                >
+                    <FileText size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                    className="floating-icon"
+                    animate={{ 
+                        y: [0, -15, 0],
+                        rotate: [0, -8, 8, 0]
+                    }}
+                    transition={{ 
+                        duration: 3.5, 
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.5
+                    }}
+                >
+                    <Calendar size={20} color="white" />
+                </motion.div>
+                <motion.div 
+                    className="floating-icon"
+                    animate={{ 
+                        y: [0, -12, 0],
+                        rotate: [0, 10, -10, 0]
+                    }}
+                    transition={{ 
+                        duration: 4.2, 
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 1
+                    }}
+                >
+                    <Star size={20} color="white" />
+                </motion.div>
             </motion.div>
           </div>
         </motion.div>
@@ -386,26 +424,28 @@ export default function BibliotecaTest() {
               </select>
             </div>
 
-            {/* Botón subir libro */}
-            <motion.button
-              className="btn-subir-libro"
-              onClick={() => setMostrarModal(true)}
-              whileHover={{ 
-                scale: 1.08, 
-                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <Upload size={18} />
-              </motion.div>
-              Subir Libro
-            </motion.button>
+            {/* 🛑 Botón Subir Libro: Condicional por Permiso */}
+            {canUpload && (
+                <motion.button
+                    className="btn-subir-libro"
+                    onClick={() => setMostrarModal(true)}
+                    whileHover={{ 
+                        scale: 1.08, 
+                        boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+                        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                >
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    >
+                        <Upload size={18} />
+                    </motion.div>
+                    Subir Libro
+                </motion.button>
+            )}
           </div>
 
           <div className="biblioteca-meta-row">
@@ -432,9 +472,9 @@ export default function BibliotecaTest() {
         </motion.div>
       </motion.div>
 
-      {/* El resto del código se mantiene igual */}
+      {/* TABLA DE LIBROS */}
        <div className="table-container">
-        <div className="table-wrapper">
+         <div className="table-wrapper">
           <table className="biblioteca-table">
             <thead>
               <tr>
@@ -513,8 +553,11 @@ export default function BibliotecaTest() {
                         <span className="formato-badge sin-archivo">N/A</span>
                       )}
                     </td>
+                    
+                    {/* 🛑 CELDAS DE ACCIONES: Condicional por Permiso (Eliminar) */}
                     <td className="cell-acciones">
                       <div className="action-buttons">
+                        {/* Descargar: visible para todos */}
                         {libro.archivoUrl ? (
                           <a
                             href={libro.archivoUrl}
@@ -530,13 +573,17 @@ export default function BibliotecaTest() {
                         ) : (
                           <span className="sin-archivo-text">Sin archivo</span>
                         )}
-                        <button
-                          onClick={() => handleEliminar(libro._id, libro.titulo)}
-                          className="btn-eliminar"
-                          title="Eliminar libro"
-                        >
-                          🗑️
-                        </button>
+                        
+                        {/* 🛑 Botón Eliminar: SOLO VISIBLE si canDelete es true */}
+                        {canDelete && (
+                            <button
+                                onClick={() => handleEliminar(libro._id, libro.titulo)}
+                                className="btn-eliminar"
+                                title="Eliminar libro"
+                            >
+                                🗑️
+                            </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -544,9 +591,9 @@ export default function BibliotecaTest() {
               )}
             </tbody>
           </table>
-        </div>
+         </div>
 
-        {/* Pagination */}
+        {/* Paginación: Mantenida completa */}
         {items.length > 0 && (
           <div className="pagination-container">
             <div className="pagination-info">
@@ -592,80 +639,108 @@ export default function BibliotecaTest() {
         )}
       </div>
 
-      {/* Modal Subir Libro */}
-      {mostrarModal && (
-        <div className="modal-overlay" onClick={() => setMostrarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>📤 Subir Nuevo Libro</h3>
-              <button onClick={() => setMostrarModal(false)} className="modal-close">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
-                <label>Título del Libro *</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Introducción a MongoDB"
-                  value={titulo}
-                  onChange={(e) => setTitulo(e.target.value)}
-                  className="form-input"
-                  required
-                />
+      {/* 🛑 Modal Subir Libro: Condicional por Permiso (Visibilidad) */}
+      <AnimatePresence>
+        {mostrarModal && canUpload && (
+          <motion.div 
+            className="modal-overlay" 
+            onClick={() => setMostrarModal(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="modal-content" 
+              onClick={(e) => e.stopPropagation()}
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            >
+              <div className="modal-header">
+                <h3>📤 Subir Nuevo Libro</h3>
+                <button onClick={() => setMostrarModal(false)} className="modal-close">
+                  <X size={20} />
+                </button>
               </div>
-
-              <div className="form-group">
-                <label>Autor *</label>
-                <input
-                  type="text"
-                  placeholder="Ej: John Doe"
-                  value={autor}
-                  onChange={(e) => setAutor(e.target.value)}
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Archivo (PDF o EPUB) *</label>
-                <div className="file-input-wrapper">
+              
+              <form onSubmit={handleSubmit} className="modal-form">
+                <div className="form-group">
+                  <label>Título del Libro *</label>
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.epub"
-                    onChange={(e) => setArchivo(e.target.files[0])}
-                    className="file-input"
+                    type="text"
+                    placeholder="Ej: Introducción a MongoDB"
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    className="form-input"
                     required
                   />
-                  {archivo && (
-                    <div className="file-selected">
-                      ✓ {archivo.name}
-                    </div>
-                  )}
                 </div>
-              </div>
 
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setMostrarModal(false)}
-                  className="btn-cancelar"
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-guardar">
-                  <Upload size={16} />
-                  Subir Libro
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="form-group">
+                  <label>Autor *</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: John Doe"
+                    value={autor}
+                    onChange={(e) => setAutor(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
 
-      {/* Notification */}
+                <div className="form-group">
+                  <label>Archivo (PDF o EPUB) *</label>
+                  <div className="file-input-wrapper">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.epub"
+                      onChange={(e) => setArchivo(e.target.files[0])}
+                      className="file-input"
+                      required
+                    />
+                    {archivo && (
+                      <div className="file-selected">
+                        ✓ {archivo.name}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button
+                    type="button"
+                    onClick={() => setMostrarModal(false)}
+                    className="btn-cancelar"
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-guardar">
+                    <Upload size={16} />
+                    Subir Libro
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+        {/* Si mostrarModal es true pero canUpload es false, no se renderiza nada (silenciosamente) */}
+        {mostrarModal && !canUpload && (
+            // Pequeña animación para indicar que el modal fue bloqueado, pero sin mostrar el contenido
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="modal-overlay" 
+                onClick={() => setMostrarModal(false)}
+            />
+        )}
+      </AnimatePresence>
+
+
+      {/* Notification (sin cambios) */}
       {notification && (
         <div className={`notification notification-${notification.type}`}>
           <span className="notification-icon">
