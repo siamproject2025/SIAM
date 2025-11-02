@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "../styles/NavBar.css";
 import { Link, useLocation } from "react-router-dom";
+import useUserRole from "./hooks/useUserRole"; 
 import LoginProfile from "./authentication/LoginProfile";
-import { Music, Home, BarChart3, Users } from "lucide-react";
+import {  Music, Zap, Home, BarChart3, Users } from "lucide-react";
 
 const links = [
   {
@@ -26,7 +27,14 @@ function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+ // 2. 🚀 Llamar al Custom Hook para obtener el rol
+  const { userRole, cargando } = useUserRole();
 
+  // Función para capitalizar la primera letra del rol
+  const formatRole = (role) => {
+    if (!role) return "Invitado";
+    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  };
   // Efecto para detectar scroll
   useEffect(() => {
     const handleScroll = () => {
