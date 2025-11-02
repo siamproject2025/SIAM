@@ -7,6 +7,7 @@ const BusquedaTablaHorarios = ({
   onDetalleHorario,
   onDetalleAlumnos,
   onCrearHorario,
+  onEliminarHorario,
 }) => {
   const generarTabla = () => {
     return horarios.map((horario, i) => (
@@ -43,7 +44,7 @@ const BusquedaTablaHorarios = ({
           </a>
           <a
             className="btn btn-outline-danger btn-sm"
-            // onClick={() => onDetalleAlumnos(horario._id)}
+            onClick={() => onEliminarHorario(horario._id)}
           >
             <Trash />
           </a>

@@ -100,7 +100,16 @@ const Horarios = () => {
     clickCerrarAlumnoHandler();
   };
 
-  const clickEliminarModeloHandler = (id_horario) => {};
+  const clickEliminarModeloHandler = async (id_horario) => {
+    try {
+      const res = await axios.delete(`${API_HORARIO}/${id_horario}`);
+      await obtenerHorarios();
+    } catch (error) {
+      console.error("Error al eliminar el horario", error);
+    }
+
+    clickCerrarModeloHandler();
+  };
 
   const obtenerHorarios = async () => {
     try {
@@ -265,6 +274,7 @@ const Horarios = () => {
                 onDetalleHorario={clickDetalleHorarioHandler}
                 onDetalleAlumnos={clickDetalleAlumnosHandler}
                 onCrearHorario={clickCrearModeloHandler}
+                onEliminarHorario={clickEliminarModeloHandler}
               />
             )}
           </AnimatePresence>

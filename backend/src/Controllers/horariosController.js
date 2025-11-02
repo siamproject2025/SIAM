@@ -191,3 +191,22 @@ exports.obtenerHorario = async (req, res) => {
       .json({ message: `Error al obtener el horario`, error: error.message });
   }
 };
+
+exports.eliminarHorario = async (req, res) => {
+  try {
+    const horario = await Horario.findByIdAndDelete(req.params.id);
+
+    if (!horario) {
+      return res.status(404).json({ message: "Horario no encontrado" });
+    }
+
+    res.status(200).json({ message: "Horario eliminado correctamente" });
+  } catch (error) {
+    console.error(
+      `Error al obtener el horario ${req.params.id}: ${error.message}`
+    );
+    res
+      .status(500)
+      .json({ message: `Error al obtener el horario`, error: error.message });
+  }
+};
