@@ -145,6 +145,7 @@ ul, li{
   font-size: 0.95rem;
   transition: all 0.3s ease;
   background: white;
+  width: 100%;
 }
 
 .personal-busqueda:focus {

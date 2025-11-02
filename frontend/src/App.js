@@ -111,14 +111,13 @@ return (
   <>
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
       {/* Renderiza NavBar solo si el usuario está autenticado */}
-      {user && (
-        <>
-          <NavBar />
-          {<SideBar />}
-        </>
-      )}
+      {user && <NavBar />}
 
-      <Routes>
+      <div className="app-content">
+        {user && <SideBar />}
+
+        <main className="main-content">
+        <Routes>
         {/* Rutas públicas */}
         <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -151,8 +150,11 @@ return (
 
         {/* Redirigir rutas desconocidas */}
         <Route path="*" element={<Navigate to="/landing" replace />} />
-      </Routes>
+          </Routes>
+          </main>
+        </div>
 
+        <Footer />
       {/* Advertencia de inactividad */}
       {warningVisible && (
         <div
@@ -174,8 +176,7 @@ return (
       )}
     </div>
 
-    {/* Footer fuera del contenedor principal */}
-    <Footer />
+    
   </>
 );
 

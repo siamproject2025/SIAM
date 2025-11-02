@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -10,10 +10,35 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete }) => {
     costoUnit: ''
   });
 
+   const [proveedores, setProveedores] = useState([]);
+    const [cargandoProveedores, setCargandoProveedores] = useState(true);
+  
+
     // 🕒 Obtener fecha y hora actual en Honduras
   const fechaActual = new Date().toLocaleString("es-ES", {
     timeZone: "America/Tegucigalpa",
   });
+
+    // 🔹 Llamada a la API de proveedores
+    useEffect(() => {
+      const fetchProveedores = async () => {
+        try {
+          const response = await fetch('http://localhost:5000/api/proveedores');
+          if (!response.ok) throw new Error('Error al obtener proveedores');
+          const data = await response.json();
+  
+          // Filtrar solo proveedores activos
+          const proveedoresActivos = data.filter(p => p.estado === 'ACTIVO');
+          setProveedores(proveedoresActivos);
+          setCargandoProveedores(false);
+        } catch (error) {
+          console.error('Error cargando proveedores:', error);
+          setCargandoProveedores(false);
+          alert('Error al cargar los proveedores. Verifica la conexión con el servidor.');
+        }
+      };
+      fetchProveedores();
+    }, []);
 
   const handleEditarItem = (idx, campo, valor) => {
     const nuevosItems = ordenEditada.items.map((item, i) =>
@@ -115,14 +140,33 @@ doc.text(`Fecha: ${fechaFormateada} ${horaFormateada}`, 14, 50);
           </div>
 
           <div className="form-group">
-            <label>ID Proveedor</label>
-            <input
-              type="text"
-              value={ordenEditada.proveedor_id}
-              onChange={(e) => setOrdenEditada({ ...ordenEditada, proveedor_id: e.target.value })}
-              placeholder="Ej: PROV-001"
-            />
-          </div>
+  <label>ID Proveedor</label>
+  <select
+    value={ordenEditada.proveedor_id?._id || ordenEditada.proveedor_id || ''}
+    onChange={(e) =>
+      setOrdenEditada({
+        ...ordenEditada,
+        proveedor_id: e.target.value, // Guarda solo el _id
+      })
+    }
+  >
+    {ordenEditada.proveedor_id && (
+      <option value={ordenEditada.proveedor_id._id}>
+        ID: {ordenEditada.proveedor_id.id_proveedor} - {ordenEditada.proveedor_id.nombre}{' '}
+        {ordenEditada.proveedor_id.empresa ? `(${ordenEditada.proveedor_id.empresa})` : ''}
+      </option>
+    )}
+
+    {proveedores.map((prov) => (
+      <option key={prov._id} value={prov._id}>
+        ID: {prov.id_proveedor} - {prov.nombre} {prov.empresa ? `(${prov.empresa})` : ''}
+      </option>
+    ))}
+  </select>
+
+  {console.log("Prueba de proveedor", ordenEditada.proveedor_id)}
+</div>
+
 
           <div className="form-group">
             <label>Estado Actual</label>

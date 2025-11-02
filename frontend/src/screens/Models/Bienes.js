@@ -101,7 +101,7 @@ const Bienes = () => {
       .catch(err => console.error('Error al obtener los bienes:', err));
   }, []);
 
-  // Filtrado
+
   const filteredItems = useMemo(() => {
     let filtered = [...bienes];
 
@@ -132,16 +132,6 @@ const Bienes = () => {
 
     return filtered;
   }, [bienes, filterValue, estadoFiltro, categoriaFiltro]);
-
-  //Filtros de categoria y estado
-  useEffect(() => {
-    console.log("👉 Estado seleccionado en filtro:", estadoFiltro);
-    console.log("👉 Categoría seleccionada en filtro:", categoriaFiltro);
-    console.log("👉 Estados en bienes:", [...new Set(bienes.map(b => b.estado))]);
-    console.log("👉 Categorías en bienes:", [...new Set(bienes.map(b => b.categoria))]);
-    console.log("👉 Total bienes:", bienes.length);
-    console.log("👉 Bienes filtrados:", filteredItems.length);
-  }, [estadoFiltro, categoriaFiltro, bienes, filteredItems]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -190,91 +180,125 @@ const Bienes = () => {
   }, [bienes]);
 
   // Handlers CRUD
-  const handleCrearBien = async (nuevoBien) => {
-    try {
-      if (!nuevoBien.codigo.trim()) {
-        showNotification('El código del bien es obligatorio', 'error');
-        return;
-      }
-      if (!nuevoBien.nombre.trim()) {
-        showNotification('El nombre del bien es obligatorio', 'error');
-        return;
-      }
-      if (!nuevoBien.estado) {
-        showNotification('Debe seleccionar un estado inicial', 'error');
-        return;
-      }
-      if (!nuevoBien.valor || nuevoBien.valor <= 0) {
-        showNotification('El valor debe ser mayor a 0', 'error');
-        return;
-      }
-
-      const codigoExistente = bienes.find(b => b.codigo.toLowerCase() === nuevoBien.codigo.toLowerCase());
-      if (codigoExistente) {
-        showNotification('Ya existe un bien con este código', 'error');
-        return;
-      }
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevoBien)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear el bien');
-      }
-      
-      const bienCreado = await res.json();
-      setBienes([...bienes, bienCreado]);
-      setMostrarModalCrear(false);
-      showNotification(`Bien "${bienCreado.nombre}" creado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al crear el bien', 'error');
+const handleCrearBien = async (nuevoBien) => {
+  try {
+    // 🔹 Validaciones
+    if (!nuevoBien.codigo.trim()) {
+      showNotification('El código del bien es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEditarBien = async (bienActualizado) => {
-    try {
-      if (!bienActualizado.codigo.trim()) {
-        showNotification('El código del bien es obligatorio', 'error');
-        return;
-      }
-      if (!bienActualizado.nombre.trim()) {
-        showNotification('El nombre del bien es obligatorio', 'error');
-        return;
-      }
-      if (!bienActualizado.estado) {
-        showNotification('Debe seleccionar un estado', 'error');
-        return;
-      }
-      if (!bienActualizado.valor || bienActualizado.valor <= 0) {
-        showNotification('El valor debe ser mayor a 0', 'error');
-        return;
-      }
-
-      const res = await fetch(`${API_URL}/${bienActualizado._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bienActualizado)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar el bien');
-      }
-      
-      const actualizada = await res.json();
-      setBienes(bienes.map(b => b._id === actualizada._id ? actualizada : b));
-      setBienSeleccionado(null);
-      showNotification(`Bien "${actualizada.nombre}" actualizado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al editar el bien', 'error');
+    if (!nuevoBien.nombre.trim()) {
+      showNotification('El nombre del bien es obligatorio', 'error');
+      return;
     }
-  };
+    if (!nuevoBien.estado) {
+      showNotification('Debe seleccionar un estado inicial', 'error');
+      return;
+    }
+    if (!nuevoBien.valor || nuevoBien.valor <= 0) {
+      showNotification('El valor debe ser mayor a 0', 'error');
+      return;
+    }
+
+    const codigoExistente = bienes.find(
+  (b) => b.codigo?.toLowerCase() === nuevoBien.codigo?.toLowerCase()
+);
+
+    if (codigoExistente) {
+      showNotification('Ya existe un bien con este código', 'error');
+      return;
+    }
+
+    // 🔹 Crear objeto FormData
+    const formData = new FormData();
+    for (const key in nuevoBien) {
+      if (key === 'imagen' && nuevoBien[key]) {
+        // Archivo tipo File o Blob
+        formData.append('imagen', nuevoBien[key]);
+      } else {
+        formData.append(key, nuevoBien[key]);
+      }
+    }
+
+    // 🔹 Enviar al backend sin establecer 'Content-Type'
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al crear el bien');
+    }
+
+    const bienCreado = await res.json();
+    console.log("🔹 Respuesta del backend:", bienCreado);
+
+    // 🔹 Actualizar estado y notificación
+    
+    setBienes([...bienes, bienCreado.data]);
+    setMostrarModalCrear(false);
+    showNotification(`Bien "${bienCreado.data.nombre}" creado exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al crear el bien', 'error');
+  }
+};
+
+
+
+ const handleEditarBien = async (bienActualizado) => {
+  try {
+    if (!bienActualizado.codigo.trim()) {
+      showNotification('El código del bien es obligatorio', 'error');
+      return;
+    }
+    if (!bienActualizado.nombre.trim()) {
+      showNotification('El nombre del bien es obligatorio', 'error');
+      return;
+    }
+    if (!bienActualizado.estado) {
+      showNotification('Debe seleccionar un estado', 'error');
+      return;
+    }
+    if (!bienActualizado.valor || bienActualizado.valor <= 0) {
+      showNotification('El valor debe ser mayor a 0', 'error');
+      return;
+    }
+
+    // 🔹 Crear FormData y agregar todos los campos de bienActualizado
+    const formData = new FormData();
+    for (const key in bienActualizado) {
+      // Si es imagen y existe, agregar como archivo
+      if (key === 'imagen' && bienActualizado[key]) {
+        formData.append('imagen', bienActualizado[key]); // tipo File o Blob
+      } else {
+        formData.append(key, bienActualizado[key]);
+      }
+    }
+
+    // 🔹 Enviar al backend sin headers, fetch lo detecta automáticamente
+    const res = await fetch(`${API_URL}/${bienActualizado._id}`, {
+      method: 'PUT',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al editar el bien');
+    }
+
+    const actualizada = await res.json();
+    setBienes(bienes.map(b => b._id === actualizada.data._id ? actualizada.data : b));
+    setBienSeleccionado(null);
+    showNotification(`Bien "${actualizada.data.nombre}" actualizado exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al editar el bien', 'error');
+  }
+};
+
 
   const handleEliminarBien = async (id) => {
     const bienAEliminar = bienes.find(b => b._id === id);
@@ -871,7 +895,7 @@ const Bienes = () => {
             Estado <ChevronDownIcon />
           </button>
           {showEstadoMenu && (
-            <div className="dropdown-menu" style={{
+            <div className="dropdown-menu2" style={{
               position: 'absolute',
               top: '100%',
               left: 0,
@@ -881,7 +905,7 @@ const Bienes = () => {
               borderRadius: '10px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               minWidth: '200px',
-              zIndex: 1000
+              zIndex: 1000,
             }}>
               {estadosOptions.map(estado => (
                 <div
@@ -1016,8 +1040,8 @@ const Bienes = () => {
               </tr>
             </thead>
             <tbody>
-              {items.length > 0 ? (
-                items.map((bien, index) => (
+              {filteredItems .length > 0 ? (
+                filteredItems .map((bien, index) => (
                   <tr 
                     key={bien._id}
                     style={{ 

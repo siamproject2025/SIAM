@@ -1,5 +1,5 @@
 // controllers/donacionesController.js
-const Donacion = require('../Models/DonacionesModel');
+const Donacion = require('../Models/donacionesModel');
 const multer = require('multer');
 const sharp = require('sharp');
 
