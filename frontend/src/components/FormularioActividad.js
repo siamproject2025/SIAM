@@ -613,7 +613,7 @@ function categorizarActividad(fechaActividad) {
               </ul>
             </div>
 
-            <div className="modal-actions">
+            <div className="modal-actions-actividades">
               <button className="btn-cerrar" onClick={() => setMostrarAyuda(false)}>
                 ✅ Entendido
               </button>

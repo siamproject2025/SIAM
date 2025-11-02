@@ -18,7 +18,7 @@ import {
   Columns
 } from 'lucide-react';
 
-// Iconos SVG (mantener los existentes)
+// Iconos SVG
 const ChevronDownIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="m6 9 6 6 6-6"/>
@@ -38,6 +38,7 @@ const API_URL = "http://localhost:5000/api/compras";
 const OrdenCompra = () => {
   // Estados principales
   const [ordenes, setOrdenes] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState(new Set(["all"]));
   const [visibleColumns, setVisibleColumns] = useState(new Set(["numero", "proveedor", "fecha", "items", "total", "estado", "acciones"]));
@@ -50,7 +51,6 @@ const OrdenCompra = () => {
   const [notification, setNotification] = useState(null);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
- 
 
   // Referencias para cerrar menús al hacer clic fuera
   const statusMenuRef = useRef(null);
@@ -76,21 +76,44 @@ const OrdenCompra = () => {
     { name: "Cerrada", uid: "CERRADA" }
   ];
 
-//filtro de clic de estado
-const handleStatClick = (estado) => {
-  if (estado === "all") {
-    setStatusFilter(new Set(["all"]));
-  } else {
-    setStatusFilter(new Set([estado]));
-  }
-};
+  // Notificaciones
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
-  // Cargar datos
+  // 🔹 Cargar proveedores
   useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => setOrdenes(data))
-      .catch(err => console.error('Error:', err));
+    const cargarProveedores = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/proveedores');
+        if (!res.ok) throw new Error('Error al cargar proveedores');
+        const data = await res.json();
+        setProveedores(data.filter(p => p.estado === 'ACTIVO'));
+      } catch (err) {
+        console.error('Error al cargar proveedores:', err);
+        showNotification('Error al cargar proveedores', 'error');
+      }
+    };
+    
+    cargarProveedores();
+  }, []);
+
+  // 🔹 Cargar órdenes
+  useEffect(() => {
+    const cargarOrdenes = async () => {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('Error al cargar órdenes');
+        const data = await res.json();
+        setOrdenes(data);
+      } catch (err) {
+        console.error('Error al cargar órdenes:', err);
+        showNotification('Error al cargar órdenes', 'error');
+      }
+    };
+    
+    cargarOrdenes();
   }, []);
 
   // Cerrar menús al hacer clic fuera
@@ -122,29 +145,23 @@ const handleStatClick = (estado) => {
     return sum + totalOrden;
   }, 0);
 
-  // Notificaciones
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
   // Filtrado
   const filteredItems = useMemo(() => {
-  let filtered = [...ordenes];
+    let filtered = [...ordenes];
 
-  if (filterValue) {
-    filtered = filtered.filter(orden =>
-      orden.numero?.toLowerCase().includes(filterValue.toLowerCase()) ||
-      orden.proveedor_id?.nombre?.toLowerCase().includes(filterValue.toLowerCase())
-    );
-  }
+    if (filterValue) {
+      filtered = filtered.filter(orden =>
+        orden.numero?.toLowerCase().includes(filterValue.toLowerCase()) ||
+        orden.proveedor_id?.nombre?.toLowerCase().includes(filterValue.toLowerCase())
+      );
+    }
 
-  if (!statusFilter.has("all")) {
-    filtered = filtered.filter(orden => statusFilter.has(orden.estado));
-  }
+    if (!statusFilter.has("all")) {
+      filtered = filtered.filter(orden => statusFilter.has(orden.estado));
+    }
 
-  return filtered;
-}, [ordenes, filterValue, statusFilter]);
+    return filtered;
+  }, [ordenes, filterValue, statusFilter]);
 
   // Ordenamiento
   const sortedItems = useMemo(() => {
@@ -174,13 +191,21 @@ const handleStatClick = (estado) => {
     return sortedItems.slice(start, start + rowsPerPage);
   }, [page, sortedItems, rowsPerPage]);
 
-  // Handlers (mantener los mismos)
+  // Handlers
   const handleSort = (columnKey) => {
     if (!columns.find(c => c.uid === columnKey)?.sortable) return;
     setSortDescriptor(prev => ({
       column: columnKey,
       direction: prev.column === columnKey && prev.direction === "ascending" ? "descending" : "ascending"
     }));
+  };
+
+  const handleStatClick = (estado) => {
+    if (estado === "all") {
+      setStatusFilter(new Set(["all"]));
+    } else {
+      setStatusFilter(new Set([estado]));
+    }
   };
 
   const handleCrearOrden = async (nuevaOrden) => {
@@ -231,8 +256,8 @@ const handleStatClick = (estado) => {
         showNotification('El número de orden es obligatorio', 'error');
         return;
       }
-      if (!ordenActualizada.proveedor_id.trim()) {
-        showNotification('El ID del proveedor es obligatorio', 'error');
+      if (!ordenActualizada.proveedor_id) {
+        showNotification('Debes seleccionar un proveedor', 'error');
         return;
       }
       if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
@@ -240,8 +265,12 @@ const handleStatClick = (estado) => {
         return;
       }
 
+      // 🔹 Asegurarse de enviar solo el ID del proveedor
       const ordenParaEnviar = {
         ...ordenActualizada,
+        proveedor_id: typeof ordenActualizada.proveedor_id === 'object' 
+          ? ordenActualizada.proveedor_id._id 
+          : ordenActualizada.proveedor_id,
         fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
       };
 
@@ -257,6 +286,8 @@ const handleStatClick = (estado) => {
       }
       
       const actualizada = await res.json();
+      
+      // 🔹 Actualizar la lista de órdenes
       setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
       setOrdenSeleccionada(null);
       showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
@@ -304,10 +335,10 @@ const handleStatClick = (estado) => {
 
   const toggleColumnVisibility = (columnUid) => {
     const newSet = new Set(visibleColumns);
-    if (columnUid === "acciones") return; // No permitir ocultar acciones
+    if (columnUid === "acciones") return;
     
     if (newSet.has(columnUid)) {
-      if (newSet.size > 2) { // Mantener al menos 2 columnas visibles
+      if (newSet.size > 2) {
         newSet.delete(columnUid);
       }
     } else {
@@ -808,12 +839,12 @@ const handleStatClick = (estado) => {
 
             {/* Status Filter */}
             <div 
-              className="dropdown-wrapper" 
+              className="dropdown-wrapper-compras" 
               ref={statusMenuRef}
               style={{ position: 'relative' }}
             >
               <motion.button
-                className="filter-button"
+                className="filter-button-estado-compra"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
@@ -835,7 +866,7 @@ const handleStatClick = (estado) => {
                 <ChevronDownIcon />
               </motion.button>
               {showStatusMenu && (
-                <div className="dropdown-menu">
+                <div className="dropdown-menu-compra">
                   {statusOptions.map(status => (
                     <div
                       key={status.uid}
@@ -844,50 +875,6 @@ const handleStatClick = (estado) => {
                     >
                       <span className="checkbox">{statusFilter.has(status.uid) ? '✓' : ''}</span>
                       {status.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Column Filter */}
-            <div 
-              className="dropdown-wrapper" 
-              ref={columnMenuRef}
-              style={{ position: 'relative' }}
-            >
-              <motion.button
-                className="filter-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowColumnMenu(!showColumnMenu)}
-                style={{
-                  padding: '0.8rem 1.5rem',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Columns size={16} />
-                Columnas
-                <ChevronDownIcon />
-              </motion.button>
-              {showColumnMenu && (
-                <div className="dropdown-menu">
-                  {columns.map(col => (
-                    <div
-                      key={col.uid}
-                      onClick={() => toggleColumnVisibility(col.uid)}
-                      className={`dropdown-item ${visibleColumns.has(col.uid) ? 'active' : ''} ${col.uid === 'acciones' ? 'disabled' : ''}`}
-                    >
-                      <span className="checkbox">{visibleColumns.has(col.uid) ? '✓' : ''}</span>
-                      {col.name}
                     </div>
                   ))}
                 </div>
@@ -1146,6 +1133,8 @@ const handleStatClick = (estado) => {
       )}
     </div>
   );
+  
 };
+
 
 export default OrdenCompra;
