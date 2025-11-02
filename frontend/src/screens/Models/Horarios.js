@@ -4,7 +4,7 @@ import ModalAlumnosHorario from "../../components/Horarios/ModalAlumnosHorario";
 import BusquedaTablaHorarios from "../../components/Horarios/TablaHorario";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Apple, Book, Calendar, Table2 } from "lucide-react";
+import { Apple, Book, Calendar, Table2, X } from "lucide-react";
 import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
 
 const API_HOST = "http://localhost:5000";
@@ -36,8 +36,15 @@ const Horarios = () => {
   const [mostrarModalDetalle, setMostrarModalDetalle] = useState(false);
   const [mostrarModalAlumnos, setMostrarModalAlumnos] = useState(false);
   const [esModalCreacion, setEsModalCreacion] = useState(false);
+  const [esModalDetalle, setEsModalDetalle] = useState(true);
   const [horariosContent, setHorariosContent] = useState(true);
   const [calendarioContent, setCalendarioContent] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   const clickHorariosContent = async () => {
     setHorariosContent(true);
@@ -53,16 +60,19 @@ const Horarios = () => {
       const res = await axios.get(`${API_HORARIO}/${id}`);
       setHorarioSeleccionado(res.data);
       setEsModalCreacion(false);
+      setEsModalDetalle(true);
       setMostrarModalDetalle(true);
     } catch (error) {
       console.error("Error al cargar el horario", error);
+      showNotification(error, "error");
     }
   };
 
   const clickDetalleAlumnosHandler = async (id) => {
     const res = await axios.get(`${API_HORARIO}/${id}`);
     setHorarioSeleccionado(res.data);
-    setMostrarModalAlumnos(true);
+    setMostrarModalDetalle(true);
+    setEsModalDetalle(false);
   };
 
   const clickCerrarModeloHandler = () => {
@@ -78,6 +88,7 @@ const Horarios = () => {
   const clickCrearModeloHandler = () => {
     setHorarioSeleccionado(inicializarHorario());
     setEsModalCreacion(true);
+    setEsModalDetalle(true);
     setMostrarModalDetalle(true);
   };
 
@@ -88,13 +99,16 @@ const Horarios = () => {
     try {
       if (esCreacion) {
         const res = await axios.post(API_HORARIO, horario);
+        showNotification("Horario creado con éxito.", "success");
         await obtenerHorarios();
       } else {
         const res = await axios.put(`${API_HORARIO}/${id}`, horario);
+        showNotification("Horario actualizado con éxito.", "success");
         await obtenerHorarios();
       }
     } catch (error) {
       console.error("Error al cargar los datos", error);
+      showNotification(error, "error");
     }
 
     clickCerrarModeloHandler();
@@ -104,8 +118,11 @@ const Horarios = () => {
   const clickEliminarModeloHandler = async (id_horario) => {
     try {
       const res = await axios.delete(`${API_HORARIO}/${id_horario}`);
+      if (res.status === 200)
+        showNotification("Horario eliminado exitosamente", "success");
       await obtenerHorarios();
     } catch (error) {
+      showNotification(error, "error");
       console.error("Error al eliminar el horario", error);
     }
 
@@ -296,20 +313,55 @@ const Horarios = () => {
               docentes: docentes,
               aulas: aulas,
               esCreacion: esModalCreacion,
+              alumnos: alumnos,
+              esDetalle: esModalDetalle,
             }}
             onCerrar={clickCerrarModeloHandler}
             onEliminar={clickEliminarModeloHandler}
             onGuardar={clickGuardarModeloHandler}
+            enviarNotificacion={showNotification}
           />
         )}
       </AnimatePresence>
+      {/* Notificaciones */}
       <AnimatePresence>
-        {mostrarModalAlumnos && (
-          <ModalAlumnosHorario
-            params={{ horario: horarioSeleccionado, alumnos: alumnos }}
-            onCerrar={clickCerrarAlumnoHandler}
-            onGuardar={clickGuardarModeloHandler}
-          />
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              zIndex: 10000,
+              background:
+                notification.type === "success" ? "#4CAF50" : "#f44336",
+              color: "white",
+              padding: "1rem 1.5rem",
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            {notification.message}
+            <button
+              onClick={() => setNotification(null)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "white",
+                cursor: "pointer",
+                padding: "2px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <X size={18} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

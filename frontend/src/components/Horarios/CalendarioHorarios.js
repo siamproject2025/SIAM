@@ -70,7 +70,6 @@ const CalendarioHorarios = ({ horarios = [], onDetalleHorario }) => {
           center: "title",
           right: "dayGridMonth,timeGridWeek,timeGridDay",
         }}
-        weekends={false} // Oculta sábado y domingo
         hiddenDays={[0]} // Oculta específicamente el domingo (0)
         events={eventos}
         slotMinTime="07:00:00"
