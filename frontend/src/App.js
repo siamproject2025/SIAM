@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
 
+
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
 import Bienes from './screens/Models/Bienes';
@@ -30,6 +31,8 @@ import ResetPasswordSeguro from './components/authentication/ResetPasswordFireba
 import SideBar from './components/SideBar';
 import ActividadesPage from './components/ActividadesPage';
 import CalendarioActividades from './components/CalendarioActividades';
+import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
+
 
 const auth = getAuth(appFirebase);
 
@@ -137,14 +140,13 @@ return (
           <Route path="/Actividades" element={<ActividadesPage />} />
           <Route path="/biblioteca" element={<BibliotecaTest />} />
           <Route path="/Calendario" element={<CalendarioActividades />} />
-                   <Route path="/directiva" element={<Directiva />} /> 
-   
-          
+          <Route path="/directiva" element={<Directiva />} />                              
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>
           <Route path="/home" element={<Home />} />
         </Route>
+
 
         <Route path="/restricted" element={<RestrictedPage />} />
 

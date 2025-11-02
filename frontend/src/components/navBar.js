@@ -76,6 +76,20 @@ function NavBar() {
         })}
       </div>
 
+      {/* 3. 🛡️ Visualización del Rol (Nuevo elemento) */}
+      <div className="nav-role-display">
+        {cargando ? (
+            <span className="role-loading">Cargando...</span>
+        ) : (
+            <>
+                <Zap size={16} className={`role-icon role-${userRole?.toLowerCase()}`} />
+                <span className="role-text">
+                    Permisos: 🔑🔐{formatRole(userRole)}🔐🔑
+                </span>
+            </>
+        )}
+      </div>
+
       {/* Perfil de usuario */}
       <LoginProfile />
     </nav>

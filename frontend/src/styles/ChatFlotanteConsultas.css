@@ -1,0 +1,106 @@
+/* src/styles/ChatFlotanteConsultas.css */
+
+/* --- BOTÓN FLOTANTE --- */
+.floating-btn {
+    position: fixed; /* Fijo en la pantalla */
+    bottom: 30px; /* Separación del fondo */
+    right: 30px; /* Separación de la derecha */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #007bff; /* Color primario azul */
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease-in-out, background-color 0.3s;
+    z-index: 1000; /* Asegura que esté por encima de todo */
+}
+
+.floating-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.floating-btn.is-open {
+    /* Si está abierto, muestra el icono de cerrar con un color diferente */
+    background-color: #dc3545; /* Rojo */
+    transform: rotate(90deg);
+}
+.floating-btn.is-open:hover {
+    background-color: #c82333;
+}
+
+/* --- PANEL DE CHAT DESPLEGABLE --- */
+.chat-panel {
+    position: fixed;
+    bottom: 100px; /* Encima del botón */
+    right: 30px; /* Alineado a la derecha */
+    width: 380px; /* Ancho cómodo para chat */
+    max-height: 80vh; /* Altura máxima */
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Oculta barras de desplazamiento innecesarias */
+    
+    /* Animación de entrada/salida */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95) translateY(20px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+}
+
+.chat-panel.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateY(0);
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: #007bff; /* Cabecera azul */
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.close-panel-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+.close-panel-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-content {
+    /* Aquí se despliega el contenido de QuestionList */
+    padding: 10px;
+    overflow-y: auto; /* Hace que el contenido interno sea scrollable */
+    flex-grow: 1;
+}
+
+/* Asegura que el contenido del QuestionList se ajuste al panel */
+.chat-content .question-list-container {
+    padding: 0; /* Remueve el padding excesivo del contenedor */
+    max-width: none;
+    box-shadow: none;
+    background-color: transparent;
+}
