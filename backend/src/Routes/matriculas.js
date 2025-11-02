@@ -1,14 +1,14 @@
 // Rutas: matriculas.js (Express.js)
 const express = require('express');
 const router = express.Router();
-const matriculaController = require('../controllers/MatriculaController');
+const matriculaController = require('../Controllers/MatriculaController');
 
 // Ruta para crear una nueva matrícula (POST)
 router.post('/', matriculaController.crearMatricula);
 
 // Ruta para obtener todos los estudiantes (GET)
 router.get('/', matriculaController.obtenerEstudiantes);
-
+router.put('/:id', matriculaController.actualizarEstudiante);
 // Ruta para obtener un estudiante por ID (GET)
 router.get('/:id', matriculaController.obtenerEstudiantePorId);
 

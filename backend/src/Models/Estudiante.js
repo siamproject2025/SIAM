@@ -10,7 +10,7 @@ const EstudianteSchema = new mongoose.Schema({
     id_documento: { type: String, unique: true, required: true }, // Cédula, DNI, Pasaporte, etc.
     residencia_direccion: { type: String, required: true },
     telefono_alumno: { type: String },
-    // ruta_foto_alumno: { type: String }, // Para almacenar la URL o path de la foto
+    ruta_foto_alumno: { type: String }, // Para almacenar la URL o path de la foto
     
     // --- Datos Académicos ---
     grado_a_matricular: { type: String, required: true },

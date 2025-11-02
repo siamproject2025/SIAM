@@ -52,3 +52,30 @@ exports.obtenerEstudiantePorId = async (req, res) => {
         });
     }
 };
+
+exports.actualizarEstudiante = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Actualiza el estudiante y devuelve el documento actualizado
+        const estudianteActualizado = await Estudiante.findByIdAndUpdate(
+            id, 
+            req.body, 
+            { new: true, runValidators: true } // Devuelve el documento actualizado y valida según el esquema
+        );
+
+        if (!estudianteActualizado) {
+            return res.status(404).json({ mensaje: 'Estudiante no encontrado' });
+        }
+
+        res.status(200).json({ 
+            mensaje: 'Estudiante actualizado exitosamente', 
+            estudiante: estudianteActualizado 
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            mensaje: 'Error al actualizar estudiante', 
+            error: error.message 
+        });
+    }
+};
