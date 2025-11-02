@@ -62,7 +62,7 @@ exports.addAnswer = async (req, res) => {
         };
 
         question.answers.push(newAnswer);
-        question.status = 'Answered'; 
+        question.status = 'Respondida'; 
         
         await question.save();
         
