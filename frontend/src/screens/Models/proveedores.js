@@ -327,8 +327,7 @@ const Proveedores = () => {
       >
         <h3 className="proveedor-subtitulo">
           <motion.div
-            initial={{ rotate: -180, scale: 0 }}
-            animate={{ rotate: 0, scale: 1 }}
+            
             transition={{ type: "spring", stiffness: 200, damping: 15 }}
           >
             {icon}
@@ -361,7 +360,7 @@ const Proveedores = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <motion.div
-                animate={{ rotate: [0, 360] }}
+              
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               >
                 <Hash size={14} />
@@ -614,7 +613,7 @@ const Proveedores = () => {
                 }}
               >
                 <motion.div
-                  initial={{ rotate: -180, scale: 0 }}
+                  
                   animate={{ rotate: 0, scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
                 >
@@ -884,7 +883,7 @@ const Proveedores = () => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <motion.div
-                  animate={{ rotate: mostrarMenuFiltros ? 180 : 0 }}
+                 
                   transition={{ duration: 0.3 }}
                 >
                   <Package size={18} />
@@ -1003,7 +1002,7 @@ const Proveedores = () => {
               transition={{ type: "spring", stiffness: 300 }}
             >
               <motion.div
-                animate={{ rotate: 360 }}
+              
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               >
                 <Plus size={18} />
@@ -1022,7 +1021,7 @@ const Proveedores = () => {
                   transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
                 >
                   <motion.div
-                    animate={{ rotate: 360 }}
+                   
                     transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     style={{ display: 'inline-block', marginBottom: '1rem' }}
                   >
