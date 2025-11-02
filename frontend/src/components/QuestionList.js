@@ -1,15 +1,15 @@
-// src/components/QuestionList.jsx
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import QuestionItem from './QuestionItem'; // Componente para mostrar preguntas y respuestas
+import QuestionItem from './QuestionItem'; 
 
-// 🎯 URL BASE DE TU API (¡Asegúrate que coincida con tu puerto de backend!)
 const API_BASE_URL = 'http://localhost:5000/api'; 
 
-const QuestionList = () => {
+
+const QuestionList = ({ canAnswer, canAsk }) => { 
     const [questions, setQuestions] = useState([]);
     const [newQuestion, setNewQuestion] = useState({ title: '', content: '' });
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(null); 
 
     useEffect(() => {
         fetchQuestions();
@@ -36,7 +36,6 @@ const QuestionList = () => {
         }
 
         try {
-            // 🚀 Se envía solo el título y el contenido. El 'askedBy' se lo asigna el backend.
             await axios.post(`${API_BASE_URL}/questions`, newQuestion); 
             
             setNewQuestion({ title: '', content: '' });
@@ -48,18 +47,15 @@ const QuestionList = () => {
             setError(`Error al publicar: ${errorMessage}.`);
         }
     };
-
-    // La funcionalidad de respuesta debe estar dentro de QuestionItem,
-    // pero aquí se define el permiso.
-    const canAsk = true; 
-    const canAnswer = true; 
+    
 
     return (
         <div className="question-list-container">
-            <h2> Consultas y Respuestas</h2>
+            <h2>Módulo de Consultas</h2>
             
             {error && <div className="alert-error">{error}</div>}
 
+           
             {canAsk && (
                 <div className="new-question-form-card">
                     <h3>Hacer una nueva pregunta ❓</h3>
@@ -93,7 +89,7 @@ const QuestionList = () => {
                         <QuestionItem 
                             key={q._id} 
                             question={q} 
-                            canAnswer={canAnswer} 
+                            canAnswer={canAnswer} // Pasa el permiso de respuesta
                             fetchQuestions={fetchQuestions} 
                         />
                     ))

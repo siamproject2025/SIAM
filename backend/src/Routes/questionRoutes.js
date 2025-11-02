@@ -34,7 +34,7 @@ router.post('/:id/answers', async (req, res) => {
         // use el default del QuestionSchema (que es para preguntas, no respuestas).
         const newAnswer = {
             answerContent,
-            answeredBy: 'Admin de Prueba', // ⭐ Valor estático
+            answeredBy: 'Admin', // ⭐ Valor estático
             answeredAt: new Date()
         };
 
@@ -45,7 +45,7 @@ router.post('/:id/answers', async (req, res) => {
         }
 
         question.answers.push(newAnswer);
-        question.status = 'Answered'; // Actualizar estado al responder
+        question.status = 'Respondida'; // Actualizar estado al responder
         
         await question.save();
         res.json(question.answers[question.answers.length - 1]); // Devolver la respuesta creada

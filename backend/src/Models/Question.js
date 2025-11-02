@@ -10,7 +10,7 @@ const AnswerSchema = new mongoose.Schema({
     // ⭐ Cambiamos a String y ya no es requerido
     answeredBy: { 
         type: String,
-        default: 'Admin de Prueba' // Valor por defecto para las respuestas
+        default: 'Admin' 
     },
     answeredAt: {
         type: Date,
@@ -32,7 +32,7 @@ const QuestionSchema = new mongoose.Schema({
     // ⭐ Cambiamos a String y ya no es requerido
     askedBy: {
         type: String,
-        default: 'Usuario de Prueba' // Valor por defecto para las preguntas
+        default: 'Anonimo' 
     },
     createdAt: {
         type: Date,
@@ -40,8 +40,8 @@ const QuestionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'Answered'],
-        default: 'Open'
+        enum: ['Pendiente', 'Respondida'],
+        default: 'Pendiente'
     },
     answers: [AnswerSchema]
 });
