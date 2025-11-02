@@ -88,3 +88,66 @@
     border-bottom: none;
   }
 }
+
+/* --- Estilos para la visualización del Rol en el NavBar --- */
+
+.nav-role-display {
+    /* Flex para alinear el ícono y el texto */
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espacio entre el ícono y el texto */
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 15px; /* Separación del LoginProfile */
+    background-color: var(--color-background-soft, #f4f6f9); /* Fondo suave */
+    color: var(--color-text, #333);
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.nav-role-display:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.role-icon {
+    /* Estilos base del ícono de rol (Zap) */
+    color: #667eea; /* Color por defecto */
+    transition: color 0.3s ease;
+}
+
+/* Estilos de color específicos para diferentes roles */
+.role-admin {
+    color: #e53e3e; /* Rojo */
+}
+
+.role-docente {
+    color: #38a169; /* Verde */
+}
+
+.role-padre {
+    color: #4299e1; /* Azul */
+}
+
+.role-estudiante {
+    color: #ecc94b; /* Amarillo */
+}
+
+.role-loading {
+    color: #999;
+}
+
+.role-text strong {
+    font-weight: 700;
+}
+
+
+/* Media Query para pantallas pequeñas */
+@media (max-width: 768px) {
+    .nav-role-display {
+        /* Ocultar el rol en el menú hamburguesa para no saturar,
+           o reubicarlo si el diseño lo permite */
+        display: none; 
+    }
+}

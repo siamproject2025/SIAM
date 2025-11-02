@@ -31,11 +31,10 @@ const CloseIcon = () => (
 );
 
 export default function BibliotecaTest() {
-  // ==========================================================
-  // 2. 🚀 LLAMADAS A HOOKS SIEMPRE AL PRINCIPIO (TOP LEVEL)
+  
   const { userRole, cargando } = useUserRole();
 
-  // Estados originales (Tus 10 estados)
+
   const [libros, setLibros] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
@@ -50,11 +49,9 @@ export default function BibliotecaTest() {
   const fileInputRef = useRef(null);
   // ==========================================================
 
-  // --- LÓGICA DE PERMISOS (Derivada del rol) ---
-  // El rol 'ADMIN' y 'DOCENTE' puede subir. Solo 'ADMIN' puede eliminar.
   const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
   const canDelete = userRole === "ADMIN";
-  // ---------------------------------------------
+  
 
   const cargarLibros = async () => {
     try {
@@ -70,9 +67,8 @@ export default function BibliotecaTest() {
     if (!cargando) { 
       cargarLibros();
     }
-  }, [cargando]); // Se ejecuta solo cuando `cargando` cambia y es false
+  }, [cargando]); 
 
-  // Calcular estadísticas (código sin cambios)
   const totalLibros = libros.length;
   const librosPDF = libros.filter(libro => libro.archivoUrl?.endsWith('.pdf')).length;
   const librosEPUB = libros.filter(libro => libro.archivoUrl?.endsWith('.epub')).length;
@@ -213,7 +209,7 @@ export default function BibliotecaTest() {
     return "📄";
   };
 
-  // 4. 🛑 RETURN CONDICIONAL DE CARGA (después de todos los Hooks)
+  
   if (cargando) {
       return (
           <div className="biblioteca-loading">
@@ -225,8 +221,7 @@ export default function BibliotecaTest() {
       );
   }
 
-  // A partir de aquí, el código de renderizado es el mismo que me enviaste, 
-  // ¡pero con las condicionales de permisos añadidas!
+  
   return (
     <div className="biblioteca-container">
       {/* 🎨 ENCABEZADO MEJORADO */}
@@ -277,7 +272,7 @@ export default function BibliotecaTest() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="header-subtitle"
             >
-              Gestiona tu colección de libros digitales de manera profesional. Rol actual: **{userRole}**
+              Gestiona tu colección de libros digitales de manera profesional. 
             </motion.p>
 
             <motion.div 
@@ -423,7 +418,7 @@ export default function BibliotecaTest() {
               </select>
             </div>
 
-            {/* 🛑 Botón Subir Libro: Condicional por Permiso */}
+          
             {canUpload && (
                 <motion.button
                     className="btn-subir-libro"
