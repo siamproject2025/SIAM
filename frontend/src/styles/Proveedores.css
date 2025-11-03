@@ -206,7 +206,7 @@
     color: white;
   }
 
-  .modal-overlay {
+  .proveedor-container .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -219,7 +219,7 @@
     z-index: 1000;
   }
 
-  .modal-content {
+   .proveedor-container  .modal-content {
     background: white;
     border-radius: 12px;
     padding: 2rem;
@@ -227,7 +227,7 @@
     max-width: 90vw;
   }
 
-  .modal-title {
+   .proveedor-container  .modal-title {
     font-size: 1.5rem;
     color: #333;
     margin-bottom: 1.5rem;

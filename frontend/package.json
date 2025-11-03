@@ -23,10 +23,8 @@
     "bootstrap": "^5.3.8",
     "cors": "^2.8.5",
     "firebase": "^12.3.0",
-
     "framer-motion": "^12.23.24",
     "fullcalendar": "^6.1.19",
-
     "jspdf": "^3.0.3",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.544.0",
@@ -40,7 +38,8 @@
     "react-router-dom": "^7.9.2",
     "react-scripts": "5.0.1",
     "recharts": "^3.2.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",

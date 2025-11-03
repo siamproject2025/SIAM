@@ -13,6 +13,8 @@ import Home from "./screens/Home";
 import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
+import QuestionList from './components/QuestionList';
+import QuestionList2 from './components/QuestionList2';
 
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
@@ -137,9 +139,11 @@ return (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/Actividades" element={<ActividadesPage />} />
           <Route path="/biblioteca" element={<BibliotecaTest />} />
+          <Route path="/horarios" element={<Horarios />} />
           <Route path="/Calendario" element={<CalendarioActividades />} />
                    <Route path="/directiva" element={<Directiva />} /> 
-   
+                   <Route path="/consultas" element={<QuestionList />} /> 
+   <Route path="/consulta" element={<QuestionList2 />} /> 
           
         </Route>
 
