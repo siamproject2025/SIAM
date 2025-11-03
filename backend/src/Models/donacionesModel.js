@@ -15,7 +15,7 @@ const donacionSchema = new mongoose.Schema({
   },
   fecha: {
     type: Date,
-    required: [true, 'La fecha de donación es obligatoria'] // Corregí a true
+    required: [false, 'La fecha de donación es obligatoria']
   },
   cantidad_donacion: {
     type: Number,
@@ -50,7 +50,7 @@ const donacionSchema = new mongoose.Schema({
   },
   fecha_ingreso: {
     type: Date,
-    required: [true, 'La fecha de ingreso es obligatoria'], // Corregí a true
+    required: [false, 'La fecha de ingreso es obligatoria'],
     default: Date.now
   },
   observaciones: {
@@ -58,26 +58,13 @@ const donacionSchema = new mongoose.Schema({
     maxlength: [500, 'Las observaciones no pueden exceder 500 caracteres'],
     trim: true
   },
-  // NUEVOS CAMPOS PARA IMAGEN (Base64)
+  // NUEVOS CAMPOS PARA IMAGEN
   imagen: {
     type: String, // Guardará la imagen en Base64
     default: null
   },
   tipo_imagen: {
     type: String, // Guardará el tipo MIME, ej. image/png
-    default: null
-  },
-  // CAMPO FOTO PRINCIPAL (URL) - AGREGADO
-  foto_principal: {
-    type: String,
-    validate: {
-      validator: function(url) {
-        // Valida que sea una URL válida si se proporciona
-        if (!url) return true; // Opcional
-        return /^https?:\/\/.+/.test(url);
-      },
-      message: 'La URL de la foto principal debe ser válida'
-    },
     default: null
   }
 }, {
@@ -97,5 +84,4 @@ donacionSchema.statics.getNextId = async function() {
   return lastDonacion ? lastDonacion.id_donacion + 1 : 1;
 };
 
-
-
+module.exports = mongoose.model('Donacion',donacionSchema,'donaciones');
