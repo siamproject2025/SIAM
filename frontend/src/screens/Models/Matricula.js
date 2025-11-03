@@ -29,7 +29,7 @@ function App() {
       }
       
       const data = await response.json();
-      setStudents(Array.isArray(data) ? data : data.estudiantes || []);
+      setStudents(data.data || []);
  // Asegurar que siempre sea un array
     } catch (error) {
       console.error('Error fetching students:', error);
