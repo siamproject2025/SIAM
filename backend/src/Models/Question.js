@@ -1,4 +1,3 @@
-// models/Question.js
 const mongoose = require('mongoose');
 
 const AnswerSchema = new mongoose.Schema({
@@ -7,15 +6,19 @@ const AnswerSchema = new mongoose.Schema({
         required: true,
         maxlength: 5000
     },
-    // ⭐ Cambiamos a String y ya no es requerido
     answeredBy: { 
         type: String,
-        default: 'Admin de Prueba' // Valor por defecto para las respuestas
+        default: 'Admin' 
     },
     answeredAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    deleteAt: {
+  type: Date,
+  require: false
+}
+
 });
 
 const QuestionSchema = new mongoose.Schema({
@@ -29,10 +32,9 @@ const QuestionSchema = new mongoose.Schema({
         required: true,
         maxlength: 5000
     },
-    // ⭐ Cambiamos a String y ya no es requerido
     askedBy: {
         type: String,
-        default: 'Usuario de Prueba' // Valor por defecto para las preguntas
+        default: 'Anonimo' 
     },
     createdAt: {
         type: Date,
@@ -40,8 +42,8 @@ const QuestionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Open', 'Answered'],
-        default: 'Open'
+        enum: ['Pendiente', 'Respondida'],
+        default: 'Pendiente'
     },
     answers: [AnswerSchema]
 });

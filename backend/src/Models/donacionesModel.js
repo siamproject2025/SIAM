@@ -83,7 +83,7 @@ const donacionSchema = new mongoose.Schema({
 }, {
   timestamps: true,
   versionKey: false
-});
+},);
 
 // Índices para mejorar el rendimiento
 donacionSchema.index({ id_donacion: 1 });
@@ -97,12 +97,5 @@ donacionSchema.statics.getNextId = async function() {
   return lastDonacion ? lastDonacion.id_donacion + 1 : 1;
 };
 
-// Método virtual para obtener la imagen completa (si se usa Base64)
-donacionSchema.virtual('imagen_completa').get(function() {
-  if (this.imagen && this.tipo_imagen) {
-    return `data:${this.tipo_imagen};base64,${this.imagen}`;
-  }
-  return null;
-});
 
-module.exports = mongoose.model('Donacion', donacionSchema);
+
