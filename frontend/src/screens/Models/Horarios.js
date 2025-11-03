@@ -63,9 +63,26 @@ const Horarios = () => {
       setEsModalDetalle(true);
       setMostrarModalDetalle(true);
     } catch (error) {
-      console.error("Error al cargar el horario", error);
-      showNotification(error, "error");
-    }
+  const { type, message } = error.response?.data || {};
+
+  switch (type) {
+    case "VALIDACION":
+      showNotification("⚠️ " + message, "warning");
+      break;
+    case "CONFLICTO":
+      showNotification("❌ " + message, "error");
+      break;
+    case "NOT_FOUND":
+      showNotification("ℹ️ " + message, "info");
+      break;
+    case "SERVER":
+      showNotification("💥 Error del servidor: " + message, "error");
+      break;
+    default:
+      showNotification("Error desconocido al procesar la solicitud.", "error");
+  }
+}
+
   };
 
   const clickDetalleAlumnosHandler = async (id) => {
@@ -92,28 +109,49 @@ const Horarios = () => {
     setMostrarModalDetalle(true);
   };
 
-  const clickGuardarModeloHandler = async (horario, esCreacion) => {
-    const id = horario._id;
-    delete horario._id;
+ const clickGuardarModeloHandler = async (horario, esCreacion) => {
+  const id = horario._id;
+  delete horario._id;
 
-    try {
-      if (esCreacion) {
-        const res = await axios.post(API_HORARIO, horario);
-        showNotification("Horario creado con éxito.", "success");
-        await obtenerHorarios();
-      } else {
-        const res = await axios.put(`${API_HORARIO}/${id}`, horario);
-        showNotification("Horario actualizado con éxito.", "success");
-        await obtenerHorarios();
-      }
-    } catch (error) {
-      console.error("Error al cargar los datos", error);
-      showNotification(error, "error");
+  try {
+    if (esCreacion) {
+      const res = await axios.post(API_HORARIO, horario);
+      showNotification("✅ Horario creado con éxito.", "success");
+    } else {
+      const res = await axios.put(`${API_HORARIO}/${id}`, horario);
+      showNotification("✅ Horario actualizado con éxito.", "success");
     }
 
+    // 👉 Solo si todo sale bien:
+    await obtenerHorarios();
     clickCerrarModeloHandler();
     clickCerrarAlumnoHandler();
-  };
+    
+  } catch (error) {
+    const { type, message } = error.response?.data || {};
+
+    switch (type) {
+      case "VALIDACION":
+        showNotification("⚠️ " + message, "warning");
+        break;
+      case "CONFLICTO":
+        showNotification("❌ " + message, "error");
+        break;
+      case "NOT_FOUND":
+        showNotification("ℹ️ " + message, "info");
+        break;
+      case "SERVER":
+        showNotification("💥 Error del servidor: " + message, "error");
+        break;
+      default:
+        showNotification("⚠️ Error desconocido al procesar la solicitud.", "error");
+    }
+
+    // ❌ No cerramos el modal aquí
+  }
+};
+
+
 
   const clickEliminarModeloHandler = async (id_horario) => {
     try {
@@ -122,9 +160,26 @@ const Horarios = () => {
         showNotification("Horario eliminado exitosamente", "success");
       await obtenerHorarios();
     } catch (error) {
-      showNotification(error, "error");
-      console.error("Error al eliminar el horario", error);
-    }
+  const { type, message } = error.response?.data || {};
+
+  switch (type) {
+    case "VALIDACION":
+      showNotification("⚠️ " + message, "warning");
+      break;
+    case "CONFLICTO":
+      showNotification("❌ " + message, "error");
+      break;
+    case "NOT_FOUND":
+      showNotification("ℹ️ " + message, "info");
+      break;
+    case "SERVER":
+      showNotification("💥 Error del servidor: " + message, "error");
+      break;
+    default:
+      showNotification("Error desconocido al procesar la solicitud.", "error");
+  }
+}
+
 
     clickCerrarModeloHandler();
   };
