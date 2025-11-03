@@ -119,7 +119,7 @@ return (
 
       <div className="app-content">
         {user && <SideBar />}
-
+<ChatFlotanteConsultas />
         <main className="main-content">
         <Routes>
         {/* Rutas públicas */}

@@ -1,14 +1,8 @@
-const Question = require('../Models/Question'); // Asegúrate de que la ruta sea correcta
+const Question = require('../Models/Question');
 
-// Obtener todas las preguntas y sus respuestas
 exports.getQuestions = async (req, res) => {
     try {
-        const questions = await Question.find()
-            // Popula los campos de usuario para mostrar nombres
-            .populate('askedBy', 'username') 
-            .populate('answers.answeredBy', 'username') 
-            .sort({ createdAt: -1 });
-
+        const questions = await Question.find().sort({ createdAt: -1 });
         res.json(questions);
     } catch (error) {
         console.error(error.message);
@@ -16,20 +10,10 @@ exports.getQuestions = async (req, res) => {
     }
 };
 
-// Crear una nueva pregunta
-// ⚠️ IMPORTANTE: Espera que el 'userId' venga en el cuerpo de la petición (req.body) desde el Frontend.
 exports.createQuestion = async (req, res) => {
     try {
         const { title, content, userId } = req.body;
-        
-       
-        const newQuestion = new Question({
-            title,
-            content
-            // Usamos el userId enviado desde el frontend
-            
-        });
-
+        const newQuestion = new Question({ title, content });
         const question = await newQuestion.save();
         res.status(201).json(question);
     } catch (error) {
@@ -38,39 +22,48 @@ exports.createQuestion = async (req, res) => {
     }
 };
 
-// Agregar una respuesta a una pregunta
-// ⚠️ IMPORTANTE: Espera que el 'userId' venga en el cuerpo de la petición (req.body) desde el Frontend.
 exports.addAnswer = async (req, res) => {
     try {
-        const { answerContent, userId } = req.body;
+        // 💡 CAPTURAMOS LA DURACIÓN Y LA UNIDAD
+        const { answerContent, userId, deleteDuration, deleteUnit } = req.body;
         const question = await Question.findById(req.params.id);
 
-        if (!question) {
-            return res.status(404).json({ message: 'Pregunta no encontrada' });
+        if (!question) return res.status(404).json({ message: 'Pregunta no encontrada' });
+        if (!userId) return res.status(401).json({ message: "ID de usuario requerido" });
+
+        // --- LÓGICA DE CÁLCULO DE TIEMPO DINÁMICO ---
+        let deleteAt = null;
+
+        if (deleteDuration > 0 && deleteUnit) {
+            let milliseconds;
+
+            if (deleteUnit === 'minutes') {
+                milliseconds = deleteDuration * 60 * 1000;
+            } else if (deleteUnit === 'hours') {
+                milliseconds = deleteDuration * 60 * 60 * 1000;
+            } else {
+                // Manejo de unidad no válida o por defecto (ej: 7 días)
+                milliseconds = 7 * 24 * 60 * 60 * 1000; 
+            }
+            
+            deleteAt = new Date(Date.now() + milliseconds);
         }
-        
-        // Verificación de existencia del userId
-        if (!userId) {
-            return res.status(401).json({ message: "ID de usuario requerido para enviar la respuesta." });
-        }
+        // Si no se especifica duración, 'deleteAt' sigue siendo null
+        // -----------------------------------------------------------
 
         const newAnswer = {
             answerContent,
-            // Usamos el userId enviado desde el frontend
-            answeredBy: userId, 
-            answeredAt: new Date()
+            answeredBy: userId,
+            answeredAt: new Date(),
+            // 💡 Asignamos el valor calculado
+            deleteAt: deleteAt 
         };
 
         question.answers.push(newAnswer);
-        question.status = 'Respondida'; 
-        
+        question.status = 'Respondida';
         await question.save();
-        
-        // Recargar la pregunta con los campos populados para devolver la info completa al frontend
-        const updatedQuestion = await Question.findById(question._id)
-            .populate('askedBy', 'username')
-            .populate('answers.answeredBy', 'username');
 
+        const updatedQuestion = await Question.findById(question._id);
         res.json(updatedQuestion);
 
     } catch (error) {
@@ -78,4 +71,3 @@ exports.addAnswer = async (req, res) => {
         res.status(400).json({ message: "Error al agregar la respuesta", error });
     }
 };
-
