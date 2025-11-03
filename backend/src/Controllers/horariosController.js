@@ -50,18 +50,19 @@ function validarDatos(horario) {
 }
 
 // 🔹 Comprueba conflictos con otros horarios
-const validarSinConflictos = async (datos) => {
+const validarSinConflictos = async (datos, idExcluido = null) => {
   const conflictos = {};
 
-  // Buscar horarios existentes que coincidan en el mismo día
-  const horariosExistentes = await Horario.find({ dia: { $in: datos.dia } });
+  const query = { dia: { $in: datos.dia } };
+  if (idExcluido) query._id = { $ne: idExcluido }; // Excluir el horario actual
+
+  const horariosExistentes = await Horario.find(query);
 
   horariosExistentes.forEach(h => {
-    // Convertir a minutos para comparar
-    const hInicio = parseInt(h.inicio.split(':')[0]) * 60 + parseInt(h.inicio.split(':')[1]);
-    const hFin = parseInt(h.fin.split(':')[0]) * 60 + parseInt(h.fin.split(':')[1]);
-    const nuevoInicio = parseInt(datos.inicio.split(':')[0]) * 60 + parseInt(datos.inicio.split(':')[1]);
-    const nuevoFin = parseInt(datos.fin.split(':')[0]) * 60 + parseInt(datos.fin.split(':')[1]);
+    const hInicio = timeToMinutes(h.inicio);
+    const hFin = timeToMinutes(h.fin);
+    const nuevoInicio = timeToMinutes(datos.inicio);
+    const nuevoFin = timeToMinutes(datos.fin);
 
     const hayChoque = hInicio < nuevoFin && nuevoInicio < hFin;
 
@@ -75,6 +76,7 @@ const validarSinConflictos = async (datos) => {
 
   return Object.keys(conflictos).length > 0 ? conflictos : null;
 };
+
 
 
 // =======================
@@ -164,15 +166,42 @@ exports.crearHorario = async (req, res) => {
 
 
 // 🔹 Actualizar horario
+// 🔹 Actualizar horario
 exports.actualizarHorario = async (req, res) => {
   try {
+    const { aula_id, docente_id, alumnos, dia, inicio, fin, grado, asignatura } = req.body;
+
+    // Validar campos obligatorios
+    const camposFaltantes = [];
+    if (!aula_id) camposFaltantes.push("Aula");
+    if (!docente_id) camposFaltantes.push("Docente");
+    //if (!alumnos || !Array.isArray(alumnos) || alumnos.length === 0) camposFaltantes.push("Alumnos");
+    if (!dia || !Array.isArray(dia) || dia.length === 0) camposFaltantes.push("Día(s)");
+    if (!inicio) camposFaltantes.push("Hora de inicio");
+    if (!fin) camposFaltantes.push("Hora de fin");
+    if (!grado) camposFaltantes.push("Grado");
+    if (!asignatura) camposFaltantes.push("Asignatura");
+
+    if (camposFaltantes.length > 0) {
+      return res.status(400).json({
+        type: "VALIDACION",
+        message: `⚠️ Faltan campos obligatorios: ${camposFaltantes.join(", ")}`,
+      });
+    }
+
+    // Convertir IDs a ObjectId
     const datos = {
-      ...req.body,
-      aula_id: new Types.ObjectId(req.body.aula_id),
-      docente_id: new Types.ObjectId(req.body.docente_id),
-      alumnos: req.body.alumnos.map((a) => new Types.ObjectId(a)),
+      aula_id: new Types.ObjectId(aula_id),
+      docente_id: new Types.ObjectId(docente_id),
+      alumnos: alumnos.map((a) => new Types.ObjectId(a)),
+      dia,
+      inicio,
+      fin,
+      grado,
+      asignatura,
     };
 
+    // Validación adicional de datos
     const errorValidacion = validarDatos(datos);
     if (errorValidacion) {
       return res.status(400).json({
@@ -181,16 +210,24 @@ exports.actualizarHorario = async (req, res) => {
       });
     }
 
+    // Validar conflictos: aula, docente o alumnos (excluyendo el horario actual)
     const conflictos = await validarSinConflictos(datos, req.params.id);
     if (conflictos) {
+      const detalles = [];
+      if (conflictos.aula)
+        detalles.push(`El aula ya tiene clases en ese horario.`);
+      if (conflictos.docente)
+        detalles.push(`El docente ya tiene clases en ese horario.`);
+      if (conflictos.alumnos && conflictos.alumnos.length > 0)
+        detalles.push(`Los alumnos ya tienen clases en ese horario.`);
+
       return res.status(400).json({
         type: "CONFLICTO",
-        message:
-          "No se puede actualizar el horario porque se superpone con otro existente. " +
-          "Verifique las horas y los días ingresados.",
+        message: detalles.join(" "),
       });
     }
 
+    // Actualizar horario
     const actualHorario = await Horario.findByIdAndUpdate(req.params.id, datos, { new: true });
     if (!actualHorario) {
       return res.status(404).json({
@@ -207,7 +244,7 @@ exports.actualizarHorario = async (req, res) => {
     res.status(500).json({
       type: "SERVER",
       message:
-        "Error interno al intentar actualizar el horario. Detalles: " + err.message,
+        "💥 Ocurrió un error interno al intentar actualizar el horario. Detalles: " + err.message,
     });
   }
 };

@@ -33,16 +33,16 @@ const donacionSchema = new mongoose.Schema({
     enum: {
       values: [
         'Alimentos',
-        'Instrumentos Escolares',
-        'Accesorios Musicales',
+        'Instrumentos musicales',
+        'Accesorios musicales',
         'Vestimenta',
         'Medicina',
         'Enseres',
         'Bebidas',
-        'Útiles Escolares',
-        'Productos de Higiene',
+        'Útiles escolares',
+        'Productos de higiene',
         'Material Audiovisual',
-        'Material Didactico',
+        'Material didactico',
         'Otro'
       ],
       message: '{VALUE} no es un tipo de donación válido'

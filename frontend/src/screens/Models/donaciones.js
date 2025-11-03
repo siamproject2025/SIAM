@@ -350,9 +350,9 @@ const handleSubmitNueva = async (e) => {
     const nombres = {
       1: 'Almacén 1',
       2: 'Almacén 2',
-      12: 'Almacén 12',
-      23: 'Almacén 23',
-      40: 'Almacén 40'
+      3: 'Almacén 3',
+      4: 'Almacén 4',
+      5: 'Almacén 5'
     };
     return nombres[id_almacen] || `Almacén ${id_almacen}`;
   };
@@ -756,15 +756,17 @@ const handleSubmitNueva = async (e) => {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Seleccionar tipo</option>
+                         <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Instrumentos musicales">Instrumentos Musicales</option>
                         <option value="Medicina">Medicina</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Vestimenta">Vestimenta</option>
+                        <option value="Accesorios musicales">Accesorios Musicales </option>
                         <option value="Útiles escolares">Utiles Escolares</option>
                         <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Material didactico">Material Didactico</option>
                         <option value="Productos de higiene">Productos de Higiene</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -818,9 +820,9 @@ const handleSubmitNueva = async (e) => {
                         <option value="">Seleccionar almacén</option>
                         <option value="1">Almacén 1</option>
                         <option value="2">Almacén 2</option>
-                        <option value="12">Almacén 12</option>
-                        <option value="23">Almacén 23</option>
-                        <option value="40">Almacén 40</option>
+                        <option value="3">Almacén 3</option>
+                        <option value="4">Almacén 4</option>
+                        <option value="5">Almacén 5</option>
                       </select>
                     </div>
 
@@ -939,15 +941,17 @@ const handleSubmitNueva = async (e) => {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Seleccionar tipo</option>
+                         <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Instrumentos musicales">Instrumentos Musicales</option>
                         <option value="Medicina">Medicina</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Vestimenta">Vestimenta</option>
+                        <option value="Accesorios musicales">Accesorios Musicales </option>
                         <option value="Útiles escolares">Utiles Escolares</option>
                         <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Material didactico">Material Didactico</option>
                         <option value="Productos de higiene">Productos de Higiene</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -1000,9 +1004,9 @@ const handleSubmitNueva = async (e) => {
                         <option value="">Seleccionar almacén</option>
                         <option value="1">Almacén 1</option>
                         <option value="2">Almacén 2</option>
-                        <option value="12">Almacén 12</option>
-                        <option value="23">Almacén 23</option>
-                        <option value="40">Almacén 40</option>
+                        <option value="3">Almacén 3</option>
+                        <option value="4">Almacén 4</option>
+                        <option value="5">Almacén 5</option>
                       </select>
                     </div>
 
