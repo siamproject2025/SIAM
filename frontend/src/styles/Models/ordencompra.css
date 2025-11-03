@@ -159,11 +159,11 @@
 }
 
 /* ===== DROPDOWNS (FILTROS) ===== */
-.dropdown-wrapper {
+.dropdown-wrapper-compras {
   position: relative;
 }
 
-.filter-button {
+.filter-button-estado-compra {
   padding: 0.875rem 1.25rem;
   background: var(--gray-50);
   border: 2px solid var(--gray-200);
@@ -178,14 +178,14 @@
   font-size: 0.95rem;
 }
 
-.filter-button:hover {
+.filter-button-estado-compra:hover {
   background: var(--gray-100);
   border-color: var(--gray-300);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
-.dropdown-menu {
+.dropdown-menu-compra {
   position: absolute;
   top: calc(100% + 0.5rem);
   left: 0;

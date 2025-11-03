@@ -1,4 +1,3 @@
-// models/Question.js
 const mongoose = require('mongoose');
 
 const AnswerSchema = new mongoose.Schema({
@@ -7,7 +6,6 @@ const AnswerSchema = new mongoose.Schema({
         required: true,
         maxlength: 5000
     },
-    // ⭐ Cambiamos a String y ya no es requerido
     answeredBy: { 
         type: String,
         default: 'Admin' 
@@ -15,7 +13,12 @@ const AnswerSchema = new mongoose.Schema({
     answeredAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    deleteAt: {
+  type: Date,
+  require: false
+}
+
 });
 
 const QuestionSchema = new mongoose.Schema({
@@ -29,7 +32,6 @@ const QuestionSchema = new mongoose.Schema({
         required: true,
         maxlength: 5000
     },
-    // ⭐ Cambiamos a String y ya no es requerido
     askedBy: {
         type: String,
         default: 'Anonimo' 
