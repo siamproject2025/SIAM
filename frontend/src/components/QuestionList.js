@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import QuestionItem from './QuestionItem'; 
+import QuestionItem from './QuestionItem';
 
-const API_BASE_URL = 'http://localhost:5000/api'; 
+const API_BASE_URL = 'http://localhost:5000/api';
 
-
-const QuestionList = ({ canAnswer, canAsk }) => { 
+const QuestionList = ({ canAnswer, canAsk }) => {
     const [questions, setQuestions] = useState([]);
     const [newQuestion, setNewQuestion] = useState({ title: '', content: '' });
-    const [error, setError] = useState(null); 
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         fetchQuestions();
@@ -22,7 +20,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
             setError(null);
         } catch (err) {
             console.error("Error al obtener preguntas:", err);
-            setError('No se pudieron cargar las preguntas. Revisa la conexión del servidor.');
+            setError('No se pudieron cargar las preguntas.');
         }
     };
 
@@ -36,46 +34,40 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         }
 
         try {
-            await axios.post(`${API_BASE_URL}/questions`, newQuestion); 
-            
+            await axios.post(`${API_BASE_URL}/questions`, newQuestion);
             setNewQuestion({ title: '', content: '' });
-            fetchQuestions(); 
+            fetchQuestions();
             alert("¡Pregunta publicada con éxito!");
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Error desconocido al crear la pregunta.';
-            console.error("Error al crear la pregunta:", err);
             setError(`Error al publicar: ${errorMessage}.`);
         }
     };
-    
 
     return (
         <div className="question-list-container">
             <h2>Módulo de Consultas</h2>
-            
+
             {error && <div className="alert-error">{error}</div>}
 
-           
             {canAsk && (
                 <div className="new-question-form-card">
                     <h3>Hacer una nueva pregunta ❓</h3>
-                    <form onSubmit={handleNewQuestionSubmit} className="question-form">
+                    <form onSubmit={handleNewQuestionSubmit}>
                         <input
                             type="text"
                             placeholder="Título de la pregunta"
                             value={newQuestion.title}
                             onChange={(e) => setNewQuestion({ ...newQuestion, title: e.target.value })}
                             required
-                            className="form-input"
                         />
                         <textarea
                             placeholder="Contenido o detalles de la pregunta"
                             value={newQuestion.content}
                             onChange={(e) => setNewQuestion({ ...newQuestion, content: e.target.value })}
                             required
-                            className="form-textarea"
                         />
-                        <button type="submit" className="form-button">Publicar Pregunta</button>
+                        <button type="submit">Publicar Pregunta</button>
                     </form>
                 </div>
             )}
@@ -86,11 +78,11 @@ const QuestionList = ({ canAnswer, canAsk }) => {
                     <p>No hay preguntas publicadas aún.</p>
                 ) : (
                     questions.map((q) => (
-                        <QuestionItem 
-                            key={q._id} 
-                            question={q} 
-                            canAnswer={canAnswer} // Pasa el permiso de respuesta
-                            fetchQuestions={fetchQuestions} 
+                        <QuestionItem
+                            key={q._id}
+                            question={q}
+                            canAnswer={canAnswer}
+                            fetchQuestions={fetchQuestions}
                         />
                     ))
                 )}
@@ -98,4 +90,5 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         </div>
     );
 };
+
 export default QuestionList;
