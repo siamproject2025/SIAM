@@ -59,7 +59,7 @@ const Donaciones = () => {
   cargarDonaciones(); // Carga inicial
   const interval = setInterval(cargarDonaciones, 30000); // Cada 30s
   return () => clearInterval(interval);
-}, []);
+}, );
 
   useEffect(() => {
     return () => {
@@ -145,22 +145,23 @@ const Donaciones = () => {
 const handleSubmitNueva = async (e) => {
   e.preventDefault();
   
-  // Validaciones mejoradas
   if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
     mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
     return;
   }
 
   try {
-    const formDataToSend = new FormData(); // Nombre más descriptivo
+    const formDataToSend = new FormData();
+    
+    // CAMBIOS CLAVE AQUÍ:
     formDataToSend.append('tipo_donacion', formData.tipo_donacion);
-    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
+    formDataToSend.append('cantidad_donacion', parseFloat(formData.cantidad_donacion)); // convertir a número
     formDataToSend.append('descripcion', formData.descripcion || '');
     formDataToSend.append('observaciones', formData.observaciones || '');
-    formDataToSend.append('id_almacen', formData.id_almacen);
+    formDataToSend.append('id_almacen', parseInt(formData.id_almacen)); // convertir a número
     formDataToSend.append('fecha', new Date().toISOString());
+    formDataToSend.append('fecha_ingreso', new Date().toISOString()); // AGREGAR ESTE CAMPO
     
-    // Solo adjuntar foto si existe
     if (formData.imagen) {
       formDataToSend.append('imagen', formData.imagen);
     }
@@ -173,7 +174,7 @@ const handleSubmitNueva = async (e) => {
 
     const response = await fetch(`${API_URL}`, {
       method: 'POST',
-      body: formDataToSend // NO incluir headers Content-Type para FormData
+      body: formDataToSend
     });
 
     const responseData = await response.json();
@@ -307,7 +308,7 @@ const handleSubmitNueva = async (e) => {
     setMostrarModalEditar(true);
   };
 
-  const handleNuevaDonacion = () => {
+  const handlenuevadonacion = () => {
     setFormData({
       tipo_donacion: '',
       cantidad_donacion: '',
@@ -321,20 +322,23 @@ const handleSubmitNueva = async (e) => {
     setMostrarModal(true);
   };
 
-  const getIconoTipo = (tipo_donacion) => {
-    const iconos = {
-      'Alimentos': <Apple size={20} />,
-      'Vestimenta': <Shirt size={20} />,
-      'Medicina': <Pill size={20} />,
-      'Enseres': <Armchair size={20} />,
-      'Bebidas': <Wine size={20} />,
-      'Útiles escolares': <Book size={20} />,
-      'Productos de higiene': <Droplet size={20} />,
-      'Otro': <Package size={20} />
-    };
-    return iconos[tipo_donacion] || <Package size={20} />;
+ const getIconoTipo = (tipo_donacion) => {
+  const iconos = {
+    'Alimentos': <Apple size={20} />,
+    'Instrumentos musicales': <Package size={20} />, // Cambiado de "Instrumental malicious"
+    'Accesorios musicales': <Package size={20} />,   // Cambiado de "Accesiorios Musicales:"
+    'Vestimenta': <Shirt size={20} />,
+    'Medicina': <Pill size={20} />,
+    'Enseres': <Armchair size={20} />,
+    'Bebidas': <Wine size={20} />,
+    'Útiles escolares': <Book size={20} />,
+    'Productos de higiene': <Droplet size={20} />,
+    'Material Audiovisual': <Package size={20} />,
+    'Material didactico': <Book size={20} />,        // Cambiado de "Material Didactico"
+    'Otro': <Package size={20} />
   };
-
+  return iconos[tipo_donacion] || <Package size={20} />;
+};
   const getColorAlmacen = (id_almacen) => {
     const colores = {
       1: '#FF6B6B',
@@ -750,24 +754,26 @@ const handleSubmitNueva = async (e) => {
                       <label>
                         Tipo de Donación <span>*</span>
                       </label>
-                      <select 
-                        name="tipo_donacion" 
-                        value={formData.tipo_donacion} 
-                        onChange={handleInputChange}
-                        required
-                      >
-                        <option value="">Seleccionar tipo</option>
-                        <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
-                        <option value="Medicina">Medicina</option>
-                        <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
-                        <option value="Útiles escolares">Utiles Escolares</option>
-                        <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
-                        <option value="Productos de higiene">Productos de Higiene</option>
-                        <option value="Otro">Otro</option>
-                      </select>
+   <select 
+  name="tipo_donacion" 
+  value={formData.tipo_donacion} 
+  onChange={handleInputChange}
+  required
+>
+  <option value="">Seleccionar tipo</option>
+  <option value="Alimentos">Alimentos</option>
+  <option value="Instrumentos musicales">Instrumentos Musicales</option>
+  <option value="Accesorios musicales">Accesorios Musicales</option>
+  <option value="Vestimenta">Vestimenta</option>
+  <option value="Medicina">Medicina</option>
+  <option value="Enseres">Enseres</option>
+  <option value="Bebidas">Bebidas</option>
+  <option value="Útiles escolares">Útiles Escolares</option>
+  <option value="Productos de higiene">Productos de Higiene</option>
+  <option value="Material Audiovisual">Material Audiovisual</option>
+  <option value="Material didactico">Material Didáctico</option>
+  <option value="Otro">Otro</option>
+</select>
                     </div>
 
                     <div className="form-group">
@@ -934,23 +940,25 @@ const handleSubmitNueva = async (e) => {
                         Tipo de Donación <span>*</span>
                       </label>
                       <select 
-                        name="tipo_donacion" 
-                        value={formData.tipo_donacion} 
-                        onChange={handleInputChange}
-                        required
-                      >
-                        <option value="">Seleccionar tipo</option>
-                        <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
-                        <option value="Medicina">Medicina</option>
-                        <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
-                        <option value="Útiles escolares">Utiles Escolares</option>
-                        <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
-                        <option value="Productos de higiene">Productos de Higiene</option>
-                        <option value="Otro">Otro</option>
-                      </select>
+  name="tipo_donacion" 
+  value={formData.tipo_donacion} 
+  onChange={handleInputChange}
+  required
+>
+  <option value="">Seleccionar tipo</option>
+  <option value="Alimentos">Alimentos</option>
+  <option value="Instrumentos musicales">Instrumentos Musicales</option>
+  <option value="Accesorios musicales">Accesorios Musicales</option>
+  <option value="Vestimenta">Vestimenta</option>
+  <option value="Medicina">Medicina</option>
+  <option value="Enseres">Enseres</option>
+  <option value="Bebidas">Bebidas</option>
+  <option value="Útiles escolares">Útiles Escolares</option>
+  <option value="Productos de higiene">Productos de Higiene</option>
+  <option value="Material Audiovisual">Material Audiovisual</option>
+  <option value="Material didactico">Material Didáctico</option>
+  <option value="Otro">Otro</option>
+</select>
                     </div>
 
                     <div className="form-group">
