@@ -254,12 +254,17 @@ useEffect(() => {
               )}
             </div>
           </div>
-
-        <div className="modal-actions">
-          <button className="btn-guardar" onClick={handleGuardar}>💾 Guardar Cambios</button>
-          <button className="btn-eliminar" onClick={handleEliminar}>🗑️ Eliminar</button>
-          <button className="btn-cerrar" onClick={onClose}>❌ Cerrar</button>
-        </div>
+        <div className="modal-actions-orden d-flex flex-wrap gap-2 justify-content-end">
+        <button className="btn btn-success" onClick={handleGuardar}>
+          💾 Guardar Cambios
+        </button>
+        <button className="btn btn-danger" onClick={handleEliminar}>
+          🗑️ Eliminar
+        </button>
+        <button className="btn btn-secondary" onClick={onClose}>
+          ❌ Cerrar
+        </button>
+      </div>
       </div>
     </div>
   );
