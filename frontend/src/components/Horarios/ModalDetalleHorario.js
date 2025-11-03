@@ -285,9 +285,11 @@ const ModalDetalleHorario = ({
                 <h4>Alumnos asignados</h4>
                 <table className="table table-striped table-hover table-bordered mb-5">
                   <thead>
+                    <tr>
                     <th scope="col">Identidad</th>
                     <th scope="col">Nombre</th>
                     <th scope="col">Acción</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {horarioEdicion.alumnos.map((alumno_id, key) => {
@@ -296,8 +298,8 @@ const ModalDetalleHorario = ({
                       )[0];
                       return (
                         <tr key={key}>
-                          <td>{alumno.identidad}</td>
-                          <td>{alumno.nombre}</td>
+                          <td>{alumno.id_documento}</td>
+                          <td>{alumno.nombre_completo}</td>
                           <td className="justify-content-between">
                             <a
                               className="btn btn-danger btn-sm text-sm"
@@ -324,8 +326,10 @@ const ModalDetalleHorario = ({
                         Seleccione un alumno
                       </option>
                       {params.alumnos.map((alumno, i) => (
+                        
                         <option key={i} value={alumno._id}>
-                          {alumno.identidad} | {alumno.nombre}
+                          {alumno.id_documento} | {alumno.nombre_completo}
+                          
                         </option>
                       ))}
                     </select>

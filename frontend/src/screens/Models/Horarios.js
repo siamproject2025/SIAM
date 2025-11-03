@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import ModalDetalleHorario from "../../components/Horarios/ModalDetalleHorario";
-import ModalAlumnosHorario from "../../components/Horarios/ModalAlumnosHorario";
 import BusquedaTablaHorarios from "../../components/Horarios/TablaHorario";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,7 +8,7 @@ import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
 
 const API_HOST = "http://localhost:5000";
 const API_HORARIO = `${API_HOST}/api/horario`;
-const API_ALUMNO = `${API_HOST}/api/alumno`;
+const API_ALUMNO = `${API_HOST}/api/matriculas`;
 const API_DOCENTE = `${API_HOST}/api/docente`;
 const API_AULA = `${API_HOST}/api/aula`;
 
@@ -111,14 +110,15 @@ const Horarios = () => {
 
  const clickGuardarModeloHandler = async (horario, esCreacion) => {
   const id = horario._id;
-  delete horario._id;
 
   try {
     if (esCreacion) {
-      const res = await axios.post(API_HORARIO, horario);
+      const { _id, ...horarioSinId } = horario; // crear un objeto sin _id para POST
+      await axios.post(API_HORARIO, horarioSinId);
       showNotification("✅ Horario creado con éxito.", "success");
     } else {
-      const res = await axios.put(`${API_HORARIO}/${id}`, horario);
+      if (!id) throw new Error("No se encontró el ID del horario para actualizar.");
+      await axios.put(`${API_HORARIO}/${id}`, horario);
       showNotification("✅ Horario actualizado con éxito.", "success");
     }
 

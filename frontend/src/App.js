@@ -116,7 +116,7 @@ return (
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
       {/* Renderiza NavBar solo si el usuario está autenticado */}
       {user && <NavBar />}
-
+        <ChatFlotanteConsultas></ChatFlotanteConsultas>
       <div className="app-content">
         {user && <SideBar />}
 

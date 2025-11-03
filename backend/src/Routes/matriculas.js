@@ -1,24 +1,22 @@
-// Rutas: matriculas.js (Express.js)
+// Routes/matriculas.js
 const express = require('express');
 const router = express.Router();
-const matriculaController = require('../Controllers/MatriculaController');
+const matriculaController = require('../controllers/MatriculaController'); // revisa la ruta exacta
+const { upload } = matriculaController; // usamos el middleware exportado en el controlador
 
-// Ruta para crear una nueva matrícula (POST)
-router.post('/', matriculaController.crearMatricula);
+// Crear matrícula
+router.post('/', upload, matriculaController.crearMatricula);
 
-// Ruta para obtener todos los estudiantes (GET)
-router.get('/', matriculaController.obtenerEstudiantes);
-router.put('/:id', matriculaController.actualizarEstudiante);
-// Ruta para obtener un estudiante por ID (GET)
-router.get('/:id', matriculaController.obtenerEstudiantePorId);
+// Obtener todas las matrículas
+router.get('/', matriculaController.getAllMatriculas);
 
-// Nota: Puedes agregar rutas para actualizar (PUT/PATCH) y eliminar (DELETE)
+// Obtener matrícula por ID
+router.get('/:id', matriculaController.getMatriculaById);
+
+// Actualizar matrícula
+router.put('/:id', upload, matriculaController.updateMatricula);
+
+// Eliminar matrícula
+router.delete('/:id', matriculaController.deleteMatricula);
 
 module.exports = router;
-
-/*
-**Ejemplo de uso de la ruta:**
-- POST /api/matriculas -> Crea un nuevo estudiante.
-- GET /api/matriculas  -> Obtiene la lista de estudiantes.
-- GET /api/matriculas/123456 -> Obtiene un estudiante específico.
-*/
