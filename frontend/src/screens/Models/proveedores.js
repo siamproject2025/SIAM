@@ -353,7 +353,7 @@ const Proveedores = () => {
           transition={{ delay: 0.4, duration: 0.5 }}
         >
           <motion.div 
-            className="tabla-header"
+            className="tabla-header-proveedores"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
@@ -382,11 +382,11 @@ const Proveedores = () => {
             <div style={{ textAlign: 'center' }}>ACCIONES</div>
           </motion.div>
 
-          <div className="tabla-body">
+          <div className="tabla-body-proveedores">
             {lista.map((proveedor, index) => (
               <motion.div
                 key={proveedor._id}
-                className="tabla-fila"
+                className="tabla-fila-proveedores"
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ 
@@ -685,10 +685,10 @@ const Proveedores = () => {
                     <Users size={20} color="white" />
                   </div>
                   <div className="stat-text" style={{ color: "white" }}>
-                    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
                       {totalProveedores}
                     </div>
-                    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                       Total Proveedores
                     </div>
                   </div>
@@ -719,11 +719,11 @@ const Proveedores = () => {
                   }}>
                     <Award size={20} color="white" />
                   </div>
-                  <div className="stat-text" style={{ color: "white" }}>
-                    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                  <div className="stat-text" style={{ color:"white",color: "white" }}>
+                    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
                       {proveedoresActivos}
                     </div>
-                    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                       Proveedores Activos
                     </div>
                   </div>
@@ -754,11 +754,11 @@ const Proveedores = () => {
                   }}>
                     <Package size={20} color="white" />
                   </div>
-                  <div className="stat-text" style={{ color: "white" }}>
-                    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                  <div className="stat-text" style={{ color:"white",color: "white" }}>
+                    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
                       {proveedoresProductos}
                     </div>
-                    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                       Proveedores Productos
                     </div>
                   </div>
@@ -1465,7 +1465,7 @@ const Proveedores = () => {
                         <div className="modal-actions">
                           <motion.button 
                             type="button" 
-                            className="btn-eliminar" 
+                            className="btn btn-danger" 
                             onClick={handleEliminarProveedor}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -1607,18 +1607,13 @@ const Proveedores = () => {
                           <li>Vista organizada por estado</li>
                         </ul>
                       </div>
-      
                       <div style={{ 
-                        position: 'sticky', 
-                        bottom: '0', 
-                        left: '0', 
-                        right: '0', 
+                        position: 'none', 
+                        
                         padding: '1rem', 
                         background: 'white', 
                         borderTop: '1px solid #e0e0e0',
-                        marginLeft: '-2rem',
-                        marginRight: '-2rem',
-                        marginBottom: '-2rem',
+                      
                         display: 'flex',
                         justifyContent: 'center'
                       }}>
@@ -1634,6 +1629,7 @@ const Proveedores = () => {
                         </motion.button>
                       </div>
                     </motion.div>
+                    
                   </motion.div>
                 )}
               </AnimatePresence>

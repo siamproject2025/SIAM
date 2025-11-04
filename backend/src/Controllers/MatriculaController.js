@@ -15,7 +15,7 @@ exports.upload = upload.single('foto'); // nombre del input en el frontend
 exports.crearMatricula = async (req, res) => {
   try {
     // Generar siguiente ID si tu modelo lo requiere
-    const nextId = await Estudiante.getNextId?.() || null;
+  
 
     let imagenBase64 = null;
     let tipoImagen = null;
@@ -48,7 +48,7 @@ exports.crearMatricula = async (req, res) => {
 
     const estudianteData = {
       ...req.body,
-      id_estudiante: nextId,
+      
       imagen: imagenBase64,
       tipo_imagen: tipoImagen
     };
@@ -95,7 +95,7 @@ exports.getAllMatriculas = async (req, res) => {
 // -------------------
 exports.getMatriculaById = async (req, res) => {
   try {
-    const estudiante = await Estudiante.findOne({ id_estudiante: req.params.id });
+    const estudiante = await Estudiante.findOne({ _id: req.params.id });
 
     if (!estudiante) {
       return res.status(404).json({
@@ -142,7 +142,7 @@ exports.updateMatricula = async (req, res) => {
     }
 
     const estudiante = await Estudiante.findOneAndUpdate(
-      { id_estudiante: req.params.id },
+      { _id: req.params.id },
       updateData,
       { new: true, runValidators: true }
     );
@@ -173,7 +173,7 @@ exports.updateMatricula = async (req, res) => {
 // -------------------
 exports.deleteMatricula = async (req, res) => {
   try {
-    const estudiante = await Estudiante.findOneAndDelete({ id_estudiante: req.params.id });
+    const estudiante = await Estudiante.findOneAndDelete({ _id: req.params.id });
 
     if (!estudiante) {
       return res.status(404).json({

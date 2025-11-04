@@ -433,8 +433,8 @@ const handleSubmitNueva = async (e) => {
                     <Package size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value">{totalDonaciones}</div>
-                    <div className="stat-label">Total Donaciones</div>
+                    <div className="stat-value" style={{color:"white"}}>{totalDonaciones}</div>
+                    <div className="stat-label" style={{color:"white"}}>Total Donaciones</div>
                   </div>
                 </motion.div>
 
@@ -447,8 +447,8 @@ const handleSubmitNueva = async (e) => {
                     <Users size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value">{totalCantidad}</div>
-                    <div className="stat-label">Cantidad Total</div>
+                    <div className="stat-value" style={{color:"white"}}>{totalCantidad}</div>
+                    <div className="stat-label" style={{color:"white"}}>Cantidad Total</div>
                   </div>
                 </motion.div>
 
@@ -461,8 +461,8 @@ const handleSubmitNueva = async (e) => {
                     <Hash size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value">{tiposUnicos}</div>
-                    <div className="stat-label">Tipos Diferentes</div>
+                    <div className="stat-value" style={{color:"white"}}>{tiposUnicos}</div>
+                    <div className="stat-label" style={{color:"white"}}>Tipos Diferentes</div>
                   </div>
                 </motion.div>
               </motion.div>

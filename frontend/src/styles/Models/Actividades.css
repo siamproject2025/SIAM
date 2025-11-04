@@ -682,22 +682,22 @@
 
 /* Colores específicos para cada categoría */
 .actividad-categoria-section:nth-child(1) {
-  background: linear-gradient(135deg, #fecaca 0%, #fee2e2 100%);
-  border-left: 4px solid #ef4444;
+  background: linear-gradient(135deg, #cacbfe22 0%, #e4e2fe 100%);
+  border-left: 4px solid #445bef;
 }
 
 .actividad-categoria-section:nth-child(2) {
-  background: linear-gradient(135deg, #fef3c7 0%, #fef7cd 100%);
-  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, #f6c7fe2d 0%, hsla(315, 92%, 51%, 0.053) 100%);
+  border-left: 4px solid #f50bc2;
 }
 
 .actividad-categoria-section:nth-child(3) {
-  background: linear-gradient(135deg, #e8f5e8 0%, #f0f9ff 100%);
+  background: linear-gradient(135deg, #e8f5e878 0%, #f0f9ff 100%);
   border-left: 4px solid #10b981;
 }
 
 .actividad-categoria-section:nth-child(4) {
-  background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%);
+  background: linear-gradient(135deg, #e5e7eb6e 0%, #f3f4f6 100%);
   border-left: 4px solid #6b7280;
 }
 

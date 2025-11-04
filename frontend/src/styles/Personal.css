@@ -264,7 +264,7 @@ ul, li{
 /* Columna 2: Estado */
 .tabla-fila-personal > div:nth-child(2) {
   display: flex;
-  justify-content: center;
+  justify-content: left;
 }
 
 /* Columna 3: Nombre y Apellido */

@@ -23,28 +23,36 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     telefono_encargado: '',
     email_encargado: '',
     contacto_emergencia_nombre: '',
-    contacto_emergencia_telefono: ''
+    contacto_emergencia_telefono: '',
+    imagen: null,
+    foto_preview: null,
   });
 
   const [errors, setErrors] = useState({});
   const [showNotification, setShowNotification] = useState(false);
    const [notification, setNotification] = useState(null);
-  useEffect(() => {
-    if (student) {
-      // Formatear fecha para input type="date"
-      const formattedStudent = { ...student };
-      if (student.fecha_nacimiento) {
-        formattedStudent.fecha_nacimiento = student.fecha_nacimiento.split('T')[0];
-      }
-      setFormData(formattedStudent);
-    }
-  }, [student]);
+  
 
-  useEffect(() => {
-      return () => {
-        if (formData.foto_preview) URL.revokeObjectURL(formData.foto_preview);
-      };
-    }, [formData.foto_preview]);
+   useEffect(() => {
+  if (student) {
+    const formattedStudent = { ...student };
+
+    // Formatear fecha
+    if (student.fecha_nacimiento) {
+      formattedStudent.fecha_nacimiento = student.fecha_nacimiento.split('T')[0];
+    }
+
+    // Si viene imagen desde el backend (base64)
+    formattedStudent.foto_preview = student.imagen
+      ? `data:image/png;base64,${student.imagen}`
+      : null;
+
+    formattedStudent.imagen = null; // evitar conflictos
+
+    setFormData(formattedStudent);
+  }
+}, [student]);
+
   
     const handleFotoChange = (e) => {
     const file = e.target.files[0];
@@ -61,11 +69,14 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
         return;
       }
 
-      setFormData(prev => ({
-        ...prev,
-        imagen: file,
-        foto_preview: URL.createObjectURL(file)
-      }));
+          setFormData(prev => {
+          if (prev.foto_preview) URL.revokeObjectURL(prev.foto_preview);
+          return {
+            ...prev,
+            imagen: file,
+            foto_preview: URL.createObjectURL(file)
+          };
+        });
     }
   };
 

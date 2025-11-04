@@ -288,8 +288,8 @@ export default function BibliotecaTest() {
                 >
                     <div className="stat-icon"><Book size={20} color="white" /></div>
                     <div className="stat-text">
-                        <div className="stat-value">{totalLibros}</div>
-                        <div className="stat-label">Total Libros</div>
+                        <div className="stat-value" style={{color:"white"}}>{totalLibros}</div>
+                        <div className="stat-label" style={{color:"white"}}>Total Libros</div>
                     </div>
                 </motion.div>
                 <motion.div 
@@ -299,8 +299,8 @@ export default function BibliotecaTest() {
                 >
                     <div className="stat-icon"><FileText size={20} color="white" /></div>
                     <div className="stat-text">
-                        <div className="stat-value">{librosPDF}</div>
-                        <div className="stat-label">Libros PDF</div>
+                        <div className="stat-value" style={{color:"white"}} >{librosPDF}</div>
+                        <div className="stat-label" style={{color:"white"}}>Libros PDF</div>
                     </div>
                 </motion.div>
                 <motion.div 
@@ -310,8 +310,8 @@ export default function BibliotecaTest() {
                 >
                     <div className="stat-icon"><Award size={20} color="white" /></div>
                     <div className="stat-text">
-                        <div className="stat-value">{librosRecientes}</div>
-                        <div className="stat-label">Recientes</div>
+                        <div className="stat-value" style={{color:"white"}}>{librosRecientes}</div>
+                        <div className="stat-label" style={{color:"white"}}>Recientes</div>
                     </div>
                 </motion.div>
             </motion.div>
