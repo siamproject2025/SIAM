@@ -295,8 +295,18 @@ const AsignarRol = () => {
       </motion.div>
 
       {/* TABLA */}
-      <div className="tabla-container-roles">
-        <table className="tablaUsuarios">
+            <motion.div
+        className="tabla-container-roles"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <motion.table
+          className="tablaUsuarios"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
           <thead>
             <tr>
               <th><FiUser /> Usuario</th>
@@ -307,7 +317,12 @@ const AsignarRol = () => {
           </thead>
           <tbody>
             {usuariosPaginados.map((u) => (
-              <tr key={u._id}>
+              <motion.tr
+                key={u._id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
                 <td>{u.username}</td>
                 <td>{u.email}</td>
                 <td>{u.roles.join(", ")}</td>
@@ -319,24 +334,18 @@ const AsignarRol = () => {
                   >
                     <option value="">Cambiar rol…</option>
                     {rolesDisponibles.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
+                      <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
                   <button className="btn-delete" onClick={() => eliminarUsuario(u._id)}>
                     <FiTrash2 />
                   </button>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
-        </table>
-
-        {usuariosPaginados.length === 0 && (
-          <p className="asignarRol-empty">No se encontraron usuarios.</p>
-        )}
-      </div>
+        </motion.table>
+      </motion.div>
 
       {/* Paginación */}
       {totalPaginas > 1 && (

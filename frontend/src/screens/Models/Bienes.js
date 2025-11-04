@@ -999,6 +999,8 @@ const handleCrearBien = async (nuevoBien) => {
         </motion.button>
       </motion.div>
 
+
+
       {/* TABLA DE BIENES */}
       <div className="bienes-table-container" style={{ 
         marginTop: '2rem',
@@ -1007,7 +1009,12 @@ const handleCrearBien = async (nuevoBien) => {
         padding: '1.5rem',
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ overflowX: 'auto' }}>
+       <div style={{ 
+       maxHeight: '600px', // ajusta según tu diseño
+        overflowY: 'auto',
+       overflowX: 'auto',
+       borderRadius: '10px'
+       }}>
           <table className="bienes-table" style={{ 
             width: '100%',
             borderCollapse: 'collapse'
@@ -1118,58 +1125,7 @@ const handleCrearBien = async (nuevoBien) => {
           </table>
         </div>
 
-        {/* Paginación */}
-        {pages > 1 && (
-          <div className="pagination" style={{ 
-            marginTop: '1.5rem',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: '1rem'
-          }}>
-            <button 
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="btn-page"
-              style={{
-                padding: '0.5rem 1rem',
-                border: '2px solid #667eea',
-                borderRadius: '8px',
-                background: page === 1 ? '#f0f0f0' : 'white',
-                color: page === 1 ? '#999' : '#667eea',
-                fontWeight: 600,
-                cursor: page === 1 ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              ← Anterior
-            </button>
-            <span style={{ 
-              padding: '0.5rem 1rem',
-              fontWeight: 600,
-              color: '#667eea'
-            }}>
-              Página {page} de {pages}
-            </span>
-            <button 
-              onClick={() => setPage(p => Math.min(pages, p + 1))}
-              disabled={page === pages}
-              className="btn-page"
-              style={{
-                padding: '0.5rem 1rem',
-                border: '2px solid #667eea',
-                borderRadius: '8px',
-                background: page === pages ? '#f0f0f0' : 'white',
-                color: page === pages ? '#999' : '#667eea',
-                fontWeight: 600,
-                cursor: page === pages ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              Siguiente →
-            </button>
-          </div>
-        )}
+        
 
         {/* Información de resultados */}
         <div style={{
@@ -1178,7 +1134,7 @@ const handleCrearBien = async (nuevoBien) => {
           color: '#666',
           fontSize: '0.9rem'
         }}>
-          Mostrando {items.length} de {sortedItems.length} bienes
+          Mostrando bienes
           {filterValue && ` (filtrado de ${bienes.length} total)`}
         </div>
       </div>

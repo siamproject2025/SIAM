@@ -4,10 +4,77 @@ const multer = require('multer');
 const sharp = require('sharp');
 
 // Configuración de multer para guardar archivos en memoria
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // Límite de 5MB
+  },
+  fileFilter: (req, file, cb) => {
+    // Validar tipos de archivo permitidos
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Solo se permiten archivos de imagen'), false);
+    }
+  }
+});
 
 // Ruta para usar en Express (ejemplo)
 // app.post('/donaciones', upload.single('imagen'), createDonacion);
+
+// Función auxiliar para procesar imágenes
+const procesarImagen = async (buffer, mimetype) => {
+  try {
+    console.log('🟢 Procesando imagen con Sharp...');
+
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 800;
+    const QUALITY = 80;
+    const MAX_SIZE_MB = 2;
+
+    // Configuración optimizada de Sharp
+    let imageProcessor = sharp(buffer)
+      .resize(MAX_WIDTH, MAX_HEIGHT, {
+        fit: 'inside',
+        withoutEnlargement: true, // No agrandar imágenes pequeñas
+        background: { r: 255, g: 255, b: 255, alpha: 1 } // Fondo blanco para PNG transparentes
+      })
+      .jpeg({ 
+        quality: QUALITY,
+        mozjpeg: true, // Mejor compresión
+        chromaSubsampling: '4:4:4' // Mejor calidad de color
+      });
+
+    // Mantener formato WebP si originalmente era WebP
+    if (mimetype === 'image/webp') {
+      imageProcessor = sharp(buffer)
+        .resize(MAX_WIDTH, MAX_HEIGHT, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .webp({ quality: QUALITY });
+    }
+
+    const processedBuffer = await imageProcessor.toBuffer();
+
+    // Verificar tamaño resultante
+    const bufferSizeMB = processedBuffer.length / (1024 * 1024);
+    if (bufferSizeMB > MAX_SIZE_MB) {
+      console.warn(`⚠️ Imagen comprimida pero aún grande: ${bufferSizeMB.toFixed(2)}MB`);
+    }
+
+    console.log(`✅ Imagen procesada: ${(bufferSizeMB).toFixed(2)} MB`);
+
+    return {
+      imagenBase64: processedBuffer.toString('base64'),
+      tipoImagen: mimetype === 'image/webp' ? 'image/webp' : 'image/jpeg'
+    };
+
+  } catch (error) {
+    console.error('❌ Error procesando imagen:', error);
+    throw new Error('Error al procesar la imagen: ' + error.message);
+  }
+};
 
 exports.createDonacion = async (req, res) => {
   try {
@@ -17,47 +84,31 @@ exports.createDonacion = async (req, res) => {
     let tipoImagen = null;
 
     if (req.file) {
-      console.log('🟢 Archivo recibido, procesando con Sharp...');
-
-      // Procesar con Sharp
-      const TARGET_WIDTH = 600;
-      const TARGET_HEIGHT = 600;
-      const QUALITY = 60; // Ajusta según lo que necesites
-
-      let imageSharp = sharp(req.file.buffer).resize(TARGET_WIDTH, TARGET_HEIGHT, { fit: 'inside' });
-
-      // Convertir a JPEG si no lo es, y aplicar calidad
-      if (req.file.mimetype === 'image/png' || req.file.mimetype === 'image/jpeg') {
-        const processedBuffer = await imageSharp.jpeg({ quality: QUALITY }).toBuffer();
-        imagenBase64 = processedBuffer.toString('base64');
-        tipoImagen = 'image/jpeg';
-      } else if (req.file.mimetype === 'image/webp') {
-        const processedBuffer = await imageSharp.webp({ quality: QUALITY }).toBuffer();
-        imagenBase64 = processedBuffer.toString('base64');
-        tipoImagen = 'image/webp';
-      } else {
-        // Para otros tipos, convertir a JPEG
-        const processedBuffer = await imageSharp.jpeg({ quality: QUALITY }).toBuffer();
-        imagenBase64 = processedBuffer.toString('base64');
-        tipoImagen = 'image/jpeg';
-      }
-
-      console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
+      const resultadoImagen = await procesarImagen(req.file.buffer, req.file.mimetype);
+      imagenBase64 = resultadoImagen.imagenBase64;
+      tipoImagen = resultadoImagen.tipoImagen;
     }
 
     const donacionData = {
       ...req.body,
       id_donacion: nextId,
       imagen: imagenBase64,
-      tipo_imagen: tipoImagen
+      tipo_imagen: tipoImagen,
+      // Si también quieres usar foto_principal con URL
+      foto_principal: req.body.foto_principal || null
     };
 
     const donacion = await Donacion.create(donacionData);
 
+    // No enviar la imagen Base64 en la respuesta para evitar payload grande
+    const donacionResponse = donacion.toObject();
+    delete donacionResponse.imagen;
+    delete donacionResponse.tipo_imagen;
+
     res.status(201).json({
       success: true,
       message: 'Donación creada exitosamente',
-      data: donacion
+      data: donacionResponse
     });
   } catch (error) {
     console.error('❌ Error en createDonacion:', error);
@@ -66,11 +117,16 @@ exports.createDonacion = async (req, res) => {
       message: 'Error al crear la donación',
       error: error.message
     });
-  }};
-// Obtener todas las donaciones
+  }
+};
+
+// Obtener todas las donaciones (sin imágenes para optimizar)
 exports.getAllDonaciones = async (req, res) => {
   try {
-    const donaciones = await Donacion.find().sort({ fecha: -1 });
+    const donaciones = await Donacion.find()
+      .select('-imagen -tipo_imagen') // Excluir campos de imagen para optimizar
+      .sort({ fecha: -1 });
+    
     res.status(200).json({
       success: true,
       count: donaciones.length,
@@ -85,11 +141,19 @@ exports.getAllDonaciones = async (req, res) => {
   }
 };
 
-// Obtener una donación por ID
+// Obtener una donación por ID (con imagen opcional)
 exports.getDonacionById = async (req, res) => {
   try {
-    const donacion = await Donacion.findOne({ id_donacion: req.params.id });
+    const includeImage = req.query.includeImage === 'true';
     
+    let query = Donacion.findOne({ id_donacion: req.params.id });
+    
+    if (!includeImage) {
+      query = query.select('-imagen -tipo_imagen');
+    }
+    
+    const donacion = await query;
+
     if (!donacion) {
       return res.status(404).json({
         success: false,
@@ -110,7 +174,37 @@ exports.getDonacionById = async (req, res) => {
   }
 };
 
+// Obtener solo la imagen de una donación
+exports.getImagenDonacion = async (req, res) => {
+  try {
+    const donacion = await Donacion.findOne(
+      { id_donacion: req.params.id },
+      { imagen: 1, tipo_imagen: 1, _id: 0 }
+    );
 
+    if (!donacion || !donacion.imagen) {
+      return res.status(404).json({
+        success: false,
+        message: 'Imagen no encontrada'
+      });
+    }
+
+    // Convertir Base64 a buffer para enviar como imagen
+    const imageBuffer = Buffer.from(donacion.imagen, 'base64');
+    
+    res.set('Content-Type', donacion.tipo_imagen);
+    res.set('Content-Length', imageBuffer.length);
+    res.set('Cache-Control', 'public, max-age=86400'); // Cache de 1 día
+    
+    res.send(imageBuffer);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener la imagen',
+      error: error.message
+    });
+  }
+};
 
 // Actualizar una donación
 exports.updateDonacion = async (req, res) => {
@@ -118,27 +212,16 @@ exports.updateDonacion = async (req, res) => {
     const updateData = { ...req.body };
 
     if (req.file) {
-      const MAX_WIDTH = 600;
-      const MAX_HEIGHT = 600;
-      const QUALITY = 60;
-
-      let imageSharp = sharp(req.file.buffer).resize({
-        width: MAX_WIDTH,
-        height: MAX_HEIGHT,
-        fit: 'inside', // Mantiene proporción
-        withoutEnlargement: true // No agranda imágenes pequeñas
-      });
-
-      const processedBuffer = await imageSharp.jpeg({ quality: QUALITY }).toBuffer();
-      updateData.imagen = processedBuffer.toString('base64');
-      updateData.tipo_imagen = 'image/jpeg';
+      const resultadoImagen = await procesarImagen(req.file.buffer, req.file.mimetype);
+      updateData.imagen = resultadoImagen.imagenBase64;
+      updateData.tipo_imagen = resultadoImagen.tipoImagen;
     }
 
     const donacion = await Donacion.findOneAndUpdate(
       { id_donacion: req.params.id },
       updateData,
       { new: true, runValidators: true }
-    );
+    ).select('-imagen -tipo_imagen'); // Excluir imagen en respuesta
 
     if (!donacion) {
       return res.status(404).json({
@@ -161,7 +244,6 @@ exports.updateDonacion = async (req, res) => {
   }
 };
 
-
 // Eliminar una donación
 exports.deleteDonacion = async (req, res) => {
   try {
@@ -177,7 +259,10 @@ exports.deleteDonacion = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Donación eliminada exitosamente',
-      data: donacion
+      data: {
+        id_donacion: donacion.id_donacion,
+        tipo_donacion: donacion.tipo_donacion
+      }
     });
   } catch (error) {
     res.status(500).json({
@@ -188,10 +273,12 @@ exports.deleteDonacion = async (req, res) => {
   }
 };
 
-// Obtener donaciones por almacén
+// Obtener donaciones por almacén (sin imágenes)
 exports.getDonacionesByAlmacen = async (req, res) => {
   try {
-    const donaciones = await Donacion.find({ id_almacen: req.params.id_almacen }).sort({ fecha: -1 });
+    const donaciones = await Donacion.find({ id_almacen: req.params.id_almacen })
+      .select('-imagen -tipo_imagen')
+      .sort({ fecha: -1 });
 
     res.status(200).json({
       success: true,
@@ -207,10 +294,12 @@ exports.getDonacionesByAlmacen = async (req, res) => {
   }
 };
 
-// Obtener donaciones por tipo
+// Obtener donaciones por tipo (sin imágenes)
 exports.getDonacionesByTipo = async (req, res) => {
   try {
-    const donaciones = await Donacion.find({ tipo_donacion: req.params.tipo }).sort({ fecha: -1 });
+    const donaciones = await Donacion.find({ tipo_donacion: req.params.tipo })
+      .select('-imagen -tipo_imagen')
+      .sort({ fecha: -1 });
 
     res.status(200).json({
       success: true,
@@ -255,3 +344,18 @@ exports.getEstadisticasDonaciones = async (req, res) => {
     });
   }
 };
+
+// Middleware para manejar errores de multer
+exports.handleMulterError = (error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'El archivo es demasiado grande. Máximo 5MB permitido.'
+      });
+    }
+  }
+  next(error);
+};
+
+module.exports = exports;

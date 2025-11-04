@@ -1,0 +1,608 @@
+/* matriculas.css */
+/* Variables CSS */
+:root {
+  --primary: #4361ee;
+  --primary-dark: #3a56d4;
+  --secondary: #7209b7;
+  --light: #f8f9fa;
+  --dark: #212529;
+  --success: #4cc9f0;
+  --danger: #f72585;
+  --warning: #ffbe0b;
+  --gray: #6c757d;
+  --gray-light: #e9ecef;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+.App2{
+  background-color: rgb(239, 244, 246);
+  min-height: 92vh;
+}
+
+/* Header con gradiente */
+.app-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  padding: 2rem 0;
+  box-shadow: var(--box-shadow);
+}
+
+.headerEstudiantes{
+  padding: 30px 30px 0px 30px;
+}
+
+
+
+
+.container2 {
+  width: 100%;
+  padding: 0 30px;
+}
+
+/* Barra de acciones */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Botones */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(67, 97, 238, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger) 0%, #e1156d 100%);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(247, 37, 133, 0.3);
+}
+
+.btn-secondary {
+  background-color: var(--gray-light);
+  color: var(--dark);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #dde1e6;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--gray);
+}
+
+.loading i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+/* Estilos para la tabla */
+.table-container {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  width: 100%;
+  padding-bottom: 10px;
+  margin-bottom: 50px;
+}
+
+.student-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.student-table th,
+.student-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-light);
+}
+.student-table thead {
+  background: linear-gradient(135deg, #5968b7 0%, #764ba2 100%);
+}
+
+
+.student-table th {
+
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.student-table tr:hover {
+  
+}
+
+.student-table tr.selected {
+  background-color: #e3f2fd;
+}
+
+/* Columnas específicas */
+.checkbox-column {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.student-name .name {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.student-name .details {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-top: 0.25rem;
+}
+
+.grade-badge {
+  background: linear-gradient(135deg, var(--success) 0%, #2a9d8f 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.encargado-info .name {
+  font-weight: 500;
+}
+
+.encargado-info .relationship {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin-top: 0.25rem;
+}
+
+/* Botones de acción en tabla */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-edit {
+  background-color: #e3f2fd;
+  color: var(--primary);
+}
+
+.btn-edit:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-delete {
+  background-color: #ffeef0;
+  color: var(--danger);
+}
+
+.btn-delete:hover {
+  background-color: var(--danger);
+  color: white;
+}
+
+/* Estado sin datos */
+.no-data {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--gray);
+}
+
+.no-data i {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-data h3 {
+  margin-bottom: 0.5rem;
+  color: var(--dark);
+}
+
+/* Formulario */
+.student-form {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-section {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  border: 1px solid var(--gray-light);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.section-title i {
+  font-size: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--dark);
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 1px solid var(--gray-light);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+  border-color: var(--danger);
+}
+
+.error-message {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gray-light);
+}
+
+.action-left,
+.action-right {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Modales personalizados */
+.modal-overlay-matriculas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content-matriculas {
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header-matriculas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-light);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.modal-title-matriculas {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.modal-close-matriculas {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.modal-close-matriculas:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body-matriculas {
+  padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 2rem;
+  }
+  
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn {
+    justify-content: center;
+  }
+  
+  .student-table {
+    font-size: 0.8rem;
+  }
+  
+  .student-table th,
+  .student-table td {
+    padding: 0.5rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content-matriculas {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .action-left,
+  .action-right {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 1.75rem;
+  }
+  
+  .header-description {
+    font-size: 1rem;
+  }
+  
+  .main-content {
+    padding: 1rem 0;
+  }
+  
+  .student-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .modal-header-matriculas {
+    padding: 1rem;
+  }
+  
+  .modal-body-matriculas {
+    padding: 1rem;
+  }
+}
+
+/* Scrollbar personalizado */
+.student-form::-webkit-scrollbar,
+.modal-body-matriculas::-webkit-scrollbar {
+  width: 6px;
+}
+
+.student-form::-webkit-scrollbar-track,
+.modal-body-matriculas::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.student-form::-webkit-scrollbar-thumb,
+.modal-body-matriculas::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+.student-form::-webkit-scrollbar-thumb:hover,
+.modal-body-matriculas::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* Estados de carga */
+.btn.loading {
+  position: relative;
+  color: transparent;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin: -8px 0 0 -8px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Efectos de hover mejorados */
+.form-section {
+  transition: var(--transition);
+}
+
+.form-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.grade-badge {
+  transition: var(--transition);
+}
+
+.grade-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Estados de validación */
+.form-group input:valid:not(:placeholder-shown) {
+  border-color: var(--success);
+}
+
+.form-group input:invalid:not(:placeholder-shown) {
+  border-color: var(--danger);
+}
+
+/* Tooltips para botones de acción */
+.btn-icon {
+  position: relative;
+}
+
+.btn-icon::before {
+  content: attr(title);
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition);
+}
+
+.btn-icon:hover::before {
+  opacity: 1;
+  bottom: -35px;
+}

@@ -8,6 +8,9 @@ const { upload } = require('../middleware/uploadImage'); // Multer en memoria
 router.get('/', donacionesController.getAllDonaciones);
 router.get('/:id', donacionesController.getDonacionById);
 
+// Ruta adicional para obtener solo la imagen (RECOMENDADA)
+router.get('/:id/imagen', donacionesController.getImagenDonacion);
+
 // Crear donación con imagen
 router.post('/', upload.single('imagen'), donacionesController.createDonacion);
 
