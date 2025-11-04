@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import "..//..//styles/Directiva.css"
+import "../../styles/Directiva.css";
 import { 
+  Users,
   Mail,
   Phone,
   Briefcase,
-  Calendar,
+  FileText,
   Hash,
   Search,
   HelpCircle,
@@ -15,14 +16,11 @@ import {
   X,
   Save,
   Check,
-  Users,
-  FileText,
   Award,
-  Shield,
-  Upload,
-  Download,
-  Eye,
-  Building
+  Building,
+  UserCheck,
+  Clock,
+  Shield
 } from 'lucide-react';
 
 const API_URL = "http://localhost:5000/api/directiva";
@@ -34,12 +32,14 @@ const Directiva = () => {
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [notification, setNotification] = useState(null);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
-  const [Loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [filtroOrden, setFiltroOrden] = useState('ninguno');
   const [mostrarMenuFiltros, setMostrarMenuFiltros] = useState(false);
-  const [mostrarModalPDF, setMostrarModalPDF] = useState(false);
-  const [pdfSeleccionado, setPdfSeleccionado] = useState(null);
-  const [archivoSubir, setArchivoSubir] = useState(null);
+  const [tabActivo, setTabActivo] = useState('info');
+  
+  // NUEVO ESTADO PARA EL MODAL DE DOCUMENTOS
+  const [mostrarModalDocumentos, setMostrarModalDocumentos] = useState(false);
+  const [documentoEditando, setDocumentoEditando] = useState(null);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -48,17 +48,35 @@ const Directiva = () => {
     telefono: '',
     empresa: '',
     estado: 'activo',
+    fecha_registro: new Date().toISOString().split('T')[0],
     notas: ''
   });
 
-  const [formPDF, setFormPDF] = useState({
+  const [documentoData, setDocumentoData] = useState({
+    nombre_archivo: '',
     tipo_documento: 'acta',
-    descripcion: ''
+    descripcion: '',
+    archivo: null
+  });
+
+  // NUEVO ESTADO PARA DOCUMENTOS EN MODAL APARTE
+  const [documentoModalData, setDocumentoModalData] = useState({
+    nombre_archivo: '',
+    tipo_documento: 'acta',
+    descripcion: '',
+    numero_sesion: '',
+    archivo: null
+  });
+
+  const [historialData, setHistorialData] = useState({
+    cargo: '',
+    fecha_inicio: '',
+    fecha_fin: ''
   });
 
   useEffect(() => {
     cargarMiembros();
-  }, );
+  }, []);
 
   const cargarMiembros = async () => {
     try {
@@ -66,10 +84,10 @@ const Directiva = () => {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error('Error al cargar miembros');
       const data = await res.json();
-      setMiembros(data.success ? data.data : []);
+      setMiembros(Array.isArray(data.data) ? data.data : []);
     } catch (err) {
-      console.error('Error al obtener miembros:', err);
-      showNotification('Error al cargar miembros de la directiva', 'error');
+      console.error('Error al obtener los miembros:', err);
+      showNotification('Error al cargar los miembros de la directiva', 'error');
       setMiembros([]);
     } finally {
       setLoading(false);
@@ -95,16 +113,21 @@ const Directiva = () => {
       telefono: '',
       empresa: '',
       estado: 'activo',
+      fecha_registro: new Date().toISOString().split('T')[0],
       notas: ''
     });
   };
 
-  const resetFormPDF = () => {
-    setFormPDF({
+  // NUEVA FUNCIÓN PARA RESETEAR FORMULARIO DE DOCUMENTOS MODAL
+  const resetDocumentoModalForm = () => {
+    setDocumentoModalData({
+      nombre_archivo: '',
       tipo_documento: 'acta',
-      descripcion: ''
+      descripcion: '',
+      numero_sesion: '',
+      archivo: null
     });
-    setArchivoSubir(null);
+    setDocumentoEditando(null);
   };
 
   const handleCrearMiembro = async (e) => {
@@ -112,7 +135,7 @@ const Directiva = () => {
     
     try {
       if (!formData.nombre.trim()) {
-        showNotification('El nombre es obligatorio', 'error');
+        showNotification('El nombre del miembro es obligatorio', 'error');
         return;
       }
       if (!formData.cargo.trim()) {
@@ -123,19 +146,14 @@ const Directiva = () => {
         showNotification('El email es obligatorio', 'error');
         return;
       }
-      if (!formData.telefono.trim()) {
+      if (!formData.telefono) {
         showNotification('El teléfono es obligatorio', 'error');
         return;
       }
 
       const datosMiembro = {
-        nombre: formData.nombre.trim(),
-        cargo: formData.cargo.trim(),
-        email: formData.email.trim().toLowerCase(),
-        telefono: formData.telefono.trim(),
-        empresa: formData.empresa.trim(),
-        estado: formData.estado,
-        notas: formData.notas.trim()
+        ...formData,
+        fecha_registro: new Date(formData.fecha_registro)
       };
 
       const res = await fetch(API_URL, {
@@ -164,7 +182,7 @@ const Directiva = () => {
     
     try {
       if (!formData.nombre.trim()) {
-        showNotification('El nombre es obligatorio', 'error');
+        showNotification('El nombre del miembro es obligatorio', 'error');
         return;
       }
       if (!formData.cargo.trim()) {
@@ -175,19 +193,14 @@ const Directiva = () => {
         showNotification('El email es obligatorio', 'error');
         return;
       }
-      if (!formData.telefono.trim()) {
+      if (!formData.telefono) {
         showNotification('El teléfono es obligatorio', 'error');
         return;
       }
 
       const datosActualizados = {
-        nombre: formData.nombre.trim(),
-        cargo: formData.cargo.trim(),
-        email: formData.email.trim().toLowerCase(),
-        telefono: formData.telefono.trim(),
-        empresa: formData.empresa.trim(),
-        estado: formData.estado,
-        notas: formData.notas.trim()
+        ...formData,
+        fecha_registro: new Date(formData.fecha_registro)
       };
 
       const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
@@ -232,80 +245,171 @@ const Directiva = () => {
     }
   };
 
-  const handleSubirPDF = async (e) => {
+  const handleAgregarDocumento = async (e) => {
     e.preventDefault();
-    
-    if (!archivoSubir) {
-      showNotification('Selecciona un archivo PDF', 'error');
-      return;
-    }
-
-    if (!formPDF.tipo_documento) {
-      showNotification('Selecciona un tipo de documento', 'error');
+    if (!documentoData.nombre_archivo || !documentoData.tipo_documento) {
+      showNotification('Nombre y tipo de documento son obligatorios', 'error');
       return;
     }
 
     try {
-      const formDataPDF = new FormData();
-      formDataPDF.append('pdf', archivoSubir);
-      formDataPDF.append('tipo_documento', formPDF.tipo_documento);
-      formDataPDF.append('descripcion', formPDF.descripcion);
-
-      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/pdf`, {
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/documentos`, {
         method: 'POST',
-        body: formDataPDF
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...documentoData,
+          fecha_subida: new Date()
+        })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al subir el PDF');
-      }
-
-      await cargarMiembros();
-      setMostrarModalPDF(false);
-      resetFormPDF();
-      showNotification('PDF subido exitosamente', 'success');
+      if (!res.ok) throw new Error('Error al agregar documento');
+      
+      showNotification('Documento agregado exitosamente', 'success');
+      setDocumentoData({
+        nombre_archivo: '',
+        tipo_documento: 'acta',
+        descripcion: '',
+        archivo: null
+      });
+      cargarMiembros();
     } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al subir el PDF', 'error');
+      showNotification('Error al agregar documento', 'error');
     }
   };
 
-  const handleDescargarPDF = async (pdfId, nombreArchivo) => {
+  // NUEVAS FUNCIONES PARA EL MODAL DE DOCUMENTOS
+  const handleAgregarDocumentoModal = async (e) => {
+    e.preventDefault();
+    if (!documentoModalData.nombre_archivo || !documentoModalData.tipo_documento) {
+      showNotification('Nombre y tipo de documento son obligatorios', 'error');
+      return;
+    }
+
     try {
-      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/pdf/${pdfId}`);
-      if (!res.ok) throw new Error('Error al descargar el PDF');
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/documentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...documentoModalData,
+          fecha_subida: new Date()
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al agregar documento');
       
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = nombreArchivo;
-      a.click();
-      window.URL.revokeObjectURL(url);
-      
-      showNotification('PDF descargado exitosamente', 'success');
+      showNotification('Documento agregado exitosamente', 'success');
+      resetDocumentoModalForm();
+      cargarMiembros();
     } catch (err) {
-      console.error(err.message);
-      showNotification('Error al descargar el PDF', 'error');
+      showNotification('Error al agregar documento', 'error');
     }
   };
 
-  const handleEliminarPDF = async (pdfId) => {
+  const handleEditarDocumentoModal = async (e) => {
+    e.preventDefault();
+    if (!documentoModalData.nombre_archivo || !documentoModalData.tipo_documento) {
+      showNotification('Nombre y tipo de documento son obligatorios', 'error');
+      return;
+    }
+
+    try {
+      const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
+      const documentosActualizados = miembroActual.documentos_pdf.map(doc => 
+        doc._id === documentoEditando._id 
+          ? { ...documentoModalData, _id: doc._id, fecha_subida: doc.fecha_subida }
+          : doc
+      );
+
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentos_pdf: documentosActualizados
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al editar documento');
+      
+      showNotification('Documento actualizado exitosamente', 'success');
+      resetDocumentoModalForm();
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al editar documento', 'error');
+    }
+  };
+
+  const handleEliminarDocumentoModal = async (documentoId) => {
     if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
-    
+
     try {
-      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/pdf/${pdfId}`, {
-        method: 'DELETE'
+      const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
+      const documentosActualizados = miembroActual.documentos_pdf.filter(doc => doc._id !== documentoId);
+
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentos_pdf: documentosActualizados
+        })
       });
+
+      if (!res.ok) throw new Error('Error al eliminar documento');
       
-      if (!res.ok) throw new Error('Error al eliminar el PDF');
-      
-      await cargarMiembros();
-      showNotification('PDF eliminado exitosamente', 'success');
+      showNotification('Documento eliminado exitosamente', 'success');
+      cargarMiembros();
     } catch (err) {
-      console.error(err.message);
-      showNotification('Error al eliminar el PDF', 'error');
+      showNotification('Error al eliminar documento', 'error');
+    }
+  };
+
+  const handleOpenEditarDocumentoModal = (documento) => {
+    setDocumentoEditando(documento);
+    setDocumentoModalData({
+      nombre_archivo: documento.nombre_archivo || '',
+      tipo_documento: documento.tipo_documento || 'acta',
+      descripcion: documento.descripcion || '',
+      numero_sesion: documento.numero_sesion || '',
+      archivo: null
+    });
+  };
+
+  const handleAgregarHistorial = async (e) => {
+    e.preventDefault();
+    if (!historialData.cargo || !historialData.fecha_inicio) {
+      showNotification('Cargo y fecha de inicio son obligatorios', 'error');
+      return;
+    }
+
+    try {
+      const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
+      const historialActualizado = [
+        ...(miembroActual.historial_cargos || []),
+        {
+          ...historialData,
+          fecha_inicio: new Date(historialData.fecha_inicio),
+          fecha_fin: historialData.fecha_fin ? new Date(historialData.fecha_fin) : null
+        }
+      ];
+
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          historial_cargos: historialActualizado
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al agregar historial');
+      
+      showNotification('Historial agregado exitosamente', 'success');
+      setHistorialData({
+        cargo: '',
+        fecha_inicio: '',
+        fecha_fin: ''
+      });
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al agregar historial', 'error');
     }
   };
 
@@ -315,39 +419,41 @@ const Directiva = () => {
       m.nombre?.toLowerCase().includes(terminoBusqueda) ||
       m.cargo?.toLowerCase().includes(terminoBusqueda) ||
       m.email?.toLowerCase().includes(terminoBusqueda) ||
-      m.empresa?.toLowerCase().includes(terminoBusqueda) ||
-      m.telefono?.toLowerCase().includes(terminoBusqueda)
+      m.telefono?.toString().includes(terminoBusqueda) ||
+      m.empresa?.toLowerCase().includes(terminoBusqueda)
     );
   });
 
+  // Aplicar ordenamiento
   const miembrosOrdenados = [...miembrosFiltrados].sort((a, b) => {
     switch(filtroOrden) {
-      case 'nombre-asc':
+      case 'nombre-az':
         return (a.nombre || '').localeCompare(b.nombre || '');
-      case 'nombre-desc':
+      case 'nombre-za':
         return (b.nombre || '').localeCompare(a.nombre || '');
-      case 'cargo-asc':
+      case 'cargo-az':
         return (a.cargo || '').localeCompare(b.cargo || '');
-      case 'cargo-desc':
-        return (b.cargo || '').localeCompare(a.cargo || '');
       case 'estado-activo':
-        const estadoOrden = { 'activo': 1, 'inactivo': 2, 'suspendido': 3 };
+        const estadoOrden = { 'activo': 1, 'suspendido': 2, 'inactivo': 3 };
         return (estadoOrden[a.estado] || 999) - (estadoOrden[b.estado] || 999);
       case 'estado-inactivo':
-        const estadoOrdenInv = { 'suspendido': 1, 'inactivo': 2, 'activo': 3 };
+        const estadoOrdenInv = { 'inactivo': 1, 'suspendido': 2, 'activo': 3 };
         return (estadoOrdenInv[a.estado] || 999) - (estadoOrdenInv[b.estado] || 999);
       default:
         return 0;
     }
   });
 
-  const getCargoIcon = (cargo) => {
-    const cargoLower = cargo?.toLowerCase() || '';
-    if (cargoLower.includes('presidente')) return <Award size={18} />;
-    if (cargoLower.includes('secretari')) return <FileText size={18} />;
-    if (cargoLower.includes('tesorero')) return <Briefcase size={18} />;
-    if (cargoLower.includes('vocal')) return <Users size={18} />;
-    return <Shield size={18} />;
+  const getTipoDocBadge = (tipo) => {
+    const clases = {
+      'acta': 'acta',
+      'contrato': 'contrato',
+      'informe': 'informe',
+      'certificado': 'certificado',
+      'nombramiento': 'nombramiento',
+      'otro': 'otro'
+    };
+    return `tipo-doc-badge ${clases[tipo] || 'otro'}`;
   };
 
   const handleOpenEditModal = (miembro) => {
@@ -359,119 +465,486 @@ const Directiva = () => {
       telefono: miembro.telefono || '',
       empresa: miembro.empresa || '',
       estado: miembro.estado || 'activo',
+      fecha_registro: miembro.fecha_registro ? new Date(miembro.fecha_registro).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       notas: miembro.notas || ''
     });
+    setTabActivo('info');
+  };
+
+  // NUEVA FUNCIÓN PARA ABRIR MODAL DE DOCUMENTOS
+  const handleOpenDocumentosModal = (miembro) => {
+    setMiembroSeleccionado(miembro);
+    setMostrarModalDocumentos(true);
+    resetDocumentoModalForm();
   };
 
   const handleCloseModals = () => {
     setMostrarModalCrear(false);
     setMiembroSeleccionado(null);
-    setMostrarModalPDF(false);
     resetForm();
-    resetFormPDF();
+    setTabActivo('info');
   };
 
-  const formatearFecha = (fecha) => {
-    if (!fecha) return '—';
-    return new Date(fecha).toLocaleDateString('es-HN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // NUEVA FUNCIÓN PARA CERRAR MODAL DE DOCUMENTOS
+  const handleCloseDocumentosModal = () => {
+    setMostrarModalDocumentos(false);
+    setMiembroSeleccionado(null);
+    resetDocumentoModalForm();
   };
+
+  const renderTablaMiembros = (titulo, lista, icon) => (
+    <motion.div 
+      className="directiva-categoria-section"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.6 }}
+    >
+      <motion.div 
+        className="directiva-categoria-header"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <h3 className="directiva-subtitulo">
+          <motion.div
+            initial={{ rotate: -180, scale: 0 }}
+            animate={{ rotate: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          >
+            {icon}
+          </motion.div>
+          {titulo} ({lista.length})
+        </h3>
+      </motion.div>
+
+      {lista.length === 0 ? (
+        <motion.p 
+          className="directiva-vacio"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          No hay miembros en esta categoría.
+        </motion.p>
+      ) : (
+        <motion.div 
+          className="tabla-directiva"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <motion.div 
+            className="tabla-header"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            style={{
+              gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 80px'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <UserCheck size={14} />
+              MIEMBRO
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Briefcase size={14} />
+              CARGO
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Mail size={14} />
+              CONTACTO
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Building size={14} />
+              EMPRESA
+            </div>
+            <div style={{ textAlign: 'center' }}>DOCUMENTOS</div>
+            <div style={{ textAlign: 'center' }}>ESTADO</div>
+            <div style={{ textAlign: 'center' }}>ACCIONES</div>
+          </motion.div>
+
+          <div className="tabla-body">
+            {lista.map((miembro, index) => (
+              <motion.div
+                key={miembro._id}
+                className="tabla-fila"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ 
+                  delay: Math.min(index * 0.05, 1),
+                  duration: 0.4,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ 
+                  scale: 1.01,
+                  transition: { duration: 0.2 }
+                }}
+                onClick={() => handleOpenEditModal(miembro)}
+                style={{
+                  gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 80px'
+                }}
+              >
+                <div>
+                  <motion.div 
+                    style={{ 
+                      fontWeight: '600',
+                      fontSize: '1rem',
+                      color: '#333',
+                      marginBottom: '3px'
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 + 0.2 }}
+                  >
+                    {miembro.nombre}
+                  </motion.div>
+                  <motion.div 
+                    style={{ 
+                      fontSize: '0.85rem',
+                      color: '#666'
+                    }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.05 + 0.3 }}
+                  >
+                    {miembro.email}
+                  </motion.div>
+                </div>
+
+                <motion.div 
+                  style={{ 
+                    fontWeight: '600',
+                    color: '#667eea',
+                    fontSize: '0.9rem'
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  {miembro.cargo}
+                </motion.div>
+
+                <div>
+                  <motion.div 
+                    style={{ 
+                      fontSize: '0.85rem',
+                      color: '#555',
+                      marginBottom: '3px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                    whileHover={{ x: 5 }}
+                  >
+                    <Mail size={14} />
+                    {miembro.email}
+                  </motion.div>
+                  <motion.div 
+                    style={{ 
+                      fontSize: '0.85rem',
+                      color: '#555',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                    whileHover={{ x: 5 }}
+                  >
+                    <Phone size={14} />
+                    {miembro.telefono}
+                  </motion.div>
+                </div>
+
+                <motion.div 
+                  style={{ fontSize: '0.9rem', color: '#555' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: index * 0.05 + 0.25 }}
+                >
+                  {miembro.empresa || '-'}
+                </motion.div>
+
+                <motion.div 
+                  style={{ textAlign: 'center' }}
+                  whileHover={{ scale: 1.1 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  {miembro.documentos_pdf && miembro.documentos_pdf.length > 0 ? (
+                    <span className="documentos-badge">
+                      <FileText size={14} />
+                      {miembro.documentos_pdf.length}
+                    </span>
+                  ) : (
+                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Sin docs</span>
+                  )}
+                </motion.div>
+
+                <motion.div
+                  style={{ display: 'flex', justifyContent: 'center' }}
+                  whileHover={{ scale: 1.15 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <span className={`estado-badge ${miembro.estado.toLowerCase()}`}>
+                    {miembro.estado}
+                  </span>
+                </motion.div>
+
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}>
+                  <motion.button
+                    whileHover={{ 
+                      scale: 1.2,
+                      rotate: 15,
+                      transition: { duration: 0.2 }
+                    }}
+                    whileTap={{ scale: 0.9, rotate: -15 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEditModal(miembro);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#2196F3',
+                      padding: '5px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Editar"
+                  >
+                    <Edit size={18} />
+                  </motion.button>
+                  
+                  {/* NUEVO BOTÓN PARA MODAL DE DOCUMENTOS */}
+                  <motion.button
+                    whileHover={{ 
+                      scale: 1.2,
+                      rotate: 15,
+                      transition: { duration: 0.2 }
+                    }}
+                    whileTap={{ scale: 0.9, rotate: -15 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenDocumentosModal(miembro);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#10B981',
+                      padding: '5px',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                    title="Gestionar Documentos"
+                  >
+                    <FileText size={18} />
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </motion.div>
+  );
 
   return (
     <>
       <div className="directiva-container">
-        {/* Header con estadísticas */}
+        {/* ENCABEZADO MEJORADO */}
         <motion.div 
           className="directiva-header"
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
         >
-          <h2>Sistema de Gestión de Directiva</h2>
-          <p>Administra los miembros de la directiva de manera eficiente</p>
+          <motion.div
+            className="header-gradient"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+            style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              padding: "2.5rem",
+              borderRadius: "20px",
+              boxShadow: "0 10px 30px rgba(102, 126, 234, 0.3)",
+              position: "relative",
+              overflow: "hidden"
+            }}
+          >
+            {/* Patrón de fondo */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+              opacity: 0.3
+            }} />
 
-          {/* Tarjetas de estadísticas */}
-          <div className="directiva-stats">
-            <motion.div 
-              className="stat-card"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Users size={24} />
-              <div className="stat-info">
-                <span className="stat-value">{totalMiembros}</span>
-                <span className="stat-label">Total</span>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="stat-card active"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Check size={24} />
-              <div className="stat-info">
-                <span className="stat-value">{miembrosActivos}</span>
-                <span className="stat-label">Activos</span>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="stat-card inactivo"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <X size={24} />
-              <div className="stat-info">
-                <span className="stat-value">{miembrosInactivos}</span>
-                <span className="stat-label">Inactivos</span>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="stat-card suspendido"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Shield size={24} />
-              <div className="stat-info">
-                <span className="stat-value">{miembrosSuspendidos}</span>
-                <span className="stat-label">Suspendidos</span>
-              </div>
-            </motion.div>
-          </div>
+            <div className="header-content" style={{ position: "relative", zIndex: 2 }}>
+              <motion.h2
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                style={{
+                  fontSize: "2.8rem",
+                  color: "white",
+                  marginBottom: "0.5rem",
+                  fontWeight: 800,
+                  textShadow: "0 2px 10px rgba(0,0,0,0.2)",
+                  letterSpacing: "-0.5px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1rem"
+                }}
+              >
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                >
+                  <Users size={36} fill="white" color="white" />
+                </motion.div>
+                Gestión de Directiva
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Award size={32} color="white" />
+                </motion.div>
+              </motion.h2>
+              
+              <motion.p
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                style={{
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "1.2rem",
+                  marginBottom: 0,
+                  fontWeight: 500,
+                  textShadow: "0 1px 5px rgba(0,0,0,0.1)"
+                }}
+              >
+                Administra y gestiona los miembros de la directiva de manera eficiente
+              </motion.p>
 
-          <div className="directiva-busqueda-bar">
+              <motion.div 
+                className="directiva-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+                <motion.div 
+                  className="stat-card"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="stat-icon">
+                    <Users size={24} />
+                  </div>
+                  <div className="stat-info">
+                    <div className="stat-value">{totalMiembros}</div>
+                    <div className="stat-label">Total Miembros</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-card active"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                >
+                  <div className="stat-icon">
+                    <UserCheck size={24} />
+                  </div>
+                  <div className="stat-info">
+                    <div className="stat-value">{miembrosActivos}</div>
+                    <div className="stat-label">Miembros Activos</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-card inactivo"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                >
+                  <div className="stat-icon">
+                    <Clock size={24} />
+                  </div>
+                  <div className="stat-info">
+                    <div className="stat-value">{miembrosInactivos}</div>
+                    <div className="stat-label">Miembros Inactivos</div>
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  className="stat-card suspendido"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
+                >
+                  <div className="stat-icon">
+                    <Shield size={24} />
+                  </div>
+                  <div className="stat-info">
+                    <div className="stat-value">{miembrosSuspendidos}</div>
+                    <div className="stat-label">Miembros Suspendidos</div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
+          </motion.div>
+
+          {/* BARRA DE BÚSQUEDA Y FILTROS */}
+          <motion.div 
+            className="directiva-busqueda-bar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            style={{ marginTop: "2rem" }}
+          >
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search 
-                size={20} 
-                style={{ 
-                  position: 'absolute', 
-                  left: '12px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  color: '#999' 
-                }} 
-              />
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
+              >
+                <Search size={18} />
+              </motion.div>
               <input
                 type="text"
                 className="directiva-busqueda"
-                placeholder="Buscar por nombre, cargo, email, empresa o teléfono..."
+                placeholder="Buscar por nombre, cargo, email, teléfono o empresa..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                style={{ paddingLeft: '45px' }}
               />
             </div>
             
             <div style={{ position: 'relative' }}>
               <motion.button 
                 className="btn-ayuda" 
-                onClick={() => setMostrarMenuFiltros(!mostrarMenuFiltros)}
-                whileHover={{ scale: 1.05 }}
+                onClick={() => setMostrarMenuFiltros(!mostrarMenuFiltros)} 
+                title="Filtros de ordenamiento"
+                whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
                 whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                <Shield size={16} />
-                Ordenar
+                <motion.div
+                  animate={{ rotate: mostrarMenuFiltros ? 180 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Briefcase size={18} />
+                </motion.div>
+                Filtros
               </motion.button>
               
               <AnimatePresence>
@@ -481,343 +954,138 @@ const Directiva = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
                   >
                     <div 
                       className={`filtro-opcion ${filtroOrden === 'ninguno' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('ninguno'); setMostrarMenuFiltros(false); }}
+                      onClick={() => {
+                        setFiltroOrden('ninguno');
+                        setMostrarMenuFiltros(false);
+                      }}
                     >
-                      Sin orden
+                      <Hash size={16} />
+                      Sin ordenar
                     </div>
                     <div className="filtro-separador"></div>
                     <div 
-                      className={`filtro-opcion ${filtroOrden === 'nombre-asc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('nombre-asc'); setMostrarMenuFiltros(false); }}
+                      className={`filtro-opcion ${filtroOrden === 'nombre-az' ? 'active' : ''}`}
+                      onClick={() => {
+                        setFiltroOrden('nombre-az');
+                        setMostrarMenuFiltros(false);
+                      }}
                     >
-                      Nombre A-Z
+                      🔤 Nombre A-Z
                     </div>
                     <div 
-                      className={`filtro-opcion ${filtroOrden === 'nombre-desc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('nombre-desc'); setMostrarMenuFiltros(false); }}
+                      className={`filtro-opcion ${filtroOrden === 'nombre-za' ? 'active' : ''}`}
+                      onClick={() => {
+                        setFiltroOrden('nombre-za');
+                        setMostrarMenuFiltros(false);
+                      }}
                     >
-                      Nombre Z-A
+                      🔡 Nombre Z-A
                     </div>
                     <div className="filtro-separador"></div>
                     <div 
-                      className={`filtro-opcion ${filtroOrden === 'cargo-asc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('cargo-asc'); setMostrarMenuFiltros(false); }}
+                      className={`filtro-opcion ${filtroOrden === 'cargo-az' ? 'active' : ''}`}
+                      onClick={() => {
+                        setFiltroOrden('cargo-az');
+                        setMostrarMenuFiltros(false);
+                      }}
                     >
-                      Cargo A-Z
-                    </div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'cargo-desc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('cargo-desc'); setMostrarMenuFiltros(false); }}
-                    >
-                      Cargo Z-A
+                      💼 Cargo A-Z
                     </div>
                     <div className="filtro-separador"></div>
                     <div 
                       className={`filtro-opcion ${filtroOrden === 'estado-activo' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('estado-activo'); setMostrarMenuFiltros(false); }}
+                      onClick={() => {
+                        setFiltroOrden('estado-activo');
+                        setMostrarMenuFiltros(false);
+                      }}
                     >
-                      Estado: Activo primero
+                      🟢 Activos Primero
                     </div>
                     <div 
                       className={`filtro-opcion ${filtroOrden === 'estado-inactivo' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('estado-inactivo'); setMostrarMenuFiltros(false); }}
+                      onClick={() => {
+                        setFiltroOrden('estado-inactivo');
+                        setMostrarMenuFiltros(false);
+                      }}
                     >
-                      Estado: Inactivo primero
+                      🔴 Inactivos Primero
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
-
+            
             <motion.button 
               className="btn-ayuda" 
-              onClick={() => setMostrarAyuda(true)}
-              whileHover={{ scale: 1.05 }}
+              onClick={() => setMostrarAyuda(true)} 
+              title="Ver ayuda"
+              whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
               whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
-              <HelpCircle size={16} />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <HelpCircle size={18} />
+              </motion.div>
               Ayuda
             </motion.button>
+            
             <motion.button 
               className="btn-ayuda" 
-              onClick={() => {
-                resetForm();
-                setMostrarModalCrear(true);
+              onClick={() => setMostrarModalCrear(true)} 
+              title="Crear nuevo miembro"
+              whileHover={{ 
+                scale: 1.08, 
+                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
               }}
-              style={{ background: '#4CAF50' }}
-              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
             >
-              <Plus size={16} />
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              >
+                <Plus size={18} />
+              </motion.div>
               Nuevo Miembro
             </motion.button>
-          </div>
+          </motion.div>
         </motion.div>
 
-        {/* TABLA con TODOS los miembros */}
-        <motion.div 
-          className="directiva-categoria-section"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
+        {/* CONTENIDO PRINCIPAL */}
+        {loading && miembros.length === 0 ? (
           <motion.div 
-            className="directiva-categoria-header"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            style={{ textAlign: 'center', padding: '3rem' }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              style={{ display: 'inline-block', marginBottom: '1rem' }}
+            >
+              <Users size={40} color="#667eea" />
+            </motion.div>
+            <p style={{ color: '#667eea', fontWeight: '600' }}>Cargando miembros...</p>
+          </motion.div>
+        ) : (
+          <motion.div 
+            className="directiva-categorias-container"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            <h3 className="directiva-subtitulo">
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15 }}
-              >
-                <Users size={20} />
-              </motion.div>
-              Miembros de la Directiva ({miembrosOrdenados.length})
-            </h3>
+            {renderTablaMiembros("Todos los Miembros", miembrosOrdenados, <Users size={20} style={{ color: '#667eea' }} />)}
           </motion.div>
-
-          {miembrosOrdenados.length === 0 ? (
-            <motion.p 
-              className="directiva-vacio"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              No hay miembros registrados en la directiva.
-            </motion.p>
-          ) : (
-            <motion.div 
-              className="tabla-directiva"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              <motion.div 
-                className="tabla-header"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 200px 200px 150px 120px 120px 120px',
-                  gap: '10px',
-                  padding: '12px 20px',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  background: '#667eea',
-                  color: 'white',
-                  borderRadius: '8px 8px 0 0'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Users size={14} />
-                  NOMBRE
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Briefcase size={14} />
-                  CARGO
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Mail size={14} />
-                  CONTACTO
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Building size={14} />
-                  EMPRESA
-                </div>
-                <div style={{ textAlign: 'center' }}>ESTADO</div>
-                <div style={{ textAlign: 'center' }}>DOCUMENTOS</div>
-                <div style={{ textAlign: 'center' }}>ACCIONES</div>
-              </motion.div>
-
-              <div className="tabla-body">
-                {miembrosOrdenados.map((miembro, index) => (
-                  <motion.div
-                    key={miembro._id}
-                    className="tabla-fila"
-                    initial={{ opacity: 0, x: -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ 
-                      delay: Math.min(index * 0.05, 1),
-                      duration: 0.4,
-                      type: "spring",
-                      stiffness: 100
-                    }}
-                    whileHover={{ 
-                      scale: 1.01,
-                      transition: { duration: 0.2 }
-                    }}
-                    onClick={() => handleOpenEditModal(miembro)}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 200px 200px 150px 120px 120px 120px',
-                      gap: '10px',
-                      alignItems: 'center',
-                      padding: '15px 20px',
-                      background: 'white',
-                      borderBottom: '1px solid #eee',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <div>
-                      <motion.div 
-                        style={{ 
-                          fontWeight: '600',
-                          fontSize: '1rem',
-                          color: '#333',
-                          marginBottom: '3px'
-                        }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 + 0.2 }}
-                      >
-                        {miembro.nombre}
-                      </motion.div>
-                      {miembro.fecha_registro && (
-                        <motion.div 
-                          style={{ 
-                            fontSize: '0.85rem',
-                            color: '#666',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.05 + 0.3 }}
-                        >
-                          <Calendar size={12} />
-                          Desde: {formatearFecha(miembro.fecha_registro)}
-                        </motion.div>
-                      )}
-                    </div>
-
-                    <motion.div 
-                      style={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '0.9rem',
-                        color: '#555'
-                      }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 + 0.25 }}
-                    >
-                      {getCargoIcon(miembro.cargo)}
-                      <span>{miembro.cargo}</span>
-                    </motion.div>
-
-                    <div>
-                      <motion.div 
-                        style={{ 
-                          fontSize: '0.85rem',
-                          color: '#555',
-                          marginBottom: '3px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                        whileHover={{ x: 5 }}
-                      >
-                        <Mail size={14} />
-                        {miembro.email}
-                      </motion.div>
-                      <motion.div 
-                        style={{ 
-                          fontSize: '0.85rem',
-                          color: '#555',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                        whileHover={{ x: 5 }}
-                      >
-                        <Phone size={14} />
-                        {miembro.telefono}
-                      </motion.div>
-                    </div>
-
-                    <motion.div 
-                      style={{ 
-                        fontSize: '0.9rem',
-                        color: '#555',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 + 0.3 }}
-                    >
-                      <Building size={14} />
-                      {miembro.empresa || '—'}
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ textAlign: 'center' }}
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <span className={`estado-badge ${miembro.estado?.toLowerCase()}`}>
-                        {miembro.estado}
-                      </span>
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ textAlign: 'center' }}
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <span className="documentos-badge">
-                        <FileText size={14} />
-                        {miembro.cantidad_documentos || 0}
-                      </span>
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        gap: '8px' 
-                      }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 + 0.3 }}
-                    >
-                      <motion.button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEditModal(miembro);
-                        }}
-                        style={{
-                          background: '#667eea',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.85rem'
-                        }}
-                        whileHover={{ scale: 1.1, backgroundColor: '#5568d3' }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Edit size={14} />
-                      </motion.button>
-                    </motion.div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
+        )}
       </div>
 
       {/* Modal Crear Miembro */}
@@ -832,7 +1100,7 @@ const Directiva = () => {
           >
             <motion.div 
               className="modal-content" 
-              style={{ maxWidth: '700px', maxHeight: '85vh', overflow: 'auto' }}
+              style={{ maxWidth: '600px', maxHeight: '90vh', overflow: 'auto' }} 
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
@@ -841,77 +1109,91 @@ const Directiva = () => {
             >
               <h3 className="modal-title">
                 <Plus size={20} />
-                Crear Nuevo Miembro
+                Agregar Nuevo Miembro
               </h3>
               <form onSubmit={handleCrearMiembro}>
                 <div className="form-grid">
-                  <div className="form-group">
+                  <div className="form-group full-width">
                     <label>Nombre Completo *</label>
                     <input
                       type="text"
                       value={formData.nombre}
                       onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                      placeholder="Juan Carlos Pérez"
+                      placeholder="Nombre completo del miembro"
                       required
                     />
                   </div>
-                  <div className="form-group">
+
+                  <div className="form-group full-width">
                     <label>Cargo *</label>
                     <input
                       type="text"
                       value={formData.cargo}
                       onChange={(e) => setFormData({...formData, cargo: e.target.value})}
-                      placeholder="Presidente"
+                      placeholder="Cargo en la directiva"
                       required
                     />
                   </div>
+
                   <div className="form-group">
                     <label>Email *</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      placeholder="miembro@empresa.com"
+                      placeholder="correo@ejemplo.com"
                       required
                     />
                   </div>
+
                   <div className="form-group">
                     <label>Teléfono *</label>
                     <input
                       type="tel"
                       value={formData.telefono}
                       onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                      placeholder="+504 9999-8888"
+                      placeholder="+504 1234-5678"
                       required
                     />
                   </div>
+
                   <div className="form-group">
                     <label>Empresa</label>
                     <input
                       type="text"
                       value={formData.empresa}
                       onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                      placeholder="Nombre de la empresa"
+                      placeholder="Empresa que representa"
                     />
                   </div>
+
                   <div className="form-group">
-                    <label>Estado *</label>
+                    <label>Estado</label>
                     <select
                       value={formData.estado}
                       onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                      required
                     >
                       <option value="activo">Activo</option>
                       <option value="inactivo">Inactivo</option>
                       <option value="suspendido">Suspendido</option>
                     </select>
                   </div>
+
+                  <div className="form-group">
+                    <label>Fecha de Registro</label>
+                    <input
+                      type="date"
+                      value={formData.fecha_registro}
+                      onChange={(e) => setFormData({...formData, fecha_registro: e.target.value})}
+                    />
+                  </div>
+
                   <div className="form-group full-width">
                     <label>Notas</label>
                     <textarea
                       value={formData.notas}
                       onChange={(e) => setFormData({...formData, notas: e.target.value})}
-                      placeholder="Notas adicionales sobre el miembro"
+                      placeholder="Notas adicionales..."
                       rows="3"
                     />
                   </div>
@@ -934,8 +1216,8 @@ const Directiva = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Save size={16} />
-                    Guardar Miembro
+                    <Check size={16} />
+                    Crear Miembro
                   </motion.button>
                 </div>
               </form>
@@ -946,7 +1228,7 @@ const Directiva = () => {
 
       {/* Modal Editar Miembro */}
       <AnimatePresence>
-        {miembroSeleccionado && !mostrarModalPDF && (
+        {miembroSeleccionado && !mostrarModalDocumentos && (
           <motion.div 
             className="modal-overlay" 
             onClick={handleCloseModals}
@@ -956,7 +1238,7 @@ const Directiva = () => {
           >
             <motion.div 
               className="modal-content" 
-              style={{ maxWidth: '900px', maxHeight: '85vh', overflow: 'auto' }}
+              style={{ maxWidth: '900px', maxHeight: '90vh', overflow: 'auto' }} 
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
@@ -965,142 +1247,351 @@ const Directiva = () => {
             >
               <h3 className="modal-title">
                 <Edit size={20} />
-                Editar Miembro
+                Editar Miembro: {miembroSeleccionado.nombre}
               </h3>
-              
+
               {/* Tabs */}
               <div className="modal-tabs">
-                <button className="tab-button active">
-                  <Edit size={16} />
-                  Información
+                <button 
+                  className={`tab-button ${tabActivo === 'info' ? 'active' : ''}`}
+                  onClick={() => setTabActivo('info')}
+                >
+                  <UserCheck size={16} />
+                  Información General
                 </button>
                 <button 
-                  className="tab-button"
-                  onClick={() => setMostrarModalPDF(true)}
+                  className={`tab-button ${tabActivo === 'documentos' ? 'active' : ''}`}
+                  onClick={() => setTabActivo('documentos')}
                 >
                   <FileText size={16} />
-                  Documentos ({miembroSeleccionado.cantidad_documentos || 0})
+                  Documentos
+                </button>
+                <button 
+                  className={`tab-button ${tabActivo === 'historial' ? 'active' : ''}`}
+                  onClick={() => setTabActivo('historial')}
+                >
+                  <Clock size={16} />
+                  Historial
                 </button>
               </div>
 
-              <form onSubmit={handleEditarMiembro}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Nombre Completo *</label>
-                    <input
-                      type="text"
-                      value={formData.nombre}
-                      onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Cargo *</label>
-                    <input
-                      type="text"
-                      value={formData.cargo}
-                      onChange={(e) => setFormData({...formData, cargo: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Email *</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Teléfono *</label>
-                    <input
-                      type="tel"
-                      value={formData.telefono}
-                      onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Empresa</label>
-                    <input
-                      type="text"
-                      value={formData.empresa}
-                      onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Estado *</label>
-                    <select
-                      value={formData.estado}
-                      onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                      required
-                    >
-                      <option value="activo">Activo</option>
-                      <option value="inactivo">Inactivo</option>
-                      <option value="suspendido">Suspendido</option>
-                    </select>
-                  </div>
-                  <div className="form-group full-width">
-                    <label>Notas</label>
-                    <textarea
-                      value={formData.notas}
-                      onChange={(e) => setFormData({...formData, notas: e.target.value})}
-                      rows="3"
-                    />
-                  </div>
-                </div>
+              {tabActivo === 'info' && (
+                <form onSubmit={handleEditarMiembro}>
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Nombre Completo *</label>
+                      <input
+                        type="text"
+                        value={formData.nombre}
+                        onChange={(e) => setFormData({...formData, nombre: e.target.value})}
+                        required
+                      />
+                    </div>
 
-                <div className="modal-actions">
-                  <motion.button 
-                    type="button" 
-                    className="btn-eliminar" 
-                    onClick={handleEliminarMiembro}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Trash2 size={16} />
-                    Eliminar
-                  </motion.button>
-                  <motion.button 
-                    type="button" 
-                    className="btn-cancelar" 
-                    onClick={handleCloseModals}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <X size={16} />
-                    Cancelar
-                  </motion.button>
-                  <motion.button 
-                    type="submit" 
-                    className="btn-guardar"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Save size={16} />
-                    Guardar Cambios
-                  </motion.button>
+                    <div className="form-group full-width">
+                      <label>Cargo *</label>
+                      <input
+                        type="text"
+                        value={formData.cargo}
+                        onChange={(e) => setFormData({...formData, cargo: e.target.value})}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Email *</label>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Teléfono *</label>
+                      <input
+                        type="tel"
+                        value={formData.telefono}
+                        onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Empresa</label>
+                      <input
+                        type="text"
+                        value={formData.empresa}
+                        onChange={(e) => setFormData({...formData, empresa: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Estado</label>
+                      <select
+                        value={formData.estado}
+                        onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                      >
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                        <option value="suspendido">Suspendido</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Fecha de Registro</label>
+                      <input
+                        type="date"
+                        value={formData.fecha_registro}
+                        onChange={(e) => setFormData({...formData, fecha_registro: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Notas</label>
+                      <textarea
+                        value={formData.notas}
+                        onChange={(e) => setFormData({...formData, notas: e.target.value})}
+                        rows="3"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="modal-actions">
+                    <motion.button 
+                      type="button" 
+                      className="btn-eliminar" 
+                      onClick={handleEliminarMiembro}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Trash2 size={16} />
+                      Eliminar
+                    </motion.button>
+                    <motion.button 
+                      type="button" 
+                      className="btn-cancelar" 
+                      onClick={handleCloseModals}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <X size={16} />
+                      Cancelar
+                    </motion.button>
+                    <motion.button 
+                      type="submit" 
+                      className="btn-guardar"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Save size={16} />
+                      Guardar Cambios
+                    </motion.button>
+                  </div>
+                </form>
+              )}
+
+              {tabActivo === 'documentos' && (
+                <div>
+                  <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Documentos del Miembro</h4>
+                  
+                  {miembroSeleccionado.documentos_pdf && miembroSeleccionado.documentos_pdf.length > 0 ? (
+                    <div style={{ marginBottom: '2rem' }}>
+                      {miembroSeleccionado.documentos_pdf.map((doc, index) => (
+                        <div key={index} style={{
+                          padding: '1rem',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          marginBottom: '0.5rem',
+                          background: '#f9fafb'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <span className={getTipoDocBadge(doc.tipo_documento)}>
+                                {doc.tipo_documento}
+                              </span>
+                              <strong style={{ marginLeft: '0.5rem' }}>{doc.nombre_archivo}</strong>
+                            </div>
+                            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                              {new Date(doc.fecha_subida).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {doc.descripcion && (
+                            <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#6b7280' }}>
+                              {doc.descripcion}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
+                      No hay documentos registrados
+                    </p>
+                  )}
+
+                  <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Agregar Nuevo Documento</h4>
+                  <form onSubmit={handleAgregarDocumento}>
+                    <div className="form-grid">
+                      <div className="form-group">
+                        <label>Nombre del Archivo *</label>
+                        <input
+                          type="text"
+                          value={documentoData.nombre_archivo}
+                          onChange={(e) => setDocumentoData({...documentoData, nombre_archivo: e.target.value})}
+                          placeholder="Nombre del documento"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Tipo de Documento *</label>
+                        <select
+                          value={documentoData.tipo_documento}
+                          onChange={(e) => setDocumentoData({...documentoData, tipo_documento: e.target.value})}
+                          required
+                        >
+                          <option value="acta">Acta</option>
+                          <option value="contrato">Contrato</option>
+                          <option value="informe">Informe</option>
+                          <option value="certificado">Certificado</option>
+                          <option value="nombramiento">Nombramiento</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Descripción</label>
+                        <textarea
+                          value={documentoData.descripcion}
+                          onChange={(e) => setDocumentoData({...documentoData, descripcion: e.target.value})}
+                          placeholder="Descripción del documento..."
+                          rows="2"
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Archivo PDF</label>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => setDocumentoData({...documentoData, archivo: e.target.files[0]})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="modal-actions">
+                      <motion.button 
+                        type="submit" 
+                        className="btn-guardar"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Plus size={16} />
+                        Agregar Documento
+                      </motion.button>
+                    </div>
+                  </form>
                 </div>
-              </form>
+              )}
+
+              {tabActivo === 'historial' && (
+                <div>
+                  <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Historial de Cargos</h4>
+                  
+                  {miembroSeleccionado.historial_cargos && miembroSeleccionado.historial_cargos.length > 0 ? (
+                    <div style={{ marginBottom: '2rem' }}>
+                      {miembroSeleccionado.historial_cargos.map((historial, index) => (
+                        <div key={index} style={{
+                          padding: '1rem',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          marginBottom: '0.5rem',
+                          background: '#f9fafb'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong>{historial.cargo}</strong>
+                            <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                              {new Date(historial.fecha_inicio).toLocaleDateString()} - 
+                              {historial.fecha_fin ? new Date(historial.fecha_fin).toLocaleDateString() : 'Actual'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
+                      No hay historial de cargos registrado
+                    </p>
+                  )}
+
+                  <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Agregar al Historial</h4>
+                  <form onSubmit={handleAgregarHistorial}>
+                    <div className="form-grid">
+                      <div className="form-group full-width">
+                        <label>Cargo *</label>
+                        <input
+                          type="text"
+                          value={historialData.cargo}
+                          onChange={(e) => setHistorialData({...historialData, cargo: e.target.value})}
+                          placeholder="Nombre del cargo"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Fecha de Inicio *</label>
+                        <input
+                          type="date"
+                          value={historialData.fecha_inicio}
+                          onChange={(e) => setHistorialData({...historialData, fecha_inicio: e.target.value})}
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Fecha de Fin</label>
+                        <input
+                          type="date"
+                          value={historialData.fecha_fin}
+                          onChange={(e) => setHistorialData({...historialData, fecha_fin: e.target.value})}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="modal-actions">
+                      <motion.button 
+                        type="submit" 
+                        className="btn-guardar"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Plus size={16} />
+                        Agregar al Historial
+                      </motion.button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Modal PDFs */}
+      {/* NUEVO MODAL PARA GESTIÓN DE DOCUMENTOS */}
       <AnimatePresence>
-        {mostrarModalPDF && miembroSeleccionado && (
+        {mostrarModalDocumentos && miembroSeleccionado && (
           <motion.div 
             className="modal-overlay" 
-            onClick={() => setMostrarModalPDF(false)}
+            onClick={handleCloseDocumentosModal}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div 
               className="modal-content" 
-              style={{ maxWidth: '800px', maxHeight: '85vh', overflow: 'auto' }}
+              style={{ maxWidth: '1000px', maxHeight: '90vh', overflow: 'auto' }} 
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 50 }}
               animate={{ scale: 1, y: 0 }}
@@ -1109,159 +1600,205 @@ const Directiva = () => {
             >
               <h3 className="modal-title">
                 <FileText size={20} />
-                Documentos de {miembroSeleccionado.nombre}
+                Gestión de Documentos - {miembroSeleccionado.nombre}
               </h3>
 
-              {/* Formulario subir PDF */}
-              <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '10px', marginBottom: '1.5rem' }}>
-                <h4 style={{ marginBottom: '1rem', color: '#667eea' }}>
-                  <Upload size={18} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                  Subir Nuevo Documento
-                </h4>
-                <form onSubmit={handleSubirPDF}>
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Tipo de Documento *</label>
-                      <select
-                        value={formPDF.tipo_documento}
-                        onChange={(e) => setFormPDF({...formPDF, tipo_documento: e.target.value})}
-                        required
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                {/* Lista de Documentos Existentes */}
+                <div>
+                  <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Documentos Existentes</h4>
+                  
+                  {miembroSeleccionado.documentos_pdf && miembroSeleccionado.documentos_pdf.length > 0 ? (
+                    <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                      {miembroSeleccionado.documentos_pdf.map((doc, index) => (
+                        <motion.div 
+                          key={doc._id || index}
+                          style={{
+                            padding: '1rem',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            marginBottom: '0.5rem',
+                            background: '#f9fafb',
+                            position: 'relative'
+                          }}
+                          whileHover={{ scale: 1.02 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                <span className={getTipoDocBadge(doc.tipo_documento)}>
+                                  {doc.tipo_documento}
+                                </span>
+                                <strong style={{ marginLeft: '0.5rem', fontSize: '1rem' }}>
+                                  {doc.nombre_archivo}
+                                </strong>
+                              </div>
+                              {doc.numero_sesion && (
+                                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.25rem' }}>
+                                  <strong>Sesión:</strong> {doc.numero_sesion}
+                                </div>
+                              )}
+                              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                                {new Date(doc.fecha_subida).toLocaleDateString('es-ES', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => handleOpenEditarDocumentoModal(doc)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#2196F3',
+                                  padding: '4px'
+                                }}
+                                title="Editar documento"
+                              >
+                                <Edit size={16} />
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => handleEliminarDocumentoModal(doc._id)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#ef4444',
+                                  padding: '4px'
+                                }}
+                                title="Eliminar documento"
+                              >
+                                <Trash2 size={16} />
+                              </motion.button>
+                            </div>
+                          </div>
+                          {doc.descripcion && (
+                            <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.4' }}>
+                              {doc.descripcion}
+                            </p>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
+                      No hay documentos registrados
+                    </p>
+                  )}
+                </div>
+
+                {/* Formulario para Agregar/Editar Documentos */}
+                <div>
+                  <h4 style={{ marginBottom: '1rem', color: '#374151' }}>
+                    {documentoEditando ? 'Editar Documento' : 'Agregar Nuevo Documento'}
+                  </h4>
+                  
+                  <form onSubmit={documentoEditando ? handleEditarDocumentoModal : handleAgregarDocumentoModal}>
+                    <div className="form-grid">
+                      <div className="form-group full-width">
+                        <label>Nombre del Archivo *</label>
+                        <input
+                          type="text"
+                          value={documentoModalData.nombre_archivo}
+                          onChange={(e) => setDocumentoModalData({...documentoModalData, nombre_archivo: e.target.value})}
+                          placeholder="Nombre del documento"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Tipo de Documento *</label>
+                        <select
+                          value={documentoModalData.tipo_documento}
+                          onChange={(e) => setDocumentoModalData({...documentoModalData, tipo_documento: e.target.value})}
+                          required
+                        >
+                          <option value="acta">Acta</option>
+                          <option value="contrato">Contrato</option>
+                          <option value="informe">Informe</option>
+                          <option value="certificado">Certificado</option>
+                          <option value="nombramiento">Nombramiento</option>
+                          <option value="otro">Otro</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Número de Sesión</label>
+                        <input
+                          type="text"
+                          value={documentoModalData.numero_sesion}
+                          onChange={(e) => setDocumentoModalData({...documentoModalData, numero_sesion: e.target.value})}
+                          placeholder="Ej: SES-2024-001"
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Descripción</label>
+                        <textarea
+                          value={documentoModalData.descripcion}
+                          onChange={(e) => setDocumentoModalData({...documentoModalData, descripcion: e.target.value})}
+                          placeholder="Descripción del documento..."
+                          rows="3"
+                        />
+                      </div>
+
+                      <div className="form-group full-width">
+                        <label>Archivo PDF</label>
+                        <input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => setDocumentoModalData({...documentoModalData, archivo: e.target.files[0]})}
+                        />
+                        <small style={{ color: '#6b7280', fontSize: '0.8rem' }}>
+                          Formatos aceptados: PDF (Máx. 10MB)
+                        </small>
+                      </div>
+                    </div>
+
+                    <div className="modal-actions">
+                      {documentoEditando && (
+                        <motion.button 
+                          type="button" 
+                          className="btn-cancelar" 
+                          onClick={resetDocumentoModalForm}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <X size={16} />
+                          Cancelar Edición
+                        </motion.button>
+                      )}
+                      <motion.button 
+                        type="submit" 
+                        className="btn-guardar"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                       >
-                        <option value="acta">Acta</option>
-                        <option value="contrato">Contrato</option>
-                        <option value="informe">Informe</option>
-                        <option value="certificado">Certificado</option>
-                        <option value="nombramiento">Nombramiento</option>
-                        <option value="otro">Otro</option>
-                      </select>
+                        {documentoEditando ? <Save size={16} /> : <Plus size={16} />}
+                        {documentoEditando ? 'Actualizar Documento' : 'Agregar Documento'}
+                      </motion.button>
                     </div>
-                    <div className="form-group">
-                      <label>Archivo PDF *</label>
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                        onChange={(e) => setArchivoSubir(e.target.files[0])}
-                        required
-                      />
-                    </div>
-                    <div className="form-group full-width">
-                      <label>Descripción</label>
-                      <input
-                        type="text"
-                        value={formPDF.descripcion}
-                        onChange={(e) => setFormPDF({...formPDF, descripcion: e.target.value})}
-                        placeholder="Descripción breve del documento"
-                      />
-                    </div>
-                  </div>
-                  <motion.button 
-                    type="submit" 
-                    className="btn-guardar"
-                    style={{ width: '100%', marginTop: '1rem' }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Upload size={16} />
-                    Subir Documento
-                  </motion.button>
-                </form>
+                  </form>
+                </div>
               </div>
 
-              {/* Lista de PDFs */}
-              <div>
-                <h4 style={{ marginBottom: '1rem', color: '#2c3e50' }}>
-                  Documentos Almacenados ({miembroSeleccionado.documentos_pdf?.length || 0})
-                </h4>
-                
-                {(!miembroSeleccionado.documentos_pdf || miembroSeleccionado.documentos_pdf.length === 0) ? (
-                  <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                    No hay documentos almacenados
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    {miembroSeleccionado.documentos_pdf.map((pdf) => (
-                      <motion.div
-                        key={pdf._id}
-                        style={{
-                          background: 'white',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          padding: '1rem',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}
-                        whileHover={{ boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                      >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: '600', color: '#2c3e50', marginBottom: '4px' }}>
-                            {pdf.nombre_archivo}
-                          </div>
-                          <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                            <span className={`tipo-doc-badge ${pdf.tipo_documento}`}>
-                              {pdf.tipo_documento.toUpperCase()}
-                            </span>
-                            {pdf.descripcion && ` • ${pdf.descripcion}`}
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>
-                            {formatearFecha(pdf.fecha_subida)} • {(pdf.tamano_kb).toFixed(2)} KB
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <motion.button
-                            onClick={() => handleDescargarPDF(pdf._id, pdf.nombre_archivo)}
-                            style={{
-                              background: '#10b981',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              padding: '8px 12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Download size={16} />
-                          </motion.button>
-                          <motion.button
-                            onClick={() => handleEliminarPDF(pdf._id)}
-                            style={{
-                              background: '#ef4444',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              padding: '8px 12px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Trash2 size={16} />
-                          </motion.button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+              <div className="modal-actions" style={{ marginTop: '2rem', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
                 <motion.button 
-                  type="button" 
                   className="btn-cerrar" 
-                  onClick={() => setMostrarModalPDF(false)}
-                  style={{ width: '100%' }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  onClick={handleCloseDocumentosModal}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <X size={16} />
-                  Cerrar
+                  <Check size={16} />
+                  Cerrar Gestión de Documentos
                 </motion.button>
               </div>
             </motion.div>
@@ -1331,7 +1868,7 @@ const Directiva = () => {
             >
               <h3 className="modal-title">
                 <FileText size={20} />
-                Guía de Uso - Sistema de Directiva
+                Guía de Uso - Gestión de Directiva
               </h3>
               
               <div style={{ marginBottom: '1rem' }}>
@@ -1339,7 +1876,7 @@ const Directiva = () => {
                   <Search size={16} />
                   Búsqueda
                 </h4>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por: nombre, cargo, email, empresa o teléfono.</p>
+                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por: nombre, cargo, email, teléfono o empresa.</p>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
@@ -1348,38 +1885,34 @@ const Directiva = () => {
                   Estados
                 </h4>
                 <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li><strong>🟢 ACTIVO:</strong> Miembro activo en la directiva</li>
-                  <li><strong>🔴 INACTIVO:</strong> Miembro retirado</li>
-                  <li><strong>🟠 SUSPENDIDO:</strong> Miembro temporalmente suspendido</li>
+                  <li><strong>🟢 Activo:</strong> Miembro activo en la directiva</li>
+                  <li><strong>🔴 Inactivo:</strong> Miembro inactivo temporalmente</li>
+                  <li><strong>🟡 Suspendido:</strong> Miembro suspendido de funciones</li>
                 </ul>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
                 <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <FileText size={16} />
-                  Tipos de Documentos
+                  Documentos
                 </h4>
                 <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li><strong>ACTA:</strong> Actas de sesiones</li>
-                  <li><strong>CONTRATO:</strong> Contratos de servicios</li>
-                  <li><strong>INFORME:</strong> Informes y reportes</li>
-                  <li><strong>CERTIFICADO:</strong> Certificaciones</li>
-                  <li><strong>NOMBRAMIENTO:</strong> Documentos de nombramiento</li>
-                  <li><strong>OTRO:</strong> Otros documentos</li>
+                  <li><strong>Actas:</strong> Documentos oficiales de reuniones</li>
+                  <li><strong>Contratos:</strong> Acuerdos y contratos firmados</li>
+                  <li><strong>Informes:</strong> Reportes y evaluaciones</li>
+                  <li><strong>Certificados:</strong> Certificaciones y acreditaciones</li>
+                  <li><strong>Nombramientos:</strong> Documentos de designación</li>
                 </ul>
               </div>
 
               <div style={{ marginBottom: '1rem' }}>
                 <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ✨ Funciones
+                  <Clock size={16} />
+                  Historial
                 </h4>
-                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li>Clic en fila para ver/editar detalles</li>
-                  <li>Gestión completa de documentos PDF</li>
-                  <li>Búsqueda en tiempo real</li>
-                  <li>Ordenar por nombre, cargo o estado</li>
-                  <li>Historial de cargos automático</li>
-                </ul>
+                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  Registra el historial de cargos que ha ocupado cada miembro en la directiva.
+                </p>
               </div>
 
               <div style={{ 
