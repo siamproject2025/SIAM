@@ -19,11 +19,9 @@ const ChatFlotanteConsultas = () => {
     if (userRole === "ADMIN" || userRole === "DOCENTE") {
         canAnswerInternally = true;
         canAskInternally = false;
-        title = "Consultas (Gestión y Respuesta)";
     } else if (userRole === "PADRE") {
         canAnswerInternally = false;
         canAskInternally = true;
-        title = "Consultas (Solo Preguntas)";
     }
 
     return (

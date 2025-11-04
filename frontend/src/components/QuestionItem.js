@@ -34,7 +34,8 @@ const calculateDate = (duration, unit) => {
 };
 
 
-const QuestionItem = ({ question, canAnswer, fetchQuestions }) => {
+// 💡 RECIBIMOS setGlobalNotification como prop
+const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotification }) => {
     const [answerContent, setAnswerContent] = useState('');
     const [showAnswerForm, setShowAnswerForm] = useState(false);
     const [error, setError] = useState(null);
@@ -50,9 +51,9 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions }) => {
     }, [deleteDuration, deleteUnit]);
     
     const handleAnswerSubmit = async (e) => {
-        // 🛑 SOLUCIÓN AL PROBLEMA DE RECARGA: Prevenir el comportamiento por defecto
         e.preventDefault(); 
         setError(null);
+        // Opcional: setGlobalNotification(null); para limpiar si había una antes
 
         if (!answerContent.trim()) {
             setError("La respuesta no puede estar vacía.");
@@ -70,7 +71,6 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions }) => {
             
             await axios.post(postUrlCompleto, { 
                 answerContent, 
-                // Asumo que tu backend espera 'userId'
                 // userId: /* Tu ID de usuario aquí */, 
                 deleteDuration: dur,
                 deleteUnit: deleteUnit
@@ -81,10 +81,26 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions }) => {
             setDeleteUnit('minutes');
             setShowAnswerForm(false);
             fetchQuestions(); 
-            alert("Respuesta publicada con éxito.");
+            
+            // 💡 REEMPLAZO DE alert() por Notificación de éxito
+            if (setGlobalNotification) {
+                setGlobalNotification({
+                    message: "Respuesta publicada con éxito.",
+                    type: 'success'
+                });
+            }
+            
         } catch (err) {
             const errorMessage = err.response?.data?.message || 'Error desconocido al enviar la respuesta.';
             console.error("Error al enviar la respuesta:", err);
+            
+            // 💡 Notificación de error
+            if (setGlobalNotification) {
+                 setGlobalNotification({
+                    message: `Error al responder: ${errorMessage}.`,
+                    type: 'error'
+                });
+            }
             setError(`Error: ${errorMessage}.`);
         }
     };

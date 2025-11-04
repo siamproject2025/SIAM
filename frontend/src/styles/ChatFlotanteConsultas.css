@@ -1,59 +1,79 @@
-/* src/styles/ChatFlotanteConsultas.css */
+/* --- src/styles/ChatFlotanteConsultas.css --- */
 
+/* ---------------------------------------------------- */
+/* --- VARIABLES DE COLOR (Basado en tu dashboard) --- */
+/* ---------------------------------------------------- */
+:root {
+    /* Colores primarios del dashboard (morado/azul) */
+    --primary-color: #5d50c6; 
+    --secondary-color: #8c78e1; 
+    --accent-color: #ff0000; /* Azul de botones */
+    --success-color: #28a745; /* Verde para éxito/envío */
+    --error-color: #dc3545; /* Rojo para errores/eliminar */
+    --background-gradient: linear-gradient(135deg, #5d50c6, #8c78e1); /* Gradiente del encabezado */
+    --shadow-light: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-deep: 0 8px 25px rgba(0, 0, 0, 0.3);
+    --bg-light: #f8f9fa; /* Fondo gris claro del panel */
+}
+
+/* ---------------------------------------------------- */
 /* --- BOTÓN FLOTANTE --- */
+/* ---------------------------------------------------- */
 .floating-btn {
-    position: fixed; /* Fijo en la pantalla */
-    bottom: 30px; /* Separación del fondo */
-    right: 30px; /* Separación de la derecha */
-    width: 60px;
-    height: 60px;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 65px; 
+    height: 65px;
     border-radius: 50%;
-    background-color: #007bff; /* Color primario azul */
+    background: var(--accent-color); 
     color: white;
     border: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-deep); 
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.3s ease-in-out, background-color 0.3s;
-    z-index: 1000; /* Asegura que esté por encima de todo */
+    transition: all 0.3s ease-in-out;
+    z-index: 1000;
+    font-size: 1.5em; /* Asegura que el icono sea visible */
 }
 
 .floating-btn:hover {
-    background-color: #0056b3;
-    transform: scale(1.05);
+    background-color: #b30009;
+    transform: scale(1.1); 
 }
 
 .floating-btn.is-open {
-    /* Si está abierto, muestra el icono de cerrar con un color diferente */
-    background-color: #dc3545; /* Rojo */
-    transform: rotate(90deg);
+    background-color: var(--error-color); 
+    transform: rotate(45deg); 
 }
 .floating-btn.is-open:hover {
     background-color: #c82333;
 }
 
-/* --- PANEL DE CHAT DESPLEGABLE --- */
+/* ---------------------------------------------------- */
+/* --- PANEL DE CHAT DESPLEGABLE (Contenedor) --- */
+/* ---------------------------------------------------- */
 .chat-panel {
     position: fixed;
-    bottom: 100px; /* Encima del botón */
-    right: 30px; /* Alineado a la derecha */
-    width: 380px; /* Ancho cómodo para chat */
-    max-height: 80vh; /* Altura máxima */
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    bottom: 90px; 
+    right: 30px; 
+    width: 400px; 
+    max-height: 75vh; 
+    background-color: var(--bg-light); 
+    border-radius: 18px; 
+    box-shadow: var(--shadow-deep);
     z-index: 999;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Oculta barras de desplazamiento innecesarias */
+    overflow: hidden; 
     
-    /* Animación de entrada/salida */
+    /* Animación de apertura */
     opacity: 0;
     visibility: hidden;
-    transform: scale(0.95) translateY(20px);
-    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+    transform: scale(0.85) translateY(40px);
+    transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .chat-panel.is-visible {
@@ -66,15 +86,16 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
-    background-color: #007bff; /* Cabecera azul */
+    padding: 20px; 
+    background: var(--background-gradient); 
     color: white;
-    border-radius: 12px 12px 0 0;
+    border-radius: 18px 18px 0 0;
 }
 
 .chat-header h3 {
     margin: 0;
-    font-size: 1.1em;
+    font-size: 1.2em; 
+    font-weight: 600;
 }
 
 .close-panel-btn {
@@ -82,25 +103,271 @@
     border: none;
     color: white;
     cursor: pointer;
-    padding: 5px;
+    padding: 8px;
     border-radius: 50%;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
+    font-size: 1.2em;
 }
 .close-panel-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
 }
 
 .chat-content {
-    /* Aquí se despliega el contenido de QuestionList */
-    padding: 10px;
-    overflow-y: auto; /* Hace que el contenido interno sea scrollable */
+    padding: 15px; 
+    overflow-y: auto; 
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-/* Asegura que el contenido del QuestionList se ajuste al panel */
-.chat-content .question-list-container {
-    padding: 0; /* Remueve el padding excesivo del contenedor */
-    max-width: none;
-    box-shadow: none;
-    background-color: transparent;
+/* ---------------------------------------------------- */
+/* --- CONTENEDORES DE LA LISTA (QuestionList.js) --- */
+/* ---------------------------------------------------- */
+
+.question-list-container {
+    width: 100%; 
+    padding: 0; 
+}
+
+/* Ocultamos el H2 si está duplicado en el header flotante */
+.question-list-container h2 {
+    display: none; 
+}
+
+.question-list-container h3 {
+    color: var(--primary-color);
+    margin-top: 5px;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+}
+
+/* ---------------------------------------------------- */
+/* --- ESTILOS DE LA TARJETA INDIVIDUAL (QuestionItem.js) --- */
+/* ---------------------------------------------------- */
+
+.question-item-card {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: var(--shadow-light); 
+    border-left: 5px solid var(--primary-color); 
+    transition: box-shadow 0.2s;
+}
+
+.question-item-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); 
+}
+
+.question-item-card h4 {
+    color: var(--primary-color);
+    margin-top: 0;
+    font-size: 1.1em;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 5px;
+}
+
+.question-content, .answer-content {
+    margin: 8px 0;
+    font-size: 0.95em;
+    color: #333;
+}
+
+.answered-by-info, .asked-by {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.75em;
+    margin-top: 5px;
+}
+
+.status-Respondida {
+    background-color: var(--success-color); 
+    color: white;
+}
+
+.status-Pendiente {
+    background-color: #ffc107; 
+    color: #333;
+}
+
+.answer-container {
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #f2f6ff; /* Fondo ligeramente azulado */
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-color);
+}
+
+/* --- MENSAJES DE ERROR/INFO --- */
+.answer-alert-error, .alert-error {
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background-color: #f8d7da; /* Rojo claro */
+    color: var(--error-color); 
+    border: 1px solid #f5c6cb;
+    font-size: 0.9em;
+}
+
+.closed-info {
+    font-size: 0.9em;
+    color: var(--success-color);
+    text-align: center;
+    margin-top: 15px;
+}
+
+/* ---------------------------------------------------- */
+/* --- FORMULARIO DE NUEVA PREGUNTA (QuestionList) --- */
+/* ---------------------------------------------------- */
+
+.new-question-form-card {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: var(--shadow-light); 
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+}
+
+.new-question-form-card h3 {
+    color: var(--accent-color); 
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.new-question-form-card input[type="text"],
+.new-question-form-card textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 0.9em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.new-question-form-card input:focus,
+.new-question-form-card textarea:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1); 
+    outline: none;
+}
+
+.new-question-form-card button[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    background: var(--background-gradient); 
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.new-question-form-card button[type="submit"]:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------- */
+/* --- FORMULARIO DE RESPUESTA (QuestionItem) --- */
+/* ---------------------------------------------------- */
+
+.answer-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.toggle-answer-btn {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+    margin-bottom: 10px;
+}
+
+.toggle-answer-btn:hover {
+    background-color: #0056b3;
+}
+
+.answer-form {
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+}
+
+.answer-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    resize: vertical;
+    font-size: 0.9em;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+.submit-answer-btn {
+    padding: 10px;
+    background-color: var(--success-color); 
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.submit-answer-btn:hover {
+    background-color: #1e7e34;
+}
+
+/* --- ESTILOS DE LOS CONTROLES DE TIEMPO --- */
+
+.delete-time-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.delete-time-controls label {
+    font-size: 0.85em;
+    color: #555;
+    white-space: nowrap;
+    font-weight: 500 !important;
+}
+
+.delete-time-controls input[type="number"],
+.delete-time-controls select {
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.85em;
+    height: 30px; 
 }
