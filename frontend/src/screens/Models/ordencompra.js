@@ -500,10 +500,10 @@ const OrdenCompra = () => {
     <Award size={20} color="white" />
   </div>
   <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
       {ordenesBorrador}
     </div>
-    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
       Órdenes Borrador
     </div>
   </div>
@@ -537,10 +537,10 @@ const OrdenCompra = () => {
     <Award size={20} color="white" />
   </div>
   <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
       {ordenesEnviadas}
     </div>
-    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+    <div className="stat-label" style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
       Órdenes Enviadas
     </div>
   </div>
@@ -573,11 +573,11 @@ const OrdenCompra = () => {
   }}>
     <Award size={20} color="white" />
   </div>
-  <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+  <div className="stat-text" style={{ color:"white",color: "white" }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
       {ordenesRecibidas}
     </div>
-    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
       Órdenes Recibidas
     </div>
   </div>
@@ -611,10 +611,10 @@ const OrdenCompra = () => {
     <Award size={20} color="white" />
   </div>
   <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
       {ordenesCerradas}
     </div>
-    <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
       Órdenes Cerradas
     </div>
   </div>
@@ -653,13 +653,13 @@ const OrdenCompra = () => {
   <div className="stat-text" style={{ color: "white" }}>
     <div
       className="stat-value"
-      style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
+      style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
     >
       {totalOrdenes}
     </div>
     <div
       className="stat-label"
-      style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
+      style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
     >
       Total Órdenes
     </div>
@@ -692,10 +692,10 @@ const OrdenCompra = () => {
                   <DollarSign size={20} color="white" />
                 </div>
                 <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                  <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
                     {formatCurrency(valorTotal)}
                   </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                  <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                     Valor Total
                   </div>
                 </div>

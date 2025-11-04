@@ -80,29 +80,25 @@ const ModalDetalleHorario = ({
   };
 
   const handleAlumnoAgregar = () => {
-    if (!alumnoSeleccionado) return; // Validar que no esté vacío
+  if (!alumnoSeleccionado) return;
 
-    setHorarioEdicion((previo) => {
-      // Verificar si el alumno ya existe en la lista
-      const yaExiste = previo.alumnos.some(
-        (alumno) => alumno._id === alumnoSeleccionado._id
-      );
+  setHorarioEdicion((previo) => {
+    // Validar si ya existe el alumno por su ID
+    const yaExiste = previo.alumnos.includes(alumnoSeleccionado);
 
-      if (yaExiste) {
-        const texto = "El alumno ya está en la lista";
-        console.log(texto);
-        enviarNotificacion(texto, "error");
-        return previo; // No hacer cambios
-      }
+    if (yaExiste) {
+      enviarNotificacion("El alumno ya está en la lista", "error");
+      return previo;
+    }
 
-      return {
-        ...previo,
-        alumnos: [...previo.alumnos, alumnoSeleccionado],
-      };
-    });
+    return {
+      ...previo,
+      alumnos: [...previo.alumnos, alumnoSeleccionado],
+    };
+  });
 
-    setAlumnoSeleccionado("");
-  };
+  setAlumnoSeleccionado("");
+};
 
   const handleAlumnoEliminar = (id_alumno) => {
     setHorarioEdicion((previo) => ({
@@ -248,7 +244,7 @@ const ModalDetalleHorario = ({
                     </option>
                     {params.docentes.map((docente, i) => (
                       <option key={i} value={docente._id}>
-                        {docente.identidad} | {docente.nombre}
+                        {docente.numero_identidad} | {docente.nombres +" "+ docente.apellidos}
                       </option>
                     ))}
                   </select>

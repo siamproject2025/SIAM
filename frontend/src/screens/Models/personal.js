@@ -973,7 +973,8 @@ const handleOpenEditModal = (empleado) => {
                           fontWeight: '600',
                           fontSize: '1rem',
                           color: '#333',
-                          marginBottom: '3px'
+                          marginBottom: '3px',
+                          textAlign: 'left'
                         }}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -981,19 +982,7 @@ const handleOpenEditModal = (empleado) => {
                       >
                         {empleado.nombres} {empleado.apellidos}
                       </motion.div>
-                      {empleado.numero_identidad && (
-                        <motion.div 
-                          style={{ 
-                            fontSize: '0.85rem',
-                            color: '#666'
-                          }}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: index * 0.05 + 0.3 }}
-                        >
-                         
-                        </motion.div>
-                      )}
+                      
                     </div>
 
                     <div>

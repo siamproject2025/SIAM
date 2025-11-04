@@ -176,8 +176,8 @@ const AsignarRol = () => {
                   <FiUsers />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalUsuarios}</div>
-                  <div className="stat-label">Total Usuarios</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalUsuarios}</div>
+                  <div className="stat-label" style={{color:"white"}}>Total Usuarios</div>
                 </div>
               </motion.div>
 
@@ -190,8 +190,8 @@ const AsignarRol = () => {
                   <MdAdminPanelSettings />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalAdmins}</div>
-                  <div className="stat-label">Administradores</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalAdmins}</div>
+                  <div className="stat-label" style={{color:"white"}}>Administradores</div>
                 </div>
               </motion.div>
 
@@ -204,8 +204,8 @@ const AsignarRol = () => {
                   <FiAward />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalDocentes + totalPadres}</div>
-                  <div className="stat-label">Usuarios Activos</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalDocentes + totalPadres}</div>
+                  <div className="stat-label" style={{color:"white"}}>Usuarios Activos</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -274,7 +274,7 @@ const AsignarRol = () => {
           <div className="filtro-item">
             <HiMiniMagnifyingGlassCircle className="search-icon" />
             <input
-              className="inputFiltro"
+              className="inputFiltro-rol"
               placeholder="Buscar por nombre o correo..."
               value={filtroTexto}
               onChange={(e) => setFiltroTexto(e.target.value)}
@@ -282,7 +282,7 @@ const AsignarRol = () => {
           </div>
 
           <select
-            className="selectFiltro"
+            className="selectFiltro-rol"
             value={filtroRol}
             onChange={(e) => setFiltroRol(e.target.value)}
           >

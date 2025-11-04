@@ -62,6 +62,11 @@ function App() {
       formData.append(key, studentData[key]);
     }
 
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formData.append('imagen', formData.imagen);
+    }
+
     const response = await fetch(API_URL, {
       method: 'POST',
       body: formData, // enviamos FormData
@@ -89,6 +94,10 @@ const updateStudent = async (studentData) => {
     const formData = new FormData();
     for (const key in studentData) {
       formData.append(key, studentData[key]);
+    }
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formData.append('imagen', formData.imagen);
     }
 
     const response = await fetch(`${API_URL}/${editingStudent._id}`, {
@@ -236,8 +245,8 @@ const updateStudent = async (studentData) => {
               >
                 <div className="stat-icon"><Users size={20} color="white" /></div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalEstudiantes}</div>
-                  <div className="stat-label">Total Estudiantes</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalEstudiantes}</div>
+                  <div className="stat-label" style={{color:"white"}}>Total Estudiantes</div>
                 </div>
               </motion.div>
               <motion.div 
@@ -247,8 +256,8 @@ const updateStudent = async (studentData) => {
               >
                 <div className="stat-icon"><UserCheck size={20} color="white" /></div>
                 <div className="stat-text">
-                  <div className="stat-value">{estudiantesActivos}</div>
-                  <div className="stat-label">Estudiantes Activos</div>
+                  <div className="stat-value" style={{color:"white"}}>{estudiantesActivos}</div>
+                  <div className="stat-label" style={{color:"white"}}>Estudiantes Activos</div>
                 </div>
               </motion.div>
               <motion.div 
@@ -258,8 +267,8 @@ const updateStudent = async (studentData) => {
               >
                 <div className="stat-icon"><UserPlus size={20} color="white" /></div>
                 <div className="stat-text">
-                  <div className="stat-value">{estudiantesNuevos}</div>
-                  <div className="stat-label">Nuevos Registros</div>
+                  <div className="stat-value" style={{color:"white"}}>{estudiantesNuevos}</div>
+                  <div className="stat-label" style={{color:"white"}}>Nuevos Registros</div>
                 </div>
               </motion.div>
             </motion.div>

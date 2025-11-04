@@ -9,7 +9,7 @@ import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
 const API_HOST = "http://localhost:5000";
 const API_HORARIO = `${API_HOST}/api/horario`;
 const API_ALUMNO = `${API_HOST}/api/matriculas`;
-const API_DOCENTE = `${API_HOST}/api/docente`;
+const API_DOCENTE = `${API_HOST}/api/personal`;
 const API_AULA = `${API_HOST}/api/aula`;
 
 const inicializarHorario = () => {
@@ -193,7 +193,7 @@ const Horarios = () => {
 
       setHorarios(resHorario.data);
       setAulas(resAulas.data);
-      setAlumnos(resAlumnos.data);
+      setAlumnos(resAlumnos.data.data);
       setDocentes(resDocentes.data);
     } catch (error) {
       console.error("Error al cargar los datos", error);
