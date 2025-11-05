@@ -86,6 +86,9 @@ app.listen(PORT, () => {
 
 // Static Files
 // Solo necesitas esta línea para servir archivos estáticos desde el directorio "public"
-app.use(express.static(path.join(__dirname, "public")));
-
+app.use(express.static(path.join(__dirname, "../frontend/build")));
 // Starting server
+// Capturar cualquier ruta que no sea API y devolver el index.html de React
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
+});
