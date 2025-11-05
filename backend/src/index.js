@@ -30,18 +30,12 @@ const allowedOrigins = [
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    // permitir requests sin origin (por ejemplo Postman)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: true, // permite todos los origins
   methods: ["GET","POST","PUT","DELETE"],
   allowedHeaders: ["Content-Type","Authorization"],
-  credentials: true // si usas cookies o auth
+  credentials: true
 }));
+
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("🚀 Conectado a MongoDB"))
