@@ -60,7 +60,7 @@ app.use(express.static(path.join(__dirname, "../frontend/build")));
 
 // Capturar cualquier ruta que no sea API
 app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
+  res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
 });
 
 // Iniciar servidor
