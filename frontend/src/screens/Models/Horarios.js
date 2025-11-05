@@ -56,34 +56,42 @@ const Horarios = () => {
   };
 
   const clickDetalleHorarioHandler = async (id) => {
-    try {
-      const res = await axios.get(`${API_HORARIO}/${id}`);
-      setHorarioSeleccionado(res.data);
-      setEsModalCreacion(false);
-      setEsModalDetalle(true);
-      setMostrarModalDetalle(true);
-    } catch (error) {
-  const { type, message } = error.response?.data || {};
+  try {
+    // 🔐 Obtener token JWT del usuario autenticado
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
 
-  switch (type) {
-    case "VALIDACION":
-      showNotification("⚠️ " + message, "warning");
-      break;
-    case "CONFLICTO":
-      showNotification("❌ " + message, "error");
-      break;
-    case "NOT_FOUND":
-      showNotification("ℹ️ " + message, "info");
-      break;
-    case "SERVER":
-      showNotification("💥 Error del servidor: " + message, "error");
-      break;
-    default:
-      showNotification("Error desconocido al procesar la solicitud.", "error");
+    const res = await axios.get(`${API_HORARIO}/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setHorarioSeleccionado(res.data);
+    setEsModalCreacion(false);
+    setEsModalDetalle(true);
+    setMostrarModalDetalle(true);
+  } catch (error) {
+    const { type, message } = error.response?.data || {};
+
+    switch (type) {
+      case "VALIDACION":
+        showNotification("⚠️ " + message, "warning");
+        break;
+      case "CONFLICTO":
+        showNotification("❌ " + message, "error");
+        break;
+      case "NOT_FOUND":
+        showNotification("ℹ️ " + message, "info");
+        break;
+      case "SERVER":
+        showNotification("💥 Error del servidor: " + message, "error");
+        break;
+      default:
+        showNotification("Error desconocido al procesar la solicitud.", "error");
+    }
   }
-}
-
-  };
+};
 
   const clickDetalleAlumnosHandler = async (id) => {
   try {
