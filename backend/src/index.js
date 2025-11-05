@@ -24,12 +24,24 @@ const matriculas = require("./Routes/matriculas");
 
 const app = express();
 app.use(express.json());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
-  methods: ["GET","POST","PUT","DELETE"],
-  allowedHeaders: ["Content-Type","Authorization"]
-}));
+const allowedOrigins = [
+  "http://localhost:3000", // desarrollo
+  "https://frontend-production-a861.up.railway.app" // producción
+];
 
+app.use(cors({
+  origin: function(origin, callback) {
+    // permitir requests sin origin (por ejemplo Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET","POST","PUT","DELETE"],
+  allowedHeaders: ["Content-Type","Authorization"],
+  credentials: true // si usas cookies o auth
+}));
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("🚀 Conectado a MongoDB"))
