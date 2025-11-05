@@ -289,6 +289,7 @@ const handleEliminarDonacion = async () => {
     const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
       method: 'DELETE',
       headers: {
+        
         Authorization: `Bearer ${token}` // ✅ Token agregado
       }
     });
