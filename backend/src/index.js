@@ -38,10 +38,10 @@ mongoose.connect(process.env.MONGO_URI)
 // Rutas API
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
-app.use("/api/usuarios", usuarios_route);
-app.use("/api/dashboard", dashboard_route);
-app.use("/api/horarios", horarios);
-app.use("/api/aulas", aulas);
+app.use("/api/", usuarios_route);
+app.use("/api/", dashboard_route);
+app.use("/api/horario", horarios);
+app.use("/api/aula", aulas);
 app.use("/api/alumnos", alumnos);
 app.use("/api/docentes", docentes);
 app.use("/api/directiva", directivaRoutes);
@@ -56,11 +56,11 @@ app.use("/api/matriculas", matriculas);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Servir React build
-app.use(express.static(path.join(__dirname, "../frontend/build")));
+app.use(express.static(path.join(__dirname, "../../frontend/build")));
 
 // Capturar cualquier ruta que no sea API
 app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
+  res.sendFile(path.join(__dirname, "../../frontend/build/index.html"));
 });
 
 // Iniciar servidor

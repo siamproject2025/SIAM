@@ -28,7 +28,7 @@ const AsignarRol = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}api/usuarios`, {
+        const res = await axios.get(`${API_URL}/api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsuarios(res.data.users);
@@ -47,7 +47,7 @@ const AsignarRol = () => {
       const user = auth.currentUser;
       const token = await user.getIdToken();
       await axios.put(
-        `${API_URL}api/usuarios/${id}/rol`,
+        `${API_URL}/api/usuarios/${id}/rol`,
         { roles: [nuevoRol] },
         {
           headers: {
@@ -73,7 +73,7 @@ const AsignarRol = () => {
     try {
       const user = auth.currentUser;
       const token = await user.getIdToken();
-      await axios.delete(`${API_URL}api/usuarios/${id}`, {
+      await axios.delete(`${API_URL}/api/usuarios/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
