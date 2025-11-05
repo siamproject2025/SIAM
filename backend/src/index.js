@@ -29,12 +29,8 @@ const allowedOrigins = [
   "https://frontend-production-a861.up.railway.app" // producción
 ];
 
-app.use(cors({
-  origin: true, // permite todos los origins
-  methods: ["GET","POST","PUT","DELETE"],
-  allowedHeaders: ["Content-Type","Authorization"],
-  credentials: true
-}));
+app.use(cors({ origin: true }));
+
 
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
