@@ -78,11 +78,6 @@ app.get("/", (req, res) => {
 });
 console.log("✅ Conectado.");
 
-// 📌 Iniciar servidor
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-});
 
 // Static Files
 // Solo necesitas esta línea para servir archivos estáticos desde el directorio "public"
@@ -91,4 +86,10 @@ app.use(express.static(path.join(__dirname, "../frontend/build")));
 // Capturar cualquier ruta que no sea API y devolver el index.html de React
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
+});
+
+// 📌 Iniciar servidor
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
 });
