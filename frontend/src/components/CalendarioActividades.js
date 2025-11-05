@@ -9,6 +9,7 @@ import { auth } from "..//components/authentication/Auth";
 
 import "../styles/Models/Calendario.css"; // Importamos los estilos
 
+const API_URL = process.env.REACT_APP_API_URL+"/api/actividades"
 /* ============================================
    COMPONENTE CALENDARIO DE ACTIVIDADES
    ============================================
@@ -62,7 +63,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    const res = await axios.get("http://localhost:5000/api/actividades", {
+    const res = await axios.get(API_URL, {
       headers: {
         Authorization: `Bearer ${token}`
       }

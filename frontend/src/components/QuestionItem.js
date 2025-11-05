@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from "..//components/authentication/Auth";
 
-const API_BASE_URL = 'http://localhost:5000/api'; 
+const API_URL = process.env.REACT_APP_API_URL+'/api'; 
 
 // 📅 Función de utilidad para formatear la fecha a hora local
 const formatToLocalTime = (dateString) => {
@@ -74,7 +74,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
         }
         const token = await user.getIdToken(); // 🔹 Obtener token
 
-        const postUrlCompleto = `${API_BASE_URL}/questions/${question._id}/answers`;
+        const postUrlCompleto = `${API_URL}/questions/${question._id}/answers`;
         
         await axios.post(postUrlCompleto, { 
             answerContent, 
