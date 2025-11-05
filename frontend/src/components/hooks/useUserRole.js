@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { auth } from "../authentication/Auth"; // Asumiendo que Auth.js tiene la instancia de Firebase/Auth
 
-const API_URL = process.env.REACT_APP_API_URL + "/api/usuarios/role";
+const API_URL = process.env.REACT_APP_API_URL + "api/usuarios/role";
 const useUserRole = () => {
     // 💡 Estado para el rol: Puede ser 'ADMIN', 'DOCENTE', 'PADRE', o null si no está logueado
     const [userRole, setUserRole] = useState(null); 

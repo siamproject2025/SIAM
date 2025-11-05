@@ -52,7 +52,7 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/bienes";
+const API_URL = process.env.REACT_APP_API_URL+"api/bienes";
 
 const Bienes = () => {
   // Estados principales

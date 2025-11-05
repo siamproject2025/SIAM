@@ -21,7 +21,7 @@ const DashboardCards = () => {
         if (!user) return;
 
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}"/api/dashboard`, {
+        const res = await axios.get(`${API_URL}api/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`
           },

@@ -29,7 +29,7 @@ import {
   Award
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/proveedores";
+const API_URL = process.env.REACT_APP_API_URL+"api/proveedores";
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);

@@ -53,7 +53,7 @@ export default function BibliotecaTest() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const API_URL = process.env.REACT_APP_API_URL+"/api/biblioteca";
+  const API_URL = process.env.REACT_APP_API_URL+"api/biblioteca";
   // Permisos basados en rol
   const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
   const canDelete = userRole === "ADMIN";

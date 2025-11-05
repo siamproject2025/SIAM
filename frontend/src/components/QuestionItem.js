@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { auth } from "..//components/authentication/Auth";
 
-const API_URL = process.env.REACT_APP_API_URL+'/api'; 
+const API_URL = process.env.REACT_APP_API_URL+'api'; 
 
 // 📅 Función de utilidad para formatear la fecha a hora local
 const formatToLocalTime = (dateString) => {

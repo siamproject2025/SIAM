@@ -37,7 +37,7 @@ const SideBar = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}/api/dashboard`, {
+        const res = await axios.get(`${API_URL}api/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

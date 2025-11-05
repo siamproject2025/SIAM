@@ -25,7 +25,7 @@ import {
   Shield
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/directiva";
+const API_URL = process.env.REACT_APP_API_URL+"api/directiva";
 
 const Directiva = () => {
   const [miembros, setMiembros] = useState([]);

@@ -9,7 +9,7 @@ import { auth } from "..//components/authentication/Auth";
 
 import "../styles/Models/Calendario.css"; // Importamos los estilos
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/actividades"
+const API_URL = process.env.REACT_APP_API_URL+"api/actividades"
 /* ============================================
    COMPONENTE CALENDARIO DE ACTIVIDADES
    ============================================

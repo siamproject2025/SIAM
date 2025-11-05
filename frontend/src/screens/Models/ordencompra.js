@@ -35,7 +35,7 @@ const DotsIcon = () => (
   </svg>
 );
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/compras";
+const API_URL = process.env.REACT_APP_API_URL+"api/compras";
 
 const OrdenCompra = () => {
   // Estados principales
@@ -97,7 +97,7 @@ const OrdenCompra = () => {
       const token = await user.getIdToken();
 
 
-      const res = await fetch(process.env.REACT_APP_API_URL+'/api/proveedores', {
+      const res = await fetch(process.env.REACT_APP_API_URL+'api/proveedores', {
         headers: {
           Authorization: `Bearer ${token}` // ✅ Token agregado
         }
