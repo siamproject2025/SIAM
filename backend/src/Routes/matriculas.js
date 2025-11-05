@@ -3,7 +3,11 @@ const express = require('express');
 const router = express.Router();
 const matriculaController = require('../Controllers/MatriculaController'); // revisa la ruta exacta
 const { upload } = require('../middleware/uploadImage'); // Multer en memoria
+const { authenticateUser } = require('../middleware/authMiddleWare');
+const { checkRole } = require('../middleware/checkRole');
 
+
+router.use(authenticateUser);
 // Crear matrícula
 router.post('/', upload.single('imagen'), matriculaController.crearMatricula);
 

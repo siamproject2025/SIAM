@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from "axios";
 import useUserRole from "./hooks/useUserRole"; 
 import "../styles/Models/Biblioteca.css";
+import { auth } from "../components/authentication/Auth";
+
 import { 
   FiSearch,
   FiUpload,
@@ -51,6 +53,7 @@ export default function BibliotecaTest() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
+  const API_URL = process.env.REACT_APP_API_URL+"/api/biblioteca";
   // Permisos basados en rol
   const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
   const canDelete = userRole === "ADMIN";
@@ -58,14 +61,25 @@ export default function BibliotecaTest() {
   const cargarLibros = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/biblioteca");
+      const user = auth.currentUser;
+      if (!user) throw new Error("Usuario no autenticado");
+      const token = await user.getIdToken();
+
+      const res = await axios.get(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
       setLibros(res.data);
     } catch (error) {
-      showNotification("Error al cargar libros", "error");
+      console.error(error);
+      showNotification(error.message || "Error al cargar libros", "error");
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (!cargando) { 
@@ -89,7 +103,7 @@ export default function BibliotecaTest() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!canUpload) {
@@ -120,14 +134,21 @@ export default function BibliotecaTest() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("titulo", titulo);
-    formData.append("autor", autor);
-    formData.append("archivo", archivo);
-
     try {
-      await axios.post("http://localhost:5000/api/biblioteca", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const user = auth.currentUser;
+      if (!user) throw new Error("Usuario no autenticado");
+      const token = await user.getIdToken();
+
+      const formData = new FormData();
+      formData.append("titulo", titulo);
+      formData.append("autor", autor);
+      formData.append("archivo", archivo);
+
+      await axios.post(API_URL, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        },
       });
 
       setTitulo("");
@@ -137,27 +158,41 @@ export default function BibliotecaTest() {
       if (fileInputRef.current) fileInputRef.current.value = "";
       cargarLibros();
       showNotification("Libro subido exitosamente", "success");
+
     } catch (error) {
-      showNotification("Error al subir el libro", "error");
+      console.error(error);
+      showNotification(error.message || "Error al subir el libro", "error");
     }
   };
 
-  const handleEliminar = async (id, titulo) => {
+
+    const handleEliminar = async (id, titulo) => {
     if (!canDelete) {
       showNotification("No tienes permiso para eliminar libros", "error");
       return;
     }
 
     if (!window.confirm(`¿Seguro que deseas eliminar "${titulo}"?`)) return;
-    
+
     try {
-      await axios.delete(`http://localhost:5000/api/biblioteca/${id}`);
+      const user = auth.currentUser;
+      if (!user) throw new Error("Usuario no autenticado");
+      const token = await user.getIdToken();
+
+      await axios.delete(`${API_URL}/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
       cargarLibros();
       showNotification("Libro eliminado exitosamente", "success");
     } catch (error) {
-      showNotification("Error al eliminar el libro", "error");
+      console.error(error);
+      showNotification(error.message || "Error al eliminar el libro", "error");
     }
   };
+
 
   // Filtrado
   const filteredItems = useMemo(() => {
@@ -249,7 +284,7 @@ export default function BibliotecaTest() {
     return (
       <div className="biblioteca-loading">
         <motion.div
-          animate={{ rotate: 360 }}
+         
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
           <FiBook size={40} />
@@ -281,7 +316,7 @@ export default function BibliotecaTest() {
               transition={{ delay: 0.2, duration: 0.5 }}
             >
               <motion.div
-                initial={{ rotate: -180, scale: 0 }}
+                
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
               >
@@ -328,8 +363,8 @@ export default function BibliotecaTest() {
                   <FiBook size={20} />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalLibros}</div>
-                  <div className="stat-label">Total Libros</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalLibros}</div>
+                  <div className="stat-label" style={{color:"white"}}>Total Libros</div>
                 </div>
               </motion.div>
 
@@ -342,8 +377,8 @@ export default function BibliotecaTest() {
                   <FiFileText size={20} />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{librosPDF}</div>
-                  <div className="stat-label">Libros PDF</div>
+                  <div className="stat-value" style={{color:"white"}}>{librosPDF}</div>
+                  <div className="stat-label" style={{color:"white"}}>Libros PDF</div>
                 </div>
               </motion.div>
 
@@ -356,8 +391,8 @@ export default function BibliotecaTest() {
                   <FiAward size={20} />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{librosRecientes}</div>
-                  <div className="stat-label">Recientes</div>
+                  <div className="stat-value" style={{color:"white"}}>{librosRecientes}</div>
+                  <div className="stat-label" style={{color:"white"}}>Recientes</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -515,7 +550,7 @@ export default function BibliotecaTest() {
           {loading ? (
             <div className="loading-state">
               <motion.div
-                animate={{ rotate: 360 }}
+               
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               >
                 <FiBook size={40} className="loading-spinner" />
@@ -625,7 +660,7 @@ export default function BibliotecaTest() {
 {canDelete && (
   <motion.button
     onClick={() => handleEliminar(libro._id, libro.titulo)}
-    className="btn-eliminar"
+    className="btn btn-danger"
     title="Eliminar libro"
     whileHover={{ scale: 1.1 }}
     whileTap={{ scale: 0.9 }}

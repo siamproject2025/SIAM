@@ -1,6 +1,8 @@
-// En rutas de actividades
+
 const express = require("express");
 const router = express.Router();
+const { authenticateUser } = require('../middleware/authMiddleWare');
+
 const {
   crearActividad,
   obtenerActividades,
@@ -8,9 +10,9 @@ const {
   eliminarActividad,
 } = require("../Controllers/actividadesController");
 
-router.post("/", crearActividad);
-router.get("/", obtenerActividades);
-router.put("/:id", actualizarActividad); // actualizar
-router.delete("/:id", eliminarActividad); // eliminar
+router.post("/", authenticateUser, crearActividad);
+router.get("/", authenticateUser, obtenerActividades);
+router.put("/:id", authenticateUser, actualizarActividad); // actualizar
+router.delete("/:id", authenticateUser, eliminarActividad); // eliminar
 
 module.exports = router;

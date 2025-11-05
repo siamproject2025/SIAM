@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { auth } from "..//..//../components/authentication/Auth";
 
 import Notification from "../../../components/Notification";
+
+const API_URL = process.env.REACT_APP_API_URL+"/api/proveedores"
 
 const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [nuevaOrden, setNuevaOrden] = useState({
@@ -32,24 +35,38 @@ const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
 
   // 🔹 Llamada a la API de proveedores
   useEffect(() => {
-    const fetchProveedores = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/proveedores');
-        if (!response.ok) throw new Error('Error al obtener proveedores');
-        const data = await response.json();
+  const fetchProveedores = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
 
-        // Filtrar solo proveedores activos
-        const proveedoresActivos = data.filter(p => p.estado === 'ACTIVO');
-        setProveedores(proveedoresActivos);
-        setCargandoProveedores(false);
-      } catch (error) {
-        console.error('Error cargando proveedores:', error);
-        setCargandoProveedores(false);
-        mostrarNotificacion('Error al cargar los proveedores. Verifica la conexión con el servidor.', 'warning');
-      }
-    };
-    fetchProveedores();
-  }, []);
+      const response = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
+      if (!response.ok) throw new Error('Error al obtener proveedores');
+      const data = await response.json();
+
+      // Filtrar solo proveedores activos
+      const proveedoresActivos = data.filter(p => p.estado === 'ACTIVO');
+      setProveedores(proveedoresActivos);
+      setCargandoProveedores(false);
+    } catch (error) {
+      console.error('Error cargando proveedores:', error);
+      setCargandoProveedores(false);
+      mostrarNotificacion(
+        error.message || 'Error al cargar los proveedores. Verifica la conexión con el servidor.',
+        'warning'
+      );
+    }
+  };
+
+  fetchProveedores();
+}, []);
+
 
   // Agregar ítem
   const handleAgregarItem = () => {

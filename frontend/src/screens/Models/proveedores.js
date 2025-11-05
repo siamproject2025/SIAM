@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Proveedores.css"
+import { auth } from "..//../components/authentication/Auth";
+
 import { 
   Building2,
   Mail,
@@ -27,7 +29,7 @@ import {
   Award
 } from 'lucide-react';
 
-const API_URL = "http://localhost:5000/api/proveedores";
+const API_URL = process.env.REACT_APP_API_URL+"/api/proveedores";
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -65,20 +67,33 @@ const Proveedores = () => {
   }, []);
 
   const cargarProveedores = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Error al cargar proveedores');
-      const data = await res.json();
-      setProveedores(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al obtener los proveedores:', err);
-      showNotification('Error al cargar los proveedores', 'error');
-      setProveedores([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const res = await fetch(API_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) throw new Error('Error al cargar proveedores');
+
+    const data = await res.json();
+    setProveedores(Array.isArray(data) ? data : []);
+
+  } catch (err) {
+    console.error('Error al obtener los proveedores:', err);
+    showNotification(err.message || 'Error al cargar los proveedores', 'error');
+    setProveedores([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Calcular estadísticas
   const totalProveedores = proveedores.length;
@@ -121,117 +136,144 @@ const Proveedores = () => {
     return parseInt(shortId);
   };
 
-  const handleCrearProveedor = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.nombre.trim()) {
-        showNotification('El nombre del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!formData.email.trim()) {
-        showNotification('El email del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!formData.telefono) {
-        showNotification('El teléfono del proveedor es obligatorio', 'error');
-        return;
-      }
-
-      const datosProveedor = {
-        ...formData,
-        id_proveedor: generarIdProveedor(),
-        calificacion: parseInt(formData.calificacion) || 5,
-        tiempo_entrega_promedio: formData.tiempo_entrega_promedio ? 
-          parseInt(formData.tiempo_entrega_promedio) : undefined
-      };
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosProveedor)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear el proveedor');
-      }
-      
-      await cargarProveedores();
-      setMostrarModalCrear(false);
-      resetForm();
-      showNotification(`Proveedor "${formData.nombre}" creado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al crear el proveedor', 'error');
+const handleCrearProveedor = async (e) => {
+  e.preventDefault();
+  
+  try {
+    if (!formData.nombre.trim()) {
+      showNotification('El nombre del proveedor es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEditarProveedor = async (e) => {
-    e.preventDefault();
-    
-    try {
-      if (!formData.nombre.trim()) {
-        showNotification('El nombre del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!formData.email.trim()) {
-        showNotification('El email del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!formData.telefono) {
-        showNotification('El teléfono del proveedor es obligatorio', 'error');
-        return;
-      }
-
-      const datosActualizados = {
-        ...formData,
-        calificacion: parseInt(formData.calificacion) || 5,
-        tiempo_entrega_promedio: formData.tiempo_entrega_promedio ? 
-          parseInt(formData.tiempo_entrega_promedio) : undefined
-      };
-
-      const res = await fetch(`${API_URL}/${proveedorSeleccionado._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datosActualizados)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar el proveedor');
-      }
-      
-      await cargarProveedores();
-      setProveedorSeleccionado(null);
-      resetForm();
-      showNotification(`Proveedor "${formData.nombre}" actualizado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al editar el proveedor', 'error');
+    if (!formData.email.trim()) {
+      showNotification('El email del proveedor es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEliminarProveedor = async () => {
-    const proveedorAEliminar = proveedores.find(p => p._id === proveedorSeleccionado._id);
-    if (!window.confirm(`¿Seguro que deseas eliminar el proveedor "${proveedorAEliminar?.nombre}"?`)) return;
-    
-    try {
-      const res = await fetch(`${API_URL}/${proveedorSeleccionado._id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar el proveedor');
-      }
-      
-      await cargarProveedores();
-      setProveedorSeleccionado(null);
-      resetForm();
-      showNotification(`Proveedor "${proveedorAEliminar?.nombre}" eliminado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al eliminar el proveedor', 'error');
+    if (!formData.telefono) {
+      showNotification('El teléfono del proveedor es obligatorio', 'error');
+      return;
     }
-  };
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const datosProveedor = {
+      ...formData,
+      id_proveedor: generarIdProveedor(),
+      calificacion: parseInt(formData.calificacion) || 5,
+      tiempo_entrega_promedio: formData.tiempo_entrega_promedio ? 
+        parseInt(formData.tiempo_entrega_promedio) : undefined
+    };
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(datosProveedor)
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al crear el proveedor');
+    }
+    
+    await cargarProveedores();
+    setMostrarModalCrear(false);
+    resetForm();
+    showNotification(`Proveedor "${formData.nombre}" creado exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al crear el proveedor', 'error');
+  }
+};
+
+const handleEditarProveedor = async (e) => {
+  e.preventDefault();
+
+  try {
+    if (!formData.nombre.trim()) {
+      showNotification('El nombre del proveedor es obligatorio', 'error');
+      return;
+    }
+    if (!formData.email.trim()) {
+      showNotification('El email del proveedor es obligatorio', 'error');
+      return;
+    }
+    if (!formData.telefono) {
+      showNotification('El teléfono del proveedor es obligatorio', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const datosActualizados = {
+      ...formData,
+      calificacion: parseInt(formData.calificacion) || 5,
+      tiempo_entrega_promedio: formData.tiempo_entrega_promedio ? 
+        parseInt(formData.tiempo_entrega_promedio) : undefined
+    };
+
+    const res = await fetch(`${API_URL}/${proveedorSeleccionado._id}`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(datosActualizados)
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al editar el proveedor');
+    }
+    
+    await cargarProveedores();
+    setProveedorSeleccionado(null);
+    resetForm();
+    showNotification(`Proveedor "${formData.nombre}" actualizado exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al editar el proveedor', 'error');
+  }
+};
+
+const handleEliminarProveedor = async () => {
+  const proveedorAEliminar = proveedores.find(p => p._id === proveedorSeleccionado._id);
+  if (!window.confirm(`¿Seguro que deseas eliminar el proveedor "${proveedorAEliminar?.nombre}"?`)) return;
+  
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${proveedorSeleccionado._id}`, { 
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      }
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al eliminar el proveedor');
+    }
+    
+    await cargarProveedores();
+    setProveedorSeleccionado(null);
+    resetForm();
+    showNotification(`Proveedor "${proveedorAEliminar?.nombre}" eliminado exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al eliminar el proveedor', 'error');
+  }
+};
 
   const proveedoresFiltrados = proveedores.filter(p => {
     const terminoBusqueda = busqueda.toLowerCase();

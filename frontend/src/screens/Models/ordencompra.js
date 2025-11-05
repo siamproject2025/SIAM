@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ModalCrearOrden from "../Models/OrdenCompra/ModalCrearOrden";
 import ModalDetalleOrden from "../Models/OrdenCompra/ModalDetalleOrden";
 import '../../styles/Models/ordencompra.css';
+import { auth } from "..//../components/authentication/Auth";
+
 import { 
   Search,
   HelpCircle,
@@ -33,7 +35,7 @@ const DotsIcon = () => (
   </svg>
 );
 
-const API_URL = "http://localhost:5000/api/compras";
+const API_URL = process.env.REACT_APP_API_URL+"/api/compras";
 
 const OrdenCompra = () => {
   // Estados principales
@@ -81,40 +83,65 @@ const OrdenCompra = () => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
-
+  
   // 🔹 Cargar proveedores
   useEffect(() => {
-    const cargarProveedores = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/proveedores');
-        if (!res.ok) throw new Error('Error al cargar proveedores');
-        const data = await res.json();
-        setProveedores(data.filter(p => p.estado === 'ACTIVO'));
-      } catch (err) {
-        console.error('Error al cargar proveedores:', err);
-        showNotification('Error al cargar proveedores', 'error');
-      }
-    };
     
-    cargarProveedores();
-  }, []);
+    const cargarProveedores = async () => {
+    const user = auth.currentUser;
+      console.log("probandoo",user)
+     try {
+      const user = auth.currentUser;
+      console.log("probandoo",user)
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
+
+
+      const res = await fetch(process.env.REACT_APP_API_URL+'/api/proveedores', {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
+      if (!res.ok) throw new Error('Error al cargar proveedores');
+      const data = await res.json();
+      setProveedores(data.filter(p => p.estado === 'ACTIVO'));
+    } catch (err) {
+      console.error('Error al cargar proveedores:', err);
+      showNotification(err.message || 'Error al cargar proveedores', 'error');
+    }
+  };
+
+  cargarProveedores();
+}, []);
+
+
 
   // 🔹 Cargar órdenes
-  useEffect(() => {
-    const cargarOrdenes = async () => {
-      try {
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error('Error al cargar órdenes');
-        const data = await res.json();
-        setOrdenes(data);
-      } catch (err) {
-        console.error('Error al cargar órdenes:', err);
-        showNotification('Error al cargar órdenes', 'error');
-      }
-    };
-    
-    cargarOrdenes();
-  }, []);
+useEffect(() => {
+  const cargarOrdenes = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
+
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
+      if (!res.ok) throw new Error('Error al cargar órdenes');
+      const data = await res.json();
+      setOrdenes(data);
+    } catch (err) {
+      console.error('Error al cargar órdenes:', err);
+      showNotification(err.message || 'Error al cargar órdenes', 'error');
+    }
+  };
+  
+  cargarOrdenes();
+}, []);
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -209,114 +236,136 @@ const OrdenCompra = () => {
   };
 
   const handleCrearOrden = async (nuevaOrden) => {
-    try {
-      if (!nuevaOrden.numero.trim()) {
-        showNotification('El número de orden es obligatorio', 'error');
-        return;
-      }
-      if (!nuevaOrden.proveedor_id.trim()) {
-        showNotification('El ID del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
-        showNotification('Debe agregar al menos un ítem a la orden', 'error');
-        return;
-      }
-
-      const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
-      if (numeroExistente) {
-        showNotification('Ya existe una orden con este número', 'error');
-        return;
-      }
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevaOrden)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear la orden');
-      }
-      
-      const ordenCreada = await res.json();
-      setOrdenes([...ordenes, ordenCreada]);
-      setMostrarModalCrear(false);
-      showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al crear la orden', 'error');
+  try {
+    if (!nuevaOrden.numero.trim()) {
+      showNotification('El número de orden es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEditarOrden = async (ordenActualizada) => {
-    try {
-      if (!ordenActualizada.numero.trim()) {
-        showNotification('El número de orden es obligatorio', 'error');
-        return;
-      }
-      if (!ordenActualizada.proveedor_id) {
-        showNotification('Debes seleccionar un proveedor', 'error');
-        return;
-      }
-      if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
-        showNotification('La orden debe tener al menos un ítem', 'error');
-        return;
-      }
-
-      // 🔹 Asegurarse de enviar solo el ID del proveedor
-      const ordenParaEnviar = {
-        ...ordenActualizada,
-        proveedor_id: typeof ordenActualizada.proveedor_id === 'object' 
-          ? ordenActualizada.proveedor_id._id 
-          : ordenActualizada.proveedor_id,
-        fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
-      };
-
-      const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ordenParaEnviar)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar la orden');
-      }
-      
-      const actualizada = await res.json();
-      
-      // 🔹 Actualizar la lista de órdenes
-      setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
-      setOrdenSeleccionada(null);
-      showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al editar la orden', 'error');
+    if (!nuevaOrden.proveedor_id.trim()) {
+      showNotification('El ID del proveedor es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEliminarOrden = async (id) => {
-    const ordenAEliminar = ordenes.find(o => o._id === id);
-    if (!window.confirm(`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`)) return;
-    
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar la orden');
-      }
-      
-      setOrdenes(ordenes.filter(o => o._id !== id));
-      setOrdenSeleccionada(null);
-      setShowActionMenu(null);
-      showNotification(`Orden "${ordenAEliminar?.numero}" eliminada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al eliminar la orden', 'error');
+    if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
+      showNotification('Debe agregar al menos un ítem a la orden', 'error');
+      return;
     }
-  };
+
+    const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
+    if (numeroExistente) {
+      showNotification('Ya existe una orden con este número', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(nuevaOrden)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al crear la orden');
+    }
+
+    const ordenCreada = await res.json();
+    setOrdenes([...ordenes, ordenCreada]);
+    setMostrarModalCrear(false);
+    showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al crear la orden', 'error');
+  }
+};
+
+const handleEditarOrden = async (ordenActualizada) => {
+  try {
+    if (!ordenActualizada.numero.trim()) {
+      showNotification('El número de orden es obligatorio', 'error');
+      return;
+    }
+    if (!ordenActualizada.proveedor_id) {
+      showNotification('Debes seleccionar un proveedor', 'error');
+      return;
+    }
+    if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
+      showNotification('La orden debe tener al menos un ítem', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const ordenParaEnviar = {
+      ...ordenActualizada,
+      proveedor_id: typeof ordenActualizada.proveedor_id === 'object' 
+        ? ordenActualizada.proveedor_id._id 
+        : ordenActualizada.proveedor_id,
+      fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
+    };
+
+    const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(ordenParaEnviar)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al editar la orden');
+    }
+
+    const actualizada = await res.json();
+    setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
+    setOrdenSeleccionada(null);
+    showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al editar la orden', 'error');
+  }
+};
+
+const handleEliminarOrden = async (id) => {
+  const ordenAEliminar = ordenes.find(o => o._id === id);
+  if (!window.confirm(`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`)) return;
+
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      }
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al eliminar la orden');
+    }
+
+    setOrdenes(ordenes.filter(o => o._id !== id));
+    setOrdenSeleccionada(null);
+    setShowActionMenu(null);
+    showNotification(`Orden "${ordenAEliminar?.numero}" eliminada exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al eliminar la orden', 'error');
+  }
+};
+
 
   const toggleStatusFilter = (status) => {
     const newSet = new Set(statusFilter);

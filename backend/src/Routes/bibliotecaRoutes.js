@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const Libro = require("../Models/biblioteca");
+const { authenticateUser } = require('../middleware/authMiddleWare');
 
 // 📁 Carpeta donde se guardarán los archivos
 const uploadPath = path.join(__dirname, "../uploads/libros");
@@ -27,7 +28,7 @@ const upload = multer({ storage });
 // -------------------
 // POST: Subir nuevo libro
 // -------------------
-router.post("/", upload.single("archivo"), async (req, res) => {
+router.post("/", authenticateUser, upload.single("archivo"), async (req, res) => {
   try {
     const { titulo, autor } = req.body;
 
@@ -54,7 +55,7 @@ router.post("/", upload.single("archivo"), async (req, res) => {
 // -------------------
 // GET: Listar todos los libros
 // -------------------
-router.get("/", async (req, res) => {
+router.get("/", authenticateUser, async (req, res) => {
   try {
     const libros = await Libro.find();
     res.json(libros);
@@ -66,7 +67,7 @@ router.get("/", async (req, res) => {
 // -------------------
 // DELETE: Eliminar un libro por ID
 // -------------------
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateUser, async (req, res) => {
   try {
     const libro = await Libro.findById(req.params.id);
     if (!libro) return res.status(404).json({ message: "Libro no encontrado" });
