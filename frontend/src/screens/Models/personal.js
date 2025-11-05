@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Personal.css"
+import { auth } from "..//../components/authentication/Auth";
 import { 
 
   Mail,
@@ -33,7 +34,7 @@ import {
   Shield
 } from 'lucide-react';
 
-const API_URL = "http://localhost:5000/api/personal";
+const API_URL = process.env.REACT_APP_API_URL+"/api/personal";
 
 const Personal = () => {
   const [personal, setPersonal] = useState([]);
@@ -77,20 +78,33 @@ useEffect(() => {
   }, [formData.foto_preview]);
 
   const cargarPersonal = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Error al cargar personal');
-      const data = await res.json();
-      setPersonal(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Error al obtener el personal:', err);
-      showNotification('Error al cargar el personal', 'error');
-      setPersonal([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+
+    // 🔑 Obtener el token del usuario autenticado (Firebase o Auth0)
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+
+    // 🔁 Petición con token incluido
+    const res = await fetch(API_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`, // 👈 Token JWT
+      },
+    });
+
+    if (!res.ok) throw new Error("Error al cargar personal");
+
+    const data = await res.json();
+    setPersonal(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("Error al obtener el personal:", err);
+    showNotification("Error al cargar el personal", "error");
+    setPersonal([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Calcular estadísticas
   const totalPersonal = personal.length;
@@ -272,13 +286,20 @@ const handleFotoChange = (e) => {
             .join(',')
         : ''
     );
+
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
     if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
     if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
 
     // ✅ Enviar al backend
     const response = await fetch(API_URL, {
       method: 'POST',
-      body: formDataSend // sin Content-Type, lo maneja automáticamente FormData
+      headers: {
+        Authorization: `Bearer ${token}`, // 👈 se agrega aquí
+        // ❌ No agregar 'Content-Type'
+      },
+      body: formDataSend,
     });
 
     const responseData = await response.json();
@@ -410,11 +431,16 @@ const handleFotoChange = (e) => {
     if (formData.imagen) {
       formDataSend.append('imagen', formData.imagen);
     }
-
+     const user = auth.currentUser;
+    const token = await user.getIdToken();
     // 🔹 Enviar al backend
     const response = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
       method: 'PUT',
-      body: formDataSend // FormData maneja el Content-Type automáticamente
+       headers: {
+        Authorization: `Bearer ${token}`, // 👈 se agrega aquí
+        
+      },
+      body: formDataSend,
     });
 
     const responseData = await response.json();
@@ -437,25 +463,42 @@ const handleFotoChange = (e) => {
 
 
   const handleEliminarPersonal = async () => {
-    const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
-    if (!window.confirm(`¿Seguro que deseas eliminar al empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}"?`)) return;
-    
-    try {
-      const res = await fetch(`${API_URL}/${personalSeleccionado._id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar el empleado');
-      }
-      
-      await cargarPersonal();
-      setPersonalSeleccionado(null);
-      resetForm();
-      showNotification(`Empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}" eliminado exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al eliminar el empleado', 'error');
+  const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
+  if (!window.confirm(`¿Seguro que deseas eliminar al empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}"?`)) return;
+
+  try {
+    // 🔑 Obtener token del usuario autenticado (Firebase o Auth0)
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+
+    // 🗑️ Petición DELETE con token
+    const res = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`, // 👈 se agrega el token
+      },
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Error al eliminar el empleado");
     }
-  };
+
+    // ✅ Actualizar lista tras eliminación
+    await cargarPersonal();
+    setPersonalSeleccionado(null);
+    resetForm();
+
+    showNotification(
+      `Empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}" eliminado exitosamente`,
+      "success"
+    );
+  } catch (err) {
+    console.error("❌ Error eliminando personal:", err);
+    showNotification(err.message || "Error al eliminar el empleado", "error");
+  }
+};
+
 
   const personalFiltrado = personal.filter(p => {
     const terminoBusqueda = busqueda.toLowerCase();
@@ -1303,7 +1346,7 @@ const handleOpenEditModal = (empleado) => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar-personal"
+                                className="btn btn-danger"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1554,7 +1597,7 @@ const handleOpenEditModal = (empleado) => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar-personal"
+                                className="btn btn-danger"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1607,7 +1650,7 @@ const handleOpenEditModal = (empleado) => {
                 <div className="modal-actions">
                   <motion.button 
                     type="button" 
-                    className="btn-eliminar-personal" 
+                    className="btn btn-danger" 
                     onClick={handleEliminarPersonal}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

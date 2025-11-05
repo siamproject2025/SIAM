@@ -9,7 +9,7 @@ import { MdAdminPanelSettings } from "react-icons/md";
 import { motion } from "framer-motion";
 import UsuariosChart from "../components/UsuariosChart";
 
-const API_URL = "http://localhost:5000/";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const AsignarRol = () => {
   const [usuarios, setUsuarios] = useState([]);
