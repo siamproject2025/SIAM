@@ -206,7 +206,7 @@ useEffect(() => {
                       onClick={eliminarFoto}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="btn btn-danger"
+                      className="btn-eliminar-donaciones"
                     >
                       <Trash2 size={16} />
                       Eliminar foto

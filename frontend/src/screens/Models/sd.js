@@ -1169,7 +1169,7 @@ const Donaciones = () => {
                   <div className="modal-actions">
                     <motion.button 
                       type="button" 
-                      className="btn btn-danger" 
+                      className="btn-eliminar" 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

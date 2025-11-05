@@ -12,10 +12,11 @@ exports.upload = upload.single('foto'); // nombre del input en el frontend
 // -------------------
 // Crear matrícula
 // -------------------
-
 exports.crearMatricula = async (req, res) => {
   try {
-    // 📸 Procesar imagen si existe
+    // Generar siguiente ID si tu modelo lo requiere
+  
+
     let imagenBase64 = null;
     let tipoImagen = null;
 
@@ -45,20 +46,9 @@ exports.crearMatricula = async (req, res) => {
       console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
     }
 
-    // 🧠 Verificar duplicado antes de crear
-    const { id_documento } = req.body;
-    const existe = await Estudiante.findOne({ id_documento });
-
-    if (existe) {
-      return res.status(400).json({
-        success: false,
-        message: 'El número de identidad ya está registrado.',
-      });
-    }
-
-    // 🧩 Crear el objeto estudiante
     const estudianteData = {
       ...req.body,
+      
       imagen: imagenBase64,
       tipo_imagen: tipoImagen
     };
@@ -67,29 +57,18 @@ exports.crearMatricula = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Matrícula creada exitosamente.',
+      message: 'Matrícula creada exitosamente',
       data: estudiante
     });
-
   } catch (error) {
     console.error('❌ Error en crearMatricula:', error);
-
-    // Manejo especial para error de clave duplicada (MongoDB)
-    if (error.code === 11000 && error.keyPattern?.id_documento) {
-      return res.status(400).json({
-        success: false,
-        message: 'El número de identidad ya está registrado (duplicado).',
-      });
-    }
-
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: 'Error al crear la matrícula.',
+      message: 'Error al crear la matrícula',
       error: error.message
     });
   }
 };
-
 
 // -------------------
 // Obtener todas las matrículas

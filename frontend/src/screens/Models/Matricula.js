@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Users, UserCheck, UserPlus, User, Calendar, Award } from 'lucide-react';
 import '..//../styles/Matriculas.css';
 import StudentTable from '..//..//components/StudentTable';
 import StudentForm from '..//..//components/StudentForm';
 import Modal from '..//..//components/Modal';
-import Notification from '../../components/Notification';
-import { auth } from "..//../components/authentication/Auth";
 
-const API_URL = process.env.REACT_APP_API_URL+'/api/matriculas';
+const API_URL = 'http://localhost:5000/api/matriculas';
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -18,36 +16,21 @@ function App() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [notification, setNotification] = useState(null);
+
   // Obtener estudiantes
   const fetchStudents = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        setError('No estás autenticado. Por favor inicia sesión.');
-        setStudents([]);
-        setLoading(false);
-        return;
-      }
-      const token = await user.getIdToken();
-
-      const response = await fetch(API_URL, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}` // ✅ Token agregado
-        }
-      });
-
+      const response = await fetch(API_URL);
+      
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-
+      
       const data = await response.json();
-      setStudents(Array.isArray(data.data) ? data.data : []); // Asegurar que siempre sea un array
-
+      setStudents(data.data || []);
+ // Asegurar que siempre sea un array
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Error al cargar los estudiantes: ' + error.message);
@@ -56,7 +39,6 @@ function App() {
       setLoading(false);
     }
   };
-
 
   const totalEstudiantes = students.length;
   const estudiantesActivos = students.filter(estudiante => estudiante.estado === 'activo').length;
@@ -72,176 +54,123 @@ function App() {
   }, []);
 
   // Crear estudiante
-// Crear estudiante
-const createStudent = async (studentData) => {
+  const createStudent = async (studentData) => {
   try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
+    // Crear FormData
     const formData = new FormData();
     for (const key in studentData) {
       formData.append(key, studentData[key]);
     }
-    if (studentData.imagen) {
-      formData.append('imagen', studentData.imagen);
+
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formData.append('imagen', formData.imagen);
     }
 
     const response = await fetch(API_URL, {
       method: 'POST',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      body: formData, // enviamos FormData
+      // NOTA: No debes poner 'Content-Type', fetch lo maneja automáticamente
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || 'Error desconocido del servidor');
+    if (response.ok) {
+      setShowCreateModal(false);
+      fetchStudents();
+      alert('Estudiante matriculado exitosamente');
+    } else {
+      throw new Error('Error al crear estudiante');
     }
-
-    setShowCreateModal(false);
-    fetchStudents();
-    setNotification({
-      message: result.message || "Estudiante matriculado exitosamente",
-      type: "success",
-    });
-
   } catch (error) {
-    console.error('❌ Error creando estudiante:', error);
-    setNotification({
-      message: error.message || "Ocurrió un error al crear el estudiante",
-      type: "error",
-    });
+    console.error('Error creating student:', error);
+    alert('Error al crear el estudiante');
   }
 };
 
-// Actualizar estudiante
+
+  // Actualizar estudiante
 const updateStudent = async (studentData) => {
   try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
+    // Crear FormData
     const formData = new FormData();
     for (const key in studentData) {
       formData.append(key, studentData[key]);
     }
-    if (studentData.imagen) {
-      formData.append('imagen', studentData.imagen);
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formData.append('imagen', formData.imagen);
     }
 
     const response = await fetch(`${API_URL}/${editingStudent._id}`, {
       method: 'PUT',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Error desconocido del servidor");
-    }
-
-    setShowEditModal(false);
-    setEditingStudent(null);
-    fetchStudents();
-    setNotification({
-      message: result.message || "Estudiante actualizado exitosamente",
-      type: "success",
-    });
-
-  } catch (error) {
-    console.error("❌ Error actualizando estudiante:", error);
-    setNotification({
-      message: error.message || "Ocurrió un error al actualizar el estudiante",
-      type: "error",
-    });
-  }
-};
-
-// Eliminar estudiante
-const deleteStudent = async (id) => {
- 
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      body: formData, // enviamos FormData
+      // NOTA: No se pone 'Content-Type', fetch lo maneja automáticamente
     });
 
     if (response.ok) {
+      setShowEditModal(false);
+      setEditingStudent(null);
       fetchStudents();
-      setSelectedStudents(prev => prev.filter(studentId => studentId !== id));
-      setNotification({
-        message: 'Estudiante eliminado exitosamente',
-        type: 'success'
-      });
+      alert('Estudiante actualizado exitosamente');
     } else {
-      const result = await response.json();
-      throw new Error(result.message || 'Error al eliminar estudiante');
+      throw new Error('Error al actualizar estudiante');
+    }
+  } catch (error) {
+    console.error('Error updating student:', error);
+    alert('Error al actualizar el estudiante');
+  }
+};
+
+
+  // Eliminar estudiante
+  const deleteStudent = async (id) => {
+    if (!window.confirm('¿Está seguro de que desea eliminar este estudiante?')) {
+      return;
     }
 
-  } catch (error) {
-    console.error('Error deleting student:', error);
-    setNotification({
-      message: error.message || 'Error al eliminar el estudiante',
-      type: 'error'
-    });
-  }
-};
-
-// Eliminar estudiantes seleccionados
-const deleteSelectedStudents = async () => {
-  if (selectedStudents.length === 0) {
-    setNotification({
-      message: 'Seleccione al menos un estudiante para eliminar',
-      type: 'error'
-    });
-    return;
-  }
-
-  if (!window.confirm(`¿Está seguro de que desea eliminar ${selectedStudents.length} estudiante(s)?`)) return;
-
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const deletePromises = selectedStudents.map(id => 
-      fetch(`${API_URL}/${id}`, {
+    try {
+      const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-    );
+      });
 
-    await Promise.all(deletePromises);
-    setSelectedStudents([]);
-    fetchStudents();
-    setNotification({
-      message: 'Estudiantes eliminados exitosamente',
-      type: 'success'
-    });
+      if (response.ok) {
+        fetchStudents();
+        // Remover el estudiante de la selección
+        setSelectedStudents(prev => prev.filter(studentId => studentId !== id));
+        alert('Estudiante eliminado exitosamente');
+      } else {
+        throw new Error('Error al eliminar estudiante');
+      }
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      alert('Error al eliminar el estudiante');
+    }
+  };
 
-  } catch (error) {
-    console.error('Error deleting students:', error);
-    setNotification({
-      message: error.message || 'Error al eliminar los estudiantes',
-      type: 'error'
-    });
-  }
-};
+  // Eliminar estudiantes seleccionados
+  const deleteSelectedStudents = async () => {
+    if (selectedStudents.length === 0) {
+      alert('Seleccione al menos un estudiante para eliminar');
+      return;
+    }
 
+    if (!window.confirm(`¿Está seguro de que desea eliminar ${selectedStudents.length} estudiante(s)?`)) {
+      return;
+    }
+
+    try {
+      const deletePromises = selectedStudents.map(id => 
+        fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+      );
+      
+      await Promise.all(deletePromises);
+      setSelectedStudents([]);
+      fetchStudents();
+      alert('Estudiantes eliminados exitosamente');
+    } catch (error) {
+      console.error('Error deleting students:', error);
+      alert('Error al eliminar los estudiantes');
+    }
+  };
 
   // Abrir modal de edición
   const openEditModal = (student) => {
@@ -478,14 +407,6 @@ const deleteSelectedStudents = async () => {
           isEdit={true}
         />
       </Modal>
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-          duration={4000} // Se cierra automáticamente a los 4 segundos
-        />
-      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Donaciones.css"
-import { auth } from "..//../components/authentication/Auth";
 import { 
   Apple,
   Shirt,
@@ -32,7 +31,7 @@ import {
   HandHeart
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+'/api/donaciones';
+const API_URL = 'http://localhost:5000/api/donaciones';
 
 // Estilos CSS integrados mejorados
 
@@ -70,41 +69,27 @@ const Donaciones = () => {
 
 
   const cargarDonaciones = async () => {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      mostrarNotificacion('No estás autenticado. Por favor inicia sesión.', 'error');
-      return;
-    }
-    const token = await user.getIdToken();
-
-    const response = await fetch(API_URL, {
-      headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error('Error al cargar donaciones');
+      const result = await response.json();
+      
+      // El backend devuelve { success: true, data: [...] }
+      if (result.success && Array.isArray(result.data)) {
+        setDonaciones(result.data);
+      } else if (Array.isArray(result)) {
+        // Por si acaso el backend devuelve directamente el array
+        setDonaciones(result);
+      } else {
+        console.error('Formato de respuesta inesperado:', result);
+        setDonaciones([]);
       }
-    });
-
-    if (!response.ok) throw new Error('Error al cargar donaciones');
-
-    const result = await response.json();
-
-    // El backend devuelve { success: true, data: [...] }
-    if (result.success && Array.isArray(result.data)) {
-      setDonaciones(result.data);
-    } else if (Array.isArray(result)) {
-      // Por si acaso el backend devuelve directamente el array
-      setDonaciones(result);
-    } else {
-      console.error('Formato de respuesta inesperado:', result);
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion('Error al cargar las donaciones', 'error');
       setDonaciones([]);
     }
-  } catch (error) {
-    console.error('Error:', error);
-    mostrarNotificacion('Error al cargar las donaciones', 'error');
-    setDonaciones([]);
-  }
-};
-
+  };
   // Calcular estadísticas
   const totalDonaciones = donaciones.length;
   const totalCantidad = donaciones.reduce((sum, d) => sum + (parseFloat(d.cantidad_donacion) || 0), 0);
@@ -157,87 +142,71 @@ const Donaciones = () => {
     }));
   };
 
-  const handleSubmitNueva = async (e) => {
-    e.preventDefault();
-    
-    // Validaciones mejoradas
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-      return;
-    }
-
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        mostrarNotificacion('No estás autenticado. Por favor inicia sesión.', 'error');
-        return;
-      }
-      const token = await user.getIdToken();
-
-      const formDataToSend = new FormData();
-      formDataToSend.append('tipo_donacion', formData.tipo_donacion);
-      formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
-      formDataToSend.append('descripcion', formData.descripcion || '');
-      formDataToSend.append('observaciones', formData.observaciones || '');
-      formDataToSend.append('id_almacen', formData.id_almacen);
-      formDataToSend.append('fecha', new Date().toISOString());
-
-      if (formData.imagen) {
-        formDataToSend.append('imagen', formData.imagen);
-      }
-
-      console.log('Enviando datos:', {
-        tipo_donacion: formData.tipo_donacion,
-        cantidad_donacion: formData.cantidad_donacion,
-        id_almacen: formData.id_almacen
-      });
-
-      const response = await fetch(`${API_URL}`, {
-        method: 'POST',
-        body: formDataToSend,
-        headers: {
-          Authorization: `Bearer ${token}` // ✅ Token agregado
-        }
-      });
-
-      const responseData = await response.json();
-      console.log('Respuesta del servidor:', responseData);
-
-      if (!response.ok) {
-        throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
-      }
-
-      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
-      handleCloseModals();
-      await cargarDonaciones();
-
-    } catch (error) {
-      console.error('Error completo:', error);
-      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
-    }
-  };
-
-
-
-const handleSubmitEditar = async (e) => {
+const handleSubmitNueva = async (e) => {
   e.preventDefault();
-  e.stopPropagation();
-
-  if (!donacionSeleccionada) return;
-
+  
+  // Validaciones mejoradas
   if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
     mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
     return;
   }
 
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      mostrarNotificacion('No estás autenticado. Por favor inicia sesión.', 'error');
-      return;
+    const formDataToSend = new FormData(); // Nombre más descriptivo
+    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
+    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
+    formDataToSend.append('descripcion', formData.descripcion || '');
+    formDataToSend.append('observaciones', formData.observaciones || '');
+    formDataToSend.append('id_almacen', formData.id_almacen);
+    formDataToSend.append('fecha', new Date().toISOString());
+    
+    // Solo adjuntar foto si existe
+    if (formData.imagen) {
+      formDataToSend.append('imagen', formData.imagen);
     }
-    const token = await user.getIdToken();
 
+    console.log('Enviando datos:', {
+      tipo_donacion: formData.tipo_donacion,
+      cantidad_donacion: formData.cantidad_donacion,
+      id_almacen: formData.id_almacen
+    });
+
+    const response = await fetch(`${API_URL}`, {
+      method: 'POST',
+      body: formDataToSend // NO incluir headers Content-Type para FormData
+    });
+
+    const responseData = await response.json();
+    console.log('Respuesta del servidor:', responseData);
+
+    if (!response.ok) {
+      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
+    }
+
+    mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
+    handleCloseModals();
+    await cargarDonaciones();
+
+  } catch (error) {
+    console.error('Error completo:', error);
+    mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+  }
+};
+
+
+  const handleSubmitEditar = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!donacionSeleccionada) return;
+
+  // Validaciones
+  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    return;
+  }
+
+  try {
     const formDataToSend = new FormData();
     formDataToSend.append('tipo_donacion', formData.tipo_donacion);
     formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
@@ -246,16 +215,14 @@ const handleSubmitEditar = async (e) => {
     formDataToSend.append('id_almacen', formData.id_almacen);
     formDataToSend.append('fecha', formData.fecha || new Date().toISOString());
 
+    // Si tienes archivo (ej: imagen)
     if (formData.imagen) {
       formDataToSend.append('imagen', formData.imagen);
     }
 
     const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
       method: 'PUT',
-      body: formDataToSend,
-      headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
-      }
+      body: formDataToSend, // importante: no usar JSON.stringify
     });
 
     if (!response.ok) {
@@ -273,40 +240,31 @@ const handleSubmitEditar = async (e) => {
 };
 
 
-const handleEliminarDonacion = async () => {
-  if (!donacionSeleccionada) return;
+  const handleEliminarDonacion = async () => {
+    if (!donacionSeleccionada) return;
 
-  if (!window.confirm('¿Estás seguro de que deseas eliminar esta donación?')) return;
-
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      mostrarNotificacion('No estás autenticado. Por favor inicia sesión.', 'error');
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta donación?')) {
       return;
     }
-    const token = await user.getIdToken();
 
-    const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+    try {
+      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al eliminar donación');
       }
-    });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al eliminar donación');
+      mostrarNotificacion('Donación eliminada exitosamente', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al eliminar la donación', 'error');
     }
-
-    mostrarNotificacion('Donación eliminada exitosamente', 'success');
-    handleCloseModals();
-    await cargarDonaciones();
-  } catch (error) {
-    console.error('Error:', error);
-    mostrarNotificacion(error.message || 'Error al eliminar la donación', 'error');
-  }
-};
-
+  };
 
   const handleCloseModals = () => {
     setMostrarModal(false);
@@ -887,7 +845,7 @@ const handleEliminarDonacion = async () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
+                                className="btn-eliminar-donaciones"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1071,7 +1029,7 @@ const handleEliminarDonacion = async () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
+                                className="btn-eliminar-donaciones"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1124,7 +1082,7 @@ const handleEliminarDonacion = async () => {
                   <div className="modal-actions-donaciones">
                     <motion.button 
                       type="button" 
-                      className="btn btn-danger" 
+                      className="btn-eliminar-donaciones" 
                       onClick={handleEliminarDonacion}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

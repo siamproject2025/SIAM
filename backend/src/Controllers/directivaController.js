@@ -1,4 +1,4 @@
-const Directiva = require('../Models/directivaModel');
+const Directiva = require('../models/directivaModel');
 
 // @desc    Obtener todos los miembros de la directiva
 // @route   GET /api/directiva

@@ -5,9 +5,8 @@ import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Apple, Book, Calendar, Table2, X } from "lucide-react";
 import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
-import { auth } from "..//../components/authentication/Auth";
 
-const API_HOST = process.env.REACT_APP_API_URL;
+const API_HOST = "http://localhost:5000";
 const API_HORARIO = `${API_HOST}/api/horario`;
 const API_ALUMNO = `${API_HOST}/api/matriculas`;
 const API_DOCENTE = `${API_HOST}/api/personal`;
@@ -86,25 +85,11 @@ const Horarios = () => {
   };
 
   const clickDetalleAlumnosHandler = async (id) => {
-  try {
-    // 🔐 Obtener token JWT del usuario autenticado
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    const res = await axios.get(`${API_HORARIO}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const res = await axios.get(`${API_HORARIO}/${id}`);
     setHorarioSeleccionado(res.data);
     setMostrarModalDetalle(true);
     setEsModalDetalle(false);
-  } catch (error) {
-    console.error("Error al obtener detalle del horario:", error);
-    showNotification("Error al obtener detalle del horario", "error");
-  }
-};
+  };
 
   const clickCerrarModeloHandler = () => {
     setHorarioSeleccionado(null);
@@ -127,22 +112,13 @@ const Horarios = () => {
   const id = horario._id;
 
   try {
-    // 🔐 Obtener token del usuario autenticado (Auth0 o Firebase)
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-
     if (esCreacion) {
       const { _id, ...horarioSinId } = horario; // crear un objeto sin _id para POST
-      await axios.post(API_HORARIO, horarioSinId, { headers });
+      await axios.post(API_HORARIO, horarioSinId);
       showNotification("✅ Horario creado con éxito.", "success");
     } else {
       if (!id) throw new Error("No se encontró el ID del horario para actualizar.");
-      await axios.put(`${API_HORARIO}/${id}`, horario, { headers });
+      await axios.put(`${API_HORARIO}/${id}`, horario);
       showNotification("✅ Horario actualizado con éxito.", "success");
     }
 
@@ -177,77 +153,52 @@ const Horarios = () => {
 
 
 
-
   const clickEliminarModeloHandler = async (id_horario) => {
-  try {
-    // 🔐 Obtener token JWT del usuario autenticado
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
+    try {
+      const res = await axios.delete(`${API_HORARIO}/${id_horario}`);
+      if (res.status === 200)
+        showNotification("Horario eliminado exitosamente", "success");
+      await obtenerHorarios();
+    } catch (error) {
+  const { type, message } = error.response?.data || {};
 
-    const res = await axios.delete(`${API_HORARIO}/${id_horario}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (res.status === 200)
-      showNotification("Horario eliminado exitosamente", "success");
-
-    await obtenerHorarios();
-  } catch (error) {
-    const { type, message } = error.response?.data || {};
-
-    switch (type) {
-      case "VALIDACION":
-        showNotification("⚠️ " + message, "warning");
-        break;
-      case "CONFLICTO":
-        showNotification("❌ " + message, "error");
-        break;
-      case "NOT_FOUND":
-        showNotification("ℹ️ " + message, "info");
-        break;
-      case "SERVER":
-        showNotification("💥 Error del servidor: " + message, "error");
-        break;
-      default:
-        showNotification("Error desconocido al procesar la solicitud.", "error");
-    }
+  switch (type) {
+    case "VALIDACION":
+      showNotification("⚠️ " + message, "warning");
+      break;
+    case "CONFLICTO":
+      showNotification("❌ " + message, "error");
+      break;
+    case "NOT_FOUND":
+      showNotification("ℹ️ " + message, "info");
+      break;
+    case "SERVER":
+      showNotification("💥 Error del servidor: " + message, "error");
+      break;
+    default:
+      showNotification("Error desconocido al procesar la solicitud.", "error");
   }
-};
+}
 
+
+    clickCerrarModeloHandler();
+  };
 
   const obtenerHorarios = async () => {
-  try {
-    // 🔑 Obtener token de usuario autenticado
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
+    try {
+      const resHorario = await axios.get(API_HORARIO);
+      const resAulas = await axios.get(API_AULA);
+      const resAlumnos = await axios.get(API_ALUMNO);
+      const resDocentes = await axios.get(API_DOCENTE);
 
-    // 🧩 Crear objeto de configuración con headers
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`, // 👈 Token JWT
-      },
-    };
-
-    // 🔁 Realizar todas las peticiones con token
-    const [resHorario, resAulas, resAlumnos, resDocentes] = await Promise.all([
-      axios.get(API_HORARIO, config),
-      axios.get(API_AULA, config),
-      axios.get(API_ALUMNO, config),
-      axios.get(API_DOCENTE, config),
-    ]);
-
-    // ✅ Asignar datos
-    setHorarios(resHorario.data);
-    setAulas(resAulas.data);
-    setAlumnos(resAlumnos.data.data);
-    setDocentes(resDocentes.data);
-  } catch (error) {
-    console.error("❌ Error al cargar los datos:", error);
-  }
-};
-
+      setHorarios(resHorario.data);
+      setAulas(resAulas.data);
+      setAlumnos(resAlumnos.data.data);
+      setDocentes(resDocentes.data);
+    } catch (error) {
+      console.error("Error al cargar los datos", error);
+    }
+  };
 
   useEffect(() => {
     obtenerHorarios();

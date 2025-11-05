@@ -353,7 +353,7 @@ const ModalDetalleHorario = ({
           </motion.button>
           {!esCreacion && (
             <motion.button
-              className="btn btn-danger"
+              className="btn-eliminar-personal"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => onEliminar(horarioEdicion._id)}

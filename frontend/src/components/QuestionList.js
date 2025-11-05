@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import QuestionItem from './QuestionItem';
-import Notification from './Notification'; 
-import { auth } from "..//components/authentication/Auth";
+import Notification from './Notification'; // 💡 NECESITAS IMPORTAR ESTO
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -18,35 +17,17 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         fetchQuestions();
     }, []);
 
-   
     const fetchQuestions = async () => {
-    try {
-        // 🔹 Obtener el usuario actual
-        const user = auth.currentUser;
-        if (!user) {
-            setError("Usuario no autenticado");
-            return;
+        try {
+            const res = await axios.get(`${API_BASE_URL}/questions`);
+            setQuestions(res.data);
+            setError(null);
+        } catch (err) {
+            console.error("Error al obtener preguntas:", err);
+            setError('No se pudieron cargar las preguntas.');
         }
-
-        // 🔹 Obtener token JWT del usuario
-        const token = await user.getIdToken();
-
-        // 🔹 Hacer la solicitud GET enviando el token en el header Authorization
-        const res = await axios.get(`${API_BASE_URL}/questions`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        // 🔹 Guardar preguntas en estado
-        setQuestions(res.data);
-        setError(null);
-    } catch (err) {
-        console.error("Error al obtener preguntas:", err);
-        setError('No se pudieron cargar las preguntas.');
-    }
-};
-
+    };
+    
     // 💡 FUNCIÓN PARA CERRAR LA NOTIFICACIÓN
     const closeNotification = () => setNotification(null);
 
