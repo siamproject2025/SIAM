@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "../../styles/Directiva.css";
-import { auth } from "..//../components/authentication/Auth";
-
 import { 
   Users,
   Mail,
@@ -25,7 +23,7 @@ import {
   Shield
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/directiva";
+const API_URL = "http://localhost:5000/api/directiva";
 
 const Directiva = () => {
   const [miembros, setMiembros] = useState([]);
@@ -80,34 +78,21 @@ const Directiva = () => {
     cargarMiembros();
   }, []);
 
-const cargarMiembros = async () => {
-  try {
-    setLoading(true);
-
-    // Obtener token del usuario autenticado
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    // Hacer la petición con el token en Authorization
-    const res = await fetch(API_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) throw new Error('Error al cargar miembros');
-
-    const data = await res.json();
-    setMiembros(Array.isArray(data.data) ? data.data : []);
-  } catch (err) {
-    console.error('Error al obtener los miembros:', err);
-    showNotification('Error al cargar los miembros de la directiva', 'error');
-    setMiembros([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  const cargarMiembros = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(API_URL);
+      if (!res.ok) throw new Error('Error al cargar miembros');
+      const data = await res.json();
+      setMiembros(Array.isArray(data.data) ? data.data : []);
+    } catch (err) {
+      console.error('Error al obtener los miembros:', err);
+      showNotification('Error al cargar los miembros de la directiva', 'error');
+      setMiembros([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Calcular estadísticas
   const totalMiembros = miembros.length;
@@ -146,333 +131,236 @@ const cargarMiembros = async () => {
   };
 
   const handleCrearMiembro = async (e) => {
-  e.preventDefault();
-  
-  try {
-    if (!formData.nombre.trim()) {
-      showNotification('El nombre del miembro es obligatorio', 'error');
-      return;
-    }
-    if (!formData.cargo.trim()) {
-      showNotification('El cargo es obligatorio', 'error');
-      return;
-    }
-    if (!formData.email.trim()) {
-      showNotification('El email es obligatorio', 'error');
-      return;
-    }
-    if (!formData.telefono) {
-      showNotification('El teléfono es obligatorio', 'error');
-      return;
-    }
-
-    const datosMiembro = {
-      ...formData,
-      fecha_registro: new Date(formData.fecha_registro)
-    };
-
-    // 🔐 Obtener token del usuario autenticado
-    const user = auth.currentUser;
-    if (!user) {
-      showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
-      return;
-    }
-
-    const token = await user.getIdToken();
-
-    // 🚀 Enviar solicitud al backend con el token
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // ✅ Token agregado
-      },
-      body: JSON.stringify(datosMiembro)
-    });
+    e.preventDefault();
     
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al crear el miembro');
-    }
-    
-    await cargarMiembros();
-    setMostrarModalCrear(false);
-    resetForm();
-    showNotification(`Miembro "${formData.nombre}" creado exitosamente`, 'success');
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al crear el miembro', 'error');
-  }
-};
+    try {
+      if (!formData.nombre.trim()) {
+        showNotification('El nombre del miembro es obligatorio', 'error');
+        return;
+      }
+      if (!formData.cargo.trim()) {
+        showNotification('El cargo es obligatorio', 'error');
+        return;
+      }
+      if (!formData.email.trim()) {
+        showNotification('El email es obligatorio', 'error');
+        return;
+      }
+      if (!formData.telefono) {
+        showNotification('El teléfono es obligatorio', 'error');
+        return;
+      }
 
+      const datosMiembro = {
+        ...formData,
+        fecha_registro: new Date(formData.fecha_registro)
+      };
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosMiembro)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al crear el miembro');
+      }
+      
+      await cargarMiembros();
+      setMostrarModalCrear(false);
+      resetForm();
+      showNotification(`Miembro "${formData.nombre}" creado exitosamente`, 'success');
+    } catch (err) {
+      console.error(err.message);
+      showNotification(err.message || 'Error al crear el miembro', 'error');
+    }
+  };
 
   const handleEditarMiembro = async (e) => {
-  e.preventDefault();
-
-  try {
-    if (!formData.nombre.trim()) {
-      showNotification('El nombre del miembro es obligatorio', 'error');
-      return;
-    }
-    if (!formData.cargo.trim()) {
-      showNotification('El cargo es obligatorio', 'error');
-      return;
-    }
-    if (!formData.email.trim()) {
-      showNotification('El email es obligatorio', 'error');
-      return;
-    }
-    if (!formData.telefono) {
-      showNotification('El teléfono es obligatorio', 'error');
-      return;
-    }
-
-    const datosActualizados = {
-      ...formData,
-      fecha_registro: new Date(formData.fecha_registro)
-    };
-
-    // Obtener token del usuario autenticado
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    // Enviar la solicitud con el token en headers
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(datosActualizados)
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al editar el miembro');
-    }
-
-    await cargarMiembros();
-    setMiembroSeleccionado(null);
-    resetForm();
-    showNotification(`Miembro "${formData.nombre}" actualizado exitosamente`, 'success');
-
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al editar el miembro', 'error');
-  }
-};
-
-
-const handleEliminarMiembro = async () => {
-  const miembroAEliminar = miembros.find(m => m._id === miembroSeleccionado._id);
-
-
-  try {
-    // Obtener token del usuario autenticado
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    // Enviar solicitud DELETE con token en headers
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al eliminar el miembro');
-    }
-
-    await cargarMiembros();
-    setMiembroSeleccionado(null);
-    resetForm();
-    showNotification(`Miembro "${miembroAEliminar?.nombre}" eliminado exitosamente`, 'success');
-
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al eliminar el miembro', 'error');
-  }
-};
-
-
- const handleAgregarDocumento = async (e) => {
-  e.preventDefault();
-  if (!documentoData.nombre_archivo || !documentoData.tipo_documento) {
-    showNotification('Nombre y tipo de documento son obligatorios', 'error');
-    return;
-  }
-
-  try {
-    // 🔐 Obtener token del usuario autenticado
-    const user = auth.currentUser;
-    if (!user) {
-      showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
-      return;
-    }
-    const token = await user.getIdToken();
-
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/documentos`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // ✅ Token agregado
-      },
-      body: JSON.stringify({
-        ...documentoData,
-        fecha_subida: new Date()
-      })
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al agregar documento');
-    }
+    e.preventDefault();
     
-    showNotification('Documento agregado exitosamente', 'success');
-    setDocumentoData({
-      nombre_archivo: '',
-      tipo_documento: 'acta',
-      descripcion: '',
-      archivo: null
-    });
-    cargarMiembros();
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al agregar documento', 'error');
-  }
-};
+    try {
+      if (!formData.nombre.trim()) {
+        showNotification('El nombre del miembro es obligatorio', 'error');
+        return;
+      }
+      if (!formData.cargo.trim()) {
+        showNotification('El cargo es obligatorio', 'error');
+        return;
+      }
+      if (!formData.email.trim()) {
+        showNotification('El email es obligatorio', 'error');
+        return;
+      }
+      if (!formData.telefono) {
+        showNotification('El teléfono es obligatorio', 'error');
+        return;
+      }
+
+      const datosActualizados = {
+        ...formData,
+        fecha_registro: new Date(formData.fecha_registro)
+      };
+
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datosActualizados)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al editar el miembro');
+      }
+      
+      await cargarMiembros();
+      setMiembroSeleccionado(null);
+      resetForm();
+      showNotification(`Miembro "${formData.nombre}" actualizado exitosamente`, 'success');
+    } catch (err) {
+      console.error(err.message);
+      showNotification(err.message || 'Error al editar el miembro', 'error');
+    }
+  };
+
+  const handleEliminarMiembro = async () => {
+    const miembroAEliminar = miembros.find(m => m._id === miembroSeleccionado._id);
+    if (!window.confirm(`¿Seguro que deseas eliminar al miembro "${miembroAEliminar?.nombre}"?`)) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al eliminar el miembro');
+      }
+      
+      await cargarMiembros();
+      setMiembroSeleccionado(null);
+      resetForm();
+      showNotification(`Miembro "${miembroAEliminar?.nombre}" eliminado exitosamente`, 'success');
+    } catch (err) {
+      console.error(err.message);
+      showNotification(err.message || 'Error al eliminar el miembro', 'error');
+    }
+  };
+
+  const handleAgregarDocumento = async (e) => {
+    e.preventDefault();
+    if (!documentoData.nombre_archivo || !documentoData.tipo_documento) {
+      showNotification('Nombre y tipo de documento son obligatorios', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/documentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...documentoData,
+          fecha_subida: new Date()
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al agregar documento');
+      
+      showNotification('Documento agregado exitosamente', 'success');
+      setDocumentoData({
+        nombre_archivo: '',
+        tipo_documento: 'acta',
+        descripcion: '',
+        archivo: null
+      });
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al agregar documento', 'error');
+    }
+  };
 
   // NUEVAS FUNCIONES PARA EL MODAL DE DOCUMENTOS
   const handleAgregarDocumentoModal = async (e) => {
-  e.preventDefault();
-  if (!documentoModalData.nombre_archivo || !documentoModalData.tipo_documento) {
-    showNotification('Nombre y tipo de documento son obligatorios', 'error');
-    return;
-  }
-
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
+    e.preventDefault();
+    if (!documentoModalData.nombre_archivo || !documentoModalData.tipo_documento) {
+      showNotification('Nombre y tipo de documento son obligatorios', 'error');
       return;
     }
-    const token = await user.getIdToken();
 
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/documentos`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` // ✅ Token agregado
-      },
-      body: JSON.stringify({
-        ...documentoModalData,
-        fecha_subida: new Date()
-      })
-    });
+    try {
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}/documentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...documentoModalData,
+          fecha_subida: new Date()
+        })
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al agregar documento');
+      if (!res.ok) throw new Error('Error al agregar documento');
+      
+      showNotification('Documento agregado exitosamente', 'success');
+      resetDocumentoModalForm();
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al agregar documento', 'error');
     }
+  };
 
-    showNotification('Documento agregado exitosamente', 'success');
-    resetDocumentoModalForm();
-    cargarMiembros();
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al agregar documento', 'error');
-  }
-};
-
-const handleEditarDocumentoModal = async (e) => {
-  e.preventDefault();
-  if (!documentoModalData.nombre_archivo || !documentoModalData.tipo_documento) {
-    showNotification('Nombre y tipo de documento son obligatorios', 'error');
-    return;
-  }
-
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
+  const handleEditarDocumentoModal = async (e) => {
+    e.preventDefault();
+    if (!documentoModalData.nombre_archivo || !documentoModalData.tipo_documento) {
+      showNotification('Nombre y tipo de documento son obligatorios', 'error');
       return;
     }
-    const token = await user.getIdToken();
 
-    const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
-    const documentosActualizados = miembroActual.documentos_pdf.map(doc => 
-      doc._id === documentoEditando._id 
-        ? { ...documentoModalData, _id: doc._id, fecha_subida: doc.fecha_subida }
-        : doc
-    );
+    try {
+      const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
+      const documentosActualizados = miembroActual.documentos_pdf.map(doc => 
+        doc._id === documentoEditando._id 
+          ? { ...documentoModalData, _id: doc._id, fecha_subida: doc.fecha_subida }
+          : doc
+      );
 
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` // ✅ Token agregado
-      },
-      body: JSON.stringify({
-        documentos_pdf: documentosActualizados
-      })
-    });
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentos_pdf: documentosActualizados
+        })
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al editar documento');
+      if (!res.ok) throw new Error('Error al editar documento');
+      
+      showNotification('Documento actualizado exitosamente', 'success');
+      resetDocumentoModalForm();
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al editar documento', 'error');
     }
+  };
 
-    showNotification('Documento actualizado exitosamente', 'success');
-    resetDocumentoModalForm();
-    cargarMiembros();
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al editar documento', 'error');
-  }
-};
+  const handleEliminarDocumentoModal = async (documentoId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
 
-const handleEliminarDocumentoModal = async (documentoId) => {
-  
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
-      return;
+    try {
+      const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
+      const documentosActualizados = miembroActual.documentos_pdf.filter(doc => doc._id !== documentoId);
+
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          documentos_pdf: documentosActualizados
+        })
+      });
+
+      if (!res.ok) throw new Error('Error al eliminar documento');
+      
+      showNotification('Documento eliminado exitosamente', 'success');
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al eliminar documento', 'error');
     }
-    const token = await user.getIdToken();
-
-    const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
-    const documentosActualizados = miembroActual.documentos_pdf.filter(doc => doc._id !== documentoId);
-
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` // ✅ Token agregado
-      },
-      body: JSON.stringify({
-        documentos_pdf: documentosActualizados
-      })
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al eliminar documento');
-    }
-
-    showNotification('Documento eliminado exitosamente', 'success');
-    cargarMiembros();
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al eliminar documento', 'error');
-  }
-};
-
-
+  };
 
   const handleOpenEditarDocumentoModal = (documento) => {
     setDocumentoEditando(documento);
@@ -486,59 +374,44 @@ const handleEliminarDocumentoModal = async (documentoId) => {
   };
 
   const handleAgregarHistorial = async (e) => {
-  e.preventDefault();
-  if (!historialData.cargo || !historialData.fecha_inicio) {
-    showNotification('Cargo y fecha de inicio son obligatorios', 'error');
-    return;
-  }
-
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
+    e.preventDefault();
+    if (!historialData.cargo || !historialData.fecha_inicio) {
+      showNotification('Cargo y fecha de inicio son obligatorios', 'error');
       return;
     }
-    const token = await user.getIdToken();
 
-    const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
-    const historialActualizado = [
-      ...(miembroActual.historial_cargos || []),
-      {
-        ...historialData,
-        fecha_inicio: new Date(historialData.fecha_inicio),
-        fecha_fin: historialData.fecha_fin ? new Date(historialData.fecha_fin) : null
-      }
-    ];
+    try {
+      const miembroActual = miembros.find(m => m._id === miembroSeleccionado._id);
+      const historialActualizado = [
+        ...(miembroActual.historial_cargos || []),
+        {
+          ...historialData,
+          fecha_inicio: new Date(historialData.fecha_inicio),
+          fecha_fin: historialData.fecha_fin ? new Date(historialData.fecha_fin) : null
+        }
+      ];
 
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` // ✅ Token agregado
-      },
-      body: JSON.stringify({
-        historial_cargos: historialActualizado
-      })
-    });
+      const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          historial_cargos: historialActualizado
+        })
+      });
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al agregar historial');
+      if (!res.ok) throw new Error('Error al agregar historial');
+      
+      showNotification('Historial agregado exitosamente', 'success');
+      setHistorialData({
+        cargo: '',
+        fecha_inicio: '',
+        fecha_fin: ''
+      });
+      cargarMiembros();
+    } catch (err) {
+      showNotification('Error al agregar historial', 'error');
     }
-
-    showNotification('Historial agregado exitosamente', 'success');
-    setHistorialData({
-      cargo: '',
-      fecha_inicio: '',
-      fecha_fin: ''
-    });
-    cargarMiembros();
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al agregar historial', 'error');
-  }
-};
-
+  };
 
   const miembrosFiltrados = miembros.filter(m => {
     const terminoBusqueda = busqueda.toLowerCase();
@@ -634,7 +507,7 @@ const handleEliminarDocumentoModal = async (documentoId) => {
       >
         <h3 className="directiva-subtitulo">
           <motion.div
-          
+            initial={{ rotate: -180, scale: 0 }}
             animate={{ rotate: 0, scale: 1 }}
             transition={{ type: "spring", stiffness: 200, damping: 15 }}
           >
@@ -932,7 +805,7 @@ const handleEliminarDocumentoModal = async (documentoId) => {
                 }}
               >
                 <motion.div
-                
+                  initial={{ rotate: -180, scale: 0 }}
                   animate={{ rotate: 0, scale: 1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
                 >
@@ -1066,7 +939,7 @@ const handleEliminarDocumentoModal = async (documentoId) => {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <motion.div
-                 
+                  animate={{ rotate: mostrarMenuFiltros ? 180 : 0 }}
                   transition={{ duration: 0.3 }}
                 >
                   <Briefcase size={18} />
@@ -1195,7 +1068,7 @@ const handleEliminarDocumentoModal = async (documentoId) => {
             transition={{ duration: 0.5, repeat: Infinity, repeatType: "reverse" }}
           >
             <motion.div
-              
+              animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               style={{ display: 'inline-block', marginBottom: '1rem' }}
             >
@@ -1488,7 +1361,7 @@ const handleEliminarDocumentoModal = async (documentoId) => {
                   <div className="modal-actions">
                     <motion.button 
                       type="button" 
-                      className="btn btn-danger" 
+                      className="btn-eliminar" 
                       onClick={handleEliminarMiembro}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}

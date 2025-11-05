@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateUser } = require('../middleware/authMiddleWare');
-
 const {
   obtenerProveedores,
   obtenerProveedorPorId,
@@ -13,8 +11,6 @@ const {
   buscarPorCalificacion
 } = require('../Controllers/proveedoresController');
 
-
-router.use(authenticateUser);
 // Rutas básicas CRUD
 router.get('/', obtenerProveedores);
 router.get('/:id', obtenerProveedorPorId);

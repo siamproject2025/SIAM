@@ -5,8 +5,6 @@ import ModalDetalleBien from './Bienes/ModalDetalleBien';
 import Notification from '../../components/Notification';
 import * as XLSX from 'xlsx';
 import '../../styles/Models/Bienes.css';
-import { auth } from "..//../components/authentication/Auth";
-
 import { 
   Package,
   Search,
@@ -52,7 +50,7 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/bienes";
+const API_URL = "http://localhost:5000/api/bienes";
 
 const Bienes = () => {
   // Estados principales
@@ -95,30 +93,13 @@ const Bienes = () => {
     { name: "Préstamo", uid: "PRESTAMO" }
   ];
 
-useEffect(() => {
-  const cargarBienes = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Usuario no autenticado');
-      const token = await user.getIdToken();
-
-      const res = await fetch(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!res.ok) throw new Error('Error al obtener los bienes');
-
-      const data = await res.json();
-      setBienes(data);
-    } catch (err) {
-      console.error('Error al obtener los bienes:', err);
-    }
-  };
-
-  cargarBienes();
-}, []);
+  // Cargar datos
+  useEffect(() => {
+    fetch(API_URL)
+      .then(res => res.json())
+      .then(data => setBienes(data))
+      .catch(err => console.error('Error al obtener los bienes:', err));
+  }, []);
 
 
   const filteredItems = useMemo(() => {
@@ -199,8 +180,9 @@ useEffect(() => {
   }, [bienes]);
 
   // Handlers CRUD
-  const handleCrearBien = async (nuevoBien) => {
+const handleCrearBien = async (nuevoBien) => {
   try {
+    // 🔹 Validaciones
     if (!nuevoBien.codigo.trim()) {
       showNotification('El código del bien es obligatorio', 'error');
       return;
@@ -219,32 +201,29 @@ useEffect(() => {
     }
 
     const codigoExistente = bienes.find(
-      (b) => b.codigo?.toLowerCase() === nuevoBien.codigo?.toLowerCase()
-    );
+  (b) => b.codigo?.toLowerCase() === nuevoBien.codigo?.toLowerCase()
+);
+
     if (codigoExistente) {
       showNotification('Ya existe un bien con este código', 'error');
       return;
     }
 
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
+    // 🔹 Crear objeto FormData
     const formData = new FormData();
     for (const key in nuevoBien) {
       if (key === 'imagen' && nuevoBien[key]) {
+        // Archivo tipo File o Blob
         formData.append('imagen', nuevoBien[key]);
       } else {
         formData.append(key, nuevoBien[key]);
       }
     }
 
+    // 🔹 Enviar al backend sin establecer 'Content-Type'
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
+      body: formData,
     });
 
     if (!res.ok) {
@@ -253,6 +232,10 @@ useEffect(() => {
     }
 
     const bienCreado = await res.json();
+    console.log("🔹 Respuesta del backend:", bienCreado);
+
+    // 🔹 Actualizar estado y notificación
+    
     setBienes([...bienes, bienCreado.data]);
     setMostrarModalCrear(false);
     showNotification(`Bien "${bienCreado.data.nombre}" creado exitosamente`, 'success');
@@ -264,7 +247,8 @@ useEffect(() => {
 };
 
 
-const handleEditarBien = async (bienActualizado) => {
+
+ const handleEditarBien = async (bienActualizado) => {
   try {
     if (!bienActualizado.codigo.trim()) {
       showNotification('El código del bien es obligatorio', 'error');
@@ -283,25 +267,21 @@ const handleEditarBien = async (bienActualizado) => {
       return;
     }
 
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
+    // 🔹 Crear FormData y agregar todos los campos de bienActualizado
     const formData = new FormData();
     for (const key in bienActualizado) {
+      // Si es imagen y existe, agregar como archivo
       if (key === 'imagen' && bienActualizado[key]) {
-        formData.append('imagen', bienActualizado[key]);
+        formData.append('imagen', bienActualizado[key]); // tipo File o Blob
       } else {
         formData.append(key, bienActualizado[key]);
       }
     }
 
+    // 🔹 Enviar al backend sin headers, fetch lo detecta automáticamente
     const res = await fetch(`${API_URL}/${bienActualizado._id}`, {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
+      body: formData,
     });
 
     if (!res.ok) {
@@ -313,7 +293,6 @@ const handleEditarBien = async (bienActualizado) => {
     setBienes(bienes.map(b => b._id === actualizada.data._id ? actualizada.data : b));
     setBienSeleccionado(null);
     showNotification(`Bien "${actualizada.data.nombre}" actualizado exitosamente`, 'success');
-
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al editar el bien', 'error');
@@ -321,37 +300,26 @@ const handleEditarBien = async (bienActualizado) => {
 };
 
 
-const handleEliminarBien = async (id) => {
-  const bienAEliminar = bienes.find(b => b._id === id);
-  
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const res = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
+  const handleEliminarBien = async (id) => {
+    const bienAEliminar = bienes.find(b => b._id === id);
+    if (!window.confirm(`¿Seguro que deseas eliminar el bien "${bienAEliminar?.nombre}"?`)) return;
+    
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Error al eliminar el bien');
       }
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al eliminar el bien');
+      
+      setBienes(bienes.filter(b => b._id !== id));
+      setBienSeleccionado(null);
+      setShowActionMenu(null);
+      showNotification(`Bien "${bienAEliminar?.nombre}" eliminado exitosamente`, 'success');
+    } catch (err) {
+      console.error(err.message);
+      showNotification(err.message || 'Error al eliminar el bien', 'error');
     }
-
-    setBienes(bienes.filter(b => b._id !== id));
-    setBienSeleccionado(null);
-    setShowActionMenu(null);
-    showNotification(`Bien "${bienAEliminar?.nombre}" eliminado exitosamente`, 'success');
-
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al eliminar el bien', 'error');
-  }
-};
-
+  };
 
   // Ordenamiento
   const sortedItems = useMemo(() => {

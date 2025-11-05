@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { auth } from "..//components/authentication/Auth";
 
 const API_BASE_URL = 'http://localhost:5000/api'; 
 
@@ -52,66 +51,59 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
     }, [deleteDuration, deleteUnit]);
     
     const handleAnswerSubmit = async (e) => {
-    e.preventDefault(); 
-    setError(null);
+        e.preventDefault(); 
+        setError(null);
+        // Opcional: setGlobalNotification(null); para limpiar si había una antes
 
-    if (!answerContent.trim()) {
-        setError("La respuesta no puede estar vacía.");
-        return;
-    }
-
-    const dur = parseInt(deleteDuration);
-    if (dur <= 0 || isNaN(dur)) {
-        setError("La duración de eliminación debe ser un número positivo.");
-        return;
-    }
-
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            setError("Usuario no autenticado");
+        if (!answerContent.trim()) {
+            setError("La respuesta no puede estar vacía.");
             return;
         }
-        const token = await user.getIdToken(); // 🔹 Obtener token
-
-        const postUrlCompleto = `${API_BASE_URL}/questions/${question._id}/answers`;
         
-        await axios.post(postUrlCompleto, { 
-            answerContent, 
-            deleteDuration: dur,
-            deleteUnit: deleteUnit
-        }, {
-            headers: {
-                Authorization: `Bearer ${token}` // ✅ Token agregado
+        const dur = parseInt(deleteDuration);
+        if (dur <= 0 || isNaN(dur)) {
+            setError("La duración de eliminación debe ser un número positivo.");
+            return;
+        }
+
+        try {
+            const postUrlCompleto = `${API_BASE_URL}/questions/${question._id}/answers`;
+            
+            await axios.post(postUrlCompleto, { 
+                answerContent, 
+                // userId: /* Tu ID de usuario aquí */, 
+                deleteDuration: dur,
+                deleteUnit: deleteUnit
+            }); 
+            
+            setAnswerContent('');
+            setDeleteDuration(1);
+            setDeleteUnit('minutes');
+            setShowAnswerForm(false);
+            fetchQuestions(); 
+            
+            // 💡 REEMPLAZO DE alert() por Notificación de éxito
+            if (setGlobalNotification) {
+                setGlobalNotification({
+                    message: "Respuesta publicada con éxito.",
+                    type: 'success'
+                });
             }
-        });
-
-        setAnswerContent('');
-        setDeleteDuration(1);
-        setDeleteUnit('minutes');
-        setShowAnswerForm(false);
-        fetchQuestions(); 
-
-        if (setGlobalNotification) {
-            setGlobalNotification({
-                message: "Respuesta publicada con éxito.",
-                type: 'success'
-            });
+            
+        } catch (err) {
+            const errorMessage = err.response?.data?.message || 'Error desconocido al enviar la respuesta.';
+            console.error("Error al enviar la respuesta:", err);
+            
+            // 💡 Notificación de error
+            if (setGlobalNotification) {
+                 setGlobalNotification({
+                    message: `Error al responder: ${errorMessage}.`,
+                    type: 'error'
+                });
+            }
+            setError(`Error: ${errorMessage}.`);
         }
-
-    } catch (err) {
-        const errorMessage = err.response?.data?.message || 'Error desconocido al enviar la respuesta.';
-        console.error("Error al enviar la respuesta:", err);
-
-        if (setGlobalNotification) {
-            setGlobalNotification({
-                message: `Error al responder: ${errorMessage}.`,
-                type: 'error'
-            });
-        }
-        setError(`Error: ${errorMessage}.`);
-    }
-};
+    };
 
     const isQuestionOpen = question.status === 'Pendiente';
 

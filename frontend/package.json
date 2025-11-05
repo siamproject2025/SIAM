@@ -22,7 +22,6 @@
     "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
     "firebase": "^12.3.0",
     "framer-motion": "^12.23.24",
     "fullcalendar": "^6.1.19",
@@ -43,7 +42,7 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "start": "serve -s build",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -65,8 +64,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "serve": "^14.2.5"
   }
 }

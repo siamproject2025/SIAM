@@ -2,10 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const Question = require('../Models/Question'); // Asegúrate de que la ruta sea correcta
-const { authenticateUser } = require('../middleware/authMiddleWare');
 
-
-router.use(authenticateUser);
 // Ruta POST para crear una nueva pregunta
 router.post('/', async (req, res) => {
     try {
