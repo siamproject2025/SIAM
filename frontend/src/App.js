@@ -116,7 +116,7 @@ return (
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
       {/* Renderiza NavBar solo si el usuario está autenticado */}
       {user && <NavBar />}
-
+        <ChatFlotanteConsultas></ChatFlotanteConsultas>
       <div className="app-content">
         {user && <SideBar />}
 <ChatFlotanteConsultas />
@@ -140,6 +140,7 @@ return (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/Actividades" element={<ActividadesPage />} />
           <Route path="/biblioteca" element={<BibliotecaTest />} />
+          <Route path="/horarios" element={<Horarios />} />
           <Route path="/Calendario" element={<CalendarioActividades />} />
           <Route path="/directiva" element={<Directiva />} />  
           <Route path="/admisiones" element={<Matricula />} />                              

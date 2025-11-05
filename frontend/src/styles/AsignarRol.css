@@ -173,7 +173,7 @@
   height: 30px;
 }
 
-.inputFiltro {
+.inputFiltro-rol {
   width: 100%;
   padding: 0.8rem 1rem;
   padding-left: 50px;
@@ -183,14 +183,14 @@
   transition: all 0.3s ease;
 }
 
-.inputFiltro:focus {
+.inputFiltro-rol:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.selectFiltro {
-  padding: 0.8rem 1rem;
+.selectFiltro-rol {
+  padding: 1rem 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   font-size: 1rem;
@@ -550,7 +550,7 @@
   .filtro-item {
     width: 100%;
   }
-  .inputFiltro,
+  .inputFiltro-rol,
   .selectFiltro {
     width: 100%;
   }

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Users, UserCheck, UserPlus, User, Calendar, Award } from 'lucide-react';
 import '..//../styles/Matriculas.css';
 import StudentTable from '..//..//components/StudentTable';
 import StudentForm from '..//..//components/StudentForm';
@@ -27,7 +29,8 @@ function App() {
       }
       
       const data = await response.json();
-      setStudents(data || []); // Asegurar que siempre sea un array
+      setStudents(data.data || []);
+ // Asegurar que siempre sea un array
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Error al cargar los estudiantes: ' + error.message);
@@ -37,58 +40,86 @@ function App() {
     }
   };
 
+  const totalEstudiantes = students.length;
+  const estudiantesActivos = students.filter(estudiante => estudiante.estado === 'activo').length;
+  const estudiantesNuevos = students.filter(estudiante => {
+    const fechaRegistro = new Date(estudiante.fechaRegistro);
+    const fechaLimite = new Date();
+    fechaLimite.setDate(fechaLimite.getDate() - 30); // Últimos 30 días
+    return fechaRegistro > fechaLimite;
+  }).length;
+
   useEffect(() => {
     fetchStudents();
   }, []);
 
   // Crear estudiante
   const createStudent = async (studentData) => {
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(studentData),
-      });
-
-      if (response.ok) {
-        setShowCreateModal(false);
-        fetchStudents();
-        alert('Estudiante matriculado exitosamente');
-      } else {
-        throw new Error('Error al crear estudiante');
-      }
-    } catch (error) {
-      console.error('Error creating student:', error);
-      alert('Error al crear el estudiante');
+  try {
+    // Crear FormData
+    const formData = new FormData();
+    for (const key in studentData) {
+      formData.append(key, studentData[key]);
     }
-  };
+
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formData.append('imagen', formData.imagen);
+    }
+
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      body: formData, // enviamos FormData
+      // NOTA: No debes poner 'Content-Type', fetch lo maneja automáticamente
+    });
+
+    if (response.ok) {
+      setShowCreateModal(false);
+      fetchStudents();
+      alert('Estudiante matriculado exitosamente');
+    } else {
+      throw new Error('Error al crear estudiante');
+    }
+  } catch (error) {
+    console.error('Error creating student:', error);
+    alert('Error al crear el estudiante');
+  }
+};
+
 
   // Actualizar estudiante
-  const updateStudent = async (studentData) => {
-    try {
-      const response = await fetch(`${API_URL}/${editingStudent._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(studentData),
-      });
-
-      if (response.ok) {
-        setShowEditModal(false);
-        setEditingStudent(null);
-        fetchStudents();
-        alert('Estudiante actualizado exitosamente');
-      } else {
-        throw new Error('Error al actualizar estudiante');
-      }
-    } catch (error) {
-      console.error('Error updating student:', error);
-      alert('Error al actualizar el estudiante');
+const updateStudent = async (studentData) => {
+  try {
+    // Crear FormData
+    const formData = new FormData();
+    for (const key in studentData) {
+      formData.append(key, studentData[key]);
     }
-  };
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formData.append('imagen', formData.imagen);
+    }
+
+    const response = await fetch(`${API_URL}/${editingStudent._id}`, {
+      method: 'PUT',
+      body: formData, // enviamos FormData
+      // NOTA: No se pone 'Content-Type', fetch lo maneja automáticamente
+    });
+
+    if (response.ok) {
+      setShowEditModal(false);
+      setEditingStudent(null);
+      fetchStudents();
+      alert('Estudiante actualizado exitosamente');
+    } else {
+      throw new Error('Error al actualizar estudiante');
+    }
+  } catch (error) {
+    console.error('Error updating student:', error);
+    alert('Error al actualizar el estudiante');
+  }
+};
+
 
   // Eliminar estudiante
   const deleteStudent = async (id) => {
@@ -148,20 +179,158 @@ function App() {
   };
 
   return (
-    <div className="App">
+    <div className="App2">
       {/* Header con gradiente */}
-      <header className="app-header">
-        <div className="header-content">
-          <h1 className="header-title">Sistema de Matrículas</h1>
-          <p className="header-description">
-            Gestión integral de estudiantes - Administre las matrículas de manera eficiente
-          </p>
-        </div>
-      </header>
+      <div className='headerEstudiantes'>
+      <motion.div 
+        className="biblioteca-header"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+      >
+        <motion.div
+          className="header-gradient"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+        >
+          {/* Patrón de fondo */}
+          <div className="header-pattern" />
 
+          <div className="header-content">
+            <motion.h2
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <motion.div
+                initial={{ rotate: -180, scale: 0 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+              >
+                <Users size={36} fill="white" color="white" />
+              </motion.div>
+              Gestión de Estudiantes
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                className="floating-main-icon"
+              >
+                <UserCheck size={32} color="white" />
+              </motion.div>
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="header-subtitle"
+            >
+              Administra y supervisa el registro de estudiantes de manera eficiente.
+            </motion.p>
+
+            <motion.div 
+              className="header-stats"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="stat-icon"><Users size={20} color="white" /></div>
+                <div className="stat-text">
+                  <div className="stat-value" style={{color:"white"}}>{totalEstudiantes}</div>
+                  <div className="stat-label" style={{color:"white"}}>Total Estudiantes</div>
+                </div>
+              </motion.div>
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+              >
+                <div className="stat-icon"><UserCheck size={20} color="white" /></div>
+                <div className="stat-text">
+                  <div className="stat-value" style={{color:"white"}}>{estudiantesActivos}</div>
+                  <div className="stat-label" style={{color:"white"}}>Estudiantes Activos</div>
+                </div>
+              </motion.div>
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+              >
+                <div className="stat-icon"><UserPlus size={20} color="white" /></div>
+                <div className="stat-text">
+                  <div className="stat-value" style={{color:"white"}}>{estudiantesNuevos}</div>
+                  <div className="stat-label" style={{color:"white"}}>Nuevos Registros</div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              className="floating-icons"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <User size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, -8, 8, 0]
+                }}
+                transition={{ 
+                  duration: 3.5, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                <Calendar size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -12, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 4.2, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              >
+                <Award size={20} color="white" />
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+      </motion.div>
+      </div>
       {/* Contenido principal */}
       <main className="main-content">
-        <div className="container">
+        <div className="container2">
           {/* Mostrar error si existe */}
           {error && (
             <div className="error-banner">
@@ -195,7 +364,7 @@ function App() {
           </div>
 
           {/* Tabla de estudiantes */}
-         <StudentTable
+          <StudentTable
             students={students}
             loading={loading}
             selectedStudents={selectedStudents}

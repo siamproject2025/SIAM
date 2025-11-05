@@ -2,44 +2,30 @@
    SISTEMA DE GESTIÓN DE DIRECTIVA - ESTILOS
    ======================================== */
 
-/* Contenedor Principal */
 .directiva-container {
   padding: 2rem;
   max-width: 100%;
   margin: 0 auto;
   width: 100%;
-  min-height: 100vh;
-  background: #f5f7fa;
 }
-
-/* ========================================
-   HEADER Y ESTADÍSTICAS
-   ======================================== */
 
 .directiva-header {
   margin-bottom: 2rem;
   width: 100%;
-  background: white;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .directiva-header h2 {
-  font-size: 2.2rem;
-  color: #2c3e50;
+  font-size: 2rem;
+  color: #333;
   margin-bottom: 0.5rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
 }
 
 .directiva-header p {
-  color: #64748b;
+  color: #666;
   font-size: 1rem;
-  margin-bottom: 2rem;
 }
 
-/* Tarjetas de estadísticas */
+/* Estadísticas */
 .directiva-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -51,7 +37,7 @@
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -120,49 +106,38 @@
   font-weight: 600;
 }
 
-/* ========================================
-   BARRA DE BÚSQUEDA Y CONTROLES
-   ======================================== */
-
 .directiva-busqueda-bar {
   display: flex;
   gap: 1rem;
   margin-top: 1.5rem;
   align-items: center;
   width: 100%;
-  flex-wrap: wrap;
 }
 
 .directiva-busqueda {
   flex: 1;
-  min-width: 300px;
-  padding: 0.9rem 1rem;
-  padding-left: 45px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.95rem;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  padding-left: 40px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
   transition: all 0.3s ease;
-  background: white;
 }
 
 .directiva-busqueda:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.directiva-busqueda::placeholder {
-  color: #94a3b8;
-}
-
-/* Botones de acción */
+/* ESTILO UNIFICADO PARA TODOS LOS BOTONES DE LA BARRA */
 .btn-ayuda {
-  padding: 0.9rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0.8rem 1.5rem;
+  background: #667eea;
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -170,82 +145,132 @@
   gap: 0.5rem;
   transition: all 0.3s ease;
   white-space: nowrap;
-  font-size: 0.95rem;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
 }
 
 .btn-ayuda:hover {
+  background: #5568d3;
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-/* ========================================
-   TABLA PRINCIPAL
-   ======================================== */
+/* ELIMINÉ LA CLASE btn-nuevo-miembro - TODOS USAN btn-ayuda */
+
+.directiva-categorias-container {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.directiva-categoria-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease;
+}
+
+.directiva-categoria-header {
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+
+.directiva-subtitulo {
+  font-size: 1.3rem;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.directiva-vacio {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+  font-size: 1.1rem;
+}
 
 .tabla-directiva {
   width: 100%;
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  min-height: 600px;
+  max-height: calc(100vh - 300px);
   display: flex;
   flex-direction: column;
+  margin-bottom: 2rem;
 }
 
 .tabla-header {
   display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 80px;
   gap: 1rem;
-  padding: 1.2rem 1.5rem;
+  padding: 1rem 1.5rem;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   align-items: center;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   position: sticky;
   top: 0;
   z-index: 10;
+  width: 100%;
 }
 
 .tabla-body {
-  width: 100%;
-  overflow-x: auto;
+  flex: 1;
   overflow-y: auto;
-  max-height: calc(100vh - 450px);
-  background: white;
+  width: 100%;
 }
 
 .tabla-fila {
   display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 80px;
   gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid #e9ecef;
   align-items: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  background: white;
+}
+
+.tabla-fila::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
 }
 
 .tabla-fila:hover {
-  background: #f8fafc;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
-/* Badges de estado */
+.tabla-fila:hover::before {
+  transform: scaleY(1);
+}
+
+.tabla-fila:last-child {
+  border-bottom: none;
+}
+
 .estado-badge {
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 20px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   display: inline-block;
   text-align: center;
   min-width: 85px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .estado-badge.activo {
@@ -263,7 +288,6 @@
   color: white;
 }
 
-/* Badge de documentos */
 .documentos-badge {
   padding: 5px 12px;
   border-radius: 20px;
@@ -277,7 +301,6 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Badge tipo de documento */
 .tipo-doc-badge {
   padding: 3px 10px;
   border-radius: 15px;
@@ -319,86 +342,38 @@
   color: #374151;
 }
 
-/* ========================================
-   SECCIÓN DE CATEGORÍA
-   ======================================== */
-
-.directiva-categoria-section {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  margin-bottom: 2rem;
-}
-
-.directiva-categoria-header {
-  padding: 1.5rem 2rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.directiva-subtitulo {
-  font-size: 1.3rem;
-  color: #2c3e50;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.directiva-vacio {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: #94a3b8;
-  font-size: 1rem;
-}
-
-/* ========================================
-   MODALES
-   ======================================== */
-
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  padding: 2rem;
 }
 
 .modal-content {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 900px;
-  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 90vw;
   max-height: 85vh;
   overflow-y: auto;
 }
 
 .modal-title {
-  font-size: 1.6rem;
-  color: #2c3e50;
+  font-size: 1.5rem;
+  color: #333;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #f1f5f9;
+  gap: 0.5rem;
 }
 
-.modal-title svg {
-  color: #667eea;
-}
-
-/* Tabs del modal */
 .modal-tabs {
   display: flex;
   gap: 0.5rem;
@@ -431,43 +406,26 @@
   border-bottom-color: #667eea;
 }
 
-/* ========================================
-   FORMULARIOS
-   ======================================== */
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
-  margin-top: 1.5rem;
-}
-
 .form-group {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #475569;
+  color: #333;
   font-weight: 600;
-  font-size: 0.9rem;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
+  padding: 0.8rem;
+  border: 2px solid #e0e0e0;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
-  background: white;
-}
-
-.form-group input[type="file"] {
-  padding: 0.5rem;
 }
 
 .form-group input:focus,
@@ -475,39 +433,31 @@
 .form-group textarea:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.form-group input::placeholder {
-  color: #94a3b8;
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .form-group.full-width {
   grid-column: 1 / -1;
 }
 
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
-}
-
-/* Acciones del modal */
 .modal-actions {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid #f1f5f9;
+  margin-top: 1.5rem;
 }
 
 .btn-guardar,
 .btn-cancelar,
 .btn-eliminar,
 .btn-cerrar {
-  padding: 0.75rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -516,53 +466,51 @@
   align-items: center;
   gap: 0.5rem;
   transition: all 0.3s ease;
-  font-size: 0.95rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-guardar {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: #4CAF50;
   color: white;
 }
 
 .btn-guardar:hover {
+  background: #45a049;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
 }
 
 .btn-cancelar {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #f44336;
   color: white;
 }
 
 .btn-cancelar:hover {
+  background: #da190b;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
 .btn-eliminar {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: #ff9800;
   color: white;
 }
 
 .btn-eliminar:hover {
+  background: #fb8c00;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
 }
 
 .btn-cerrar {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #667eea;
   color: white;
 }
 
 .btn-cerrar:hover {
+  background: #5568d3;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
-
-/* ========================================
-   MENÚ DE FILTROS
-   ======================================== */
 
 .filtros-menu {
   position: absolute;
@@ -570,74 +518,40 @@
   right: 0;
   margin-top: 0.5rem;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   padding: 0.5rem;
-  min-width: 220px;
+  min-width: 200px;
   z-index: 100;
-  border: 1px solid #e2e8f0;
 }
 
 .filtro-opcion {
-  padding: 0.75rem 1rem;
+  padding: 0.7rem 1rem;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.2s ease;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #475569;
 }
 
 .filtro-opcion:hover {
-  background: #f8fafc;
-  color: #667eea;
+  background: #f5f5f5;
 }
 
 .filtro-opcion.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: #667eea;
   color: white;
 }
 
 .filtro-separador {
   height: 1px;
-  background: #e2e8f0;
+  background: #e0e0e0;
   margin: 0.5rem 0;
 }
 
-/* ========================================
-   SCROLLBAR PERSONALIZADO
-   ======================================== */
-
-.tabla-body::-webkit-scrollbar,
-.modal-content::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-.tabla-body::-webkit-scrollbar-track,
-.modal-content::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
-}
-
-.tabla-body::-webkit-scrollbar-thumb,
-.modal-content::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  border-radius: 10px;
-  border: 2px solid #f1f5f9;
-}
-
-.tabla-body::-webkit-scrollbar-thumb:hover,
-.modal-content::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5568d3, #6b3f94);
-}
-
-/* ========================================
-   RESPONSIVE
-   ======================================== */
-
+/* Responsive */
 @media (max-width: 1200px) {
   .form-grid {
     grid-template-columns: 1fr;
@@ -697,77 +611,22 @@
     gap: 0.5rem;
     padding: 0.75rem 1rem;
   }
-}
-
-/* ========================================
-   ANIMACIONES
-   ======================================== */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+  
+  .tabla-header {
+    grid-template-columns: 1fr 1fr 1fr;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .tabla-fila {
+    grid-template-columns: 1fr 1fr 1fr;
   }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(-100%);
+  
+  /* Ocultar columnas en móvil */
+  .tabla-header > :nth-child(4),
+  .tabla-header > :nth-child(5),
+  .tabla-header > :nth-child(6),
+  .tabla-fila > :nth-child(4),
+  .tabla-fila > :nth-child(5),
+  .tabla-fila > :nth-child(6) {
+    display: none;
   }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* ========================================
-   UTILIDADES
-   ======================================== */
-
-.text-truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.shadow-sm {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.shadow-md {
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.shadow-lg {
-  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-}
-
-/* Fix para evitar problemas de box-sizing */
-* {
-  box-sizing: border-box;
-}
-
-/* Asegurar que no haya márgenes o paddings no deseados */
-.tabla-directiva * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.tabla-header > *,
-.tabla-fila > * {
-  padding: 0;
-  margin: 0;
 }

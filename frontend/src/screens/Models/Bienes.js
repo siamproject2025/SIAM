@@ -510,13 +510,13 @@ const handleCrearBien = async (nuevoBien) => {
   <div className="stat-text" style={{ color: "white" }}>
     <div
       className="stat-value"
-      style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
+      style={{color:"white", fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
     >
       {metrics.activos}
     </div>
     <div
       className="stat-label"
-      style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
+      style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
     >
       En Uso
     </div>
@@ -681,10 +681,10 @@ const handleCrearBien = async (nuevoBien) => {
     <span role="img" aria-label="total">📊</span>
   </div>
   <div style={{ color: "white" }}>
-    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+    <div style={{color:"white", fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
       {metrics.total}
     </div>
-    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+    <div style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
       Total Bienes
     </div>
   </div>
@@ -715,10 +715,10 @@ const handleCrearBien = async (nuevoBien) => {
                   <DollarSign size={20} color="white" />
                 </div>
                 <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                  <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
                     ${valorTotal.toLocaleString()}
                   </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                  <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                     Valor Total
                   </div>
                 </div>

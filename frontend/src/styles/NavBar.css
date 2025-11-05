@@ -89,7 +89,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   opacity: 0.1;
   transition: left 0.3s ease;
-  border-radius: 12px;
+  border-radius: 0px;
 }
 
 .nav-link:hover::before {

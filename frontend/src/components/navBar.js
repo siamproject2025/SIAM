@@ -92,7 +92,7 @@ function NavBar() {
             <>
                 <Zap size={16} className={`role-icon role-${userRole?.toLowerCase()}`} />
                 <span className="role-text">
-                    Permisos: 🔑🔐{formatRole(userRole)}🔐🔑
+                    Permisos: {formatRole(userRole)}
                 </span>
             </>
         )}
