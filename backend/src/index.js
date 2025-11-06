@@ -17,8 +17,9 @@ const donacionesRoutes = require('./Routes/donacionesRoutes');
 const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 const actividadesRoutes = require("./Routes/actividades");
 const biblioteca = require("./Routes/bibliotecaRoutes");
-
-
+const directivaRoutes = require("./Routes/directivaRoutes");
+const question = require("./Routes/questionRoutes");
+const matriculas = require("./Routes/matriculas");
 
 
 const app = express();
@@ -52,21 +53,19 @@ app.use("/api/horario", horarios);
 app.use("/api/aula", aulas);
 app.use("/api/alumno", alumnos);
 app.use("/api/docente", docentes);
-
+app.use("/api/directiva", directivaRoutes);
 app.use('/api/',usuarios_route);
 app.use('/api/',dashboard_route);
-
-
 app.use('/api/personal', personalRoutes); 
 app.use('/api/proveedores', proveedoresRoutes); 
 app.use('/api/donaciones', donacionesRoutes); 
-
 app.use('/api/horarios',horarios);
-
 app.use("/api/actividades", actividadesRoutes);
-
 app.use("/api/horarios", horarios);
 app.use("/api/biblioteca", biblioteca);
+app.use("/api/questions", question);
+app.use("/api/matriculas", matriculas);
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 console.log("✅ Conectado.");
 

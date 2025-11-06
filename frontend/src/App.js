@@ -14,12 +14,14 @@ import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
 
+
 //Models
 import OrdenCompra from './screens/Models/ordencompra';
 import Bienes from './screens/Models/Bienes';
 import Personal from './screens/Models/personal';
 import Horarios from './screens/Models/Horarios';
-
+import Matricula from './screens/Models/Matricula';
+import Directiva from './screens/Models/directiva'; // ← Cambiado a mayúscula
 import Proveedores from './screens/Models/proveedores';
 import Donaciones from './screens/Models/donaciones';
 import RestrictedPage from './screens/RestrictedPage';
@@ -30,6 +32,8 @@ import ResetPasswordSeguro from './components/authentication/ResetPasswordFireba
 import SideBar from './components/SideBar';
 import ActividadesPage from './components/ActividadesPage';
 import CalendarioActividades from './components/CalendarioActividades';
+import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
+
 
 const auth = getAuth(appFirebase);
 
@@ -111,14 +115,13 @@ return (
   <>
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
       {/* Renderiza NavBar solo si el usuario está autenticado */}
-      {user && (
-        <>
-          <NavBar />
-          {<SideBar />}
-        </>
-      )}
-
-      <Routes>
+      {user && <NavBar />}
+        <ChatFlotanteConsultas></ChatFlotanteConsultas>
+      <div className="app-content">
+        {user && <SideBar />}
+<ChatFlotanteConsultas />
+        <main className="main-content">
+        <Routes>
         {/* Rutas públicas */}
         <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -137,19 +140,26 @@ return (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/Actividades" element={<ActividadesPage />} />
           <Route path="/biblioteca" element={<BibliotecaTest />} />
+          <Route path="/horarios" element={<Horarios />} />
           <Route path="/Calendario" element={<CalendarioActividades />} />
+          <Route path="/directiva" element={<Directiva />} />  
+          <Route path="/admisiones" element={<Matricula />} />                              
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>
           <Route path="/home" element={<Home />} />
         </Route>
 
+
         <Route path="/restricted" element={<RestrictedPage />} />
 
         {/* Redirigir rutas desconocidas */}
         <Route path="*" element={<Navigate to="/landing" replace />} />
-      </Routes>
+          </Routes>
+          </main>
+        </div>
 
+        <Footer />
       {/* Advertencia de inactividad */}
       {warningVisible && (
         <div
@@ -171,8 +181,7 @@ return (
       )}
     </div>
 
-    {/* Footer fuera del contenedor principal */}
-    <Footer />
+    
   </>
 );
 

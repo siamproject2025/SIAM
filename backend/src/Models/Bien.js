@@ -4,18 +4,18 @@ const mongoose = require("mongoose");
 const bienSchema = new mongoose.Schema({
   codigo: {
     type: String, 
-    required: true,
-    unique: true,
+    required: false,
+    unique: false,
     trim: true
   },
   nombre:{
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   descripcion: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   categoria: {
@@ -35,6 +35,15 @@ const bienSchema = new mongoose.Schema({
   fechaIngreso: {
     type: Date,
     default: Date.now
+  },
+   // NUEVOS CAMPOS PARA IMAGEN
+  imagen: {
+    type: String, // Guardará la imagen en Base64
+    default: null
+  },
+  tipo_imagen: {
+    type: String, // Guardará el tipo MIME, ej. image/png
+    default: null
   }
 }, { collection: "bienes" });
 

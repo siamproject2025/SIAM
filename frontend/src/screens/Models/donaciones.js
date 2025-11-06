@@ -51,23 +51,22 @@ const Donaciones = () => {
     observaciones: '',
     id_almacen: '',
     fecha: new Date().toISOString().split('T')[0],
-    foto: null,
+    imagen: null,
     foto_preview: null
   });
 
-  // Cargar donaciones al montar
   useEffect(() => {
-    cargarDonaciones();
-  }, );
+  cargarDonaciones(); // Carga inicial
+  const interval = setInterval(cargarDonaciones, 30000); // Cada 30s
+  return () => clearInterval(interval);
+}, []);
 
-  // Recargar cada 30 segundos para mantener sincronización
   useEffect(() => {
-    const interval = setInterval(() => {
-      cargarDonaciones();
-    }, 30000);
+    return () => {
+      if (formData.foto_preview) URL.revokeObjectURL(formData.foto_preview);
+    };
+  }, [formData.foto_preview]);
 
-    return () => clearInterval(interval);
-  }, );
 
   const cargarDonaciones = async () => {
     try {
@@ -126,7 +125,7 @@ const Donaciones = () => {
 
       setFormData(prev => ({
         ...prev,
-        foto: file,
+        imagen: file,
         foto_preview: URL.createObjectURL(file)
       }));
     }
@@ -138,99 +137,108 @@ const Donaciones = () => {
     }
     setFormData(prev => ({
       ...prev,
-      foto: null,
+      imagen: null,
       foto_preview: null
     }));
   };
 
-  const handleSubmitNueva = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+const handleSubmitNueva = async (e) => {
+  e.preventDefault();
+  
+  // Validaciones mejoradas
+  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    return;
+  }
 
-    // Validaciones
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-      return;
+  try {
+    const formDataToSend = new FormData(); // Nombre más descriptivo
+    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
+    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
+    formDataToSend.append('descripcion', formData.descripcion || '');
+    formDataToSend.append('observaciones', formData.observaciones || '');
+    formDataToSend.append('id_almacen', formData.id_almacen);
+    formDataToSend.append('fecha', new Date().toISOString());
+    
+    // Solo adjuntar foto si existe
+    if (formData.imagen) {
+      formDataToSend.append('imagen', formData.imagen);
     }
 
-    try {
-      const datosEnviar = {
-        tipo_donacion: formData.tipo_donacion,
-        cantidad_donacion: parseInt(formData.cantidad_donacion),
-        descripcion: formData.descripcion,
-        observaciones: formData.observaciones,
-        id_almacen: parseInt(formData.id_almacen),
-        fecha: new Date().toISOString(),
-        fecha_ingreso: new Date().toISOString()
-      };
+    console.log('Enviando datos:', {
+      tipo_donacion: formData.tipo_donacion,
+      cantidad_donacion: formData.cantidad_donacion,
+      id_almacen: formData.id_almacen
+    });
 
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(datosEnviar)
-      });
+    const response = await fetch(`${API_URL}`, {
+      method: 'POST',
+      body: formDataToSend // NO incluir headers Content-Type para FormData
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al crear donación');
-      }
+    const responseData = await response.json();
+    console.log('Respuesta del servidor:', responseData);
 
-      const result = await response.json();
-      
-      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
-      handleCloseModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+    if (!response.ok) {
+      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
     }
-  };
+
+    mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
+    handleCloseModals();
+    await cargarDonaciones();
+
+  } catch (error) {
+    console.error('Error completo:', error);
+    mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
+  }
+};
+
 
   const handleSubmitEditar = async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  e.preventDefault();
+  e.stopPropagation();
 
-    if (!donacionSeleccionada) return;
+  if (!donacionSeleccionada) return;
 
-    // Validaciones
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-      return;
+  // Validaciones
+  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    return;
+  }
+
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
+    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
+    formDataToSend.append('descripcion', formData.descripcion || '');
+    formDataToSend.append('observaciones', formData.observaciones || '');
+    formDataToSend.append('id_almacen', formData.id_almacen);
+    formDataToSend.append('fecha', formData.fecha || new Date().toISOString());
+
+    // Si tienes archivo (ej: imagen)
+    if (formData.imagen) {
+      formDataToSend.append('imagen', formData.imagen);
     }
 
-    try {
-      const datosEnviar = {
-        tipo_donacion: formData.tipo_donacion,
-        cantidad_donacion: parseInt(formData.cantidad_donacion),
-        descripcion: formData.descripcion,
-        observaciones: formData.observaciones,
-        id_almacen: parseInt(formData.id_almacen),
-        fecha: formData.fecha || new Date().toISOString()
-      };
+    const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+      method: 'PUT',
+      body: formDataToSend, // importante: no usar JSON.stringify
+    });
 
-      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(datosEnviar)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar donación');
-      }
-
-      mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
-      handleCloseModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al actualizar donación');
     }
-  };
+
+    mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
+    handleCloseModals();
+    await cargarDonaciones();
+  } catch (error) {
+    console.error('Error:', error);
+    mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
+  }
+};
+
 
   const handleEliminarDonacion = async () => {
     if (!donacionSeleccionada) return;
@@ -275,7 +283,7 @@ const Donaciones = () => {
       observaciones: '',
       id_almacen: '',
       fecha: new Date().toISOString().split('T')[0],
-      foto: null,
+      imagen: null,
       foto_preview: null
     });
   };
@@ -291,8 +299,9 @@ const Donaciones = () => {
       observaciones: donacion.observaciones || '',
       id_almacen: donacion.id_almacen || '',
       fecha: donacion.fecha ? new Date(donacion.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      foto: null,
-      foto_preview: donacion.foto ? `http://localhost:5000${donacion.foto}` : null
+      imagen: null,
+      foto_preview: donacion.imagen ? `data:image/png;base64,${donacion.imagen}` : null
+
     });
     
     setMostrarModalEditar(true);
@@ -306,7 +315,7 @@ const Donaciones = () => {
       observaciones: '',
       id_almacen: '',
       fecha: new Date().toISOString().split('T')[0],
-      foto: null,
+      imagen: null,
       foto_preview: null
     });
     setMostrarModal(true);
@@ -341,9 +350,9 @@ const Donaciones = () => {
     const nombres = {
       1: 'Almacén 1',
       2: 'Almacén 2',
-      12: 'Almacén 12',
-      23: 'Almacén 23',
-      40: 'Almacén 40'
+      3: 'Almacén 3',
+      4: 'Almacén 4',
+      5: 'Almacén 5'
     };
     return nombres[id_almacen] || `Almacén ${id_almacen}`;
   };
@@ -424,8 +433,8 @@ const Donaciones = () => {
                     <Package size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value">{totalDonaciones}</div>
-                    <div className="stat-label">Total Donaciones</div>
+                    <div className="stat-value" style={{color:"white"}}>{totalDonaciones}</div>
+                    <div className="stat-label" style={{color:"white"}}>Total Donaciones</div>
                   </div>
                 </motion.div>
 
@@ -438,8 +447,8 @@ const Donaciones = () => {
                     <Users size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value">{totalCantidad}</div>
-                    <div className="stat-label">Cantidad Total</div>
+                    <div className="stat-value" style={{color:"white"}}>{totalCantidad}</div>
+                    <div className="stat-label" style={{color:"white"}}>Cantidad Total</div>
                   </div>
                 </motion.div>
 
@@ -452,8 +461,8 @@ const Donaciones = () => {
                     <Hash size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value">{tiposUnicos}</div>
-                    <div className="stat-label">Tipos Diferentes</div>
+                    <div className="stat-value" style={{color:"white"}}>{tiposUnicos}</div>
+                    <div className="stat-label" style={{color:"white"}}>Tipos Diferentes</div>
                   </div>
                 </motion.div>
               </motion.div>
@@ -606,7 +615,7 @@ const Donaciones = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <div className="tabla-header">
+                <div className="tabla-header-donaciones">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <Hash size={14} />
                     ID
@@ -632,12 +641,12 @@ const Donaciones = () => {
                   </div>
                 </div>
 
-                <div className="tabla-body">
+                <div className="tabla-body-donaciones">
                   <AnimatePresence>
                     {donacionesFiltradas.map((donacion, idx) => (
                       <motion.div
                         key={donacion._id || donacion.id_donacion}
-                        className="tabla-fila"
+                        className="tabla-fila-donaciones"
                         onClick={() => handleFilaClick(donacion)}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -715,14 +724,14 @@ const Donaciones = () => {
         <AnimatePresence>
           {mostrarModal && (
             <motion.div 
-              className="modal-overlay" 
+              className="modal-overlay-donaciones" 
               onClick={handleCloseModals}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content" 
+                className="modal-content-donaciones" 
                 style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, y: 50 }}
@@ -747,15 +756,17 @@ const Donaciones = () => {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Seleccionar tipo</option>
+                         <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Instrumentos musicales">Instrumentos Musicales</option>
                         <option value="Medicina">Medicina</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Vestimenta">Vestimenta</option>
+                        <option value="Accesorios musicales">Accesorios Musicales </option>
                         <option value="Útiles escolares">Utiles Escolares</option>
                         <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Material didactico">Material Didactico</option>
                         <option value="Productos de higiene">Productos de Higiene</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -809,9 +820,9 @@ const Donaciones = () => {
                         <option value="">Seleccionar almacén</option>
                         <option value="1">Almacén 1</option>
                         <option value="2">Almacén 2</option>
-                        <option value="12">Almacén 12</option>
-                        <option value="23">Almacén 23</option>
-                        <option value="40">Almacén 40</option>
+                        <option value="3">Almacén 3</option>
+                        <option value="4">Almacén 4</option>
+                        <option value="5">Almacén 5</option>
                       </select>
                     </div>
 
@@ -834,7 +845,7 @@ const Donaciones = () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar"
+                                className="btn-eliminar-donaciones"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -867,10 +878,10 @@ const Donaciones = () => {
                     </div>
                   </div>
 
-                  <div className="modal-actions">
+                  <div className="modal-actions-donaciones">
                     <motion.button 
                       type="button" 
-                      className="btn-cancelar" 
+                      className="btn-cancelar-donaciones" 
                       onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -880,7 +891,7 @@ const Donaciones = () => {
                     </motion.button>
                     <motion.button 
                       type="submit" 
-                      className="btn-guardar"
+                      className="btn-guardar-donaciones"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -898,14 +909,14 @@ const Donaciones = () => {
         <AnimatePresence>
           {mostrarModalEditar && donacionSeleccionada && (
             <motion.div 
-              className="modal-overlay" 
+              className="modal-overlay-donaciones" 
               onClick={handleCloseModals}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content" 
+                className="modal-content-donaciones" 
                 style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, y: 50 }}
@@ -930,15 +941,17 @@ const Donaciones = () => {
                         onChange={handleInputChange}
                         required
                       >
-                        <option value="">Seleccionar tipo</option>
+                         <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
+                        <option value="Instrumentos musicales">Instrumentos Musicales</option>
                         <option value="Medicina">Medicina</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
+                        <option value="Bebidas">Bebidas</option>
+                        <option value="Vestimenta">Vestimenta</option>
+                        <option value="Accesorios musicales">Accesorios Musicales </option>
                         <option value="Útiles escolares">Utiles Escolares</option>
                         <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material Didactico">Material Didactico</option>
+                        <option value="Material didactico">Material Didactico</option>
                         <option value="Productos de higiene">Productos de Higiene</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -991,9 +1004,9 @@ const Donaciones = () => {
                         <option value="">Seleccionar almacén</option>
                         <option value="1">Almacén 1</option>
                         <option value="2">Almacén 2</option>
-                        <option value="12">Almacén 12</option>
-                        <option value="23">Almacén 23</option>
-                        <option value="40">Almacén 40</option>
+                        <option value="3">Almacén 3</option>
+                        <option value="4">Almacén 4</option>
+                        <option value="5">Almacén 5</option>
                       </select>
                     </div>
 
@@ -1016,7 +1029,7 @@ const Donaciones = () => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar"
+                                className="btn-eliminar-donaciones"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1066,10 +1079,10 @@ const Donaciones = () => {
                     </div>
                   </div>
 
-                  <div className="modal-actions">
+                  <div className="modal-actions-donaciones">
                     <motion.button 
                       type="button" 
-                      className="btn-eliminar" 
+                      className="btn-eliminar-donaciones" 
                       onClick={handleEliminarDonacion}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -1079,7 +1092,7 @@ const Donaciones = () => {
                     </motion.button>
                     <motion.button 
                       type="button" 
-                      className="btn-cancelar" 
+                      className="btn-cancelar-donaciones" 
                       onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -1089,7 +1102,7 @@ const Donaciones = () => {
                     </motion.button>
                     <motion.button 
                       type="submit" 
-                      className="btn-guardar"
+                      className="btn-guardar-donaciones"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1141,14 +1154,14 @@ const Donaciones = () => {
         <AnimatePresence>
           {mostrarAyuda && (
             <motion.div 
-              className="modal-overlay" 
+              className="modal-overlay-donaciones" 
               onClick={() => setMostrarAyuda(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content" 
+                className="modal-content-donaciones" 
                 style={{ maxWidth: '580px', maxHeight: '85vh' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, rotateX: 90 }}
@@ -1212,22 +1225,19 @@ const Donaciones = () => {
                 </div>
 
                 <div style={{ 
-                  position: 'sticky', 
+                  position: 'sticky',
                   bottom: '0', 
                   left: '0', 
                   right: '0', 
-                  padding: '1.5rem', 
+                  
                   background: 'white', 
                   borderTop: '2px solid #f0f0f0',
-                  marginLeft: '-2.5rem',
-                  marginRight: '-2.5rem',
-                  marginBottom: '-2.5rem',
+                  
                   display: 'flex',
-                  justifyContent: 'center',
-                  gap: '1rem'
+                  justifyContent: 'center'
                 }}>
                   <motion.button 
-                    className="btn-cerrar" 
+                    className="btn-cerrar-donaciones" 
                     onClick={() => setMostrarAyuda(false)}
                     style={{ minWidth: '200px' }}
                     whileHover={{ scale: 1.05 }}

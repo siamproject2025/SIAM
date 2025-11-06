@@ -27,9 +27,11 @@ body {
   color: var(--text-primary);
   overflow-x: hidden;
 }
+
 .landing-page{
   width: 100%;    
 }
+
 .container-custom {
   max-width: 1200px;
   margin: 0 auto;
