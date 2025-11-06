@@ -4,7 +4,7 @@ import QuestionItem from './QuestionItem';
 import Notification from './Notification'; 
 import { auth } from "..//components/authentication/Auth";
 
-const API_URL = process.env.REACT_APP_API_URL+'api';
+const API_URL = process.env.REACT_APP_API_URL+'/api';
 
 const QuestionList = ({ canAnswer, canAsk }) => {
     const [questions, setQuestions] = useState([]);

@@ -14,7 +14,7 @@ const AdminOnly = ({ children }) => {
       if (!user) return;
 
       const token = await user.getIdToken();
-      const res = await axios.get(`${API_URL}api/usuarios/role`, {
+      const res = await axios.get(`${API_URL}/api/usuarios/role`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

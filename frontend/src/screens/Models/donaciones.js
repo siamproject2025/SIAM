@@ -32,7 +32,7 @@ import {
   HandHeart
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+'api/donaciones';
+const API_URL = process.env.REACT_APP_API_URL+'/api/donaciones';
 
 // Estilos CSS integrados mejorados
 
@@ -289,7 +289,7 @@ const handleEliminarDonacion = async () => {
     const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
       method: 'DELETE',
       headers: {
-        
+
         Authorization: `Bearer ${token}` // ✅ Token agregado
       }
     });

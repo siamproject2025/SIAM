@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { auth } from "../authentication/Auth";
 
-const API_URL = process.env.REACT_APP_API_URL+"api/usuarios/role";
+const API_URL = process.env.REACT_APP_API_URL+"/api/usuarios/role";
 
 const PrivateRoute = ({ allowedRoles = [] }) => {
   const [authState, setAuthState] = useState({

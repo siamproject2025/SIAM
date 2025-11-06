@@ -108,7 +108,7 @@ const saveUserToAPI = async (user, name, password) => {
     if (!user) throw new Error("No hay usuario autenticado");
 
     const token = await user.getIdToken();
-    const response = await fetch(`${API_URL}api/usuarios`, {
+    const response = await fetch(`${API_URL}/api/usuarios`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

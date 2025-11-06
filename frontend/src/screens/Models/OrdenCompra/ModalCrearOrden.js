@@ -3,7 +3,7 @@ import { auth } from "..//..//../components/authentication/Auth";
 
 import Notification from "../../../components/Notification";
 
-const API_URL = process.env.REACT_APP_API_URL+"api/proveedores"
+const API_URL = process.env.REACT_APP_API_URL+"/api/proveedores"
 
 const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [nuevaOrden, setNuevaOrden] = useState({

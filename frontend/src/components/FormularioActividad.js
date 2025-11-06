@@ -21,7 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+"api/actividades";
+const API_URL = process.env.REACT_APP_API_URL+"/api/actividades";
 
 const Actividades = () => {
   const [actividades, setActividades] = useState([]);
