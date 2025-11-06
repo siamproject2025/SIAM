@@ -1,13 +1,16 @@
 // src/pages/Horarios.jsx
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import ModalDetalleHorario from "../../components/Horarios/ModalDetalleHorario";
 import BusquedaTablaHorarios from "../../components/Horarios/TablaHorario";
 import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
-import useUserRole from "../../components/hooks/useUserRole"; // Asegúrate que esta ruta es correcta
+import useUserRole from "../../components/hooks/useUserRole"; 
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Apple, Book, Calendar, Table2, X } from "lucide-react";
+import { Apple, Book, Calendar, Table2, X, FileText, Image } from "lucide-react"; // Importa íconos
+import html2canvas from 'html2canvas'; // Para capturar la imagen del DOM
+import { saveAs } from 'file-saver'; // Para forzar la descarga
+import jsPDF from 'jspdf'; // Para generar el PDF
 
 const API_HOST = "http://localhost:5000";
 const API_HORARIO = `${API_HOST}/api/horario`;
@@ -31,14 +34,14 @@ const inicializarHorario = () => {
 
 const Horarios = () => {
     // ----------------------------------------------------------------------
-    // ESTADO DEL ROL Y PERMISOS
+    // ESTADO DEL ROL, PERMISOS Y REFS
     // ----------------------------------------------------------------------
     const { userRole, cargando } = useUserRole();
+    const calendarioRef = useRef(null); 
     
     const CAN_EDIT = userRole === 'ADMIN' || userRole === 'DOCENTE';
     const CAN_VIEW = userRole === 'ADMIN' || userRole === 'DOCENTE' || userRole === 'PADRE';
 
-    // Nueva regla: Solo ADMIN y DOCENTE pueden ver las pestañas Horarios y Calendario.
     const CAN_SEE_ALL_TABS = userRole === 'ADMIN' || userRole === 'DOCENTE'; 
 
     // ----------------------------------------------------------------------
@@ -50,20 +53,19 @@ const Horarios = () => {
     const [aulas, setAulas] = useState([]);
     const [horarioSeleccionado, setHorarioSeleccionado] = useState(null);
     const [mostrarModalDetalle, setMostrarModalDetalle] = useState(false);
-    const [mostrarModalAlumnos, setMostrarModalAlumnos] = useState(false);
     const [esModalCreacion, setEsModalCreacion] = useState(false);
     const [esModalDetalle, setEsModalDetalle] = useState(true);
     
-    // El estado inicial se ajustará en el useEffect
+    // Estados de pestañas
     const [horariosContent, setHorariosContent] = useState(true);
     const [calendarioContent, setCalendarioContent] = useState(false);
     const [gradosContent, setGradosContent] = useState(false);
     
     const [notification, setNotification] = useState(null);
 
-    // ESTADOS para la pestaña por grado (Integrado)
+    // ESTADOS para la pestaña por grado y descarga
     const [gradoSeleccionado, setGradoSeleccionado] = useState('');
-
+    const [mostrarSelectorFormato, setMostrarSelectorFormato] = useState(false); // Estado para el selector de formato
 
     const showNotification = useCallback((message, type) => {
         setNotification({ message, type });
@@ -71,7 +73,7 @@ const Horarios = () => {
     }, []);
 
     // ----------------------------------------------------------------------
-    // FUNCIONES DE CARGA Y FILTRADO POR ROL
+    // FUNCIONES DE CARGA Y FILTRADO
     // ----------------------------------------------------------------------
     
     const obtenerHorarios = useCallback(async () => {
@@ -99,67 +101,14 @@ const Horarios = () => {
         }
     }, [obtenerHorarios, cargando]);
 
-    // Horarios visibles según el ROL (Filtro principal)
     const horariosVisibles = useMemo(() => {
         if (CAN_VIEW) {
-            // Admin, Docente y PADRE ven todos los horarios
             return horarios;
         }
-
-        // Si no es un rol permitido
         return [];
     }, [horarios, CAN_VIEW]);
-
-    // ----------------------------------------------------------------------
-    // LÓGICA DE PESTAÑAS Y VISTA INICIAL PARA PADRE
-    // ----------------------------------------------------------------------
     
-    // Efecto para forzar la vista "Por Grado" si el rol es PADRE al cargar
-    useEffect(() => {
-        if (!cargando && userRole === 'PADRE') {
-            // Forzar la vista a "Por Grado" 
-            if (!gradosContent) {
-                setHorariosContent(false);
-                setCalendarioContent(false);
-                setGradosContent(true);
-            }
-        }
-    }, [cargando, userRole, gradosContent]); 
-
-    const clickHorariosContent = () => {
-        if (!CAN_SEE_ALL_TABS) return; // Seguridad adicional
-        setHorariosContent(true);
-        setCalendarioContent(false);
-        setGradosContent(false);
-    };
-    const clickCalendarioContent = () => {
-        if (!CAN_SEE_ALL_TABS) return; // Seguridad adicional
-        setHorariosContent(false);
-        setCalendarioContent(true);
-        setGradosContent(false);
-    };
-    const clickGradosContent = () => {
-        if (!CAN_VIEW) { 
-             showNotification("❌ Permiso denegado.", "error");
-             return;
-        }
-        setHorariosContent(false);
-        setCalendarioContent(false);
-        setGradosContent(true);
-    };
-    
-    // Redirección de seguridad (necesaria si un ADMIN/DOCENTE cambia de rol)
-    useEffect(() => {
-        if (!cargando && gradosContent && !CAN_VIEW) {
-            clickHorariosContent();
-        }
-    }, [cargando, gradosContent, CAN_VIEW]); 
-
-    // ----------------------------------------------------------------------
-    // LÓGICA DE "HORARIOS POR GRADO" (Integrada)
-    // ----------------------------------------------------------------------
-    
-    // Grados únicos disponibles según los horarios que el usuario puede ver
+    // Grados únicos disponibles
     const gradosUnicos = useMemo(() => {
         if (!horariosVisibles || horariosVisibles.length === 0) return [];
         
@@ -181,6 +130,97 @@ const Horarios = () => {
         if (!gradoSeleccionado) return [];
         return horariosVisibles.filter(h => h.grado === gradoSeleccionado);
     }, [horariosVisibles, gradoSeleccionado]);
+
+    // ----------------------------------------------------------------------
+    // LÓGICA DE PESTAÑAS Y VISTA INICIAL PARA PADRE
+    // ----------------------------------------------------------------------
+    
+    useEffect(() => {
+        if (!cargando && userRole === 'PADRE') {
+            if (!gradosContent) {
+                setHorariosContent(false);
+                setCalendarioContent(false);
+                setGradosContent(true);
+            }
+        }
+    }, [cargando, userRole, gradosContent]); 
+
+    const clickHorariosContent = () => {
+        if (!CAN_SEE_ALL_TABS) return; 
+        setHorariosContent(true);
+        setCalendarioContent(false);
+        setGradosContent(false);
+    };
+    const clickCalendarioContent = () => {
+        if (!CAN_SEE_ALL_TABS) return; 
+        setHorariosContent(false);
+        setCalendarioContent(true);
+        setGradosContent(false);
+    };
+    const clickGradosContent = () => {
+        if (!CAN_VIEW) { 
+             showNotification("❌ Permiso denegado.", "error");
+             return;
+        }
+        setHorariosContent(false);
+        setCalendarioContent(false);
+        setGradosContent(true);
+    };
+    
+    // ----------------------------------------------------------------------
+    // FUNCIÓN DE DESCARGA (Soporta PNG y PDF)
+    // ----------------------------------------------------------------------
+    const descargarHorarioHandler = async (formato) => { 
+        if (!calendarioRef.current) {
+            showNotification("⚠️ El contenido del horario no está listo para descargar.", "warning");
+            setMostrarSelectorFormato(false);
+            return;
+        }
+
+        setMostrarSelectorFormato(false); 
+        showNotification(`⏳ Generando archivo en formato ${formato.toUpperCase()}...`, "info");
+        
+        const nombreBase = `Horario_${gradoSeleccionado || 'General'}_${new Date().toLocaleDateString()}`;
+
+        try {
+            const canvas = await html2canvas(calendarioRef.current, {
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: '#ffffff',
+                allowTaint: true,
+            });
+
+            if (formato === 'png') {
+                // Opción PNG
+                canvas.toBlob((blob) => {
+                    saveAs(blob, `${nombreBase}.png`);
+                    showNotification("✅ Horario PNG descargado con éxito.", "success");
+                }, 'image/png');
+                
+            } else if (formato === 'pdf') {
+                // Opción PDF
+                const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4',
+                });
+                
+                const width = pdf.internal.pageSize.getWidth();
+                const height = pdf.internal.pageSize.getHeight();
+                
+                // Añade la imagen al PDF, escalándola para que encaje
+                pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
+                pdf.save(`${nombreBase}.pdf`);
+                
+                showNotification("✅ Horario PDF descargado con éxito.", "success");
+            }
+
+        } catch (error) {
+            console.error("Error al descargar el horario:", error);
+            showNotification("💥 Error al descargar el horario. Intenta de nuevo.", "error");
+        }
+    };
 
     // ----------------------------------------------------------------------
     // FUNCIONES CRUD Y HANDLERS
@@ -215,14 +255,13 @@ const Horarios = () => {
         setMostrarModalDetalle(true);
     };
 
-    // ✅ Nueva función para manejar el intento de Guardar sin permiso (solución al TypeError)
+    // SOLUCIÓN: Función para manejar el intento de Guardar sin permiso (evita TypeError)
     const noPermitidoGuardarHandler = () => {
         showNotification("❌ Permiso denegado para guardar cambios.", "error");
     };
 
     const clickGuardarModeloHandler = async (horario, esCreacion) => {
         if (!CAN_EDIT) {
-            // Este guardia se mantiene, pero la lógica principal ahora es en el prop onGuardar
             showNotification("❌ Permiso denegado para guardar cambios.", "error");
             return;
         }
@@ -281,15 +320,13 @@ const Horarios = () => {
     return (
         <>
             <div className="donacion-container">
-                {/* Tu Encabezado... */}
-                
+                {/* Título y navegación de pestañas */}
                 <motion.ul
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.1, duration: 0.6 }}
                     className="nav nav-tabs justify-content-center"
                 >
-                    {/* Pestañas 'Horarios' y 'Calendario' solo visibles para ADMIN y DOCENTE */}
                     {CAN_SEE_ALL_TABS && (
                         <>
                             <li className="nav-item">
@@ -312,8 +349,6 @@ const Horarios = () => {
                             </li>
                         </>
                     )}
-
-                    {/* Pestaña Horarios por Grado (visible para ADMIN, DOCENTE y PADRE) */}
                     {CAN_VIEW && (
                         <li className="nav-item">
                             <a
@@ -367,27 +402,41 @@ const Horarios = () => {
                                         <div className="d-flex justify-content-between align-items-center mb-4">
                                             <h3 className="h4 text-primary">Horario Detallado por Grado: <span className="ms-2 fw-bold text-dark">{gradoSeleccionado}</span></h3>
                                             
-                                            {/* Selector de Grado - Visible si hay más de uno */}
-                                            {gradosUnicos.length > 1 && (
-                                                <div className="d-flex align-items-center">
-                                                    <label htmlFor="selectorGrado" className="form-label me-2 mb-0 fw-bold">Seleccionar Grado:</label>
-                                                    <select 
-                                                        id="selectorGrado"
-                                                        className="form-select w-auto"
-                                                        value={gradoSeleccionado}
-                                                        onChange={(e) => setGradoSeleccionado(e.target.value)}
-                                                    >
-                                                        {gradosUnicos.map(grado => (
-                                                            <option key={grado} value={grado}>{grado}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            )}
+                                            {/* Contenedor de Selector y Botón de Descarga */}
+                                            <div className="d-flex align-items-center">
+                                                {gradosUnicos.length > 1 && (
+                                                    <div className="d-flex align-items-center me-3">
+                                                        <label htmlFor="selectorGrado" className="form-label me-2 mb-0 fw-bold">Seleccionar Grado:</label>
+                                                        <select 
+                                                            id="selectorGrado"
+                                                            className="form-select w-auto"
+                                                            value={gradoSeleccionado}
+                                                            onChange={(e) => setGradoSeleccionado(e.target.value)}
+                                                        >
+                                                            {gradosUnicos.map(grado => (
+                                                                <option key={grado} value={grado}>{grado}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Botón que ABRE el selector de formato */}
+                                                <button 
+                                                    className="btn btn-secondary d-flex align-items-center"
+                                                    onClick={() => setMostrarSelectorFormato(true)}
+                                                >
+                                                    <Apple size={18} className="me-2" /> Descargar
+                                                </button>
+                                            </div>
                                         </div>
-                                        <CalendarioHorarios
-                                            horarios={horariosFiltradosPorGrado}
-                                            onDetalleHorario={clickDetalleHorarioHandler}
-                                        />
+                                        
+                                        {/* ASIGNAR LA REF AL CONTENEDOR DEL CALENDARIO */}
+                                        <div ref={calendarioRef} style={{ width: '100%' }}> 
+                                            <CalendarioHorarios
+                                                horarios={horariosFiltradosPorGrado}
+                                                onDetalleHorario={clickDetalleHorarioHandler}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </motion.div>
@@ -397,6 +446,7 @@ const Horarios = () => {
                 </div>
             </div>
 
+            {/* Modal Detalle/Edición de Horario */}
             <AnimatePresence>
                 {mostrarModalDetalle && (
                     <ModalDetalleHorario
@@ -411,12 +461,59 @@ const Horarios = () => {
                         onCerrar={clickCerrarModeloHandler}
                         onEliminar={clickEliminarModeloHandler}
                         
-                        
+                        // Uso el handler correcto según el permiso para evitar el TypeError
                         onGuardar={CAN_EDIT ? clickGuardarModeloHandler : noPermitidoGuardarHandler} 
                         
                         canEdit={CAN_EDIT} 
                         enviarNotificacion={showNotification}
                     />
+                )}
+            </AnimatePresence>
+            
+            {/* ----------------------------------------------------------------------
+                MODAL/SELECTOR DE FORMATO DE DESCARGA 
+            ---------------------------------------------------------------------- */}
+            <AnimatePresence>
+                {mostrarSelectorFormato && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                            backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 10001,
+                            display: 'flex', justifyContent: 'center', alignItems: 'center'
+                        }}
+                        onClick={() => setMostrarSelectorFormato(false)}
+                    >
+                        <motion.div
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -50, opacity: 0 }}
+                            className="bg-white p-4 rounded shadow-lg"
+                            style={{ width: '300px' }}
+                            onClick={(e) => e.stopPropagation()} // Previene cerrar al hacer clic dentro
+                        >
+                            <h5 className="mb-4 d-flex justify-content-between">
+                                Seleccionar Formato
+                                <button className="btn-close" onClick={() => setMostrarSelectorFormato(false)}></button>
+                            </h5>
+                            <div className="d-grid gap-2">
+                                <button 
+                                    className="btn btn-primary d-flex align-items-center justify-content-center"
+                                    onClick={() => descargarHorarioHandler('png')}
+                                >
+                                    <Image size={18} className="me-2" /> Descargar como **PNG** (Imagen)
+                                </button>
+                                <button 
+                                    className="btn btn-info d-flex align-items-center justify-content-center text-white"
+                                    onClick={() => descargarHorarioHandler('pdf')}
+                                >
+                                    <FileText size={18} className="me-2" /> Descargar como **PDF** (Documento)
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
                 )}
             </AnimatePresence>
             
@@ -433,7 +530,7 @@ const Horarios = () => {
                             right: "20px",
                             zIndex: 10000,
                             background:
-                                notification.type === "success" ? "#4CAF50" : "#f44336",
+                                notification.type === "success" ? "#4CAF50" : notification.type === "warning" ? "#ffc107" : notification.type === "info" ? "#17a2b8" : "#f44336",
                             color: "white",
                             padding: "1rem 1.5rem",
                             borderRadius: "8px",
