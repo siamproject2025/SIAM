@@ -15,7 +15,7 @@ const donacionSchema = new mongoose.Schema({
   },
   fecha: {
     type: Date,
-    required: [false, 'La fecha de donación es obligatoria']
+    required: [true, 'La fecha de donación es obligatoria']
   },
   cantidad_donacion: {
     type: Number,
@@ -33,16 +33,12 @@ const donacionSchema = new mongoose.Schema({
     enum: {
       values: [
         'Alimentos',
-        'Instrumentos musicales',
-        'Accesorios musicales',
         'Vestimenta',
         'Medicina',
         'Enseres',
         'Bebidas',
         'Útiles escolares',
         'Productos de higiene',
-        'Material Audiovisual',
-        'Material didactico',
         'Otro'
       ],
       message: '{VALUE} no es un tipo de donación válido'
@@ -50,27 +46,18 @@ const donacionSchema = new mongoose.Schema({
   },
   fecha_ingreso: {
     type: Date,
-    required: [false, 'La fecha de ingreso es obligatoria'],
+    required: [true, 'La fecha de ingreso es obligatoria'],
     default: Date.now
   },
   observaciones: {
     type: String,
     maxlength: [500, 'Las observaciones no pueden exceder 500 caracteres'],
     trim: true
-  },
-  // NUEVOS CAMPOS PARA IMAGEN
-  imagen: {
-    type: String, // Guardará la imagen en Base64
-    default: null
-  },
-  tipo_imagen: {
-    type: String, // Guardará el tipo MIME, ej. image/png
-    default: null
   }
 }, {
   timestamps: true,
   versionKey: false
-},);
+});
 
 // Índices para mejorar el rendimiento
 donacionSchema.index({ id_donacion: 1 });
@@ -84,4 +71,4 @@ donacionSchema.statics.getNextId = async function() {
   return lastDonacion ? lastDonacion.id_donacion + 1 : 1;
 };
 
-module.exports = mongoose.model('Donacion',donacionSchema,'donaciones');
+module.exports = mongoose.model('Donacion', donacionSchema);

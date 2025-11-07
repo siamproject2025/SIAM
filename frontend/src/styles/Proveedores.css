@@ -116,9 +116,9 @@
     margin-bottom: 2rem;
   }
 
-  .tabla-header-proveedores {
+  .tabla-header {
     display: grid;
-   grid-template-columns: 0.5fr 0.5fr 1fr 1fr 0.8fr 0.6fr 0.6fr 0.4fr;
+    grid-template-columns: 80px 220px 200px 160px 120px 120px 120px 100px;
     gap: 1rem;
     padding: 1rem 1.5rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -126,15 +126,16 @@
     font-weight: 600;
     font-size: 0.9rem;
     align-items: center;
+    position: sticky;
     top: 0;
     z-index: 10;
     width: 100%;
   }
 
-  .tabla-body-proveedores {
+  .tabla-body {
     flex: 1;
     overflow-y: auto;
-    width: auto
+    width: 100%;
   }
 
   
@@ -143,18 +144,17 @@
     width:auto;
 }
 
-  .tabla-fila-proveedores {
-  display: grid;
-  grid-template-columns: 0.5fr 0.5fr 1fr 1fr 0.8fr 0.6fr 0.6fr 0.4fr;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e9ecef;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-}
-
+  .tabla-fila {
+    display: grid;
+    grid-template-columns: 80px 220px 200px 160px 120px 120px 120px 100px;
+    gap: 1rem;
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
 
   .tabla-fila::before {
     content: '';

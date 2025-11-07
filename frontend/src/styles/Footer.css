@@ -65,13 +65,14 @@ a {
     transition: 0.4s;
 }
 
-.footer-container2 {
+.footer-container {
     height: 200px;
     color: aliceblue;
     text-align: center;
     background-color: rgba(49, 49, 54, 0.993);
     font-size: 15px;
     width: 100%;
+    height: 4rem;
     display: grid;
     grid-template-columns: 3fr 6fr 1fr 1fr 1fr;
 }

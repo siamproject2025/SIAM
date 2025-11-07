@@ -118,8 +118,6 @@
     max-width: 100%;
     margin: 0 auto;
     width: 100%;
-    height: auto;
-    min-height: 100vh;
   }
 
   .donacion-header {
@@ -219,9 +217,20 @@
     font-size: 1.1rem;
   }
 
-  
+  .tabla-bienes {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    min-height: 400px;
+    max-height: calc(100vh - 300px);
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+  }
 
-  .tabla-header-donaciones {
+  .tabla-header {
     display: grid;
     grid-template-columns: 80px 1fr 140px 150px 120px 100px;
     gap: 1rem;
@@ -236,12 +245,12 @@
     z-index: 10;
   }
 
-  .tabla-body-donaciones {
+  .tabla-body {
     flex: 1;
     overflow-y: auto;
   }
 
-  .tabla-fila-donaciones {
+  .tabla-fila {
     display: grid;
     grid-template-columns: 80px 1fr 140px 150px 120px 100px;
     gap: 1rem;
@@ -279,7 +288,7 @@
     border-bottom: none;
   }
 
-  .donacion-container .modal-overlay-donaciones {
+  .donacion-container .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -293,13 +302,12 @@
   }
 
 
-  .donacion-container .modal-content-donaciones {
+  .donacion-container .modal-content {
     background: white;
     border-radius: 12px;
     padding: 2rem;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     max-width: 90vw;
-    padding-bottom: 0px !important;
   }
 
 
@@ -352,17 +360,17 @@
     grid-column: 1 / -1;
   }
 
-  .modal-actions-donaciones {
+  .modal-actions {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
     margin-top: 1.5rem;
   }
 
-  .btn-guardar-donaciones,
-  .btn-cancelar-donaciones,
-  .btn-eliminar-donaciones,
-  .btn-cerrar-donaciones {
+  .btn-guardar,
+  .btn-cancelar,
+  .btn-eliminar,
+  .btn-cerrar {
     padding: 0.8rem 1.5rem;
     border: none;
     border-radius: 8px;
@@ -372,10 +380,9 @@
     align-items: center;
     gap: 0.5rem;
     transition: all 0.3s ease;
-    margin:5px;
   }
 
-  .btn-guardar-donaciones {
+  .btn-guardar {
     background: #4CAF50;
     color: white;
   }
@@ -384,16 +391,16 @@
     background: #45a049;
   }
 
-  .btn-cancelar-donaciones {
-    background: #000000;
+  .btn-cancelar {
+    background: #f44336;
     color: white;
   }
 
   .btn-cancelar:hover {
-    background: #4b4b4b;
+    background: #da190b;
   }
 
-  .btn-eliminar-donaciones {
+  .btn-eliminar {
     background: #ff9800;
     color: white;
   }
@@ -675,7 +682,7 @@
     border-bottom: none;
   }
 
-  .modal-overlay-donaciones {
+  .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -690,7 +697,7 @@
     padding: 2rem;
   }
 
-  .modal-content-donaciones {
+  .modal-content {
     background: white;
     border-radius: 20px;
     padding: 2.5rem;
@@ -834,15 +841,13 @@
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
 
-  .modal-actions-donaciones {
+  .modal-actions {
     display: flex;
     gap: 1rem;
     justify-content: flex-end;
     margin-top: 2rem;
     padding-top: 1.5rem;
     border-top: 2px solid #f0f0f0;
-    
-    margin-bottom: 8px;
   }
 
   .btn-eliminar,
@@ -861,8 +866,8 @@
     font-size: 0.95rem;
   }
 
-  .btn-eliminar-donaciones {
-    background: linear-gradient(135deg, #be392f 0%, #bc2929 100%);
+  .btn-eliminar {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
     color: white;
   }
 
@@ -968,12 +973,10 @@
   .help-section ul {
     margin-left: 1.5rem;
     margin-top: 0.5rem;
-     list-style: none!important;
   }
 
   .help-section li {
     margin-bottom: 0.5rem;
-   
   }
 
   .help-section li strong {

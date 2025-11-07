@@ -1,7 +1,5 @@
 // routes/bienesRoutes.js
 const express = require("express");
-const { upload } = require('../middleware/uploadImage'); // Multer en memoria
-
 const  {
   getBienes,
   getBienById,
@@ -14,8 +12,8 @@ const router = express.Router();
 
 router.get("/", getBienes);
 router.get("/:id", getBienById);
-router.post("/", upload.single('imagen'), createBien);
-router.put("/:id", upload.single('imagen'), updateBien);
+router.post("/", createBien);
+router.put("/:id", updateBien);
 router.delete("/:id", deleteBien);
 
 module.exports = router;

@@ -6,22 +6,6 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const compression = require("compression");
 
-const horarios = require("./Routes/Horarios");
-const aulas = require("./Routes/aulasRoutes");
-const alumnos = require("./Routes/alumnosRoutes");
-const docentes = require("./Routes/docentesRoutes");
-const ordencompra = require('./Routes/ordenCompra'); 
-const bienesRoutes = require( "./Routes/bienesRoutes");
-const usuarios_route = require('./Routes/usuario_ruta'); 
-const dashboard_route = require('./Routes/dashboard_ruta'); 
-const personalRoutes = require('./Routes/personalRoutes'); // 🆕 NUEVA RUTA
-const donacionesRoutes = require('./Routes/donacionesRoutes');
-const proveedoresRoutes = require('./Routes/proveedoresRoutes');
-const actividadesRoutes = require("./Routes/actividades");
-const biblioteca = require("./Routes/bibliotecaRoutes");
-const directivaRoutes = require("./Routes/directivaRoutes");
-const question = require("./Routes/questionRoutes");
-const matriculas = require("./Routes/matriculas");
 const app = express();
 
 /* ===================== Config ===================== */
@@ -92,27 +76,6 @@ app.use("/api/alumnos", alumnos);
 app.use("/api/docentes", docentes);
 app.use("/api/ordencompra", ordencompra);
 app.use("/api/bienes", bienesRoutes);
-app.use("/api/", usuarios_route);
-app.use("/api/", dashboard_route);
-app.use("/api/horario", horarios);
-app.use("/api/aula", aulas);
-app.use("/api/alumno", alumnos);
-app.use("/api/docente", docentes);
-app.use("/api/directiva", directivaRoutes);
-app.use('/api/',usuarios_route);
-app.use('/api/',dashboard_route);
-app.use('/api/personal', personalRoutes); 
-app.use('/api/proveedores', proveedoresRoutes); 
-app.use('/api/donaciones', donacionesRoutes); 
-app.use('/api/horarios',horarios);
-app.use("/api/actividades", actividadesRoutes);
-app.use("/api/horarios", horarios);
-app.use("/api/biblioteca", biblioteca);
-app.use("/api/questions", question);
-app.use("/api/matriculas", matriculas);
-
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-console.log("✅ Conectado.");
 app.use("/api/usuarios", usuarios_route);
 
 // Dashboard

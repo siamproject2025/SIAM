@@ -71,7 +71,7 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
 
         <div className="modal-actions">
           <button className="btn-guardar" onClick={handleGuardar}>💾 Guardar Cambios</button>
-          <button className="btn btn-danger" onClick={handleEliminar}>🗑️ Eliminar</button>
+          <button className="btn-eliminar" onClick={handleEliminar}>🗑️ Eliminar</button>
           <button className="btn-cerrar" onClick={onClose}>❌ Cerrar</button>
         </div>
       </div>

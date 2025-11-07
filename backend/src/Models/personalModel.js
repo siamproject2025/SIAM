@@ -47,14 +47,13 @@ const personalSchema = new mongoose.Schema({
     },
     default: 'ACTIVO'
   },
-    // NUEVOS CAMPOS PARA IMAGEN
-  imagen: {
-    type: String, // Guardará la imagen en Base64
-    default: null
-  },
-  tipo_imagen: {
-    type: String, // Guardará el tipo MIME, ej. image/png
-    default: null
+  foto: {
+    nombre_archivo: String,
+    tipo: {
+      type: String,
+      enum: ['image/jpeg', 'image/png', 'image/jpg']
+    },
+    data: String
   },
   cv: [{
     tipo: {

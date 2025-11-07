@@ -365,8 +365,8 @@ function categorizarActividad(fechaActividad) {
                   <Calendar size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{totalActividades}</div>
-                  <div className="stat-label"  style={{color:"white"}}>Total Actividades</div>
+                  <div className="stat-value">{totalActividades}</div>
+                  <div className="stat-label">Total Actividades</div>
                 </div>
               </motion.div>
 
@@ -379,8 +379,8 @@ function categorizarActividad(fechaActividad) {
                   <AlertCircle size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value"  style={{color:"white"}}>{actividadesHoyCount}</div>
-                  <div className="stat-label"  style={{color:"white"}}>Para Hoy</div>
+                  <div className="stat-value">{actividadesHoyCount}</div>
+                  <div className="stat-label">Para Hoy</div>
                 </div>
               </motion.div>
 
@@ -393,8 +393,8 @@ function categorizarActividad(fechaActividad) {
                   <Clock size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value"  style={{color:"white"}}>{actividadesProximasCount}</div>
-                  <div className="stat-label"  style={{color:"white"}}>Próximas</div>
+                  <div className="stat-value">{actividadesProximasCount}</div>
+                  <div className="stat-label">Próximas</div>
                 </div>
               </motion.div>
 
@@ -407,8 +407,8 @@ function categorizarActividad(fechaActividad) {
                   <CheckCircle size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value"  style={{color:"white"}}>{actividadesFinalizadasCount}</div>
-                  <div className="stat-label"  style={{color:"white"}}>Finalizadas</div>
+                  <div className="stat-value">{actividadesFinalizadasCount}</div>
+                  <div className="stat-label">Finalizadas</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -613,7 +613,7 @@ function categorizarActividad(fechaActividad) {
               </ul>
             </div>
 
-            <div className="modal-actions-actividades">
+            <div className="modal-actions">
               <button className="btn-cerrar" onClick={() => setMostrarAyuda(false)}>
                 ✅ Entendido
               </button>

@@ -51,22 +51,23 @@ const Donaciones = () => {
     observaciones: '',
     id_almacen: '',
     fecha: new Date().toISOString().split('T')[0],
-    imagen: null,
+    foto: null,
     foto_preview: null
   });
 
+  // Cargar donaciones al montar
   useEffect(() => {
-  cargarDonaciones(); // Carga inicial
-  const interval = setInterval(cargarDonaciones, 30000); // Cada 30s
-  return () => clearInterval(interval);
-}, []);
+    cargarDonaciones();
+  }, );
 
+  // Recargar cada 30 segundos para mantener sincronización
   useEffect(() => {
-    return () => {
-      if (formData.foto_preview) URL.revokeObjectURL(formData.foto_preview);
-    };
-  }, [formData.foto_preview]);
+    const interval = setInterval(() => {
+      cargarDonaciones();
+    }, 30000);
 
+    return () => clearInterval(interval);
+  }, );
 
   const cargarDonaciones = async () => {
     try {
@@ -125,7 +126,7 @@ const Donaciones = () => {
 
       setFormData(prev => ({
         ...prev,
-        imagen: file,
+        foto: file,
         foto_preview: URL.createObjectURL(file)
       }));
     }
@@ -137,108 +138,99 @@ const Donaciones = () => {
     }
     setFormData(prev => ({
       ...prev,
-      imagen: null,
+      foto: null,
       foto_preview: null
     }));
   };
 
-const handleSubmitNueva = async (e) => {
-  e.preventDefault();
-  
-  // Validaciones mejoradas
-  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-    return;
-  }
+  const handleSubmitNueva = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  try {
-    const formDataToSend = new FormData(); // Nombre más descriptivo
-    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
-    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
-    formDataToSend.append('descripcion', formData.descripcion || '');
-    formDataToSend.append('observaciones', formData.observaciones || '');
-    formDataToSend.append('id_almacen', formData.id_almacen);
-    formDataToSend.append('fecha', new Date().toISOString());
-    
-    // Solo adjuntar foto si existe
-    if (formData.imagen) {
-      formDataToSend.append('imagen', formData.imagen);
+    // Validaciones
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+      return;
     }
 
-    console.log('Enviando datos:', {
-      tipo_donacion: formData.tipo_donacion,
-      cantidad_donacion: formData.cantidad_donacion,
-      id_almacen: formData.id_almacen
-    });
+    try {
+      const datosEnviar = {
+        tipo_donacion: formData.tipo_donacion,
+        cantidad_donacion: parseInt(formData.cantidad_donacion),
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        id_almacen: parseInt(formData.id_almacen),
+        fecha: new Date().toISOString(),
+        fecha_ingreso: new Date().toISOString()
+      };
 
-    const response = await fetch(`${API_URL}`, {
-      method: 'POST',
-      body: formDataToSend // NO incluir headers Content-Type para FormData
-    });
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datosEnviar)
+      });
 
-    const responseData = await response.json();
-    console.log('Respuesta del servidor:', responseData);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear donación');
+      }
 
-    if (!response.ok) {
-      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
+      const result = await response.json();
+      
+      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
     }
-
-    mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
-    handleCloseModals();
-    await cargarDonaciones();
-
-  } catch (error) {
-    console.error('Error completo:', error);
-    mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
-  }
-};
-
+  };
 
   const handleSubmitEditar = async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
 
-  if (!donacionSeleccionada) return;
+    if (!donacionSeleccionada) return;
 
-  // Validaciones
-  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
-    return;
-  }
-
-  try {
-    const formDataToSend = new FormData();
-    formDataToSend.append('tipo_donacion', formData.tipo_donacion);
-    formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
-    formDataToSend.append('descripcion', formData.descripcion || '');
-    formDataToSend.append('observaciones', formData.observaciones || '');
-    formDataToSend.append('id_almacen', formData.id_almacen);
-    formDataToSend.append('fecha', formData.fecha || new Date().toISOString());
-
-    // Si tienes archivo (ej: imagen)
-    if (formData.imagen) {
-      formDataToSend.append('imagen', formData.imagen);
+    // Validaciones
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+      return;
     }
 
-    const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
-      method: 'PUT',
-      body: formDataToSend, // importante: no usar JSON.stringify
-    });
+    try {
+      const datosEnviar = {
+        tipo_donacion: formData.tipo_donacion,
+        cantidad_donacion: parseInt(formData.cantidad_donacion),
+        descripcion: formData.descripcion,
+        observaciones: formData.observaciones,
+        id_almacen: parseInt(formData.id_almacen),
+        fecha: formData.fecha || new Date().toISOString()
+      };
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Error al actualizar donación');
+      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(datosEnviar)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al actualizar donación');
+      }
+
+      mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
+      handleCloseModals();
+      await cargarDonaciones();
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
     }
-
-    mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
-    handleCloseModals();
-    await cargarDonaciones();
-  } catch (error) {
-    console.error('Error:', error);
-    mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
-  }
-};
-
+  };
 
   const handleEliminarDonacion = async () => {
     if (!donacionSeleccionada) return;
@@ -283,7 +275,7 @@ const handleSubmitNueva = async (e) => {
       observaciones: '',
       id_almacen: '',
       fecha: new Date().toISOString().split('T')[0],
-      imagen: null,
+      foto: null,
       foto_preview: null
     });
   };
@@ -299,9 +291,8 @@ const handleSubmitNueva = async (e) => {
       observaciones: donacion.observaciones || '',
       id_almacen: donacion.id_almacen || '',
       fecha: donacion.fecha ? new Date(donacion.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      imagen: null,
-      foto_preview: donacion.imagen ? `data:image/png;base64,${donacion.imagen}` : null
-
+      foto: null,
+      foto_preview: donacion.foto ? `http://localhost:5000${donacion.foto}` : null
     });
     
     setMostrarModalEditar(true);
@@ -315,7 +306,7 @@ const handleSubmitNueva = async (e) => {
       observaciones: '',
       id_almacen: '',
       fecha: new Date().toISOString().split('T')[0],
-      imagen: null,
+      foto: null,
       foto_preview: null
     });
     setMostrarModal(true);
@@ -350,9 +341,9 @@ const handleSubmitNueva = async (e) => {
     const nombres = {
       1: 'Almacén 1',
       2: 'Almacén 2',
-      3: 'Almacén 3',
-      4: 'Almacén 4',
-      5: 'Almacén 5'
+      12: 'Almacén 12',
+      23: 'Almacén 23',
+      40: 'Almacén 40'
     };
     return nombres[id_almacen] || `Almacén ${id_almacen}`;
   };
@@ -433,8 +424,8 @@ const handleSubmitNueva = async (e) => {
                     <Package size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value" style={{color:"white"}}>{totalDonaciones}</div>
-                    <div className="stat-label" style={{color:"white"}}>Total Donaciones</div>
+                    <div className="stat-value">{totalDonaciones}</div>
+                    <div className="stat-label">Total Donaciones</div>
                   </div>
                 </motion.div>
 
@@ -447,8 +438,8 @@ const handleSubmitNueva = async (e) => {
                     <Users size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value" style={{color:"white"}}>{totalCantidad}</div>
-                    <div className="stat-label" style={{color:"white"}}>Cantidad Total</div>
+                    <div className="stat-value">{totalCantidad}</div>
+                    <div className="stat-label">Cantidad Total</div>
                   </div>
                 </motion.div>
 
@@ -461,8 +452,8 @@ const handleSubmitNueva = async (e) => {
                     <Hash size={20} color="white" />
                   </div>
                   <div className="stat-text">
-                    <div className="stat-value" style={{color:"white"}}>{tiposUnicos}</div>
-                    <div className="stat-label" style={{color:"white"}}>Tipos Diferentes</div>
+                    <div className="stat-value">{tiposUnicos}</div>
+                    <div className="stat-label">Tipos Diferentes</div>
                   </div>
                 </motion.div>
               </motion.div>
@@ -615,7 +606,7 @@ const handleSubmitNueva = async (e) => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <div className="tabla-header-donaciones">
+                <div className="tabla-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <Hash size={14} />
                     ID
@@ -641,12 +632,12 @@ const handleSubmitNueva = async (e) => {
                   </div>
                 </div>
 
-                <div className="tabla-body-donaciones">
+                <div className="tabla-body">
                   <AnimatePresence>
                     {donacionesFiltradas.map((donacion, idx) => (
                       <motion.div
                         key={donacion._id || donacion.id_donacion}
-                        className="tabla-fila-donaciones"
+                        className="tabla-fila"
                         onClick={() => handleFilaClick(donacion)}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -724,14 +715,14 @@ const handleSubmitNueva = async (e) => {
         <AnimatePresence>
           {mostrarModal && (
             <motion.div 
-              className="modal-overlay-donaciones" 
+              className="modal-overlay" 
               onClick={handleCloseModals}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content-donaciones" 
+                className="modal-content" 
                 style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, y: 50 }}
@@ -756,17 +747,15 @@ const handleSubmitNueva = async (e) => {
                         onChange={handleInputChange}
                         required
                       >
-                         <option value="">Seleccionar tipo</option>
+                        <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales">Instrumentos Musicales</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
                         <option value="Medicina">Medicina</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Bebidas">Bebidas</option>
-                        <option value="Vestimenta">Vestimenta</option>
-                        <option value="Accesorios musicales">Accesorios Musicales </option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
                         <option value="Útiles escolares">Utiles Escolares</option>
                         <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material didactico">Material Didactico</option>
+                        <option value="Material Didactico">Material Didactico</option>
                         <option value="Productos de higiene">Productos de Higiene</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -820,9 +809,9 @@ const handleSubmitNueva = async (e) => {
                         <option value="">Seleccionar almacén</option>
                         <option value="1">Almacén 1</option>
                         <option value="2">Almacén 2</option>
-                        <option value="3">Almacén 3</option>
-                        <option value="4">Almacén 4</option>
-                        <option value="5">Almacén 5</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
                       </select>
                     </div>
 
@@ -845,7 +834,7 @@ const handleSubmitNueva = async (e) => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar-donaciones"
+                                className="btn-eliminar"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -878,10 +867,10 @@ const handleSubmitNueva = async (e) => {
                     </div>
                   </div>
 
-                  <div className="modal-actions-donaciones">
+                  <div className="modal-actions">
                     <motion.button 
                       type="button" 
-                      className="btn-cancelar-donaciones" 
+                      className="btn-cancelar" 
                       onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -891,7 +880,7 @@ const handleSubmitNueva = async (e) => {
                     </motion.button>
                     <motion.button 
                       type="submit" 
-                      className="btn-guardar-donaciones"
+                      className="btn-guardar"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -909,14 +898,14 @@ const handleSubmitNueva = async (e) => {
         <AnimatePresence>
           {mostrarModalEditar && donacionSeleccionada && (
             <motion.div 
-              className="modal-overlay-donaciones" 
+              className="modal-overlay" 
               onClick={handleCloseModals}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content-donaciones" 
+                className="modal-content" 
                 style={{ minWidth: '520px', maxWidth: '550px' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, y: 50 }}
@@ -941,17 +930,15 @@ const handleSubmitNueva = async (e) => {
                         onChange={handleInputChange}
                         required
                       >
-                         <option value="">Seleccionar tipo</option>
+                        <option value="">Seleccionar tipo</option>
                         <option value="Alimentos">Alimentos</option>
-                        <option value="Instrumentos musicales">Instrumentos Musicales</option>
+                        <option value="Instrumentos musicales ">Instrumentos Musicales</option>
                         <option value="Medicina">Medicina</option>
                         <option value="Enseres">Enseres</option>
-                        <option value="Bebidas">Bebidas</option>
-                        <option value="Vestimenta">Vestimenta</option>
-                        <option value="Accesorios musicales">Accesorios Musicales </option>
+                        <option value="Accesiorios Musicales:">Accesorios Musicales </option>
                         <option value="Útiles escolares">Utiles Escolares</option>
                         <option value="Material Audiovisual">Mateial Audiovisual</option>
-                        <option value="Material didactico">Material Didactico</option>
+                        <option value="Material Didactico">Material Didactico</option>
                         <option value="Productos de higiene">Productos de Higiene</option>
                         <option value="Otro">Otro</option>
                       </select>
@@ -1004,9 +991,9 @@ const handleSubmitNueva = async (e) => {
                         <option value="">Seleccionar almacén</option>
                         <option value="1">Almacén 1</option>
                         <option value="2">Almacén 2</option>
-                        <option value="3">Almacén 3</option>
-                        <option value="4">Almacén 4</option>
-                        <option value="5">Almacén 5</option>
+                        <option value="12">Almacén 12</option>
+                        <option value="23">Almacén 23</option>
+                        <option value="40">Almacén 40</option>
                       </select>
                     </div>
 
@@ -1029,7 +1016,7 @@ const handleSubmitNueva = async (e) => {
                                 onClick={eliminarFoto}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="btn-eliminar-donaciones"
+                                className="btn-eliminar"
                               >
                                 <Trash2 size={16} />
                                 Eliminar foto
@@ -1079,10 +1066,10 @@ const handleSubmitNueva = async (e) => {
                     </div>
                   </div>
 
-                  <div className="modal-actions-donaciones">
+                  <div className="modal-actions">
                     <motion.button 
                       type="button" 
-                      className="btn-eliminar-donaciones" 
+                      className="btn-eliminar" 
                       onClick={handleEliminarDonacion}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -1092,7 +1079,7 @@ const handleSubmitNueva = async (e) => {
                     </motion.button>
                     <motion.button 
                       type="button" 
-                      className="btn-cancelar-donaciones" 
+                      className="btn-cancelar" 
                       onClick={handleCloseModals}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -1102,7 +1089,7 @@ const handleSubmitNueva = async (e) => {
                     </motion.button>
                     <motion.button 
                       type="submit" 
-                      className="btn-guardar-donaciones"
+                      className="btn-guardar"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -1154,14 +1141,14 @@ const handleSubmitNueva = async (e) => {
         <AnimatePresence>
           {mostrarAyuda && (
             <motion.div 
-              className="modal-overlay-donaciones" 
+              className="modal-overlay" 
               onClick={() => setMostrarAyuda(false)}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
               <motion.div 
-                className="modal-content-donaciones" 
+                className="modal-content" 
                 style={{ maxWidth: '580px', maxHeight: '85vh' }}
                 onClick={(e) => e.stopPropagation()}
                 initial={{ scale: 0.8, rotateX: 90 }}
@@ -1225,19 +1212,22 @@ const handleSubmitNueva = async (e) => {
                 </div>
 
                 <div style={{ 
-                  position: 'sticky',
+                  position: 'sticky', 
                   bottom: '0', 
                   left: '0', 
                   right: '0', 
-                  
+                  padding: '1.5rem', 
                   background: 'white', 
                   borderTop: '2px solid #f0f0f0',
-                  
+                  marginLeft: '-2.5rem',
+                  marginRight: '-2.5rem',
+                  marginBottom: '-2.5rem',
                   display: 'flex',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  gap: '1rem'
                 }}>
                   <motion.button 
-                    className="btn-cerrar-donaciones" 
+                    className="btn-cerrar" 
                     onClick={() => setMostrarAyuda(false)}
                     style={{ minWidth: '200px' }}
                     whileHover={{ scale: 1.05 }}

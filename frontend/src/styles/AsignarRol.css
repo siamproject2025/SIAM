@@ -1,6 +1,7 @@
 /* Estilos generales del componente */
 .RolHeader {
   padding: 2rem;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -173,7 +174,7 @@
   height: 30px;
 }
 
-.inputFiltro-rol {
+.inputFiltro {
   width: 100%;
   padding: 0.8rem 1rem;
   padding-left: 50px;
@@ -183,14 +184,14 @@
   transition: all 0.3s ease;
 }
 
-.inputFiltro-rol:focus {
+.inputFiltro:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.selectFiltro-rol {
-  padding: 1rem 1rem;
+.selectFiltro {
+  padding: 0.8rem 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   font-size: 1rem;
@@ -205,7 +206,7 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 /* Tabla de usuarios - VERSIÓN CORREGIDA */
-.tabla-container-roles {
+.tabla-container {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -223,14 +224,12 @@
 }
 
 .tablaUsuarios th {
-  padding: 1.0rem 1rem;
-  text-align: center!important;
+  padding: 1.2rem 1rem;
+  text-align: left;
   color: white;
   font-weight: 600;
   font-size: 1rem;
-  justify-content: center;
-  align-items: center;
-  
+  /* QUITADO: display: flex */
 }
 
 .tablaUsuarios th svg {
@@ -421,10 +420,11 @@
 }
 
 /* --- Tabla de Usuarios --- */
-.tabla-container-roles {
+.tabla-container {
   overflow-x: auto;
   background: white;
   border-radius: 14px;
+  padding: 15px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.12);
 }
 
@@ -446,7 +446,6 @@
   font-size: 1rem;
   align-items: center;
   gap: 0.5rem;
-  
 }
 
 
@@ -550,7 +549,7 @@
   .filtro-item {
     width: 100%;
   }
-  .inputFiltro-rol,
+  .inputFiltro,
   .selectFiltro {
     width: 100%;
   }
@@ -606,7 +605,7 @@
     min-width: 100%;
   }
   
-  .tabla-container-roles {
+  .tabla-container {
     overflow-x: auto;
   }
   

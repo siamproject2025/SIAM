@@ -8,7 +8,7 @@ exports.listarUsuario = async (req, res) => {
     // Trae todos los usuarios, excluyendo campos sensibles como contraseña
     const usuarios = await Auth.find({}, { password: 0 }); // exclude password
 
-    
+    console.log("Usuarios obtenidos:", usuarios);
 
     res.json({
       users: usuarios, // Más claro que "Auth"

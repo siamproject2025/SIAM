@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-import Notification from "../../../components/Notification";
-
 const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [nuevaOrden, setNuevaOrden] = useState({
     numero: '',
@@ -17,14 +15,6 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     cantidad: '',
     costoUnit: ''
   });
-
-  // Estado para notificaciones
-const [notificacion, setNotificacion] = useState(null);
-
-const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
-  setNotificacion({ message: mensaje, type: tipo, duration: duracion });
-};
-
 
   // Estado para proveedores obtenidos desde la API
   const [proveedores, setProveedores] = useState([]);
@@ -45,7 +35,7 @@ const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
       } catch (error) {
         console.error('Error cargando proveedores:', error);
         setCargandoProveedores(false);
-        mostrarNotificacion('Error al cargar los proveedores. Verifica la conexión con el servidor.', 'warning');
+        alert('Error al cargar los proveedores. Verifica la conexión con el servidor.');
       }
     };
     fetchProveedores();
@@ -54,7 +44,7 @@ const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
   // Agregar ítem
   const handleAgregarItem = () => {
     if (!nuevoItem.descripcion || !nuevoItem.cantidad || !nuevoItem.costoUnit) {
-      mostrarNotificacion('Por favor completa todos los campos del ítem', 'warning');
+      alert('Por favor completa todos los campos del ítem');
       return;
     }
     
@@ -62,7 +52,7 @@ const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
     const costoUnit = parseFloat(nuevoItem.costoUnit);
     
     if (cantidad <= 0 || costoUnit < 0) {
-      mostrarNotificacion('La cantidad debe ser mayor a 0 y el costo no puede ser negativo,', 'warning');
+      alert('La cantidad debe ser mayor a 0 y el costo no puede ser negativo');
       return;
     }
     
@@ -88,55 +78,13 @@ const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
   };
 
   // Crear orden (validar campos obligatorios)
- const handleCrear = () => {
-  // Validar número de orden
-  if (!nuevaOrden.numero || nuevaOrden.numero.trim() === '') {
-    mostrarNotificacion('El número de orden es obligatorio', 'warning');
-    return;
-  }
-
-  // Validar proveedor
-  if (!nuevaOrden.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
-    mostrarNotificacion('Debes seleccionar un proveedor', 'warning');
-    return;
-  }
-
-  // Validar fecha
-  if (!nuevaOrden.fecha || nuevaOrden.fecha.trim() === '') {
-    mostrarNotificacion('La fecha de creación es obligatoria', 'warning');
-    return;
-  }
-
-  // Validar estado
-  if (!nuevaOrden.estado || nuevaOrden.estado.trim() === '') {
-    mostrarNotificacion('El estado de la orden es obligatorio', 'warning');
-    return;
-  }
-
-  // Validar ítems
-  if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
-    mostrarNotificacion('Debes agregar al menos un ítem a la orden', 'warning');
-    return;
-  }
-
-  // Validar cada ítem
-  const itemsInvalidos = nuevaOrden.items.some(
-    item =>
-      !item.descripcion ||
-      item.cantidad <= 0 ||
-      item.costoUnit < 0
-  );
-
-  if (itemsInvalidos) {
-    mostrarNotificacion('Todos los ítems deben tener descripción, cantidad mayor a 0 y costo válido', 'warning');
-    return;
-  }
-
-  // Si todo está bien, crear la orden
-  onCreate(nuevaOrden);
-  mostrarNotificacion('Orden creada exitosamente', 'success');
-};
-
+  const handleCrear = () => {
+    if (!nuevaOrden.numero || !nuevaOrden.proveedor_id || nuevaOrden.items.length === 0) {
+      alert("Por favor completa los campos obligatorios y agrega al menos un ítem.");
+      return;
+    }
+    onCreate(nuevaOrden);
+  };
 
   // Calcular total
   const total = nuevaOrden.items.reduce(
@@ -357,14 +305,6 @@ const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
           </button>
         </div>
       </div>
-      {notificacion && (
-          <Notification
-         message={notificacion.message}
-          type={notificacion.type}
-          duration={notificacion.duration}
-           onClose={() => setNotificacion(null)}
-          />
-        )}
     </div>
   );
 };

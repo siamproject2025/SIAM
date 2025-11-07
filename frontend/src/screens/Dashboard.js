@@ -1,4 +1,4 @@
-import { FiUsers, FiInbox, FiCalendar, FiFile, FiGift, FiPackage, FiBookOpen, FiMessageSquare, FiShield, FiArrowRight } from 'react-icons/fi';
+import { FiUsers, FiInbox, FiCalendar, FiFile, FiGift, FiPackage, FiBookOpen, FiMessageSquare, FiShield } from 'react-icons/fi';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,6 @@ import Home from './Home';
 import AdminOnly from '../components/Plugins/AdminOnly';
 
 const API_URL = "http://localhost:5000/";
-
 const DashboardCards = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
@@ -21,8 +20,9 @@ const DashboardCards = () => {
         if (!user) return;
 
         const token = await user.getIdToken();
+
         const res = await axios.get("http://localhost:5000/api/dashboard", {
-          headers: {
+        headers: {
             Authorization: `Bearer ${token}`
           },
         });
@@ -36,39 +36,28 @@ const DashboardCards = () => {
     fetchModulos();
   }, []);
 
-  // Función para determinar el tipo de módulo
-  const getModuleType = (index) => {
-    const types = ['primary-module', 'success-module', 'warning-module', 'info-module'];
-    return types[index % types.length];
-  };
-
   return (
     <div className="main dashboard-container">
       <AdminOnly><Home></Home></AdminOnly>
       <div className="dashboard-main">
         <div className="dashboard-grid">
-          {modulos.map((modulo, index) => {
+          {modulos.map((modulo) => {
             const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
-            const moduleType = getModuleType(index);
-            
             return (
               <div
                 key={modulo._id}
-                className={`dashboard-card ${moduleType}`}
+                className="dashboard-card"
                 onClick={() => navigate(modulo.link)}
               >
-                <div className="icon-container">
-                  <IconComponent size={24} />
-                </div>
+                <IconComponent size={40} />
                 <h3>{modulo.titulo}</h3>
                 <p>{modulo.descripcion}</p>
-                <div className="arrow">
-                  <FiArrowRight size={18} />
-                </div>
               </div>
             );
           })}
-        </div>
+        
+        
+      </div>
       </div>
     </div>
   );
