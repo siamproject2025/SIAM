@@ -333,15 +333,7 @@ const Horarios = () => {
                                     <Table2 /> Horarios
                                 </a>
                             </li>
-                            <li className="nav-item">
-                                <a
-                                    href="#"
-                                    className={`nav-link ${calendarioContent ? "active" : ""}`}
-                                    onClick={clickCalendarioContent}
-                                >
-                                    
-                                </a>
-                            </li>
+                          
                         </>
                     )}
                     {CAN_VIEW && (
