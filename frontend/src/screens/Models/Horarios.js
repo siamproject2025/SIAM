@@ -151,12 +151,7 @@ const Horarios = () => {
         setCalendarioContent(false);
         setGradosContent(false);
     };
-    const clickCalendarioContent = () => {
-        if (!CAN_SEE_ALL_TABS) return; 
-        setHorariosContent(false);
-        setCalendarioContent(true);
-        setGradosContent(false);
-    };
+   
     const clickGradosContent = () => {
         if (!CAN_VIEW) { 
              showNotification("❌ Permiso denegado.", "error");
@@ -344,7 +339,7 @@ const Horarios = () => {
                                     className={`nav-link ${calendarioContent ? "active" : ""}`}
                                     onClick={clickCalendarioContent}
                                 >
-                                    <Calendar /> Calendario
+                                    
                                 </a>
                             </li>
                         </>
