@@ -1,33 +1,42 @@
+// src/components/BibliotecaTest.jsx
+
 import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from "axios";
+import useUserRole from "./hooks/useUserRole"; 
 import "../styles/Models/Biblioteca.css";
 import { 
-  Search,
-  Upload,
-  Download,
-  Book,
-  X,
-  Filter,
-  Users,
-  Award,
-  FileText,
-  BookIcon,
-  DownloadIcon,
-  Star,
-  Calendar,
-  BookOpen
-} from 'lucide-react';
-
-// Mantener los iconos SVG existentes para compatibilidad
-const CloseIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="6" x2="6" y2="18"/>
-    <line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
+  FiSearch,
+  FiUpload,
+  FiDownload,
+  FiBook,
+  FiX,
+  FiFilter,
+  FiUsers,
+  FiAward,
+  FiFileText,
+  FiStar,
+  FiCalendar,
+  FiBookOpen,
+  FiTrash2, // ✅ Icono de eliminar agregado
+  FiFile,
+  FiArrowUp,
+  FiArrowDown,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiInfo,
+  FiUser,
+  FiLock
+} from 'react-icons/fi';
 
 export default function BibliotecaTest() {
+  
+  const { userRole, cargando } = useUserRole();
+
   const [libros, setLibros] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
@@ -39,20 +48,30 @@ export default function BibliotecaTest() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Permisos basados en rol
+  const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
+  const canDelete = userRole === "ADMIN";
+
   const cargarLibros = async () => {
+    setLoading(true);
     try {
       const res = await axios.get("http://localhost:5000/api/biblioteca");
       setLibros(res.data);
     } catch (error) {
       showNotification("Error al cargar libros", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    cargarLibros();
-  }, []);
+    if (!cargando) { 
+      cargarLibros();
+    }
+  }, [cargando]);
 
   // Calcular estadísticas
   const totalLibros = libros.length;
@@ -73,6 +92,12 @@ export default function BibliotecaTest() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!canUpload) {
+      showNotification("No tienes permiso para subir libros", "error");
+      setMostrarModal(false);
+      return;
+    }
+
     if (!titulo.trim()) {
       showNotification("El título es obligatorio", "error");
       return;
@@ -85,6 +110,13 @@ export default function BibliotecaTest() {
     
     if (!archivo) {
       showNotification("Debes seleccionar un archivo", "error");
+      return;
+    }
+
+    // Validar tipo de archivo
+    const fileExtension = archivo.name.split('.').pop().toLowerCase();
+    if (!['pdf', 'epub'].includes(fileExtension)) {
+      showNotification("Solo se permiten archivos PDF y EPUB", "error");
       return;
     }
 
@@ -111,6 +143,11 @@ export default function BibliotecaTest() {
   };
 
   const handleEliminar = async (id, titulo) => {
+    if (!canDelete) {
+      showNotification("No tienes permiso para eliminar libros", "error");
+      return;
+    }
+
     if (!window.confirm(`¿Seguro que deseas eliminar "${titulo}"?`)) return;
     
     try {
@@ -175,16 +212,56 @@ export default function BibliotecaTest() {
   };
 
   const getFileIcon = (url) => {
-    if (!url) return "📄";
+    if (!url) return <FiFile className="file-icon-default" />;
     const ext = url.split('.').pop().toLowerCase();
-    if (ext === 'pdf') return "📕";
-    if (ext === 'epub') return "📘";
-    return "📄";
+    if (ext === 'pdf') return <FiFileText className="file-icon-pdf" />;
+    if (ext === 'epub') return <FiBook className="file-icon-epub" />;
+    return <FiFile className="file-icon-default" />;
   };
+
+  const getSortIcon = (columnKey) => {
+    if (sortDescriptor.column !== columnKey) return null;
+    return sortDescriptor.direction === "ascending" ? 
+      <FiArrowUp className="sort-icon" /> : 
+      <FiArrowDown className="sort-icon" />;
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setArchivo(file);
+    }
+  };
+
+  const resetForm = () => {
+    setTitulo("");
+    setAutor("");
+    setArchivo(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleModalClose = () => {
+    setMostrarModal(false);
+    resetForm();
+  };
+
+  if (cargando) {
+    return (
+      <div className="biblioteca-loading">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <FiBook size={40} />
+        </motion.div>
+        <p>Cargando permisos y biblioteca...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="biblioteca-container">
-      {/* 🎨 ENCABEZADO MEJORADO */}
+      {/* ENCABEZADO */}
       <motion.div 
         className="biblioteca-header"
         initial={{ opacity: 0, y: -30 }}
@@ -197,9 +274,6 @@ export default function BibliotecaTest() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, duration: 0.6 }}
         >
-          {/* Patrón de fondo */}
-          <div className="header-pattern" />
-
           <div className="header-content">
             <motion.h2
               initial={{ opacity: 0, x: -50 }}
@@ -211,7 +285,7 @@ export default function BibliotecaTest() {
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
               >
-                <Book size={36} fill="white" color="white" />
+                <FiBook size={36} className="header-main-icon" />
               </motion.div>
               Biblioteca Digital
               <motion.div
@@ -222,7 +296,7 @@ export default function BibliotecaTest() {
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
                 className="floating-main-icon"
               >
-                <BookOpen size={32} color="white" />
+                <FiBookOpen size={32} />
               </motion.div>
             </motion.h2>
             
@@ -233,6 +307,10 @@ export default function BibliotecaTest() {
               className="header-subtitle"
             >
               Gestiona tu colección de libros digitales de manera profesional
+              <span className="user-role-badge">
+                <FiUser size={12} />
+                {userRole}
+              </span>
             </motion.p>
 
             <motion.div 
@@ -247,7 +325,7 @@ export default function BibliotecaTest() {
                 transition={{ type: "spring", stiffness: 300 }}
               >
                 <div className="stat-icon">
-                  <Book size={20} color="white" />
+                  <FiBook size={20} />
                 </div>
                 <div className="stat-text">
                   <div className="stat-value">{totalLibros}</div>
@@ -261,7 +339,7 @@ export default function BibliotecaTest() {
                 transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
               >
                 <div className="stat-icon">
-                  <FileText size={20} color="white" />
+                  <FiFileText size={20} />
                 </div>
                 <div className="stat-text">
                   <div className="stat-value">{librosPDF}</div>
@@ -275,7 +353,7 @@ export default function BibliotecaTest() {
                 transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
               >
                 <div className="stat-icon">
-                  <Award size={20} color="white" />
+                  <FiAward size={20} />
                 </div>
                 <div className="stat-text">
                   <div className="stat-value">{librosRecientes}</div>
@@ -302,7 +380,7 @@ export default function BibliotecaTest() {
                   ease: "easeInOut"
                 }}
               >
-                <FileText size={20} color="white" />
+                <FiFileText size={20} />
               </motion.div>
               <motion.div 
                 className="floating-icon"
@@ -317,7 +395,7 @@ export default function BibliotecaTest() {
                   delay: 0.5
                 }}
               >
-                <Calendar size={20} color="white" />
+                <FiCalendar size={20} />
               </motion.div>
               <motion.div 
                 className="floating-icon"
@@ -332,13 +410,13 @@ export default function BibliotecaTest() {
                   delay: 1
                 }}
               >
-                <Star size={20} color="white" />
+                <FiStar size={20} />
               </motion.div>
             </motion.div>
           </div>
         </motion.div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS MEJORADA */}
+        {/* BARRA DE BÚSQUEDA Y FILTROS */}
         <motion.div 
           className="biblioteca-top-content"
           initial={{ opacity: 0, y: 20 }}
@@ -346,14 +424,13 @@ export default function BibliotecaTest() {
           transition={{ delay: 0.5, duration: 0.5 }}
         >
           <div className="biblioteca-filters-row">
-            {/* Search */}
             <div className="search-container">
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="search-icon-animated"
               >
-                <Search size={18} />
+                <FiSearch size={18} />
               </motion.div>
               <input
                 type="text"
@@ -367,14 +444,13 @@ export default function BibliotecaTest() {
                   className="search-clear"
                   onClick={() => setFilterValue('')}
                 >
-                  ✕
+                  <FiX size={14} />
                 </button>
               )}
             </div>
 
-            {/* Filtro por tipo */}
             <div className="filter-tipo-wrapper">
-              <Filter size={18} />
+              <FiFilter size={18} />
               <select
                 value={tipoFiltro}
                 onChange={(e) => setTipoFiltro(e.target.value)}
@@ -386,30 +462,31 @@ export default function BibliotecaTest() {
               </select>
             </div>
 
-            {/* Botón subir libro */}
-            <motion.button
-              className="btn-subir-libro"
-              onClick={() => setMostrarModal(true)}
-              whileHover={{ 
-                scale: 1.08, 
-                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            {canUpload && (
+              <motion.button
+                className="btn-subir-libro"
+                onClick={() => setMostrarModal(true)}
+                whileHover={{ 
+                  scale: 1.08, 
+                  boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)"
+                }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300 }}
               >
-                <Upload size={18} />
-              </motion.div>
-              Subir Libro
-            </motion.button>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                  <FiUpload size={18} />
+                </motion.div>
+                Subir Libro
+              </motion.button>
+            )}
           </div>
 
           <div className="biblioteca-meta-row">
             <span className="libro-count">
+              <FiBook size={14} />
               Total: {sortedItems.length} {sortedItems.length === 1 ? 'libro' : 'libros'}
             </span>
             <div className="rows-per-page">
@@ -432,248 +509,351 @@ export default function BibliotecaTest() {
         </motion.div>
       </motion.div>
 
-      {/* El resto del código se mantiene igual */}
-       <div className="table-container">
+      {/* TABLA PRINCIPAL */}
+      <div className="table-container">
         <div className="table-wrapper">
-          <table className="biblioteca-table">
-            <thead>
-              <tr>
-                <th onClick={() => handleSort("titulo")} className="sortable th-titulo">
-                  <div className="th-content">
-                    TÍTULO
-                    {sortDescriptor.column === "titulo" && (
-                      <span className="sort-icon">
-                        {sortDescriptor.direction === "ascending" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th onClick={() => handleSort("autor")} className="sortable th-autor">
-                  <div className="th-content">
-                    AUTOR
-                    {sortDescriptor.column === "autor" && (
-                      <span className="sort-icon">
-                        {sortDescriptor.direction === "ascending" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th onClick={() => handleSort("fecha")} className="sortable th-fecha">
-                  <div className="th-content">
-                    FECHA
-                    {sortDescriptor.column === "fecha" && (
-                      <span className="sort-icon">
-                        {sortDescriptor.direction === "ascending" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="th-formato">
-                  <div className="th-content">FORMATO</div>
-                </th>
-                <th className="th-acciones">
-                  <div className="th-content">ACCIONES</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
+          {loading ? (
+            <div className="loading-state">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <FiBook size={40} className="loading-spinner" />
+              </motion.div>
+              <p>Cargando libros...</p>
+            </div>
+          ) : (
+            <table className="biblioteca-table">
+              <thead>
                 <tr>
-                  <td colSpan="5" className="empty-state">
-                    <div className="empty-content">
-                      <BookIcon />
-                      <p>No se encontraron libros</p>
-                      <small>Intenta ajustar los filtros o sube un nuevo libro</small>
+                  <th onClick={() => handleSort("titulo")} className="sortable th-titulo">
+                    <div className="th-content">
+                      TÍTULO
+                      {getSortIcon("titulo")}
                     </div>
-                  </td>
+                  </th>
+                  <th onClick={() => handleSort("autor")} className="sortable th-autor">
+                    <div className="th-content">
+                      AUTOR
+                      {getSortIcon("autor")}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort("fecha")} className="sortable th-fecha">
+                    <div className="th-content">
+                      FECHA
+                      {getSortIcon("fecha")}
+                    </div>
+                  </th>
+                  <th className="th-formato">
+                    <div className="th-content">
+                      <FiFileText size={14} />
+                      FORMATO
+                    </div>
+                  </th>
+                  <th className="th-acciones">
+                    <div className="th-content">
+                      <FiUsers size={14} />
+                      ACCIONES
+                    </div>
+                  </th>
                 </tr>
-              ) : (
-                items.map((libro) => (
-                  <tr key={libro._id} className="table-row">
-                    <td className="cell-titulo">
-                      <div className="titulo-wrapper">
-                        <span className="file-icon">{getFileIcon(libro.archivoUrl)}</span>
-                        {libro.titulo}
-                      </div>
-                    </td>
-                    <td className="cell-autor">{libro.autor}</td>
-                    <td className="cell-fecha">
-                      {new Date(libro.fechaCreacion).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric'
-                      })}
-                    </td>
-                    <td className="cell-formato">
-                      {libro.archivoUrl ? (
-                        <span className={`formato-badge ${libro.archivoUrl.split('.').pop().toLowerCase()}`}>
-                          {libro.archivoUrl.split('.').pop().toUpperCase()}
-                        </span>
-                      ) : (
-                        <span className="formato-badge sin-archivo">N/A</span>
-                      )}
-                    </td>
-                    <td className="cell-acciones">
-                      <div className="action-buttons">
-                        {libro.archivoUrl ? (
-                          <a
-                            href={libro.archivoUrl}
-                            download
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-descargar"
-                            title="Descargar libro"
-                          >
-                            <DownloadIcon />
-                            Descargar
-                          </a>
-                        ) : (
-                          <span className="sin-archivo-text">Sin archivo</span>
-                        )}
-                        <button
-                          onClick={() => handleEliminar(libro._id, libro.titulo)}
-                          className="btn-eliminar"
-                          title="Eliminar libro"
-                        >
-                          🗑️
-                        </button>
+              </thead>
+              <tbody>
+                {items.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="empty-state">
+                      <div className="empty-content">
+                        <FiBook size={40} className="empty-icon" />
+                        <p>No se encontraron libros</p>
+                        <small>Intenta ajustar los filtros o sube un nuevo libro</small>
                       </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  items.map((libro) => (
+                    <tr key={libro._id} className="table-row">
+                      <td className="cell-titulo">
+                        <div className="titulo-wrapper">
+                          <span className="file-icon">{getFileIcon(libro.archivoUrl)}</span>
+                          <span className="titulo-text">{libro.titulo}</span>
+                        </div>
+                      </td>
+                      <td className="cell-autor">{libro.autor}</td>
+                      <td className="cell-fecha">
+                        <FiCalendar size={12} className="fecha-icon" />
+                        {new Date(libro.fechaCreacion).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </td>
+                      <td className="cell-formato">
+                        {libro.archivoUrl ? (
+                          <span className={`formato-badge ${libro.archivoUrl.split('.').pop().toLowerCase()}`}>
+                            {libro.archivoUrl.split('.').pop().toUpperCase()}
+                          </span>
+                        ) : (
+                          <span className="formato-badge sin-archivo">
+                            <FiAlertCircle size={10} />
+                            N/A
+                          </span>
+                        )}
+                      </td>
+                      <td className="cell-acciones">
+                        <div className="action-buttons">
+                          {libro.archivoUrl ? (
+                            <motion.a
+                              href={libro.archivoUrl}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-descargar"
+                              title="Descargar libro"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <FiDownload size={14} />
+                              Descargar
+                            </motion.a>
+                          ) : (
+                            <span className="sin-archivo-text">
+                              <FiAlertCircle size={12} />
+                              Sin archivo
+                            </span>
+                          )}
+                    
+{canDelete && (
+  <motion.button
+    onClick={() => handleEliminar(libro._id, libro.titulo)}
+    className="btn-eliminar"
+    title="Eliminar libro"
+    whileHover={{ scale: 1.1 }}
+    whileTap={{ scale: 0.9 }}
+    style={{ 
+      border: '2px solid red', // Borde rojo para verificar que se renderiza
+      background: 'orange',     // Fondo naranja para visibilidad
+      color: 'white',           // Texto blanco
+      padding: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px'
+    }}
+  >
+    <FiTrash2 size={16} />
+   
+  </motion.button>
+)}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        {/* Pagination */}
+        {/* PAGINACIÓN */}
         {items.length > 0 && (
           <div className="pagination-container">
             <div className="pagination-info">
+              <FiInfo size={14} />
               Mostrando {((page - 1) * rowsPerPage) + 1} - {Math.min(page * rowsPerPage, sortedItems.length)} de {sortedItems.length}
             </div>
             
             <div className="pagination-controls">
-              <button
+              <motion.button
                 onClick={() => setPage(1)}
                 disabled={page === 1}
                 className="pagination-button"
+                title="Primera página"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                ⟪
-              </button>
-              <button
+                <FiChevronsLeft size={14} />
+              </motion.button>
+              <motion.button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
                 className="pagination-button"
+                title="Página anterior"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                ← Anterior
-              </button>
+                <FiChevronLeft size={14} />
+                Anterior
+              </motion.button>
               
               <span className="pagination-pages">
                 Página {page} de {pages}
               </span>
               
-              <button
+              <motion.button
                 onClick={() => setPage(Math.min(pages, page + 1))}
                 disabled={page === pages}
                 className="pagination-button"
+                title="Siguiente página"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                Siguiente →
-              </button>
-              <button
+                Siguiente
+                <FiChevronRight size={14} />
+              </motion.button>
+              <motion.button
                 onClick={() => setPage(pages)}
                 disabled={page === pages}
                 className="pagination-button"
+                title="Última página"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                ⟫
-              </button>
+                <FiChevronsRight size={14} />
+              </motion.button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Modal Subir Libro */}
-      {mostrarModal && (
-        <div className="modal-overlay" onClick={() => setMostrarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>📤 Subir Nuevo Libro</h3>
-              <button onClick={() => setMostrarModal(false)} className="modal-close">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="modal-form">
-              <div className="form-group">
-                <label>Título del Libro *</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Introducción a MongoDB"
-                  value={titulo}
-                  onChange={(e) => setTitulo(e.target.value)}
-                  className="form-input"
-                  required
-                />
+      {/* MODAL SUBIR LIBRO */}
+      <AnimatePresence>
+        {mostrarModal && canUpload && (
+          <motion.div 
+            className="modal-overlay" 
+            onClick={handleModalClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="modal-content" 
+              onClick={(e) => e.stopPropagation()}
+              initial={{ scale: 0.8, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.8, y: 50 }}
+              transition={{ type: "spring", damping: 20 }}
+            >
+              <div className="modal-header">
+                <h3>
+                  <FiUpload />
+                  Subir Nuevo Libro
+                </h3>
+                <button onClick={handleModalClose} className="modal-close">
+                  <FiX size={20} />
+                </button>
               </div>
-
-              <div className="form-group">
-                <label>Autor *</label>
-                <input
-                  type="text"
-                  placeholder="Ej: John Doe"
-                  value={autor}
-                  onChange={(e) => setAutor(e.target.value)}
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Archivo (PDF o EPUB) *</label>
-                <div className="file-input-wrapper">
+              
+              <form onSubmit={handleSubmit} className="modal-form">
+                <div className="form-group">
+                  <label>
+                    <FiBook size={14} />
+                    Título del Libro *
+                  </label>
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.epub"
-                    onChange={(e) => setArchivo(e.target.files[0])}
-                    className="file-input"
+                    type="text"
+                    placeholder="Ej: Introducción a MongoDB"
+                    value={titulo}
+                    onChange={(e) => setTitulo(e.target.value)}
+                    className="form-input"
                     required
                   />
-                  {archivo && (
-                    <div className="file-selected">
-                      ✓ {archivo.name}
-                    </div>
-                  )}
                 </div>
-              </div>
 
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  onClick={() => setMostrarModal(false)}
-                  className="btn-cancelar"
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-guardar">
-                  <Upload size={16} />
-                  Subir Libro
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                <div className="form-group">
+                  <label>
+                    <FiUsers size={14} />
+                    Autor *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: John Doe"
+                    value={autor}
+                    onChange={(e) => setAutor(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
 
-      {/* Notification */}
-      {notification && (
-        <div className={`notification notification-${notification.type}`}>
-          <span className="notification-icon">
-            {notification.type === 'success' ? '✓' : notification.type === 'error' ? '✕' : 'ℹ'}
-          </span>
-          {notification.message}
-        </div>
-      )}
+                <div className="form-group">
+                  <label>
+                    <FiFileText size={14} />
+                    Archivo (PDF o EPUB) *
+                  </label>
+                  <div className="file-input-wrapper">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.epub"
+                      onChange={handleFileChange}
+                      className="file-input"
+                      required
+                    />
+                    {archivo && (
+                      <div className="file-selected">
+                        <FiCheckCircle size={14} />
+                        {archivo.name}
+                      </div>
+                    )}
+                  </div>
+                  <small className="file-hint">
+                    Formatos aceptados: PDF, EPUB
+                  </small>
+                </div>
+
+                <div className="modal-actions">
+                  <motion.button
+                    type="button"
+                    onClick={handleModalClose}
+                    className="btn-cancelar"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FiX size={14} />
+                    Cancelar
+                  </motion.button>
+                  <motion.button 
+                    type="submit" 
+                    className="btn-guardar"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FiUpload size={14} />
+                    Subir Libro
+                  </motion.button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* NOTIFICATION */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            className={`notification notification-${notification.type}`}
+            initial={{ opacity: 0, y: -50, x: 100 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: -50, x: 100 }}
+            transition={{ type: "spring", damping: 20 }}
+          >
+            <span className="notification-icon">
+              {notification.type === 'success' ? 
+                <FiCheckCircle size={20} /> : 
+                notification.type === 'error' ? 
+                <FiAlertCircle size={20} /> : 
+                <FiInfo size={20} />
+              }
+            </span>
+            <span className="notification-message">{notification.message}</span>
+            <button 
+              onClick={() => setNotification(null)}
+              className="notification-close"
+            >
+              <FiX size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

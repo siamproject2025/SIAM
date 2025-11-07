@@ -162,6 +162,7 @@ body{
 
 .forgot-pass-link:hover{
   text-decoration: underline;
+  cursor: pointer;
 }
 
 .login-center-buttons{

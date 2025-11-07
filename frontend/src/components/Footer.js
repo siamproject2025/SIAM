@@ -11,8 +11,8 @@ import { faCopyright } from "@fortawesome/free-solid-svg-icons";
 
 const Footer = () => {
     return (
-        <footer className="footer">
-            <div className="footer-container">
+        <footer className="footer2">
+            <div className="footer-container2">
                 <div className="item1">
                     <PrivacyModal />
                 </div>
