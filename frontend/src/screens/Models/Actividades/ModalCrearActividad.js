@@ -70,8 +70,8 @@ const ModalCrearActividad = ({ onClose, onCreate }) => {
         </div>
 
         <div className="modal-actions">
-          <button className="btn-cancelar" onClick={onClose}>❌ Cancelar</button>
-          <button className="btn-crear" onClick={handleCrear}>✨ Crear Actividad</button>
+          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
+          <button className="btn-guardar" onClick={handleCrear}>Crear Actividad</button>
         </div>
       </div>
     </div>

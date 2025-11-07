@@ -14,12 +14,13 @@ const {
   buscarPorCargo
 } = require('../Controllers/personalController');
 
+//router.use(authenticateUser);
 // Rutas básicas CRUD
-router.get('/', authenticateUser, obtenerPersonal);
-router.get('/:id', authenticateUser, obtenerPersonalPorId);
-router.post('/', authenticateUser, upload.single('imagen'), crearPersonal);
-router.put('/:id', authenticateUser, upload.single('imagen'), actualizarPersonal);
-router.delete('/:id', authenticateUser, eliminarPersonal);
+router.get('/', obtenerPersonal);
+router.get('/:id', obtenerPersonalPorId);
+router.post('/', upload.single('imagen'), crearPersonal);
+router.put('/:id',  upload.single('imagen'), actualizarPersonal);
+router.delete('/:id',  eliminarPersonal);
 
 // Rutas de búsqueda específicas
 router.get('/estado/:estado', authenticateUser, buscarPorEstado);

@@ -6,6 +6,9 @@
   margin-top: 0;
 }
 
+.tab-content{
+  margin: 0px 18px;
+}
 
 .App {
   min-height: 100vh;

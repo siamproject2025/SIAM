@@ -354,7 +354,9 @@
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
-
+.btn-guardar-donaciones{
+ margin-top: 0px!important; 
+}
 .metric-card {
   background: white;
   border-radius: 15px;

@@ -28,7 +28,7 @@ const AsignarRol = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}api/usuarios`, {
+        const res = await axios.get(`${API_URL}/api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsuarios(res.data.users);
@@ -47,7 +47,7 @@ const AsignarRol = () => {
       const user = auth.currentUser;
       const token = await user.getIdToken();
       await axios.put(
-        `${API_URL}api/usuarios/${id}/rol`,
+        `${API_URL}/api/usuarios/${id}/rol`,
         { roles: [nuevoRol] },
         {
           headers: {
@@ -57,31 +57,45 @@ const AsignarRol = () => {
         }
       );
 
+      const usuarioActualizado = usuarios.find((u) => u._id === id);
+      alert(
+        `✅ Rol actualizado correctamente para ${
+          usuarioActualizado?.username || "usuario desconocido"
+        } (${usuarioActualizado?.email || "sin email"})`
+      );
+
       setUsuarios((prev) =>
         prev.map((u) => (u._id === id ? { ...u, roles: [nuevoRol] } : u))
       );
-
       setActualizarChart((prev) => !prev);
     } catch (error) {
       console.error("Error al asignar rol:", error);
-      alert(error.response?.data?.message || "❌ Error al cambiar rol.");
+      alert(error.response?.data?.message || "❌ No se pudo actualizar el rol.");
     }
   };
 
   const eliminarUsuario = async (id) => {
-    if (!window.confirm("⚠️ ¿Seguro que deseas eliminar este usuario?")) return;
+   
     try {
       const user = auth.currentUser;
       const token = await user.getIdToken();
-      await axios.delete(`${API_URL}api/usuarios/${id}`, {
+      await axios.delete(`${API_URL}/api/usuarios/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      const usuarioEliminado = usuarios.find((u) => u._id === id);
+      const nombre = usuarioEliminado?.username || "desconocido";
+
+      setMensaje(
+        <span>
+          🗑 Usuario <strong>{nombre}</strong> eliminado correctamente
+        </span>
+      );
       setUsuarios((prev) => prev.filter((u) => u._id !== id));
       setActualizarChart((prev) => !prev);
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
-      setMensaje("❌ Error al eliminar usuario.");
+      setMensaje("❌ No se pudo eliminar el usuario.");
     }
   };
 

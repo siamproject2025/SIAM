@@ -8,7 +8,7 @@ import Modal from '..//..//components/Modal';
 import Notification from '../../components/Notification';
 import { auth } from "..//../components/authentication/Auth";
 
-const API_URL = process.env.REACT_APP_API_URL+'api/matriculas';
+const API_URL = process.env.REACT_APP_API_URL+'/api/matriculas';
 
 function App() {
   const [students, setStudents] = useState([]);

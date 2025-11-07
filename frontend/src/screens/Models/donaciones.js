@@ -32,7 +32,7 @@ import {
   HandHeart
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+'api/donaciones';
+const API_URL = process.env.REACT_APP_API_URL+'/api/donaciones';
 
 // Estilos CSS integrados mejorados
 
@@ -289,6 +289,7 @@ const handleEliminarDonacion = async () => {
     const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
       method: 'DELETE',
       headers: {
+
         Authorization: `Bearer ${token}` // ✅ Token agregado
       }
     });
@@ -666,7 +667,7 @@ const handleEliminarDonacion = async () => {
                     <Package size={14} />
                     TIPO & DESCRIPCIÓN
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'left', gap: '5px' }}>
                     <Warehouse size={14} />
                     ALMACÉN
                   </div>
@@ -725,19 +726,19 @@ const handleEliminarDonacion = async () => {
                           </div>
                         </div>
 
-                        <div>
+                        <div style={{display:"flex", justifyContent:"center", alignItems:"center"}}>
                           <span 
                             className="badge-almacen"
                             style={{ 
                               background: getColorAlmacen(donacion.id_almacen),
-                              color: 'white'
+                              color: 'white', textAlign:"center"
                             }}
                           >
                             {getNombreAlmacen(donacion.id_almacen)}
                           </span>
                         </div>
 
-                        <div style={{ fontSize: '0.9rem', color: '#555' }}>
+                        <div style={{ fontSize: '0.9rem', color: '#555' , textAlign:"center"}}>
                           {new Date(donacion.fecha).toLocaleDateString('es-ES')}
                         </div>
 
@@ -889,8 +890,7 @@ const handleEliminarDonacion = async () => {
                                 whileTap={{ scale: 0.95 }}
                                 className="btn btn-danger"
                               >
-                                <Trash2 size={16} />
-                                Eliminar foto
+                                <Trash2 size={16} /> Eliminar foto
                               </motion.button>
                             </div>
                           </div>
@@ -1129,8 +1129,7 @@ const handleEliminarDonacion = async () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Trash2 size={16} />
-                      Eliminar
+                      <Trash2 size={16} /> Eliminar
                     </motion.button>
                     <motion.button 
                       type="button" 

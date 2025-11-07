@@ -52,7 +52,7 @@ const DownloadIcon = () => (
   </svg>
 );
 
-const API_URL = process.env.REACT_APP_API_URL+"api/bienes";
+const API_URL = process.env.REACT_APP_API_URL+"/api/bienes";
 
 const Bienes = () => {
   // Estados principales
@@ -389,7 +389,7 @@ const handleEliminarBien = async (id) => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-HN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'HNL',
       minimumFractionDigits: 2
     }).format(amount || 0);
   };
@@ -748,7 +748,7 @@ const handleEliminarBien = async (id) => {
                 </div>
                 <div className="stat-text" style={{ color: "white" }}>
                   <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    ${valorTotal.toLocaleString()}
+                    L. {valorTotal.toLocaleString()}
                   </div>
                   <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                     Valor Total

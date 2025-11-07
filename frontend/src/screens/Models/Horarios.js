@@ -8,10 +8,10 @@ import CalendarioHorarios from "../../components/Horarios/CalendarioHorarios";
 import { auth } from "..//../components/authentication/Auth";
 
 const API_HOST = process.env.REACT_APP_API_URL;
-const API_HORARIO = `${API_HOST}api/horario`;
-const API_ALUMNO = `${API_HOST}api/matriculas`;
-const API_DOCENTE = `${API_HOST}api/personal`;
-const API_AULA = `${API_HOST}api/aula`;
+const API_HORARIO = `${API_HOST}/api/horario`;
+const API_ALUMNO = `${API_HOST}/api/matriculas`;
+const API_DOCENTE = `${API_HOST}/api/personal`;
+const API_AULA = `${API_HOST}/api/aula`;
 
 const inicializarHorario = () => {
   return {

@@ -53,7 +53,7 @@ export default function BibliotecaTest() {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const API_URL = process.env.REACT_APP_API_URL+"api/biblioteca";
+  const API_URL = process.env.REACT_APP_API_URL+"/api/biblioteca";
   // Permisos basados en rol
   const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
   const canDelete = userRole === "ADMIN";
@@ -624,8 +624,8 @@ export default function BibliotecaTest() {
                       </td>
                       <td className="cell-formato">
                         {libro.archivoUrl ? (
-                          <span className={`formato-badge ${libro.archivoUrl.split('.').pop().toLowerCase()}`}>
-                            {libro.archivoUrl.split('.').pop().toUpperCase()}
+                          <span className={`formato-badge ${libro.extension.split('.').pop().toLowerCase()}`}>
+                            {libro.extension.split('.').pop().toUpperCase()}
                           </span>
                         ) : (
                           <span className="formato-badge sin-archivo">
@@ -657,27 +657,27 @@ export default function BibliotecaTest() {
                             </span>
                           )}
                     
-{canDelete && (
-  <motion.button
-    onClick={() => handleEliminar(libro._id, libro.titulo)}
-    className="btn btn-danger"
-    title="Eliminar libro"
-    whileHover={{ scale: 1.1 }}
-    whileTap={{ scale: 0.9 }}
-    style={{ 
-      border: '2px solid red', // Borde rojo para verificar que se renderiza
-      background: 'orange',     // Fondo naranja para visibilidad
-      color: 'white',           // Texto blanco
-      padding: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px'
-    }}
-  >
-    <FiTrash2 size={16} />
-   
-  </motion.button>
-)}
+                          {canDelete && (
+                            <motion.button
+                              onClick={() => handleEliminar(libro._id, libro.titulo)}
+                              className="btn btn-danger"
+                              title="Eliminar libro"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              style={{ 
+                                border: '2px solid red', // Borde rojo para verificar que se renderiza
+                              
+                                color: 'white',           // Texto blanco
+                                padding: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <FiTrash2 size={16} />
+                            
+                            </motion.button>
+                          )}
                         </div>
                       </td>
                     </tr>

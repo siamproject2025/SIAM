@@ -36,11 +36,11 @@ export default function Home() {
         const token = await user.getIdToken();
 
         const results = await Promise.allSettled([
-          axios.get(`${API_URL}api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/compras`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/biblioteca`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
-          axios.get(`${API_URL}api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
+          axios.get(`${API_URL}/api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/compras`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/biblioteca`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
+          axios.get(`${API_URL}/api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
         ]);
 
         setUsuarios(results[0].status === "fulfilled" ? results[0].value.data.users : []);

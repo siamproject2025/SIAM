@@ -7,7 +7,7 @@ const { authenticateUser } = require('../middleware/authMiddleWare');
 const { checkRole } = require('../middleware/checkRole');
 
 
-router.use(authenticateUser);
+//router.use(authenticateUser);
 // Crear matrícula
 router.post('/', upload.single('imagen'), matriculaController.crearMatricula);
 

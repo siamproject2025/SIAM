@@ -29,7 +29,7 @@ import {
   Award
 } from 'lucide-react';
 
-const API_URL = process.env.REACT_APP_API_URL+"api/proveedores";
+const API_URL = process.env.REACT_APP_API_URL+"/api/proveedores";
 
 const Proveedores = () => {
   const [proveedores, setProveedores] = useState([]);
@@ -99,8 +99,6 @@ const Proveedores = () => {
   const totalProveedores = proveedores.length;
   const proveedoresActivos = proveedores.filter(p => p.estado === "ACTIVO").length;
   const proveedoresProductos = proveedores.filter(p => p.tipo_proveedor === "PRODUCTOS").length;
-  const proveedoresServicios = proveedores.filter(p => p.tipo_proveedor === "SERVICIOS").length;
-  const proveedoresMixtos = proveedores.filter(p => p.tipo_proveedor === "MIXTO").length;
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
