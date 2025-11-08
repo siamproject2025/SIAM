@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { auth } from "..//..//../components/authentication/Auth";
+
+import Notification from "../../../components/Notification";
+
+const API_URL = process.env.REACT_APP_API_URL+"/api/proveedores"
 
 const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [nuevaOrden, setNuevaOrden] = useState({
@@ -16,35 +21,57 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     costoUnit: ''
   });
 
+  // Estado para notificaciones
+const [notificacion, setNotificacion] = useState(null);
+
+const mostrarNotificacion = (mensaje, tipo = 'info', duracion = 3000) => {
+  setNotificacion({ message: mensaje, type: tipo, duration: duracion });
+};
+
+
   // Estado para proveedores obtenidos desde la API
   const [proveedores, setProveedores] = useState([]);
   const [cargandoProveedores, setCargandoProveedores] = useState(true);
 
   // 🔹 Llamada a la API de proveedores
   useEffect(() => {
-    const fetchProveedores = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/proveedores');
-        if (!response.ok) throw new Error('Error al obtener proveedores');
-        const data = await response.json();
+  const fetchProveedores = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
 
-        // Filtrar solo proveedores activos
-        const proveedoresActivos = data.filter(p => p.estado === 'ACTIVO');
-        setProveedores(proveedoresActivos);
-        setCargandoProveedores(false);
-      } catch (error) {
-        console.error('Error cargando proveedores:', error);
-        setCargandoProveedores(false);
-        alert('Error al cargar los proveedores. Verifica la conexión con el servidor.');
-      }
-    };
-    fetchProveedores();
-  }, []);
+      const response = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
+      if (!response.ok) throw new Error('Error al obtener proveedores');
+      const data = await response.json();
+
+      // Filtrar solo proveedores activos
+      const proveedoresActivos = data.filter(p => p.estado === 'ACTIVO');
+      setProveedores(proveedoresActivos);
+      setCargandoProveedores(false);
+    } catch (error) {
+      console.error('Error cargando proveedores:', error);
+      setCargandoProveedores(false);
+      mostrarNotificacion(
+        error.message || 'Error al cargar los proveedores. Verifica la conexión con el servidor.',
+        'warning'
+      );
+    }
+  };
+
+  fetchProveedores();
+}, []);
+
 
   // Agregar ítem
   const handleAgregarItem = () => {
     if (!nuevoItem.descripcion || !nuevoItem.cantidad || !nuevoItem.costoUnit) {
-      alert('Por favor completa todos los campos del ítem');
+      mostrarNotificacion('Por favor completa todos los campos del ítem', 'warning');
       return;
     }
     
@@ -52,7 +79,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     const costoUnit = parseFloat(nuevoItem.costoUnit);
     
     if (cantidad <= 0 || costoUnit < 0) {
-      alert('La cantidad debe ser mayor a 0 y el costo no puede ser negativo');
+      mostrarNotificacion('La cantidad debe ser mayor a 0 y el costo no puede ser negativo,', 'warning');
       return;
     }
     
@@ -78,13 +105,55 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
   };
 
   // Crear orden (validar campos obligatorios)
-  const handleCrear = () => {
-    if (!nuevaOrden.numero || !nuevaOrden.proveedor_id || nuevaOrden.items.length === 0) {
-      alert("Por favor completa los campos obligatorios y agrega al menos un ítem.");
-      return;
-    }
-    onCreate(nuevaOrden);
-  };
+ const handleCrear = () => {
+  // Validar número de orden
+  if (!nuevaOrden.numero || nuevaOrden.numero.trim() === '') {
+    mostrarNotificacion('El número de orden es obligatorio', 'warning');
+    return;
+  }
+
+  // Validar proveedor
+  if (!nuevaOrden.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
+    mostrarNotificacion('Debes seleccionar un proveedor', 'warning');
+    return;
+  }
+
+  // Validar fecha
+  if (!nuevaOrden.fecha || nuevaOrden.fecha.trim() === '') {
+    mostrarNotificacion('La fecha de creación es obligatoria', 'warning');
+    return;
+  }
+
+  // Validar estado
+  if (!nuevaOrden.estado || nuevaOrden.estado.trim() === '') {
+    mostrarNotificacion('El estado de la orden es obligatorio', 'warning');
+    return;
+  }
+
+  // Validar ítems
+  if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
+    mostrarNotificacion('Debes agregar al menos un ítem a la orden', 'warning');
+    return;
+  }
+
+  // Validar cada ítem
+  const itemsInvalidos = nuevaOrden.items.some(
+    item =>
+      !item.descripcion ||
+      item.cantidad <= 0 ||
+      item.costoUnit < 0
+  );
+
+  if (itemsInvalidos) {
+    mostrarNotificacion('Todos los ítems deben tener descripción, cantidad mayor a 0 y costo válido', 'warning');
+    return;
+  }
+
+  // Si todo está bien, crear la orden
+  onCreate(nuevaOrden);
+  mostrarNotificacion('Orden creada exitosamente', 'success');
+};
+
 
   // Calcular total
   const total = nuevaOrden.items.reduce(
@@ -305,6 +374,14 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           </button>
         </div>
       </div>
+      {notificacion && (
+          <Notification
+         message={notificacion.message}
+          type={notificacion.type}
+          duration={notificacion.duration}
+           onClose={() => setNotificacion(null)}
+          />
+        )}
     </div>
   );
 };

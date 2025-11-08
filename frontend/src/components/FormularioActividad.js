@@ -4,6 +4,8 @@ import ModalCrearActividad from '../screens/Models/Actividades/ModalCrearActivid
 import ModalDetalleActividad from '../screens/Models/Actividades/ModalDetalleActividad';
 import Notification from '../components/Notification';
 import '../../src/styles/Models/Actividades.css';
+import { auth } from "..//components/authentication/Auth";
+
 import { 
   Calendar,
   Clock,
@@ -19,7 +21,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-const API_URL = "http://localhost:5000/api/actividades";
+const API_URL = process.env.REACT_APP_API_URL+"/api/actividades";
 
 const Actividades = () => {
   const [actividades, setActividades] = useState([]);
@@ -30,11 +32,30 @@ const Actividades = () => {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
   useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => setActividades(data))
-      .catch(err => console.error('Error al obtener las actividades:', err));
-  }, []);
+  const cargarActividades = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+
+      const token = await user.getIdToken(); // 🔹 Obtener token JWT
+
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ Token incluido
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!res.ok) throw new Error('Error al obtener las actividades');
+      const data = await res.json();
+      setActividades(data);
+    } catch (err) {
+      console.error('Error al obtener las actividades:', err);
+    }
+  };
+
+  cargarActividades();
+}, []);
 
   // Calcular estadísticas
   const totalActividades = actividades.length;
@@ -47,116 +68,157 @@ const Actividades = () => {
     setNotification({ message, type });
   };
 
-  const handleCrearActividad = async (nuevaActividad) => {
-    try {
-      // Validaciones
-      if (!nuevaActividad.nombre.trim()) {
-        showNotification('El nombre de la actividad es obligatorio', 'error');
-        return;
-      }
-      if (!nuevaActividad.fecha) {
-        showNotification('La fecha y hora son obligatorias', 'error');
-        return;
-      }
-      if (!nuevaActividad.lugar.trim()) {
-        showNotification('El lugar es obligatorio', 'error');
-        return;
-      }
-      if (!nuevaActividad.descripcion.trim()) {
-        showNotification('La descripción es obligatoria', 'error');
-        return;
-      }
+ 
 
-      // Verificar que la fecha no sea pasada
-      const fechaActividad = new Date(nuevaActividad.fecha);
-      const ahora = new Date();
-      if (fechaActividad < ahora) {
-        showNotification('No puedes crear una actividad con fecha pasada', 'error');
-        return;
-      }
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevaActividad)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear la actividad');
-      }
-      
-      const actividadCreada = await res.json();
-      setActividades([...actividades, actividadCreada]);
-      setMostrarModalCrear(false);
-      showNotification(`Actividad "${actividadCreada.nombre}" creada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al crear la actividad', 'error');
+const handleCrearActividad = async (nuevaActividad) => {
+  try {
+    // Validaciones
+    if (!nuevaActividad.nombre.trim()) {
+      showNotification('El nombre de la actividad es obligatorio', 'error');
+      return;
     }
-  };
+    if (!nuevaActividad.fecha) {
+      showNotification('La fecha y hora son obligatorias', 'error');
+      return;
+    }
+    if (!nuevaActividad.lugar.trim()) {
+      showNotification('El lugar es obligatorio', 'error');
+      return;
+    }
+    if (!nuevaActividad.descripcion.trim()) {
+      showNotification('La descripción es obligatoria', 'error');
+      return;
+    }
+
+    // Verificar que la fecha no sea pasada
+    const fechaActividad = new Date(nuevaActividad.fecha);
+    const ahora = new Date();
+    if (fechaActividad < ahora) {
+      showNotification('No puedes crear una actividad con fecha pasada', 'error');
+      return;
+    }
+
+    // 🔹 Obtener token del usuario autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      showNotification('No estás autenticado', 'error');
+      return;
+    }
+    const token = await user.getIdToken();
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(nuevaActividad)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al crear la actividad');
+    }
+
+    const actividadCreada = await res.json();
+    setActividades([...actividades, actividadCreada]);
+    setMostrarModalCrear(false);
+    showNotification(`Actividad "${actividadCreada.nombre}" creada exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al crear la actividad', 'error');
+  }
+};
+
 
   const handleEditarActividad = async (actividadActualizada) => {
-    try {
-      // Validaciones
-      if (!actividadActualizada.nombre.trim()) {
-        showNotification('El nombre de la actividad es obligatorio', 'error');
-        return;
-      }
-      if (!actividadActualizada.fecha) {
-        showNotification('La fecha y hora son obligatorias', 'error');
-        return;
-      }
-      if (!actividadActualizada.lugar.trim()) {
-        showNotification('El lugar es obligatorio', 'error');
-        return;
-      }
-      if (!actividadActualizada.descripcion.trim()) {
-        showNotification('La descripción es obligatoria', 'error');
-        return;
-      }
-
-      const res = await fetch(`${API_URL}/${actividadActualizada._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(actividadActualizada)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar la actividad');
-      }
-      
-      const actualizada = await res.json();
-      setActividades(actividades.map(a => a._id === actualizada._id ? actualizada : a));
-      setActividadSeleccionada(null);
-      showNotification(`Actividad "${actualizada.nombre}" actualizada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al editar la actividad', 'error');
+  try {
+    // Validaciones
+    if (!actividadActualizada.nombre.trim()) {
+      showNotification('El nombre de la actividad es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEliminarActividad = async (id) => {
-    const actividadAEliminar = actividades.find(a => a._id === id);
-    if (!window.confirm(`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}"?`)) return;
-    
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar la actividad');
-      }
-      
-      setActividades(actividades.filter(a => a._id !== id));
-      setActividadSeleccionada(null);
-      showNotification(`Actividad "${actividadAEliminar?.nombre}" eliminada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al eliminar la actividad', 'error');
+    if (!actividadActualizada.fecha) {
+      showNotification('La fecha y hora son obligatorias', 'error');
+      return;
     }
-  };
+    if (!actividadActualizada.lugar.trim()) {
+      showNotification('El lugar es obligatorio', 'error');
+      return;
+    }
+    if (!actividadActualizada.descripcion.trim()) {
+      showNotification('La descripción es obligatoria', 'error');
+      return;
+    }
 
+    // 🔹 Obtener token del usuario autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      showNotification('No estás autenticado', 'error');
+      return;
+    }
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${actividadActualizada._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(actividadActualizada)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al editar la actividad');
+    }
+
+    const actualizada = await res.json();
+    setActividades(actividades.map(a => a._id === actualizada._id ? actualizada : a));
+    setActividadSeleccionada(null);
+    showNotification(`Actividad "${actualizada.nombre}" actualizada exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al editar la actividad', 'error');
+  }
+};
+
+const handleEliminarActividad = async (id) => {
+  const actividadAEliminar = actividades.find(a => a._id === id);
+  if (!window.confirm(`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}"?`)) return;
+
+  try {
+    // 🔹 Obtener token del usuario autenticado
+    const user = auth.currentUser;
+    if (!user) {
+      showNotification('No estás autenticado', 'error');
+      return;
+    }
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      }
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al eliminar la actividad');
+    }
+
+    setActividades(actividades.filter(a => a._id !== id));
+    setActividadSeleccionada(null);
+    showNotification(`Actividad "${actividadAEliminar?.nombre}" eliminada exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al eliminar la actividad', 'error');
+  }
+};
   // Categorizar actividades según la fecha
 function categorizarActividad(fechaActividad) {
   const fecha = new Date(fechaActividad);
@@ -365,8 +427,8 @@ function categorizarActividad(fechaActividad) {
                   <Calendar size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalActividades}</div>
-                  <div className="stat-label">Total Actividades</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalActividades}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Total Actividades</div>
                 </div>
               </motion.div>
 
@@ -379,8 +441,8 @@ function categorizarActividad(fechaActividad) {
                   <AlertCircle size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{actividadesHoyCount}</div>
-                  <div className="stat-label">Para Hoy</div>
+                  <div className="stat-value"  style={{color:"white"}}>{actividadesHoyCount}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Para Hoy</div>
                 </div>
               </motion.div>
 
@@ -393,8 +455,8 @@ function categorizarActividad(fechaActividad) {
                   <Clock size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{actividadesProximasCount}</div>
-                  <div className="stat-label">Próximas</div>
+                  <div className="stat-value"  style={{color:"white"}}>{actividadesProximasCount}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Próximas</div>
                 </div>
               </motion.div>
 
@@ -407,8 +469,8 @@ function categorizarActividad(fechaActividad) {
                   <CheckCircle size={20} color="white" />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{actividadesFinalizadasCount}</div>
-                  <div className="stat-label">Finalizadas</div>
+                  <div className="stat-value"  style={{color:"white"}}>{actividadesFinalizadasCount}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Finalizadas</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -613,7 +675,7 @@ function categorizarActividad(fechaActividad) {
               </ul>
             </div>
 
-            <div className="modal-actions">
+            <div className="modal-actions-actividades">
               <button className="btn-cerrar" onClick={() => setMostrarAyuda(false)}>
                 ✅ Entendido
               </button>

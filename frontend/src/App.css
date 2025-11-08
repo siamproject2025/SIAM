@@ -6,14 +6,35 @@
   margin-top: 0;
 }
 
+.tab-content{
+  margin: 0px 18px;
+}
 
 .App {
-  
-  text-align: center;
-  min-height: 92vh;
+  min-height: 100vh;
   display: flex;
-  
+  flex-direction: column;
 }
+
+/* Contenedor principal: Sidebar a la izquierda, contenido a la derecha */
+.app-content {
+  display: flex;
+  flex: 1;
+}
+
+/* Sidebar fijo en el lado izquierdo */
+.app-content > aside,
+.app-content > .SideBar {
+  flex-shrink: 0;
+  width: 250px; /* ajusta según tu diseño */
+}
+
+/* Contenido principal que ocupa el resto del espacio */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
 
 .App-logo {
   height: 40vmin;

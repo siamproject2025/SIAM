@@ -1,4 +1,4 @@
-import { FiUsers, FiInbox, FiCalendar, FiFile, FiGift, FiPackage, FiBookOpen, FiMessageSquare, FiShield } from 'react-icons/fi';
+import { FiUsers, FiInbox, FiCalendar, FiFile, FiGift, FiPackage, FiBookOpen, FiMessageSquare, FiShield, FiArrowRight } from 'react-icons/fi';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -8,7 +8,8 @@ import { auth } from "../components/authentication/Auth";
 import Home from './Home';
 import AdminOnly from '../components/Plugins/AdminOnly';
 
-const API_URL = "http://localhost:5000/";
+const API_URL = process.env.REACT_APP_API_URL;
+
 const DashboardCards = () => {
   const [modulos, setModulos] = useState([]);
   const navigate = useNavigate();
@@ -20,9 +21,8 @@ const DashboardCards = () => {
         if (!user) return;
 
         const token = await user.getIdToken();
-
-        const res = await axios.get("http://localhost:5000/api/dashboard", {
-        headers: {
+        const res = await axios.get(`${API_URL}/api/dashboard`, {
+          headers: {
             Authorization: `Bearer ${token}`
           },
         });
@@ -36,28 +36,39 @@ const DashboardCards = () => {
     fetchModulos();
   }, []);
 
+  // Función para determinar el tipo de módulo
+  const getModuleType = (index) => {
+    const types = ['primary-module', 'success-module', 'warning-module', 'info-module'];
+    return types[index % types.length];
+  };
+
   return (
     <div className="main dashboard-container">
       <AdminOnly><Home></Home></AdminOnly>
       <div className="dashboard-main">
         <div className="dashboard-grid">
-          {modulos.map((modulo) => {
+          {modulos.map((modulo, index) => {
             const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
+            const moduleType = getModuleType(index);
+            
             return (
               <div
                 key={modulo._id}
-                className="dashboard-card"
+                className={`dashboard-card ${moduleType}`}
                 onClick={() => navigate(modulo.link)}
               >
-                <IconComponent size={40} />
+                <div className="icon-container">
+                  <IconComponent size={24} />
+                </div>
                 <h3>{modulo.titulo}</h3>
                 <p>{modulo.descripcion}</p>
+                <div className="arrow">
+                  <FiArrowRight size={18} />
+                </div>
               </div>
             );
           })}
-        
-        
-      </div>
+        </div>
       </div>
     </div>
   );

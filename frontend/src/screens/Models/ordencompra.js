@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ModalCrearOrden from "../Models/OrdenCompra/ModalCrearOrden";
 import ModalDetalleOrden from "../Models/OrdenCompra/ModalDetalleOrden";
 import '../../styles/Models/ordencompra.css';
+import { auth } from "..//../components/authentication/Auth";
+
 import { 
   Search,
   HelpCircle,
@@ -18,7 +20,7 @@ import {
   Columns
 } from 'lucide-react';
 
-// Iconos SVG (mantener los existentes)
+// Iconos SVG
 const ChevronDownIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="m6 9 6 6 6-6"/>
@@ -33,11 +35,12 @@ const DotsIcon = () => (
   </svg>
 );
 
-const API_URL = "http://localhost:5000/api/compras";
+const API_URL = process.env.REACT_APP_API_URL+"/api/compras";
 
 const OrdenCompra = () => {
   // Estados principales
   const [ordenes, setOrdenes] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
   const [filterValue, setFilterValue] = useState("");
   const [statusFilter, setStatusFilter] = useState(new Set(["all"]));
   const [visibleColumns, setVisibleColumns] = useState(new Set(["numero", "proveedor", "fecha", "items", "total", "estado", "acciones"]));
@@ -75,13 +78,70 @@ const OrdenCompra = () => {
     { name: "Cerrada", uid: "CERRADA" }
   ];
 
-  // Cargar datos
+  // Notificaciones
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+  
+  // 🔹 Cargar proveedores
   useEffect(() => {
-    fetch(API_URL)
-      .then(res => res.json())
-      .then(data => setOrdenes(data))
-      .catch(err => console.error('Error:', err));
-  }, []);
+    
+    const cargarProveedores = async () => {
+    const user = auth.currentUser;
+      console.log("probandoo",user)
+     try {
+      const user = auth.currentUser;
+      console.log("probandoo",user)
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
+
+
+      const res = await fetch(process.env.REACT_APP_API_URL+'/api/proveedores', {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
+      if (!res.ok) throw new Error('Error al cargar proveedores');
+      const data = await res.json();
+      setProveedores(data.filter(p => p.estado === 'ACTIVO'));
+    } catch (err) {
+      console.error('Error al cargar proveedores:', err);
+      showNotification(err.message || 'Error al cargar proveedores', 'error');
+    }
+  };
+
+  cargarProveedores();
+}, []);
+
+
+
+  // 🔹 Cargar órdenes
+useEffect(() => {
+  const cargarOrdenes = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
+
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}` // ✅ Token agregado
+        }
+      });
+
+      if (!res.ok) throw new Error('Error al cargar órdenes');
+      const data = await res.json();
+      setOrdenes(data);
+    } catch (err) {
+      console.error('Error al cargar órdenes:', err);
+      showNotification(err.message || 'Error al cargar órdenes', 'error');
+    }
+  };
+  
+  cargarOrdenes();
+}, []);
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -112,12 +172,6 @@ const OrdenCompra = () => {
     return sum + totalOrden;
   }, 0);
 
-  // Notificaciones
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
   // Filtrado
   const filteredItems = useMemo(() => {
     let filtered = [...ordenes];
@@ -125,7 +179,7 @@ const OrdenCompra = () => {
     if (filterValue) {
       filtered = filtered.filter(orden =>
         orden.numero?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        orden.proveedor_id?.toLowerCase().includes(filterValue.toLowerCase())
+        orden.proveedor_id?.nombre?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -164,7 +218,7 @@ const OrdenCompra = () => {
     return sortedItems.slice(start, start + rowsPerPage);
   }, [page, sortedItems, rowsPerPage]);
 
-  // Handlers (mantener los mismos)
+  // Handlers
   const handleSort = (columnKey) => {
     if (!columns.find(c => c.uid === columnKey)?.sortable) return;
     setSortDescriptor(prev => ({
@@ -173,109 +227,145 @@ const OrdenCompra = () => {
     }));
   };
 
+  const handleStatClick = (estado) => {
+    if (estado === "all") {
+      setStatusFilter(new Set(["all"]));
+    } else {
+      setStatusFilter(new Set([estado]));
+    }
+  };
+
   const handleCrearOrden = async (nuevaOrden) => {
-    try {
-      if (!nuevaOrden.numero.trim()) {
-        showNotification('El número de orden es obligatorio', 'error');
-        return;
-      }
-      if (!nuevaOrden.proveedor_id.trim()) {
-        showNotification('El ID del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
-        showNotification('Debe agregar al menos un ítem a la orden', 'error');
-        return;
-      }
-
-      const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
-      if (numeroExistente) {
-        showNotification('Ya existe una orden con este número', 'error');
-        return;
-      }
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(nuevaOrden)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al crear la orden');
-      }
-      
-      const ordenCreada = await res.json();
-      setOrdenes([...ordenes, ordenCreada]);
-      setMostrarModalCrear(false);
-      showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al crear la orden', 'error');
+  try {
+    if (!nuevaOrden.numero.trim()) {
+      showNotification('El número de orden es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEditarOrden = async (ordenActualizada) => {
-    try {
-      if (!ordenActualizada.numero.trim()) {
-        showNotification('El número de orden es obligatorio', 'error');
-        return;
-      }
-      if (!ordenActualizada.proveedor_id.trim()) {
-        showNotification('El ID del proveedor es obligatorio', 'error');
-        return;
-      }
-      if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
-        showNotification('La orden debe tener al menos un ítem', 'error');
-        return;
-      }
-
-      const ordenParaEnviar = {
-        ...ordenActualizada,
-        fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
-      };
-
-      const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ordenParaEnviar)
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al editar la orden');
-      }
-      
-      const actualizada = await res.json();
-      setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
-      setOrdenSeleccionada(null);
-      showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al editar la orden', 'error');
+    if (!nuevaOrden.proveedor_id.trim()) {
+      showNotification('El ID del proveedor es obligatorio', 'error');
+      return;
     }
-  };
-
-  const handleEliminarOrden = async (id) => {
-    const ordenAEliminar = ordenes.find(o => o._id === id);
-    if (!window.confirm(`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`)) return;
-    
-    try {
-      const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Error al eliminar la orden');
-      }
-      
-      setOrdenes(ordenes.filter(o => o._id !== id));
-      setOrdenSeleccionada(null);
-      setShowActionMenu(null);
-      showNotification(`Orden "${ordenAEliminar?.numero}" eliminada exitosamente`, 'success');
-    } catch (err) {
-      console.error(err.message);
-      showNotification(err.message || 'Error al eliminar la orden', 'error');
+    if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
+      showNotification('Debe agregar al menos un ítem a la orden', 'error');
+      return;
     }
-  };
+
+    const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
+    if (numeroExistente) {
+      showNotification('Ya existe una orden con este número', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(nuevaOrden)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al crear la orden');
+    }
+
+    const ordenCreada = await res.json();
+    setOrdenes([...ordenes, ordenCreada]);
+    setMostrarModalCrear(false);
+    showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al crear la orden', 'error');
+  }
+};
+
+const handleEditarOrden = async (ordenActualizada) => {
+  try {
+    if (!ordenActualizada.numero.trim()) {
+      showNotification('El número de orden es obligatorio', 'error');
+      return;
+    }
+    if (!ordenActualizada.proveedor_id) {
+      showNotification('Debes seleccionar un proveedor', 'error');
+      return;
+    }
+    if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
+      showNotification('La orden debe tener al menos un ítem', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const ordenParaEnviar = {
+      ...ordenActualizada,
+      proveedor_id: typeof ordenActualizada.proveedor_id === 'object' 
+        ? ordenActualizada.proveedor_id._id 
+        : ordenActualizada.proveedor_id,
+      fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
+    };
+
+    const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      },
+      body: JSON.stringify(ordenParaEnviar)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al editar la orden');
+    }
+
+    const actualizada = await res.json();
+    setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
+    setOrdenSeleccionada(null);
+    showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al editar la orden', 'error');
+  }
+};
+
+const handleEliminarOrden = async (id) => {
+  const ordenAEliminar = ordenes.find(o => o._id === id);
+  if (!window.confirm(`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`)) return;
+
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}` // ✅ Token agregado
+      }
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al eliminar la orden');
+    }
+
+    setOrdenes(ordenes.filter(o => o._id !== id));
+    setOrdenSeleccionada(null);
+    setShowActionMenu(null);
+    showNotification(`Orden "${ordenAEliminar?.numero}" eliminada exitosamente`, 'success');
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al eliminar la orden', 'error');
+  }
+};
+
 
   const toggleStatusFilter = (status) => {
     const newSet = new Set(statusFilter);
@@ -294,10 +384,10 @@ const OrdenCompra = () => {
 
   const toggleColumnVisibility = (columnUid) => {
     const newSet = new Set(visibleColumns);
-    if (columnUid === "acciones") return; // No permitir ocultar acciones
+    if (columnUid === "acciones") return;
     
     if (newSet.has(columnUid)) {
-      if (newSet.size > 2) { // Mantener al menos 2 columnas visibles
+      if (newSet.size > 2) {
         newSet.delete(columnUid);
       }
     } else {
@@ -313,7 +403,7 @@ const OrdenCompra = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('es-HN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'HNL',
       minimumFractionDigits: 2
     }).format(amount);
   };
@@ -414,6 +504,8 @@ const OrdenCompra = () => {
               Gestiona y controla todas tus órdenes de compra de manera eficiente y profesional
             </motion.p>
 
+              
+
             <motion.div 
               className="header-stats"
               initial={{ opacity: 0, y: 20 }}
@@ -426,75 +518,202 @@ const OrdenCompra = () => {
                 flexWrap: "wrap"
               }}
             >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <FileText size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {totalOrdenes}
-                  </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Total Órdenes
-                  </div>
-                </div>
-              </motion.div>
+              
+              <motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("BORRADOR")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    color: "rgba(255, 255, 255, 0.9)",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    color: "rgba(255, 255, 255, 0.9)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesBorrador}
+    </div>
+    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Borrador
+    </div>
+  </div>
+</motion.div>
 
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <Award size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {ordenesEnviadas + ordenesRecibidas + ordenesCerradas}
-                  </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Órdenes Activas
-                  </div>
-                </div>
-              </motion.div>
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("ENVIADA")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesEnviadas}
+    </div>
+    <div className="stat-label" style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Enviadas
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("RECIBIDA")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color:"white",color: "white" }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesRecibidas}
+    </div>
+    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Recibidas
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+  onClick={() => handleStatClick("CERRADA")}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer"
+  }}
+>
+  <div className="stat-icon" style={{
+    background: "rgba(255, 255, 255, 0.2)",
+    padding: "0.5rem",
+    borderRadius: "10px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  }}>
+    <Award size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+      {ordenesCerradas}
+    </div>
+    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+      Órdenes Cerradas
+    </div>
+  </div>
+</motion.div>
+
+<motion.div
+  className="stat-item"
+  whileHover={{ scale: 1.05, y: -2 }}
+  transition={{ type: "spring", stiffness: 300 }}
+  onClick={() => handleStatClick("all")} // 👈 al hacer clic muestra todas las órdenes
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "0.75rem",
+    background: "rgba(255, 255, 255, 0.15)",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "12px",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    cursor: "pointer" // 👈 indica que es clickeable
+  }}
+>
+  <div
+    className="stat-icon"
+    style={{
+      background: "rgba(255, 255, 255, 0.2)",
+      padding: "0.5rem",
+      borderRadius: "10px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    }}
+  >
+    <FileText size={20} color="white" />
+  </div>
+  <div className="stat-text" style={{ color: "white" }}>
+    <div
+      className="stat-value"
+      style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
+    >
+      {totalOrdenes}
+    </div>
+    <div
+      className="stat-label"
+      style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
+    >
+      Total Órdenes
+    </div>
+  </div>
+</motion.div>
 
               <motion.div 
                 className="stat-item"
@@ -522,10 +741,10 @@ const OrdenCompra = () => {
                   <DollarSign size={20} color="white" />
                 </div>
                 <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
+                  <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
                     {formatCurrency(valorTotal)}
                   </div>
-                  <div className="stat-label" style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
+                  <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
                     Valor Total
                   </div>
                 </div>
@@ -671,12 +890,12 @@ const OrdenCompra = () => {
 
             {/* Status Filter */}
             <div 
-              className="dropdown-wrapper" 
+              className="dropdown-wrapper-compras" 
               ref={statusMenuRef}
               style={{ position: 'relative' }}
             >
               <motion.button
-                className="filter-button"
+                className="filter-button-estado-compra"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
@@ -698,7 +917,7 @@ const OrdenCompra = () => {
                 <ChevronDownIcon />
               </motion.button>
               {showStatusMenu && (
-                <div className="dropdown-menu">
+                <div className="dropdown-menu-compra">
                   {statusOptions.map(status => (
                     <div
                       key={status.uid}
@@ -707,50 +926,6 @@ const OrdenCompra = () => {
                     >
                       <span className="checkbox">{statusFilter.has(status.uid) ? '✓' : ''}</span>
                       {status.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Column Filter */}
-            <div 
-              className="dropdown-wrapper" 
-              ref={columnMenuRef}
-              style={{ position: 'relative' }}
-            >
-              <motion.button
-                className="filter-button"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowColumnMenu(!showColumnMenu)}
-                style={{
-                  padding: '0.8rem 1.5rem',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Columns size={16} />
-                Columnas
-                <ChevronDownIcon />
-              </motion.button>
-              {showColumnMenu && (
-                <div className="dropdown-menu">
-                  {columns.map(col => (
-                    <div
-                      key={col.uid}
-                      onClick={() => toggleColumnVisibility(col.uid)}
-                      className={`dropdown-item ${visibleColumns.has(col.uid) ? 'active' : ''} ${col.uid === 'acciones' ? 'disabled' : ''}`}
-                    >
-                      <span className="checkbox">{visibleColumns.has(col.uid) ? '✓' : ''}</span>
-                      {col.name}
                     </div>
                   ))}
                 </div>
@@ -1009,6 +1184,8 @@ const OrdenCompra = () => {
       )}
     </div>
   );
+  
 };
+
 
 export default OrdenCompra;
