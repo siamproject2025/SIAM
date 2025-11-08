@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { auth } from "../authentication/Auth";
 
+const API_URL = process.env.REACT_APP_API_URL;
 const AdminOnly = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -13,7 +14,7 @@ const AdminOnly = ({ children }) => {
       if (!user) return;
 
       const token = await user.getIdToken();
-      const res = await axios.get("http://localhost:5000/api/usuarios/role", {
+      const res = await axios.get(`${API_URL}/api/usuarios/role`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -30,7 +31,6 @@ const AdminOnly = ({ children }) => {
   checkAdmin();
 }, []);
 
-  if (cargando) return <p>Cargando...</p>;
   if (!isAdmin) return null; // no renderiza si no es admin
 
   return <>{children}</>;

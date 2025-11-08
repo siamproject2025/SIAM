@@ -206,7 +206,7 @@ useEffect(() => {
                       onClick={eliminarFoto}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="btn-eliminar-donaciones"
+                      className="btn btn-danger"
                     >
                       <Trash2 size={16} />
                       Eliminar foto
@@ -256,13 +256,13 @@ useEffect(() => {
           </div>
         <div className="modal-actions-orden d-flex flex-wrap gap-2 justify-content-end">
         <button className="btn btn-success" onClick={handleGuardar}>
-          💾 Guardar Cambios
+          Guardar Cambios
         </button>
         <button className="btn btn-danger" onClick={handleEliminar}>
-          🗑️ Eliminar
+          Eliminar
         </button>
         <button className="btn btn-secondary" onClick={onClose}>
-          ❌ Cerrar
+          Cerrar
         </button>
       </div>
       </div>

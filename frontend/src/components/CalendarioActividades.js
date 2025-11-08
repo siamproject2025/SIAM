@@ -5,8 +5,11 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 import axios from "axios";
+import { auth } from "..//components/authentication/Auth";
+
 import "../styles/Models/Calendario.css"; // Importamos los estilos
 
+const API_URL = process.env.REACT_APP_API_URL+"/api/actividades"
 /* ============================================
    COMPONENTE CALENDARIO DE ACTIVIDADES
    ============================================
@@ -55,34 +58,43 @@ const CalendarioActividades = forwardRef((props, ref) => {
      y las formatea para FullCalendar
   */
   const cargarActividades = async () => {
-    try {
-      const res = await axios.get("http://localhost:5000/api/actividades");
-      const actividades = res.data;
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Usuario no autenticado');
+    const token = await user.getIdToken();
 
-      const eventosFormateados = actividades.map((actividad) => {
-        const categoria = determinarCategoria(actividad.nombre);
-        
-        return {
-          id: actividad._id,
-          title: actividad.nombre,
-          date: actividad.fecha,
-          start: actividad.fecha,
-          className: `evento-${categoria}`,
-          extendedProps: {
-            lugar: actividad.lugar,
-            descripcion: actividad.descripcion,
-            categoria: categoria
-          }
-        };
-      });
+    const res = await axios.get(API_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+    
+    const actividades = res.data;
 
-      setEventos(eventosFormateados);
-      actualizarProximosEventos(eventosFormateados);
+    const eventosFormateados = actividades.map((actividad) => {
+      const categoria = determinarCategoria(actividad.nombre);
       
-    } catch (error) {
-      console.error("❌ Error al cargar actividades:", error);
-    }
-  };
+      return {
+        id: actividad._id,
+        title: actividad.nombre,
+        date: actividad.fecha,
+        start: actividad.fecha,
+        className: `evento-${categoria}`,
+        extendedProps: {
+          lugar: actividad.lugar,
+          descripcion: actividad.descripcion,
+          categoria: categoria
+        }
+      };
+    });
+
+    setEventos(eventosFormateados);
+    actualizarProximosEventos(eventosFormateados);
+    
+  } catch (error) {
+    console.error("❌ Error al cargar actividades:", error);
+  }
+};
 
   /* ==========================================
      FUNCIÓN: determinarCategoria

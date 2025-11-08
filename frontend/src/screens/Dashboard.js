@@ -8,7 +8,7 @@ import { auth } from "../components/authentication/Auth";
 import Home from './Home';
 import AdminOnly from '../components/Plugins/AdminOnly';
 
-const API_URL = "http://localhost:5000/";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const DashboardCards = () => {
   const [modulos, setModulos] = useState([]);
@@ -21,7 +21,7 @@ const DashboardCards = () => {
         if (!user) return;
 
         const token = await user.getIdToken();
-        const res = await axios.get("http://localhost:5000/api/dashboard", {
+        const res = await axios.get(`${API_URL}/api/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`
           },

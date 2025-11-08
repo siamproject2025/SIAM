@@ -1,5 +1,9 @@
 const express = require("express");
+const { authenticateUser } = require('../middleware/authMiddleWare');
+
 const router = express.Router();
+
+//router.use(authenticateUser);
 const {
   crearHorario,
   obtenerHorarios,

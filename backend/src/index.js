@@ -4,15 +4,16 @@ const mongoose = require("mongoose");
 const path = require("path");
 const cors = require("cors");
 
+// Rutas
 const horarios = require("./Routes/Horarios");
 const aulas = require("./Routes/aulasRoutes");
 const alumnos = require("./Routes/alumnosRoutes");
 const docentes = require("./Routes/docentesRoutes");
 const ordencompra = require('./Routes/ordenCompra'); 
-const bienesRoutes = require( "./Routes/bienesRoutes");
+const bienesRoutes = require("./Routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
 const dashboard_route = require('./Routes/dashboard_ruta'); 
-const personalRoutes = require('./Routes/personalRoutes'); // 🆕 NUEVA RUTA
+const personalRoutes = require('./Routes/personalRoutes'); 
 const donacionesRoutes = require('./Routes/donacionesRoutes');
 const proveedoresRoutes = require('./Routes/proveedoresRoutes');
 const actividadesRoutes = require("./Routes/actividades");
@@ -20,72 +21,53 @@ const biblioteca = require("./Routes/bibliotecaRoutes");
 const directivaRoutes = require("./Routes/directivaRoutes");
 const question = require("./Routes/questionRoutes");
 const matriculas = require("./Routes/matriculas");
-
+const gradosRoutes = require("./Routes/gradosRoutes");
 
 const app = express();
+app.use(express.json());
+const allowedOrigins = [
+  "http://localhost:3000", // desarrollo
+  "https://frontend-production-a861.up.railway.app" // producción
+];
 
-app.use(express.json()); // Para poder leer JSON en el body de las solicitudes
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors({ origin: true }));
 
-// 📌 Conexión a MongoDB
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+
+// Conexión MongoDB
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("🚀 Conectado a MongoDB"))
-  .catch((error) => console.error("❌ Error conectando a MongoDB:", error))
-  .finally(() => console.log("✅ Conectado."));
+  .catch(err => console.error("❌ Error MongoDB:", err));
 
-// 📌 Rutas organizadas correctamente
-console.log("🚀 Conectando con rutas.");
+// Rutas API
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
 app.use("/api/", usuarios_route);
 app.use("/api/", dashboard_route);
 app.use("/api/horario", horarios);
 app.use("/api/aula", aulas);
-app.use("/api/alumno", alumnos);
-app.use("/api/docente", docentes);
+app.use("/api/alumnos", alumnos);
+app.use("/api/docentes", docentes);
 app.use("/api/directiva", directivaRoutes);
-app.use('/api/',usuarios_route);
-app.use('/api/',dashboard_route);
-app.use('/api/personal', personalRoutes); 
-app.use('/api/proveedores', proveedoresRoutes); 
-app.use('/api/donaciones', donacionesRoutes); 
-app.use('/api/horarios',horarios);
+app.use("/api/personal", personalRoutes);
+app.use("/api/proveedores", proveedoresRoutes);
+app.use("/api/donaciones", donacionesRoutes);
 app.use("/api/actividades", actividadesRoutes);
-app.use("/api/horarios", horarios);
 app.use("/api/biblioteca", biblioteca);
 app.use("/api/questions", question);
 app.use("/api/matriculas", matriculas);
+app.use("/api/grados", gradosRoutes);
+
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-console.log("✅ Conectado.");
 
+// Servir React build
+app.use(express.static(path.join(__dirname, "../../frontend/build")));
 
-
-// 📌 Ruta de prueba para verificar que el servidor funciona
-console.log("🚀 Ruta de prueba para verificar que el servidor funciona");
-app.get("/", (req, res) => {
-  res.send("¡Servidor funcionando correctamente! 🚀");
+// Capturar cualquier ruta que no sea API
+app.get(/^\/(?!api).*/, (req, res) => {
+   res.send("¡Servidor funcionando correctamente! 🚀");
 });
-console.log("✅ Conectado.");
 
-// 📌 Iniciar servidor
+// Iniciar servidor
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-});
-
-// Static Files
-// Solo necesitas esta línea para servir archivos estáticos desde el directorio "public"
-app.use(express.static(path.join(__dirname, "public")));
-
-// Starting server
+app.listen(PORT, () => console.log(`✅ Servidor corriendo en http://localhost:${PORT}`));

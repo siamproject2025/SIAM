@@ -26,7 +26,7 @@ import {
   Gift
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api/donaciones';
+const API_URL = process.env.REACT_APP_API_URL+'/api/donaciones';
 
 
 
@@ -1169,7 +1169,7 @@ const Donaciones = () => {
                   <div className="modal-actions">
                     <motion.button 
                       type="button" 
-                      className="btn-eliminar" 
+                      className="btn btn-danger" 
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

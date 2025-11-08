@@ -186,7 +186,7 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
                       onClick={eliminarFoto}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="btn-eliminar-donaciones"
+                      className="btn btn-danger"
                     >
                       <Trash2 size={16} />
                       Eliminar foto
@@ -219,8 +219,8 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
           </div>
 
         <div className="modal-actions">
-          <button className="btn-cancelar" onClick={onClose}>❌ Cancelar</button>
-          <button className="btn-crear" onClick={handleCrear}>✨ Crear Bien</button>
+          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
+          <button className="btn-guardar-donaciones" onClick={handleCrear}>Crear Bien</button>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import { auth } from "./authentication/Auth";
 import * as FiIcons from "react-icons/fi";
 import { Music } from "lucide-react";
 
-const API_URL = "http://localhost:5000/";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const SideBar = () => {
   const [modulos, setModulos] = useState([]);
@@ -37,7 +37,7 @@ const SideBar = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}api/dashboard`, {
+        const res = await axios.get(`${API_URL}/api/dashboard`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

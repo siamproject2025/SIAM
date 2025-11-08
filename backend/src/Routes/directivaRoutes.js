@@ -9,7 +9,9 @@ const {
   agregarDocumento,
   obtenerEstadisticas
 } = require('../Controllers/directivaController');
+const { authenticateUser } = require('../middleware/authMiddleWare');
 
+router.use(authenticateUser);
 // Rutas principales
 router.route('/')
   .get(obtenerMiembrosDirectiva)    // Obtener todos los miembros

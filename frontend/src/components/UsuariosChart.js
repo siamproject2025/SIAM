@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Ba
 import { auth } from "../components/authentication/Auth";
 import "../styles/UsuariosChart.css";
 
-const API_URL = "http://localhost:5000/";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const COLORS = ["#323232ff", "#a600ffff", "#1369fdff"];
 
@@ -17,7 +17,7 @@ const UsuariosChart = (actualizar) => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}api/usuarios`, {
+        const res = await axios.get(`${API_URL}/api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsuarios(res.data.users);

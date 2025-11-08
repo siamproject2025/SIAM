@@ -361,9 +361,9 @@
 
   .btn-guardar-donaciones,
   .btn-cancelar-donaciones,
-  .btn-eliminar-donaciones,
+  
   .btn-cerrar-donaciones {
-    padding: 0.8rem 1.5rem;
+    padding: 0.8rem 0.8rem;
     border: none;
     border-radius: 8px;
     font-weight: 600;
@@ -393,10 +393,7 @@
     background: #4b4b4b;
   }
 
-  .btn-eliminar-donaciones {
-    background: #ff9800;
-    color: white;
-  }
+
 
   .btn-eliminar:hover {
     background: #fb8c00;
@@ -827,6 +824,7 @@
     font-weight: 600;
     transition: all 0.3s ease;
     font-size: 0.95rem;
+    margin-bottom: 0px!important;
   }
 
   .btn-upload-label:hover {
@@ -900,6 +898,8 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
+
+
 
   .badge-almacen {
     padding: 0.4rem 1rem;

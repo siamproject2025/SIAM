@@ -7,7 +7,7 @@
   --light: #f8f9fa;
   --dark: #212529;
   --success: #4cc9f0;
-  --danger: #f72585;
+  --danger: #f72525;
   --warning: #ffbe0b;
   --gray: #6c757d;
   --gray-light: #e9ecef;
@@ -52,7 +52,7 @@
 }
 
 /* Botones */
-.btn {
+.App2 .btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -66,23 +66,23 @@
   text-decoration: none;
 }
 
-.btn:disabled {
+.App2 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-primary {
+.App2 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
+.App2 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(67, 97, 238, 0.3);
 }
 
-.btn-danger {
-  background: linear-gradient(135deg, var(--danger) 0%, #e1156d 100%);
+ .App2 .btn-danger {
+ 
   color: white;
 }
 
@@ -91,7 +91,7 @@
   box-shadow: 0 6px 12px rgba(247, 37, 133, 0.3);
 }
 
-.btn-secondary {
+.App2 .btn-secondary {
   background-color: var(--gray-light);
   color: var(--dark);
 }
