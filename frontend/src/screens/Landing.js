@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
+import { motion, useMotionValue, animate } from 'motion/react';
 import '../screens/Landingpage/styles/Landing.css'; 
 
 const App = () => {
@@ -7,6 +8,8 @@ const App = () => {
   const [flippedCards, setFlippedCards] = useState({});
   const [isVisible, setIsVisible] = useState(false);
   const [activeSection, setActiveSection] = useState('inicio');
+  const navigate = useNavigate();
+
   
   const sectionRefs = {
     inicio: useRef(null),
@@ -15,6 +18,32 @@ const App = () => {
     beneficios: useRef(null),
     contacto: useRef(null)
   };
+
+ 
+//Efecto de contador
+const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
+  const count = useMotionValue(0);
+  const [display, setDisplay] = useState('0');
+
+  useEffect(() => {
+    const controls = animate(count, to, {
+      duration,
+      onUpdate(latest) {
+        const formatted =
+          suffix === '%' || suffix === '+'
+            ? `${Math.round(latest)}${suffix}`
+            : suffix === '/7'
+            ? `24/7`
+            : `${Math.round(latest)}${suffix}`;
+        setDisplay(formatted);
+      },
+    });
+
+    return () => controls.stop();
+  }, [to, suffix, duration]);
+
+  return <div className="stat-number">{display}</div>;
+};
 
   // Efecto para animaciones al hacer scroll
   useEffect(() => {
@@ -258,9 +287,9 @@ const App = () => {
             transition={{ duration: 0.5, delay: 0.4 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => scrollToSection('proposito')}
+            onClick={() => navigate('/login')}
           >
-            Descubre Más
+            Iniciar sesión
           </motion.button>
         </div>
         
@@ -433,29 +462,30 @@ const App = () => {
           
           <div className="benefits-content">
             <motion.div 
-              className="benefits-stats"
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <div className="stat">
-                <div className="stat-number">+70%</div>
-                <div className="stat-label">Eficiencia en tareas administrativas</div>
-              </div>
-              <div className="stat">
-                <div className="stat-number">100%</div>
-                <div className="stat-label">Reducción de errores en procesos críticos</div>
-              </div>
-              <div className="stat">
-                <div className="stat-number">24/7</div>
-                <div className="stat-label">Acceso centralizado a información</div>
-              </div>
-              <div className="stat">
-                <div className="stat-number">500+</div>
-                <div className="stat-label">Estudiantes beneficiados</div>
-              </div>
-            </motion.div>
+  className="benefits-stats"
+  initial={{ opacity: 0, x: -50 }}
+  whileInView={{ opacity: 1, x: 0 }}
+  transition={{ duration: 0.5 }}
+  viewport={{ once: true }}
+>
+  <div className="stat">
+    <AnimatedNumber to={70} suffix="%" />
+    <div className="stat-label">Eficiencia en tareas administrativas</div>
+  </div>
+  <div className="stat">
+    <AnimatedNumber to={100} suffix="%" />
+    <div className="stat-label">Reducción de errores en procesos críticos</div>
+  </div>
+  <div className="stat">
+    <AnimatedNumber to={24} suffix="/7" />
+    <div className="stat-label">Acceso centralizado a información</div>
+  </div>
+  <div className="stat">
+    <AnimatedNumber to={500} suffix="+" />
+    <div className="stat-label">Estudiantes beneficiados</div>
+  </div>
+</motion.div>
+
             
             <motion.div 
               className="benefits-list"
@@ -577,7 +607,7 @@ const App = () => {
                 <div className="contact-icon">📞</div>
                 <div className="contact-details">
                   <h4>Teléfono</h4>
-                  <p>+504 9979-4964</p>
+                  <p>+504 8797-1675</p>
                 </div>
               </div>
               
@@ -585,7 +615,7 @@ const App = () => {
                 <div className="contact-icon">✉️</div>
                 <div className="contact-details">
                   <h4>Correo Electrónico</h4>
-                  <p>siamproject2025@gmail.com</p>
+                  <p>esc.experimentalmusica@gmail.com</p>
                 </div>
               </div>
               
@@ -593,7 +623,7 @@ const App = () => {
                 <div className="contact-icon">📍</div>
                 <div className="contact-details">
                   <h4>Ubicación</h4>
-                  <p>UNAH, Tegucigalpa, Honduras</p>
+                  <p>Colonia Hato de Enmedio, sector 2 Contiguo a la Iglesia de los Santos de los Últimos Días, Tegucigalpa, Honduras</p>
                 </div>
               </div>
               
@@ -607,34 +637,34 @@ const App = () => {
             </motion.div>
             
             <motion.div 
-              className="contact-form"
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              className="mapa-contacto"
+               initial={{ opacity: 0, x: 50 }}
+               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-            >
-              <h3>Envíanos un mensaje</h3>
-              <form>
-                <div className="form-group">
-                  <input type="text" placeholder="Nombre" required />
-                </div>
-                <div className="form-group">
-                  <input type="email" placeholder="Correo electrónico" required />
-                </div>
-                <div className="form-group">
-                  <input type="text" placeholder="Asunto" required />
-                </div>
-                <div className="form-group">
-                  <textarea placeholder="Mensaje" rows="5" required></textarea>
-                </div>
-                <button type="submit" className="btn-primary">Enviar Mensaje</button>
-              </form>
-            </motion.div>
+                viewport={{ once: true }}
+              >
+            <h3>Ubicación Institucional</h3>
+  <p className="mapa-descripcion">
+    Colonia Hato de Enmedio, sector 2, contiguo a la Iglesia de los Santos de los Últimos Días, Tegucigalpa, Honduras
+  </p>
+  <div className="mapa-embed">
+    <iframe
+  title="Mapa S.I.A.M."
+  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3931.562882243273!2d-87.1767392!3d14.0727637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f6fbcd070775acd%3A0x30d484aaca34d4cf!2sEscuela%20Experimental%20De%20Ni%C3%B1os%20Para%20La%20M%C3%BAsica!5e0!3m2!1ses!2shn!4v1699999999999"
+  width="100%"
+  height="400"
+  allowFullScreen=""
+  loading="lazy"
+  referrerPolicy="no-referrer-when-downgrade"
+></iframe>
+  </div>
+</motion.div>
+
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer 
       <footer className="footer">
         <div className="container">
           <div className="footer-content">
@@ -650,7 +680,7 @@ const App = () => {
             </div>
           </div>
         </div>
-      </footer>
+      </footer>*/}
     </div>
   );
 };
