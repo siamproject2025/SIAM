@@ -21,6 +21,7 @@ const biblioteca = require("./Routes/bibliotecaRoutes");
 const directivaRoutes = require("./Routes/directivaRoutes");
 const question = require("./Routes/questionRoutes");
 const matriculas = require("./Routes/matriculas");
+const gradosRoutes = require("./Routes/gradosRoutes");
 
 const app = express();
 app.use(express.json());
@@ -54,6 +55,8 @@ app.use("/api/actividades", actividadesRoutes);
 app.use("/api/biblioteca", biblioteca);
 app.use("/api/questions", question);
 app.use("/api/matriculas", matriculas);
+app.use("/api/grados", gradosRoutes);
+
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

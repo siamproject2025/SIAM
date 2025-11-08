@@ -33,6 +33,7 @@ import SideBar from './components/SideBar';
 import ActividadesPage from './components/ActividadesPage';
 import CalendarioActividades from './components/CalendarioActividades';
 import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
+import GradosPage from './screens/Models/grados';
 
 
 const auth = getAuth(appFirebase);
@@ -143,7 +144,8 @@ return (
           <Route path="/horarios" element={<Horarios />} />
           <Route path="/Calendario" element={<CalendarioActividades />} />
           <Route path="/directiva" element={<Directiva />} />  
-          <Route path="/admisiones" element={<Matricula />} />                              
+          <Route path="/admisiones" element={<Matricula />} />
+           <Route path="/grados" element={<GradosPage />} />                                  
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>

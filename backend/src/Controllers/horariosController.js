@@ -262,6 +262,7 @@ exports.obtenerHorarios = async (req, res) => {
         grado: h.grado,
         asignatura: h.asignatura,
         aula_id: h.aula_id,
+         docente_id: h.docente_id,
       }))
     );
   } catch (error) {

@@ -31,7 +31,6 @@ const AdminOnly = ({ children }) => {
   checkAdmin();
 }, []);
 
-  if (cargando) return <p>Cargando...</p>;
   if (!isAdmin) return null; // no renderiza si no es admin
 
   return <>{children}</>;
