@@ -1,20 +1,44 @@
 import React, { useState } from 'react';
-
-const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
+import Notification from '../../../components/Notification';
+const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete, showNotification }) => {
   const [actividadEditada, setActividadEditada] = useState({
     ...actividad,
     fecha: new Date(actividad.fecha).toISOString().slice(0, 16)
   });
 
-  const handleGuardar = () => {
-    onUpdate(actividadEditada);
-  };
+const handleGuardar = () => {
+  if (!actividadEditada.nombre.trim()) {
+    showNotification('El nombre de la actividad es obligatorio', 'error');
+    return;
+  }
+  if (!actividadEditada.fecha) {
+    showNotification('La fecha y hora son obligatorias', 'error');
+    return;
+  }
+  if (!actividadEditada.lugar.trim()) {
+    showNotification('El lugar es obligatorio', 'error');
+    return;
+  }
+  if (!actividadEditada.descripcion.trim()) {
+    showNotification('La descripción es obligatoria', 'error');
+    return;
+  }
 
-  const handleEliminar = () => {
-    if (window.confirm('¿Seguro que deseas eliminar esta actividad?')) {
-      onDelete(actividadEditada._id);
-    }
-  };
+  const fechaActividad = new Date(actividadEditada.fecha);
+  const ahora = new Date();
+  if (fechaActividad < ahora) {
+    showNotification('No puedes guardar una actividad con fecha pasada', 'error');
+    return;
+  }
+
+  onUpdate(actividadEditada);
+};
+
+
+const handleEliminar = () => {
+  showNotification(`Preparando eliminación de "${actividadEditada.nombre}"`, 'info');
+  onDelete(actividadEditada._id);
+};
 
   return (
     <div className="modal-overlay">

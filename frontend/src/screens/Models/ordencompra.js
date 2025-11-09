@@ -4,6 +4,7 @@ import ModalCrearOrden from "../Models/OrdenCompra/ModalCrearOrden";
 import ModalDetalleOrden from "../Models/OrdenCompra/ModalDetalleOrden";
 import '../../styles/Models/ordencompra.css';
 import { auth } from "..//../components/authentication/Auth";
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 
 import { 
   Search,
@@ -53,6 +54,12 @@ const OrdenCompra = () => {
   const [notification, setNotification] = useState(null);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+
+
+  //Dialogo de eliminación
+  const [ordenAEliminar, setOrdenAEliminar] = useState(null);
+const [showConfirm, setShowConfirm] = useState(false);
+
 
   // Referencias para cerrar menús al hacer clic fuera
   const statusMenuRef = useRef(null);
@@ -335,19 +342,25 @@ const handleEditarOrden = async (ordenActualizada) => {
   }
 };
 
-const handleEliminarOrden = async (id) => {
-  const ordenAEliminar = ordenes.find(o => o._id === id);
-  if (!window.confirm(`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`)) return;
+const handleEliminarOrden = (id) => {
+  const orden = ordenes.find(o => o._id === id);
+  setOrdenAEliminar(orden);
+  setShowConfirm(true);
+};
+
+const confirmarEliminacionOrden = async () => {
+  setShowConfirm(false);
+  if (!ordenAEliminar) return;
 
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    const res = await fetch(`${API_URL}/${id}`, {
+    const res = await fetch(`${API_URL}/${ordenAEliminar._id}`, {
       method: 'DELETE',
       headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -356,15 +369,22 @@ const handleEliminarOrden = async (id) => {
       throw new Error(errorData.message || 'Error al eliminar la orden');
     }
 
-    setOrdenes(ordenes.filter(o => o._id !== id));
+    setOrdenes(ordenes.filter(o => o._id !== ordenAEliminar._id));
     setOrdenSeleccionada(null);
     setShowActionMenu(null);
-    showNotification(`Orden "${ordenAEliminar?.numero}" eliminada exitosamente`, 'success');
+    showNotification(`Orden "${ordenAEliminar.numero}" eliminada exitosamente`, 'success');
+    setOrdenAEliminar(null);
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar la orden', 'error');
   }
 };
+
+const cancelarEliminacionOrden = () => {
+  setShowConfirm(false);
+  setOrdenAEliminar(null);
+};
+
 
 
   const toggleStatusFilter = (status) => {
@@ -1172,6 +1192,16 @@ const handleEliminarOrden = async (id) => {
           onDelete={handleEliminarOrden}
         />
       )}
+
+{showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`}
+    onConfirm={confirmarEliminacionOrden}
+    onCancel={cancelarEliminacionOrden}
+    visible={showConfirm}
+  />
+)}
+
 
       {/* Notification */}
       {notification && (

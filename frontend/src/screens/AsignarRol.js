@@ -9,6 +9,9 @@ import { MdAdminPanelSettings } from "react-icons/md";
 import { motion } from "framer-motion";
 import UsuariosChart from "../components/UsuariosChart";
 
+import Notification from "../components/Notification";
+import ConfirmDialog from "../components/ConfirmDialog/ConfirmDialog";
+
 const API_URL = process.env.REACT_APP_API_URL;
 
 const AsignarRol = () => {
@@ -74,30 +77,49 @@ const AsignarRol = () => {
     }
   };
 
-  const eliminarUsuario = async (id) => {
-   
-    try {
-      const user = auth.currentUser;
-      const token = await user.getIdToken();
-      await axios.delete(`${API_URL}/api/usuarios/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
 
-      const usuarioEliminado = usuarios.find((u) => u._id === id);
-      const nombre = usuarioEliminado?.username || "desconocido";
+//Eliminar usuario
+const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
+const [showConfirm, setShowConfirm] = useState(false);
 
-      setMensaje(
-        <span>
-          🗑 Usuario <strong>{nombre}</strong> eliminado correctamente
-        </span>
-      );
-      setUsuarios((prev) => prev.filter((u) => u._id !== id));
-      setActualizarChart((prev) => !prev);
-    } catch (error) {
-      console.error("Error al eliminar usuario:", error);
-      setMensaje("❌ No se pudo eliminar el usuario.");
-    }
-  };
+const handleEliminarUsuario = (usuario) => {
+  setUsuarioAEliminar(usuario);
+  setShowConfirm(true);
+};
+
+
+ const confirmarEliminacionUsuario = async () => {
+  setShowConfirm(false);
+  if (!usuarioAEliminar) return;
+
+  try {
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+    await axios.delete(`${API_URL}/api/usuarios/${usuarioAEliminar._id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const nombre = usuarioAEliminar.username || "desconocido";
+    setMensaje(
+      <span>
+        🗑 Usuario <strong>{nombre}</strong> eliminado correctamente
+      </span>
+    );
+    setUsuarios((prev) => prev.filter((u) => u._id !== usuarioAEliminar._id));
+    setActualizarChart((prev) => !prev);
+    setUsuarioAEliminar(null);
+  } catch (error) {
+    console.error("Error al eliminar usuario:", error);
+    setMensaje("❌ No se pudo eliminar el usuario.");
+  }
+};
+
+const cancelarEliminacionUsuario = () => {
+  setShowConfirm(false);
+  setUsuarioAEliminar(null);
+};
+
+
 
   const usuariosFiltrados = usuarios.filter((u) => {
     const coincideTexto =
@@ -351,15 +373,34 @@ const AsignarRol = () => {
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
-                  <button className="btn-delete" onClick={() => eliminarUsuario(u._id)}>
-                    <FiTrash2 />
-                  </button>
+                 <button className="btn-delete" onClick={() => handleEliminarUsuario(u)}>
+                   <FiTrash2 />
+                </button>
+
                 </td>
               </motion.tr>
             ))}
           </tbody>
         </motion.table>
       </motion.div>
+
+      {showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar al usuario "${usuarioAEliminar?.username}"?`}
+    onConfirm={confirmarEliminacionUsuario}
+    onCancel={cancelarEliminacionUsuario}
+    visible={showConfirm}
+  />
+)}
+
+{mensaje && (
+  <Notification
+    message={mensaje}
+    type="info"
+    onClose={() => setMensaje(null)}
+  />
+)}
+
 
       {/* Paginación */}
       {totalPaginas > 1 && (

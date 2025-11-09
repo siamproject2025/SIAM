@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Notification from '../../../components/Notification';
+import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 
 const ModalDetalleOrden = ({
   orden,
@@ -12,6 +13,8 @@ const ModalDetalleOrden = ({
 }) => {
   // 🔹 Estado para notificaciones
   const [notificacion, setNotificacion] = useState(null);
+
+
 
   //const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
@@ -85,12 +88,10 @@ const handleGuardar = () => {
 
 
 const handleEliminar = () => {
-  const confirmar = window.confirm('¿Seguro que deseas eliminar esta orden?');
-  if (confirmar) {
-    onDelete(ordenEditada._id);
-    mostrarNotificacion('Orden eliminada exitosamente', 'success');
-  }
+  onDelete(ordenEditada._id); // ✅ delega al padre
 };
+
+
 
   const handleDescargarPDF = () => {
     try {
@@ -283,6 +284,12 @@ return (
         </button>
       </div>
     </div>
+
+
+
+
+
+
 
     {/* Notificación */}
     {notificacion && (

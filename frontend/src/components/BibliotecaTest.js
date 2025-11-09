@@ -6,6 +6,7 @@ import axios from "axios";
 import useUserRole from "./hooks/useUserRole"; 
 import "../styles/Models/Biblioteca.css";
 import { auth } from "../components/authentication/Auth";
+import ConfirmDialog from "./ConfirmDialog/ConfirmDialog";
 
 import { 
   FiSearch,
@@ -166,32 +167,44 @@ export default function BibliotecaTest() {
   };
 
 
-    const handleEliminar = async (id, titulo) => {
-    if (!canDelete) {
-      showNotification("No tienes permiso para eliminar libros", "error");
-      return;
-    }
 
-    if (!window.confirm(`¿Seguro que deseas eliminar "${titulo}"?`)) return;
+  //Borrar
+  const [showConfirm, setShowConfirm] = useState(false);
+const [libroAEliminar, setLibroAEliminar] = useState(null);
+const prepararEliminacion = (libro) => {
+  if (!canDelete) {
+    showNotification("No tienes permiso para eliminar libros", "error");
+    return;
+  }
 
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Usuario no autenticado");
-      const token = await user.getIdToken();
+  setLibroAEliminar(libro);
+  setShowConfirm(true);
+};
 
-      await axios.delete(`${API_URL}/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}` // ✅ Token agregado
-        }
-      });
 
-      cargarLibros();
-      showNotification("Libro eliminado exitosamente", "success");
-    } catch (error) {
-      console.error(error);
-      showNotification(error.message || "Error al eliminar el libro", "error");
-    }
-  };
+  const confirmarEliminacion = async () => {
+  setShowConfirm(false);
+  if (!libroAEliminar) return;
+
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Usuario no autenticado");
+    const token = await user.getIdToken();
+
+    await axios.delete(`${API_URL}/${libroAEliminar._id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    showNotification(`🗑 Libro "${libroAEliminar.titulo}" eliminado correctamente`, "success");
+    // Aquí puedes actualizar el estado de libros si lo tienes
+    setLibroAEliminar(null);
+  } catch (error) {
+    console.error("Error al eliminar libro:", error);
+    showNotification("❌ No se pudo eliminar el libro.", "error");
+  }
+};
 
 
   // Filtrado
@@ -658,26 +671,36 @@ export default function BibliotecaTest() {
                           )}
                     
                           {canDelete && (
-                            <motion.button
-                              onClick={() => handleEliminar(libro._id, libro.titulo)}
-                              className="btn btn-danger"
-                              title="Eliminar libro"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              style={{ 
-                                border: '2px solid red', // Borde rojo para verificar que se renderiza
-                              
-                                color: 'white',           // Texto blanco
-                                padding: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              <FiTrash2 size={16} />
-                            
-                            </motion.button>
+                           <motion.button
+  onClick={() => prepararEliminacion(libro)}
+  className="btn btn-danger"
+  title="Eliminar libro"
+  whileHover={{ scale: 1.1 }}
+  whileTap={{ scale: 0.9 }}
+  style={{
+    border: '2px solid red',
+    color: 'white',
+    padding: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
+  }}
+>
+  <FiTrash2 size={16} />
+</motion.button>
+
+
+
                           )}
+                          
+ {showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar "${libroAEliminar?.titulo}"?`}
+    onConfirm={confirmarEliminacion}
+    onCancel={() => setShowConfirm(false)}
+    visible={showConfirm}
+  />
+)}
                         </div>
                       </td>
                     </tr>
@@ -889,6 +912,8 @@ export default function BibliotecaTest() {
           </motion.div>
         )}
       </AnimatePresence>
+     
     </div>
+    
   );
 }
