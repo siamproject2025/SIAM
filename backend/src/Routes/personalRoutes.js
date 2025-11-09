@@ -14,7 +14,7 @@ const {
   buscarPorCargo
 } = require('../Controllers/personalController');
 
-//router.use(authenticateUser);
+router.use(authenticateUser);
 // Rutas básicas CRUD
 router.get('/', obtenerPersonal);
 router.get('/:id', obtenerPersonalPorId);

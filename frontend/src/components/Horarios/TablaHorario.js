@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from 'jspdf-autotable';
 import AdminOnly from '../../components/Plugins/AdminOnly';
 import "../../styles/Models/horarios.css"
+import { auth } from "../../components/authentication/Auth";
 
 const BusquedaTablaHorarios = ({
   horarios,
@@ -32,11 +33,13 @@ const BusquedaTablaHorarios = ({
   const cargarPersonal = async () => {
     try {
       setLoadingPersonal(true);
+       const user = auth.currentUser;
+        const token = await user.getIdToken();
       const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
       
       const res = await fetch(API_URL, {
         headers: {
-          // Authorization: `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`, 
         },
       });
 

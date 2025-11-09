@@ -1,548 +1,666 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Music, 
-  Users, 
-  Calendar, 
-  Shield, 
-  BookOpen, 
-  Settings,
-  CheckCircle,
-  AlertCircle,
-  Phone,
-  Mail,
-  MapPin,
-  Github,
-  Linkedin,
-  ExternalLink
-} from 'lucide-react';
-import {useNavigate} from 'react-router-dom';
-
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, useMotionValue, animate } from 'motion/react';
 import '../styles/Landingpage/landing.css';
+import {  Music } from "lucide-react";
 
-// === COMPONENTE PRINCIPAL LANDING PAGE S.I.A.M. ===
-const LandingPage = () => {
-  
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [user, setUser] = useState(null);
+const App = () => {
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [flippedCards, setFlippedCards] = useState({});
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeSection, setActiveSection] = useState('inicio');
   const navigate = useNavigate();
 
-  // Efecto para detectar scroll y cambiar navbar
+  
+  const sectionRefs = {
+    inicio: useRef(null),
+    proposito: useRef(null),
+    modulos: useRef(null),
+    beneficios: useRef(null),
+    contacto: useRef(null)
+  };
+
+ 
+//Efecto de contador
+const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
+  const count = useMotionValue(0);
+  const [display, setDisplay] = useState('0');
+
   useEffect(() => {
-    //Verificacion si hay usuario logeado
-    const checkAuthStatus = () => {
-      const token = localStorage.getItem('authToken');
-      const userData = localStorage.getItem('userData');
-      if (token && userData) {
-        setUser({...JSON.parse(userData)});
-       } else {
-        setUser( null);
-       }
-      };
-      checkAuthStatus();
+    const controls = animate(count, to, {
+      duration,
+      onUpdate(latest) {
+        const formatted =
+          suffix === '%' || suffix === '+'
+            ? `${Math.round(latest)}${suffix}`
+            : suffix === '/7'
+            ? `24/7`
+            : `${Math.round(latest)}${suffix}`;
+        setDisplay(formatted);
+      },
+    });
+
+    return () => controls.stop();
+  }, [to, suffix, duration]);
+
+  return <div className="stat-number landing-stat-number">{display}</div>;
+};
+
+  // Efecto para animaciones al hacer scroll
+  useEffect(() => {
+    setIsVisible(true);
     
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            setActiveSection(id);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    Object.values(sectionRefs).forEach(ref => {
+      if (ref.current) observer.observe(ref.current);
+    });
+
+    return () => {
+      Object.values(sectionRefs).forEach(ref => {
+        if (ref.current) observer.unobserve(ref.current);
+      });
     };
+  }, []);
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-    
-    }, []);
-
-    const scrlltoSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  // Datos para las tarjetas giratorias de módulos
+  const modulosData = [
+    {
+      id: 1,
+      front: {
+        title: "Gestión de Estudiantes",
+        icon: "👨‍🎓",
+        description: "Matrícula digital y expedientes completos"
+      },
+      back: {
+        title: "Gestión de Estudiantes",
+        features: [
+          "Matrícula digital",
+          "Expedientes completos",
+          "Información de contacto",
+          "Historial académico",
+          "Seguimiento personalizado"
+        ]
+      }
+    },
+    {
+      id: 2,
+      front: {
+        title: "Gestión de Personal",
+        icon: "👨‍🏫",
+        description: "Registro completo de empleados y estados"
+      },
+      back: {
+        title: "Gestión de Personal",
+        features: [
+          "Registro de empleados",
+          "Control de vacaciones y licencias",
+          "Gestión de cargos y salarios",
+          "Estados laborales",
+          "Información administrativa"
+        ]
+      }
+    },
+    {
+      id: 3,
+      front: {
+        title: "Horarios Académicos",
+        icon: "📅",
+        description: "Programación inteligente sin conflictos"
+      },
+      back: {
+        title: "Horarios Académicos",
+        features: [
+          "Programación por grado",
+          "Asignación de aulas",
+          "Asignación de docentes",
+          "Prevención de conflictos",
+          "Visualización clara"
+        ]
+      }
+    },
+    {
+      id: 4,
+      front: {
+        title: "Biblioteca Digital",
+        icon: "📚",
+        description: "Recursos educativos en formato digital"
+      },
+      back: {
+        title: "Biblioteca Digital",
+        features: [
+          "Subida de libros PDF",
+          "Edición de contenido",
+          "Descarga segura",
+          "Categorización por autor",
+          "Búsqueda avanzada"
+        ]
+      }
+    },
+    {
+      id: 5,
+      front: {
+        title: "Inventario de Bienes",
+        icon: "🎻",
+        description: "Control completo de instrumentos y activos"
+      },
+      back: {
+        title: "Inventario de Bienes",
+        features: [
+          "Registro de activos",
+          "Sistema de préstamos",
+          "Control de mantenimiento",
+          "Valoración económica",
+          "Trazabilidad completa"
+        ]
+      }
+    },
+    {
+      id: 6,
+      front: {
+        title: "Órdenes de Compra",
+        icon: "🛒",
+        description: "Gestión completa del proceso de compras"
+      },
+      back: {
+        title: "Órdenes de Compra",
+        features: [
+          "Generación de órdenes",
+          "Envío a proveedores",
+          "Recepción de productos",
+          "Seguimiento detallado",
+          "Cálculo de valores"
+        ]
+      }
     }
-    };
+  ];
+
+  // Datos para las preguntas frecuentes
+  const faqData = [
+    {
+      question: "¿Qué es S.I.A.M.?",
+      answer: "S.I.A.M. es un Sistema Integrado Administrativo Musical diseñado para optimizar y automatizar los procesos clave de instituciones musicales, desde la matrícula hasta el control de inventario."
+    },
+    {
+      question: "¿Qué problemas resuelve S.I.A.M.?",
+      answer: "Resuelve problemas como procesos manuales de matrícula, desorganización en horarios, control limitado de inventario, falta de trazabilidad en compras y comunicación institucional dispersa."
+    },
+    {
+      question: "¿Qué tecnologías utiliza S.I.A.M.?",
+      answer: "Utiliza React y JavaScript en el frontend, Express.js en el backend, MongoDB como base de datos y APIs privadas seguras para integración."
+    },
+    {
+      question: "¿Cómo mejora la eficiencia institucional?",
+      answer: "Aumenta en más del 70% la eficiencia en tareas administrativas, reduce errores en procesos críticos y proporciona acceso centralizado a información 24/7."
+    },
+    {
+      question: "¿Quién puede utilizar S.I.A.M.?",
+      answer: "Está diseñado para escuelas de música, conservatorios y cualquier institución educativa musical que necesite gestionar sus procesos administrativos y académicos."
+    }
+  ];
+
+  // Función para manejar el clic en las tarjetas giratorias
+  const handleCardClick = (id) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Función para alternar las preguntas frecuentes
+  const toggleFaq = (index) => {
+    setActiveFaq(activeFaq === index ? null : index);
+  };
+
+  // Función para navegar a una sección
+  const scrollToSection = (sectionId) => {
+    sectionRefs[sectionId].current.scrollIntoView({ behavior: 'smooth' });
+    setActiveSection(sectionId);
+  };
 
   return (
-    <div className="landing-page">
-      {/* === 1. HEADER/NAVEGACIÓN === */}
-      <nav className={`navbar-custom ${isScrolled ? 'navbar-scrolled' : ''}`}>
-        <div className="container-custom">
-          <div className="d-flex justify-content-between align-items-center">
-            {/* Logo */}
-            <a href="#inicio" className="logo">
-              <Music size={24} />
-              S.I.A.M.
-            </a>
-
-            {/* Menú de navegación */}
-            <ul className="nav-menu d-none d-lg-flex">
-              <li><a href="#inicio" className="nav-link-custom">Inicio</a></li>
-              <li><a href="#caracteristicas" className="nav-link-custom">Características</a></li>
-              <li><a href="#beneficios" className="nav-link-custom">Beneficios</a></li>
-              <li><a href="#modulos" className="nav-link-custom">Módulos</a></li>
-              <li><a href="#contacto" className="nav-link-custom">Contacto</a></li>
-            </ul>
-
-            {/* Botones de acción */}
-            <div className="d-flex gap-2">
-              <button className="btn btn-outline-primary" onClick={() => navigate('/login')}>Iniciar Sesión</button>
-              <button className="btn btn-primary" onClick={()=> navigate('/#')}>Registro</button>
-            </div>
-          </div>
+    <div className="app landing-app">
+      {/* Navegación */}
+      <nav className="navbar landing-navbar">
+        <div className="nav-container landing-nav-container">
+          <motion.div 
+            className="logo landing-logo"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <span className="logo-icon landing-logo-icon"><Music size={20} /></span>
+            <span className="logo-text landing-logo-text">S.I.A.M.</span>
+          </motion.div>
+          
+          <ul className="nav-menu landing-nav-menu">
+            {['inicio', 'proposito', 'modulos', 'beneficios', 'contacto'].map((item) => (
+              <li key={item} className="nav-item landing-nav-item">
+                <button 
+                  className={`nav-link landing-nav-link ${activeSection === item ? 'active' : ''}`}
+                  onClick={() => scrollToSection(item)}
+                >
+                  {item.charAt(0).toUpperCase() + item.slice(1)}
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       </nav>
 
-      {/* === 2. HERO SECTION === */}
-      <section id="inicio" className="hero-section">
-        <div className="container-custom">
-          <div className="row align-items-center">
-            <div className="col-lg-8">
-              <div className="hero-content animate-fade-in-up">
-                <h1 className="hero-title">
-                  S.I.A.M. - Sistema Educativo 
-                  <span className="text-gradient"> Administrativo Musical</span>
-                </h1>
-                <p className="hero-subtitle">
-                  Transforme la gestión de su institución musical con tecnología moderna
-                </p>
-                <p className="hero-description">
-                  Solución integral diseñada específicamente para automatizar procesos 
-                  administrativos, académicos y de inventario en instituciones musicales.
-                </p>
-                <div className="d-flex gap-3 flex-wrap">
-                  <button className="btn btn-light btn-lg">
-                    Conocer el Sistema
-                    <ExternalLink className="ms-2" size={20} />
-                  </button>
-                  <button className="btn btn-outline-light btn-lg">
-                    Empezamos?
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="col-lg-4">
-              {/* Imagen del mockup o estudiantes */}
-              <div className="hero-image">
-                <img 
-                  src="https://images.pexels.com/photos/210764/pexels-photo-210764.jpeg?_gl=1*y0crf9*_ga*MTY4MDAyMzg4Ni4xNzU0MjAzOTUx*_ga_8JE65Q40S6*czE3NTkxMDI3NzIkbzEwJGcxJHQxNzU5MTAyODIxJGoxMSRsMCRoMA.." 
-                  alt="Estudiantes de música" 
-                  className="img-fluid rounded-3 shadow-lg"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === 3. PROBLEMA/NECESIDAD === */}
-      <section className="section problem-section">
-        <div className="container-custom">
-          <h2 className="section-title">
-            ¿Su escuela de música enfrenta estos desafíos?
-          </h2>
-          <div className="row justify-content-center">
-            <div className="col-lg-8">
-              <ul className="problem-list">
-                <li className="problem-item">
-                  <AlertCircle className="problem-icon" size={24} />
-                  <span>Gestión manual de matrículas y documentos</span>
-                </li>
-                <li className="problem-item">
-                  <AlertCircle className="problem-icon" size={24} />
-                  <span>Control deficiente de inventario de instrumentos</span>
-                </li>
-                <li className="problem-item">
-                  <AlertCircle className="problem-icon" size={24} />
-                  <span>Horarios desorganizados y conflictos de programación</span>
-                </li>
-                <li className="problem-item">
-                  <AlertCircle className="problem-icon" size={24} />
-                  <span>Falta de comunicación centralizada</span>
-                </li>
-                <li className="problem-item">
-                  <AlertCircle className="problem-icon" size={24} />
-                  <span>Reportes administrativos tardíos y errores</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === 4. SOLUCIÓN - CARACTERÍSTICAS PRINCIPALES === */}
-      <section id="caracteristicas" className="section">
-        <div className="container-custom">
-          <h2 className="section-title">
-            Una solución completa para instituciones musicales
-          </h2>
-          <p className="section-subtitle">
-            Módulos especializados diseñados para cubrir todas las necesidades 
-            administrativas y académicas de su escuela de música.
-          </p>
-
-          <div className="features-grid">
-            {/* Gestión Académica */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <BookOpen size={30} />
-              </div>
-              <h3 className="feature-title">Gestión Académica</h3>
-              <p className="feature-description">
-                Matrícula digital automatizada, seguimiento detallado del progreso estudiantil 
-                y gestión integral de expedientes académicos.
-              </p>
-            </div>
-
-            {/* Control de Inventario */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Music size={30} />
-              </div>
-              <h3 className="feature-title">Control de Inventario</h3>
-              <p className="feature-description">
-                Gestión completa de instrumentos musicales, control de préstamos, 
-                programación de mantenimiento y seguimiento de estado.
-              </p>
-            </div>
-
-            {/* Administración de Horarios */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Calendar size={30} />
-              </div>
-              <h3 className="feature-title">Administración de Horarios</h3>
-              <p className="feature-description">
-                Asignación inteligente de horarios, prevención automática de conflictos 
-                y optimización del uso de aulas y recursos.
-              </p>
-            </div>
-
-            {/* Comunicación Interna */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Users size={30} />
-              </div>
-              <h3 className="feature-title">Comunicación Interna</h3>
-              <p className="feature-description">
-                Sistema integrado de notificaciones, calendario institucional 
-                y comunicación directa entre personal, estudiantes y padres.
-              </p>
-            </div>
-
-            {/* Seguridad de Datos */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Shield size={30} />
-              </div>
-              <h3 className="feature-title">Seguridad de Datos</h3>
-              <p className="feature-description">
-                Control granular de acceso por roles, encriptación de datos 
-                y respaldos automáticos para máxima protección.
-              </p>
-            </div>
-
-            {/* Configuración Avanzada */}
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Settings size={30} />
-              </div>
-              <h3 className="feature-title">Configuración Avanzada</h3>
-              <p className="feature-description">
-                Sistema altamente personalizable que se adapta a los procesos 
-                específicos de su institución musical.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === 5. BENEFICIOS CLAVE === */}
-      <section id="beneficios" className="section benefits-section">
-        <div className="container-custom">
-          <h2 className="section-title text-white">
-            Beneficios que transformarán su institución
-          </h2>
-          <div className="benefits-grid">
-            <div className="benefit-card">
-              <div className="benefit-number">70%</div>
-              <h3>Eficiencia</h3>
-              <p>Reducción del tiempo administrativo mediante automatización inteligente</p>
-            </div>
-            <div className="benefit-card">
-              <div className="benefit-number">100%</div>
-              <h3>Precisión</h3>
-              <p>Eliminación completa de errores manuales en procesos críticos</p>
-            </div>
-            <div className="benefit-card">
-              <div className="benefit-number">∞</div>
-              <h3>Organización</h3>
-              <p>Centralización total de información institucional accesible 24/7</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === 6. MÓDULOS DEL SISTEMA (DETALLADO) === */}
-      <section id="modulos" className="section">
-        <div className="container-custom">
-          <h2 className="section-title">Módulos Especializados del Sistema</h2>
+     {/* Sección Hero */}
+      <section id="inicio" ref={sectionRefs.inicio} className="hero-section landing-hero-section">
+        <div className="hero-content landing-hero-content">
+          <motion.h1 
+            className="hero-title landing-hero-title"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            <span className="title-line landing-title-line">S.I.A.M</span>
+            <span className="title-line landing-title-line">Sistema Integrado</span>
+            <span className="title-line landing-title-line">Administrativo Musical</span>
+          </motion.h1>
           
-          <div className="features-grid">
-            {modulosData.map((modulo, index) => (
-              <div key={index} className="feature-card">
-                <div className="feature-icon">
-                  <modulo.icon size={30} />
+          <motion.p 
+            className="hero-subtitle landing-hero-subtitle"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+          >
+            Plataforma digital para la gestión académica, administrativa y operativa de escuelas de música
+          </motion.p>
+          
+          <motion.button 
+            className="cta-button landing-cta-button"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/login')}
+          >
+            Iniciar sesión
+          </motion.button>
+        </div>
+        
+        <motion.div 
+          className="hero-visual landing-hero-visual"
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+        >
+          <div className="floating-elements landing-floating-elements">
+            <div className="floating-element landing-floating-element element-1">🎵</div>
+            <div className="floating-element landing-floating-element element-2">🎼</div>
+            <div className="floating-element landing-floating-element element-3">🎹</div>
+            <div className="floating-element landing-floating-element element-4">🎻</div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Propósito Section */}
+      <section id="proposito" ref={sectionRefs.proposito} className="section purpose landing-purpose">
+        <div className="container landing-container">
+          <motion.h2 
+            className="section-title landing-section-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Propósito del Sistema
+          </motion.h2>
+          
+          <motion.div 
+            className="purpose-content landing-purpose-content"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <div className="purpose-text landing-purpose-text">
+              <p>
+                S.I.A.M. está diseñado para <span className="highlight landing-highlight">optimizar y automatizar</span> los procesos clave 
+                de instituciones musicales, desde la matrícula hasta el inventario, mejorando la 
+                <span className="highlight landing-highlight"> eficiencia, organización y comunicación interna</span>.
+              </p>
+              
+              <div className="problems-grid landing-problems-grid">
+                <h3>Problemas que Resuelve:</h3>
+                <div className="problems-list landing-problems-list">
+                  <div className="problem-item landing-problem-item">
+                    <span className="problem-icon landing-problem-icon">📝</span>
+                    <span>Procesos manuales de matrícula y seguimiento estudiantil</span>
+                  </div>
+                  <div className="problem-item landing-problem-item">
+                    <span className="problem-icon landing-problem-icon">⏰</span>
+                    <span>Desorganización en horarios y asignaciones</span>
+                  </div>
+                  <div className="problem-item landing-problem-item">
+                    <span className="problem-icon landing-problem-icon">🎻</span>
+                    <span>Control limitado de inventario de instrumentos y bienes</span>
+                  </div>
+                  <div className="problem-item landing-problem-item">
+                    <span className="problem-icon landing-problem-icon">📦</span>
+                    <span>Falta de trazabilidad en órdenes de compra y proveedores</span>
+                  </div>
+                  <div className="problem-item landing-problem-item">
+                    <span className="problem-icon landing-problem-icon">💬</span>
+                    <span>Comunicación institucional dispersa</span>
+                  </div>
+                  <div className="problem-item landing-problem-item">
+                    <span className="problem-icon landing-problem-icon">👥</span>
+                    <span>Gestión ineficiente de personal y actividades</span>
+                  </div>
                 </div>
-                <h3 className="feature-title">{modulo.titulo}</h3>
-                <p className="feature-description">{modulo.descripcion}</p>
               </div>
+            </div>
+            
+            <div className="purpose-visual landing-purpose-visual">
+              <div className="visual-card landing-visual-card">
+                <div className="card-icon landing-card-icon">🚀</div>
+                <h4>Automatización</h4>
+                <p>Automatiza procesos repetitivos para ahorrar tiempo y recursos</p>
+              </div>
+              <div className="visual-card landing-visual-card">
+                <div className="card-icon landing-card-icon">📊</div>
+                <h4>Organización</h4>
+                <p>Centraliza toda la información institucional en un solo lugar</p>
+              </div>
+              <div className="visual-card landing-visual-card">
+                <div className="card-icon landing-card-icon">🔗</div>
+                <h4>Integración</h4>
+                <p>Conecta todos los departamentos para una gestión unificada</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Módulos Section */}
+      <section id="modulos" ref={sectionRefs.modulos} className="section modules landing-modules">
+        <div className="container landing-container">
+          <motion.h2 
+            className="section-title landing-section-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Módulos Funcionales
+          </motion.h2>
+          
+          <motion.p 
+            className="section-subtitle landing-section-subtitle"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            viewport={{ once: true }}
+          >
+            Descubre todas las funcionalidades que S.I.A.M. ofrece para transformar la gestión de tu institución musical
+          </motion.p>
+          
+          <div className="modules-grid landing-modules-grid">
+            {modulosData.map((modulo, index) => (
+              <motion.div
+                key={modulo.id}
+                className={`card-container landing-card-container ${flippedCards[modulo.id] ? 'flipped' : ''}`}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                onClick={() => handleCardClick(modulo.id)}
+              >
+                <div className="card landing-card">
+                  <div className="card-front landing-card-front">
+                    <div className="card-icon landing-card-icon">{modulo.front.icon}</div>
+                    <h3 className="card-title landing-card-title">{modulo.front.title}</h3>
+                    <p className="card-description landing-card-description">{modulo.front.description}</p>
+                    <div className="card-hint landing-card-hint">Haz clic para más información</div>
+                  </div>
+                  <div className="card-back landing-card-back">
+                    <h3 className="card-title landing-card-title">{modulo.back.title}</h3>
+                    <ul className="card-features landing-card-features">
+                      {modulo.back.features.map((feature, idx) => (
+                        <li key={idx}>{feature}</li>
+                      ))}
+                    </ul>
+                    <div className="card-hint landing-card-hint">Haz clic para volver</div>
+                  </div>
+                </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* === 7. CASOS DE USO/TESTIMONIOS === */}
-      <section className="section testimonial-section">
-        <div className="container-custom">
-          <h2 className="section-title">
-            Diseñado para la Escuela Experimental de Niños para la Música
-          </h2>
+      {/* Beneficios Section */}
+      <section id="beneficios" ref={sectionRefs.beneficios} className="section benefits landing-benefits">
+        <div className="container landing-container">
+          <motion.h2 
+            className="section-title landing-section-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Beneficios Institucionales
+          </motion.h2>
           
-          <div className="testimonial-card">
-            <blockquote className="testimonial-quote">
-              "Este sistema representa el futuro de la gestión educativa musical. 
-              Nos permitirá brindar un servicio más eficiente y de calidad a nuestros 
-              estudiantes y sus familias."
-            </blockquote>
-            <div className="testimonial-author">Lic. Rosario de Fátima Mejía Aguilar</div>
-            <div className="testimonial-position">Directora - Escuela Experimental de Niños para la Música</div>
-          </div>
-
-          {/* Estadísticas del proyecto */}
-          <div className="row mt-5 text-center">
-            <div className="col-md-4">
-              <div className="h2 text-primary">500+</div>
-              <p>Estudiantes Beneficiados</p>
-            </div>
-            <div className="col-md-4">
-              <div className="h2 text-primary">200+</div>
-              <p>Instrumentos Gestionados</p>
-            </div>
-            <div className="col-md-4">
-              <div className="h2 text-primary">15+</div>
-              <p>Procesos Automatizados</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === 8. TECNOLOGÍA Y SEGURIDAD === */}
-      <section className="section">
-        <div className="container-custom">
-          <h2 className="section-title">Tecnología de Vanguardia y Máxima Seguridad</h2>
-          
-          <div className="row">
-            <div className="col-lg-6 mb-4">
-              <h3 className="h4 mb-3">Stack Tecnológico</h3>
-              <div className="tech-grid">
-                <div className="tech-item">
-                  <div className="tech-logo">
-                    <span className="fw-bold">R</span>
-                  </div>
-                  <div>React</div>
-                </div>
-                <div className="tech-item">
-                  <div className="tech-logo">
-                    <span className="fw-bold">R</span>
-                  </div>
-                  <div>React</div>
-                </div>
-                <div className="tech-item">
-                  <div className="tech-logo">
-                    <span className="fw-bold">JS</span>
-                  </div>
-                  <div>Javascript</div>
-                </div>
-                <div className="tech-item">
-                  <div className="tech-logo">
-                    <span className="fw-bold">DB</span>
-                  </div>
-                  <div>Mongo</div>
+          <div className="benefits-content landing-benefits-content">
+            <motion.div 
+              className="benefits-stats landing-benefits-stats"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <div className="stat landing-stat">
+                <AnimatedNumber to={70} suffix="%" />
+                <div className="stat-label landing-stat-label">Eficiencia en tareas administrativas</div>
+              </div>
+              <div className="stat landing-stat">
+                <AnimatedNumber to={100} suffix="%" />
+                <div className="stat-label landing-stat-label">Reducción de errores en procesos críticos</div>
+              </div>
+              <div className="stat landing-stat">
+                <AnimatedNumber to={24} suffix="/7" />
+                <div className="stat-label landing-stat-label">Acceso centralizado a información</div>
+              </div>
+              <div className="stat landing-stat">
+                <AnimatedNumber to={500} suffix="+" />
+                <div className="stat-label landing-stat-label">Estudiantes beneficiados</div>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="benefits-list landing-benefits-list"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <div className="benefit-item landing-benefit-item">
+                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <div className="benefit-text landing-benefit-text">
+                  <h4>Comunicación fluida</h4>
+                  <p>Entre docentes, estudiantes y padres</p>
                 </div>
               </div>
-            </div>
-            
-            <div className="col-lg-6">
-              <h3 className="h4 mb-3">Características de Seguridad</h3>
-              <ul className="list-unstyled">
-                <li className="mb-2">
-                  <CheckCircle className="text-success me-2" size={20} />
-                  Encriptación end-to-end de datos sensibles
-                </li>
-                <li className="mb-2">
-                  <CheckCircle className="text-success me-2" size={20} />
-                  Control de acceso basado en roles (RBAC)
-                </li>
-                <li className="mb-2">
-                  <CheckCircle className="text-success me-2" size={20} />
-                  Respaldos automáticos diarios
-                </li>
-                <li className="mb-2">
-                  <CheckCircle className="text-success me-2" size={20} />
-                  Acceso web responsivo multiplataforma
-                </li>
-                <li className="mb-2">
-                  <CheckCircle className="text-success me-2" size={20} />
-                  Cumplimiento de estándares de seguridad
-                </li>
-              </ul>
-            </div>
+              <div className="benefit-item landing-benefit-item">
+                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <div className="benefit-text landing-benefit-text">
+                  <h4>Trazabilidad completa</h4>
+                  <p>De bienes y actividades institucionales</p>
+                </div>
+              </div>
+              <div className="benefit-item landing-benefit-item">
+                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <div className="benefit-text landing-benefit-text">
+                  <h4>Gestión eficiente</h4>
+                  <p>De personal, horarios y recursos</p>
+                </div>
+              </div>
+              <div className="benefit-item landing-benefit-item">
+                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <div className="benefit-text landing-benefit-text">
+                  <h4>Automatización</h4>
+                  <p>De 15+ procesos administrativos</p>
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      </section>
-
-      {/* === 9. CALL TO ACTION FINAL === */}
-      <section id="contacto" className="section cta-section">
-        <div className="container-custom">
-          <h2 className="section-title text-white">
-            ¿Listo para modernizar su escuela de música?
-          </h2>
           
-          <div className="row justify-content-center">
-            <div className="col-lg-8">
-              <form className="cta-form">
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label className="form-label text-white">Nombre Completo</label>
-                      <input 
-                        type="text" 
-                        className="form-control-custom" 
-                        placeholder="Su nombre completo"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label className="form-label text-white">Email Institucional</label>
-                      <input 
-                        type="email" 
-                        className="form-control-custom" 
-                        placeholder="email@institucion.edu"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label text-white">Institución</label>
-                  <input 
-                    type="text" 
-                    className="form-control-custom" 
-                    placeholder="Nombre de su institución musical"
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label className="form-label text-white">Mensaje</label>
-                  <textarea 
-                    className="form-control-custom" 
-                    rows={4}
-                    placeholder="Cuéntenos sobre sus necesidades específicas..."
-                  ></textarea>
-                </div>
-                
-                <button type="submit" className="btn btn-warning btn-lg w-100">
-                  Solicitar Propuesta Personalizada
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* === 10. FOOTER === */}
-      <footer className="footer">
-        <div className="container-custom">
-          <div className="footer-grid">
-            {/* Información del proyecto */}
-            <div className="footer-section">
-              <h3>S.I.A.M.</h3>
-              <p>
-                Sistema desarrollado por estudiantes de Ingeniería en Sistemas 
-                de la Universidad Nacional Autónoma de Honduras (UNAH).
+          {/* Testimonio */}
+          <motion.div 
+            className="testimonial landing-testimonial"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+          >
+            <div className="testimonial-content landing-testimonial-content">
+              <p className="testimonial-text landing-testimonial-text">
+                "Sistema que mejora la eficiencia y la calidad del servicio educativo musical."
               </p>
-              <div className="d-flex gap-3">
-                <Github size={20} />
-                <Linkedin size={20} />
+              <div className="testimonial-author landing-testimonial-author">
+                <strong>Lic. Rosario de Fátima Mejía Aguilar</strong>
+                <span>Directora, Escuela Experimental de Niños para la Música</span>
               </div>
             </div>
-            
-            {/* Enlaces útiles */}
-            <div className="footer-section">
-              <h3>Enlaces</h3>
-              <a href="#inicio" className="footer-link">Inicio</a>
-              <a href="#caracteristicas" className="footer-link">Características</a>
-              <a href="#modulos" className="footer-link">Módulos</a>
-              <a href="#contacto" className="footer-link">Contacto</a>
-            </div>
-            
-            {/* Contacto */}
-            <div className="footer-section">
-              <h3>Contacto</h3>
-              <div className="d-flex align-items-center mb-2">
-                <Phone size={16} className="me-2" />
-                <span>+504 9979-4964</span>
-              </div>
-              <div className="d-flex align-items-center mb-2">
-                <Mail size={16} className="me-2" />
-                <span>siamproject2025@gmail.com</span>
-              </div>
-              <div className="d-flex align-items-center">
-                <MapPin size={16} className="me-2" />
-                <span>UNAH, Tegucigalpa, Honduras</span>
-              </div>
-            </div>
-          </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="section faq landing-faq">
+        <div className="container landing-container">
+          <motion.h2 
+            className="section-title landing-section-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Preguntas Frecuentes
+          </motion.h2>
           
-          <div className="footer-bottom">
-            <p>
-              &copy; {new Date().getFullYear()} S.I.A.M. - Universidad Nacional Autónoma de Honduras. 
-              Todos los derechos reservados.
-            </p>
+          <div className="faq-container landing-faq-container">
+            {faqData.map((item, index) => (
+              <motion.div 
+                key={index}
+                className={`faq-item landing-faq-item ${activeFaq === index ? 'active' : ''}`}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <div className="faq-question landing-faq-question" onClick={() => toggleFaq(index)}>
+                  <span>{item.question}</span>
+                  <span className="faq-toggle landing-faq-toggle">{activeFaq === index ? '−' : '+'}</span>
+                </div>
+                <div className="faq-answer landing-faq-answer">
+                  <p>{item.answer}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Contacto Section */}
+      <section id="contacto" ref={sectionRefs.contacto} className="section contact landing-contact">
+        <div className="container landing-container">
+          <motion.h2 
+            className="section-title landing-section-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+          >
+            Contacto
+          </motion.h2>
+          
+          <div className="contact-content landing-contact-content">
+            <motion.div 
+              className="contact-info landing-contact-info"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <div className="contact-item landing-contact-item">
+                <div className="contact-icon landing-contact-icon">📞</div>
+                <div className="contact-details landing-contact-details">
+                  <h4>Teléfono</h4>
+                  <p>+504 8797-1675</p>
+                </div>
+              </div>
+              
+              <div className="contact-item landing-contact-item">
+                <div className="contact-icon landing-contact-icon">✉️</div>
+                <div className="contact-details landing-contact-details">
+                  <h4>Correo Electrónico</h4>
+                  <p>esc.experimentalmusica@gmail.com</p>
+                </div>
+              </div>
+              
+              <div className="contact-item landing-contact-item">
+                <div className="contact-icon landing-contact-icon">📍</div>
+                <div className="contact-details landing-contact-details">
+                  <h4>Ubicación</h4>
+                  <p>Colonia Hato de Enmedio, sector 2 Contiguo a la Iglesia de los Santos de los Últimos Días, Tegucigalpa, Honduras</p>
+                </div>
+              </div>
+              
+              <div className="contact-item landing-contact-item">
+                <div className="contact-icon landing-contact-icon">👨‍💻</div>
+                <div className="contact-details landing-contact-details">
+                  <h4>Desarrollado por</h4>
+                  <p>Estudiantes de Ingeniería en Sistemas, UNAH</p>
+                </div>
+              </div>
+            </motion.div>
+            
+            <motion.div 
+              className="mapa-contacto landing-mapa-contacto"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              viewport={{ once: true }}
+            >
+              <h3>Ubicación Institucional</h3>
+              <p className="mapa-descripcion landing-mapa-descripcion">
+                Colonia Hato de Enmedio, sector 2, contiguo a la Iglesia de los Santos de los Últimos Días, Tegucigalpa, Honduras
+              </p>
+              <div className="mapa-embed landing-mapa-embed">
+                <iframe
+                  title="Mapa S.I.A.M."
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3931.562882243273!2d-87.1767392!3d14.0727637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f6fbcd070775acd%3A0x30d484aaca34d4cf!2sEscuela%20Experimental%20De%20Ni%C3%B1os%20Para%20La%20M%C3%BAsica!5e0!3m2!1ses!2shn!4v1699999999999"
+                  width="100%"
+                  height="400"
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };
 
-// === DATOS DE MÓDULOS ===
-const modulosData = [
-  {
-    titulo: "Gestión de Personal",
-    descripcion: "Administración completa de expedientes de docentes, horarios laborales y evaluaciones de desempeño.",
-    icon: Users
-  },
-  {
-    titulo: "Admisiones y Matrícula",
-    descripcion: "Proceso digital de inscripción, documentación automática y seguimiento de solicitudes.",
-    icon: BookOpen
-  },
-  {
-    titulo: "Horarios y Aulas",
-    descripcion: "Programación inteligente que evita conflictos y optimiza el uso de espacios físicos.",
-    icon: Calendar
-  },
-  {
-    titulo: "Inventario Musical",
-    descripcion: "Control detallado de instrumentos, partituras, equipos de audio y material pedagógico.",
-    icon: Music
-  },
-  {
-    titulo: "Biblioteca Virtual",
-    descripcion: "Gestión digital de partituras, métodos de enseñanza y recursos multimedia.",
-    icon: BookOpen
-  },
-  {
-    titulo: "Seguridad y Usuarios",
-    descripcion: "Control granular de permisos, auditoría de acciones y protección de datos institucionales.",
-    icon: Shield
-  }
-];
-
-export default LandingPage;
+export default App;

@@ -896,13 +896,6 @@
   margin-bottom: 0.5rem;
 }
 
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-}
 
 /* === BOTONES MODAL === */
 .modal-actions-actividades {
@@ -913,17 +906,8 @@
   flex-wrap: wrap;
 }
 
-.btn-cancelar,
-.btn-cerrar {
-  background: var(--dark-color);
-  color: white;
-}
 
-.btn-crear,
-.btn-guardar {
-  background: var(--success-color);
-  color: white;
-}
+
 
 .btn-eliminar-actividad {
   background: var(--error-color);

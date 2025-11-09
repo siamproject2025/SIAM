@@ -1,5 +1,5 @@
 // backend/src/routes/gradosRoutes.js
-console.log("✅ Cargando router: gradosRoutes");
+const { authenticateUser } = require('../middleware/authMiddleWare');
 
 const { Router } = require("express");
 const ctrl = require("../Controllers/gradosController");
@@ -10,6 +10,7 @@ router.get("/ping", (req, res) => {
   return res.json({ ok: true, ruta: "/api/grados/ping", ts: new Date().toISOString() });
 });
 
+router.use(authenticateUser);
 router.post("/", ctrl.crearGrado);
 router.get("/", ctrl.listarGrados);
 

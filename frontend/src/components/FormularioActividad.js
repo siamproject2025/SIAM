@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ModalCrearActividad from '../screens/Models/Actividades/ModalCrearActividad';
 import ModalDetalleActividad from '../screens/Models/Actividades/ModalDetalleActividad';
 import Notification from '../components/Notification';
+import ConfirmDialog from '../components/ConfirmDialog/ConfirmDialog';
 import '../../src/styles/Models/Actividades.css';
 import { auth } from "..//components/authentication/Auth";
 
@@ -24,6 +25,10 @@ import {
 const API_URL = process.env.REACT_APP_API_URL+"/api/actividades";
 
 const Actividades = () => {
+
+const [showConfirm, setShowConfirm] = useState(false);
+const [actividadAEliminar, setActividadAEliminar] = useState(null);
+
   const [actividades, setActividades] = useState([]);
   const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
   const [busqueda, setBusqueda] = useState('');
@@ -31,17 +36,25 @@ const Actividades = () => {
   const [notification, setNotification] = useState(null);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
+
+// Funciones para el diálogo de confirmación de cancelacion
+const cancelarEliminacion = () => {
+  setShowConfirm(false);
+  setActividadAEliminar(null);
+};
+
+
   useEffect(() => {
   const cargarActividades = async () => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Usuario no autenticado');
 
-      const token = await user.getIdToken(); // 🔹 Obtener token JWT
+      const token = await user.getIdToken();
 
       const res = await fetch(API_URL, {
         headers: {
-          Authorization: `Bearer ${token}`, // ✅ Token incluido
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -68,7 +81,9 @@ const Actividades = () => {
     setNotification({ message, type });
   };
 
- 
+  const closeNotification = () => {
+    setNotification(null);
+  };
 
 const handleCrearActividad = async (nuevaActividad) => {
   try {
@@ -98,7 +113,6 @@ const handleCrearActividad = async (nuevaActividad) => {
       return;
     }
 
-    // 🔹 Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado', 'error');
@@ -110,7 +124,7 @@ const handleCrearActividad = async (nuevaActividad) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(nuevaActividad)
     });
@@ -152,7 +166,6 @@ const handleCrearActividad = async (nuevaActividad) => {
       return;
     }
 
-    // 🔹 Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado', 'error');
@@ -164,7 +177,7 @@ const handleCrearActividad = async (nuevaActividad) => {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify(actividadActualizada)
     });
@@ -185,12 +198,19 @@ const handleCrearActividad = async (nuevaActividad) => {
   }
 };
 
-const handleEliminarActividad = async (id) => {
-  const actividadAEliminar = actividades.find(a => a._id === id);
-  if (!window.confirm(`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}"?`)) return;
+
+const handleEliminarActividad = (id) => {
+  const actividad = actividades.find(a => a._id === id);
+  setActividadAEliminar(actividad);
+  setShowConfirm(true);
+};
+
+
+const confirmarEliminacion = async () => {
+  setShowConfirm(false);
+  if (!actividadAEliminar) return;
 
   try {
-    // 🔹 Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado', 'error');
@@ -198,10 +218,10 @@ const handleEliminarActividad = async (id) => {
     }
     const token = await user.getIdToken();
 
-    const res = await fetch(`${API_URL}/${id}`, {
+    const res = await fetch(`${API_URL}/${actividadAEliminar._id}`, {
       method: 'DELETE',
       headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -210,15 +230,18 @@ const handleEliminarActividad = async (id) => {
       throw new Error(errorData.message || 'Error al eliminar la actividad');
     }
 
-    setActividades(actividades.filter(a => a._id !== id));
+    setActividades(actividades.filter(a => a._id !== actividadAEliminar._id));
     setActividadSeleccionada(null);
-    showNotification(`Actividad "${actividadAEliminar?.nombre}" eliminada exitosamente`, 'success');
+    showNotification(`Actividad "${actividadAEliminar.nombre}" eliminada exitosamente`, 'success');
+    setActividadAEliminar(null);
 
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar la actividad', 'error');
   }
 };
+
+
   // Categorizar actividades según la fecha
 function categorizarActividad(fechaActividad) {
   const fecha = new Date(fechaActividad);
@@ -361,7 +384,18 @@ function categorizarActividad(fechaActividad) {
 
   return (
     <div className="actividad-container">
-      {/* 🎨 ENCABEZADO MEJORADO */}
+      {/* Notificación */}
+      <AnimatePresence>
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={closeNotification}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ENCABEZADO */}
       <motion.div 
         className="actividad-header"
         initial={{ opacity: 0, y: -30 }}
@@ -374,7 +408,6 @@ function categorizarActividad(fechaActividad) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, duration: 0.6 }}
         >
-          {/* Patrón de fondo */}
           <div className="header-pattern" />
 
           <div className="header-content">
@@ -605,7 +638,7 @@ function categorizarActividad(fechaActividad) {
         {renderGrupoActividades("Actividades finalizadas", actividadesFinalizadas, "#4D4D4D")}
       </motion.div>
 
-      {/* Modales y notificaciones (mantener igual) */}
+      {/* Modales */}
       {mostrarModalCrear && (
         <ModalCrearActividad
           onClose={() => setMostrarModalCrear(false)}
@@ -617,20 +650,23 @@ function categorizarActividad(fechaActividad) {
         <ModalDetalleActividad
           actividad={actividadSeleccionada}
           onClose={() => setActividadSeleccionada(null)}
+          showNotification={showNotification}
           onUpdate={handleEditarActividad}
           onDelete={handleEliminarActividad}
         />
       )}
 
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
+      {/* Confirmación de eliminación */}
+      {showConfirm && (
+        <ConfirmDialog
+          message={`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}"?`}
+          onConfirm={confirmarEliminacion}
+          onCancel={cancelarEliminacion}
+          visible={showConfirm}
         />
       )}
 
-      {/* Modal Ayuda (mantener igual) */}
+      {/* Modal Ayuda */}
       {mostrarAyuda && (
         <div className="modal-overlay">
           <div className="modal-content">

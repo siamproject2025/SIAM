@@ -7,7 +7,7 @@ const { checkRole } = require('../middleware/checkRole');
 
 
 // Crear usuario (solo usuarios autenticados pueden hacerlo)
-router.post('/usuarios', usuarioController.crearUsuario);
+router.post('/usuarios',authenticateUser, usuarioController.crearUsuario);
 
 // Listar usuarios (solo ADMIN)
 router.get('/usuarios', authenticateUser, checkRole(['ADMIN']), usuarioController.listarUsuario);

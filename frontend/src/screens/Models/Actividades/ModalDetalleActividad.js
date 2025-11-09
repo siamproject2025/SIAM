@@ -11,9 +11,9 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
   };
 
   const handleEliminar = () => {
-    if (window.confirm('¿Seguro que deseas eliminar esta actividad?')) {
+   
       onDelete(actividadEditada._id);
-    }
+    
   };
 
   return (

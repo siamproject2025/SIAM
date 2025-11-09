@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Notification from '../../../components/Notification';
+import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 
 const ModalDetalleOrden = ({
   orden,
@@ -12,6 +13,8 @@ const ModalDetalleOrden = ({
 }) => {
   // 🔹 Estado para notificaciones
   const [notificacion, setNotificacion] = useState(null);
+
+
 
   //const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
@@ -85,12 +88,10 @@ const handleGuardar = () => {
 
 
 const handleEliminar = () => {
-  const confirmar = window.confirm('¿Seguro que deseas eliminar esta orden?');
-  if (confirmar) {
-    onDelete(ordenEditada._id);
-    mostrarNotificacion('Orden eliminada exitosamente', 'success');
-  }
+  onDelete(ordenEditada._id); // ✅ delega al padre
 };
+
+
 
   const handleDescargarPDF = () => {
     try {
@@ -245,7 +246,7 @@ return (
                   />
                 </td>
                 <td className="text-end fw-bold">
-                  ${ (item.cantidad * item.costoUnit).toFixed(2) }
+                  L.{ (item.cantidad * item.costoUnit).toFixed(2) }
                 </td>
                 <td className="text-center">
                   <button
@@ -270,19 +271,25 @@ return (
       {/* Botones de acción */}
       <div className="modal-actions-orden d-flex flex-wrap gap-2 justify-content-end">
         <button className="btn btn-success" onClick={handleGuardar}>
-          💾 Guardar Cambios
+          Guardar Cambios
         </button>
         <button className="btn btn-danger" onClick={handleEliminar}>
-          🗑️ Eliminar
+          Eliminar
         </button>
         <button className="btn btn-primary" onClick={handleDescargarPDF}>
-          📄 Descargar PDF
+          Descargar PDF
         </button>
         <button className="btn btn-secondary" onClick={onClose}>
-          ❌ Cerrar
+          Cerrar
         </button>
       </div>
     </div>
+
+
+
+
+
+
 
     {/* Notificación */}
     {notificacion && (
