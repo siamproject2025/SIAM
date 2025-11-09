@@ -218,7 +218,7 @@ const handleEliminarActividad = async (id) => {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar la actividad', 'error');
   }
-};
+};//
   // Categorizar actividades según la fecha
 function categorizarActividad(fechaActividad) {
   const fecha = new Date(fechaActividad);
