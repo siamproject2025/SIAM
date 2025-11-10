@@ -32,6 +32,8 @@ import {
   HandHeart
 } from 'lucide-react';
 
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
+
 const API_URL = process.env.REACT_APP_API_URL+'/api/donaciones';
 
 // Estilos CSS integrados mejorados
@@ -273,10 +275,18 @@ const handleSubmitEditar = async (e) => {
 };
 
 
-const handleEliminarDonacion = async () => {
-  if (!donacionSeleccionada) return;
 
-  if (!window.confirm('¿Estás seguro de que deseas eliminar esta donación?')) return;
+
+const [showConfirm, setShowConfirm] = useState(false);
+
+const prepararEliminacionDonacion = () => {
+  if (!donacionSeleccionada) return;
+  setShowConfirm(true);
+};
+
+const confirmarEliminacionDonacion = async () => {
+  setShowConfirm(false);
+  if (!donacionSeleccionada) return;
 
   try {
     const user = auth.currentUser;
@@ -289,8 +299,7 @@ const handleEliminarDonacion = async () => {
     const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
       method: 'DELETE',
       headers: {
-
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -307,6 +316,8 @@ const handleEliminarDonacion = async () => {
     mostrarNotificacion(error.message || 'Error al eliminar la donación', 'error');
   }
 };
+
+
 
 
   const handleCloseModals = () => {
@@ -1122,15 +1133,25 @@ const handleEliminarDonacion = async () => {
                   </div>
 
                   <div className="modal-actions-donaciones">
-                    <motion.button 
-                      type="button" 
-                      className="btn btn-danger" 
-                      onClick={handleEliminarDonacion}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Trash2 size={16} /> Eliminar
-                    </motion.button>
+                   <motion.button 
+  type="button" 
+  className="btn btn-danger" 
+  onClick={prepararEliminacionDonacion}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+>
+  <Trash2 size={16} /> Eliminar
+</motion.button>
+{showConfirm && (
+  <ConfirmDialog
+    message="¿Estás seguro de que deseas eliminar esta donación?"
+    onConfirm={confirmarEliminacionDonacion}
+    onCancel={() => setShowConfirm(false)}
+    visible={showConfirm}
+  />
+)}
+
+
                     <motion.button 
                       type="button" 
                       className="btn-cancelar-donaciones" 
