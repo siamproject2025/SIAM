@@ -11,7 +11,7 @@ const {
   actualizarDocumento,
   eliminarDocumento,
   obtenerEstadisticas
-} = require('../controllers/directivaController');
+} = require('../Controllers/directivaController');
 
 // Configurar multer para manejar archivos (igual que en biblioteca)
 const storage = multer.memoryStorage();
