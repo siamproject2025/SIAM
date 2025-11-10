@@ -1,3 +1,18 @@
+require('dotenv').config();
+
+// Validar que las variables de entorno requeridas existan
+const variablesRequeridas = [
+  'FIREBASE_PRIVATE_KEY',
+  'FIREBASE_CLIENT_EMAIL',
+  'FIREBASE_PROJECT_ID'
+];
+
+for (const variable of variablesRequeridas) {
+  if (!process.env[variable]) {
+    throw new Error(`Falta la variable de entorno requerida: ${variable}`);
+  }
+}
+
 const serviceAccount = {
   type: process.env.FIREBASE_TYPE,
   project_id: process.env.FIREBASE_PROJECT_ID,
@@ -12,6 +27,15 @@ const serviceAccount = {
 };
 
 const admin = require('firebase-admin');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+
+try {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  console.log('Firebase Admin inicializado correctamente');
+} catch (error) {
+  console.error('Error inicializando Firebase Admin:', error);
+  throw error;
+}
+
+module.exports = admin;
