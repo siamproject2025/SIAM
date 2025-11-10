@@ -151,7 +151,7 @@ export default function GradosPage() {
 
   // ------ Eliminar ------
   const eliminarGrado = async (id) => {
-    if (!window.confirm("¿Estás seguro de que quieres eliminar este grado? Esta acción no se puede deshacer.")) return;
+   
     try {
       setLoading(true);
       await fetchWithToken(`${API}/${id}`, { method: "DELETE" });

@@ -464,8 +464,7 @@ const handleFotoChange = (e) => {
 
   const handleEliminarPersonal = async () => {
   const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
-  if (!window.confirm(`¿Seguro que deseas eliminar al empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}"?`)) return;
-
+  
   try {
     // 🔑 Obtener token del usuario autenticado (Firebase o Auth0)
     const user = auth.currentUser;

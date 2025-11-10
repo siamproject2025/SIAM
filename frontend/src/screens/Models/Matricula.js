@@ -207,8 +207,7 @@ const deleteSelectedStudents = async () => {
     return;
   }
 
-  if (!window.confirm(`¿Está seguro de que desea eliminar ${selectedStudents.length} estudiante(s)?`)) return;
-
+  
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');

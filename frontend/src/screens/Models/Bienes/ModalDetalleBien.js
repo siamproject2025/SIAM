@@ -111,9 +111,9 @@ const confirmarEliminacion = () => {
 
 
   const handleEliminar = () => {
-    if (window.confirm('¿Seguro que deseas eliminar este bien?')) {
+    
       onDelete(bienEditado._id);
-    }
+    
   };
 
   return (
