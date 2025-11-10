@@ -16,7 +16,7 @@ import { auth } from "../components/authentication/Auth";
 import { FiUsers, FiShoppingCart, FiBox, FiBook, FiCalendar } from "react-icons/fi";
 import "../styles/Home.css";
 
-const API_URL = "http://localhost:5000/";
+const API_URL = process.env.REACT_APP_API_URL;
 const COLORS = ["#323232", "#a600ff", "#1369fd", "#ffcc00", "#00bcd4"];
 const COLORS2 = [ "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7"];
 
@@ -36,11 +36,11 @@ export default function Home() {
         const token = await user.getIdToken();
 
         const results = await Promise.allSettled([
-          axios.get(`${API_URL}api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/compras`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API_URL}api/biblioteca`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
-          axios.get(`${API_URL}api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
+          axios.get(`${API_URL}/api/usuarios`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/compras`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/biblioteca`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
+          axios.get(`${API_URL}/api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
         ]);
 
         setUsuarios(results[0].status === "fulfilled" ? results[0].value.data.users : []);

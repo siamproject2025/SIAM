@@ -11,9 +11,9 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
   };
 
   const handleEliminar = () => {
-    if (window.confirm('¿Seguro que deseas eliminar esta actividad?')) {
+   
       onDelete(actividadEditada._id);
-    }
+    
   };
 
   return (
@@ -70,9 +70,9 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
         </div>
 
         <div className="modal-actions">
-          <button className="btn-guardar" onClick={handleGuardar}>💾 Guardar Cambios</button>
-          <button className="btn-eliminar" onClick={handleEliminar}>🗑️ Eliminar</button>
-          <button className="btn-cerrar" onClick={onClose}>❌ Cerrar</button>
+          <button className="btn-guardar" onClick={handleGuardar}>Guardar Cambios</button>
+          <button className="btn btn-danger" onClick={handleEliminar}>Eliminar</button>
+          <button className="btn-cerrar" onClick={onClose}>Cerrar</button>
         </div>
       </div>
     </div>

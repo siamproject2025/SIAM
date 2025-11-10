@@ -1,12 +1,6 @@
 const admin = require('firebase-admin');
 
-var serviceAccount = require("../config/firebase-service-account.json");
-// Inicializar Firebase Admin SDK
-if (!admin.apps.length) {
-  admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-}
+
 const Usuario = require('../Models/usuario_modelo'); // tu modelo de usuario
 
 const authenticateUser = async (req, res, next) => {

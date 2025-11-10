@@ -1,7 +1,7 @@
 import React from "react";
 import "../styles/RestrictedPage.css";
 import { Lock } from "lucide-react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 
 const RestrictedPage = () => {
   return (

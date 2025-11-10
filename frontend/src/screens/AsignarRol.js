@@ -9,7 +9,10 @@ import { MdAdminPanelSettings } from "react-icons/md";
 import { motion } from "framer-motion";
 import UsuariosChart from "../components/UsuariosChart";
 
-const API_URL = "http://localhost:5000/";
+import Notification from "../components/Notification";
+import ConfirmDialog from "../components/ConfirmDialog/ConfirmDialog";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const AsignarRol = () => {
   const [usuarios, setUsuarios] = useState([]);
@@ -28,7 +31,7 @@ const AsignarRol = () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}api/usuarios`, {
+        const res = await axios.get(`${API_URL}/api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsuarios(res.data.users);
@@ -47,7 +50,7 @@ const AsignarRol = () => {
       const user = auth.currentUser;
       const token = await user.getIdToken();
       await axios.put(
-        `${API_URL}api/usuarios/${id}/rol`,
+        `${API_URL}/api/usuarios/${id}/rol`,
         { roles: [nuevoRol] },
         {
           headers: {
@@ -57,32 +60,67 @@ const AsignarRol = () => {
         }
       );
 
+      const usuarioActualizado = usuarios.find((u) => u._id === id);
+      
+      // Mostrar notificación en lugar de alert
+      setMensaje(
+        <span>
+          Rol actualizado correctamente para <strong>{usuarioActualizado?.username || "usuario desconocido"}</strong> ({usuarioActualizado?.email || "sin email"})
+        </span>
+      );
+
       setUsuarios((prev) =>
         prev.map((u) => (u._id === id ? { ...u, roles: [nuevoRol] } : u))
       );
-
       setActualizarChart((prev) => !prev);
     } catch (error) {
       console.error("Error al asignar rol:", error);
-      alert(error.response?.data?.message || "❌ Error al cambiar rol.");
+      setMensaje(
+        <span>
+          ❌ {error.response?.data?.message || "No se pudo actualizar el rol."}
+        </span>
+      );
     }
   };
 
-  const eliminarUsuario = async (id) => {
-    if (!window.confirm("⚠️ ¿Seguro que deseas eliminar este usuario?")) return;
+  // Eliminar usuario
+  const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleEliminarUsuario = (usuario) => {
+    setUsuarioAEliminar(usuario);
+    setShowConfirm(true);
+  };
+
+  const confirmarEliminacionUsuario = async () => {
+    setShowConfirm(false);
+    if (!usuarioAEliminar) return;
+
     try {
       const user = auth.currentUser;
       const token = await user.getIdToken();
-      await axios.delete(`${API_URL}api/usuarios/${id}`, {
+      await axios.delete(`${API_URL}/api/usuarios/${usuarioAEliminar._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsuarios((prev) => prev.filter((u) => u._id !== id));
+      const nombre = usuarioAEliminar.username || "desconocido";
+      setMensaje(
+        <span>
+          🗑 Usuario <strong>{nombre}</strong> eliminado correctamente
+        </span>
+      );
+      setUsuarios((prev) => prev.filter((u) => u._id !== usuarioAEliminar._id));
       setActualizarChart((prev) => !prev);
+      setUsuarioAEliminar(null);
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
-      setMensaje("❌ Error al eliminar usuario.");
+      setMensaje("❌ No se pudo eliminar el usuario.");
     }
+  };
+
+  const cancelarEliminacionUsuario = () => {
+    setShowConfirm(false);
+    setUsuarioAEliminar(null);
   };
 
   const usuariosFiltrados = usuarios.filter((u) => {
@@ -176,8 +214,8 @@ const AsignarRol = () => {
                   <FiUsers />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalUsuarios}</div>
-                  <div className="stat-label">Total Usuarios</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalUsuarios}</div>
+                  <div className="stat-label" style={{color:"white"}}>Total Usuarios</div>
                 </div>
               </motion.div>
 
@@ -190,8 +228,8 @@ const AsignarRol = () => {
                   <MdAdminPanelSettings />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalAdmins}</div>
-                  <div className="stat-label">Administradores</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalAdmins}</div>
+                  <div className="stat-label" style={{color:"white"}}>Administradores</div>
                 </div>
               </motion.div>
 
@@ -204,8 +242,8 @@ const AsignarRol = () => {
                   <FiAward />
                 </div>
                 <div className="stat-text">
-                  <div className="stat-value">{totalDocentes + totalPadres}</div>
-                  <div className="stat-label">Usuarios Activos</div>
+                  <div className="stat-value" style={{color:"white"}}>{totalDocentes + totalPadres}</div>
+                  <div className="stat-label" style={{color:"white"}}>Usuarios Activos</div>
                 </div>
               </motion.div>
             </motion.div>
@@ -274,7 +312,7 @@ const AsignarRol = () => {
           <div className="filtro-item">
             <HiMiniMagnifyingGlassCircle className="search-icon" />
             <input
-              className="inputFiltro"
+              className="inputFiltro-rol"
               placeholder="Buscar por nombre o correo..."
               value={filtroTexto}
               onChange={(e) => setFiltroTexto(e.target.value)}
@@ -282,7 +320,7 @@ const AsignarRol = () => {
           </div>
 
           <select
-            className="selectFiltro"
+            className="selectFiltro-rol"
             value={filtroRol}
             onChange={(e) => setFiltroRol(e.target.value)}
           >
@@ -295,8 +333,18 @@ const AsignarRol = () => {
       </motion.div>
 
       {/* TABLA */}
-      <div className="tabla-container">
-        <table className="tablaUsuarios">
+            <motion.div
+        className="tabla-container-roles"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <motion.table
+          className="tablaUsuarios"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
           <thead>
             <tr>
               <th><FiUser /> Usuario</th>
@@ -307,7 +355,12 @@ const AsignarRol = () => {
           </thead>
           <tbody>
             {usuariosPaginados.map((u) => (
-              <tr key={u._id}>
+              <motion.tr
+                key={u._id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+              >
                 <td>{u.username}</td>
                 <td>{u.email}</td>
                 <td>{u.roles.join(", ")}</td>
@@ -319,24 +372,37 @@ const AsignarRol = () => {
                   >
                     <option value="">Cambiar rol…</option>
                     {rolesDisponibles.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
+                      <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
-                  <button className="btn-delete" onClick={() => eliminarUsuario(u._id)}>
-                    <FiTrash2 />
-                  </button>
+                 <button className="btn-delete" onClick={() => handleEliminarUsuario(u)}>
+                   <FiTrash2 />
+                </button>
+
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
-        </table>
+        </motion.table>
+      </motion.div>
 
-        {usuariosPaginados.length === 0 && (
-          <p className="asignarRol-empty">No se encontraron usuarios.</p>
-        )}
-      </div>
+      {showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar al usuario "${usuarioAEliminar?.username}"?`}
+    onConfirm={confirmarEliminacionUsuario}
+    onCancel={cancelarEliminacionUsuario}
+    visible={showConfirm}
+  />
+)}
+
+{mensaje && (
+  <Notification
+    message={mensaje}
+    type="info"
+    onClose={() => setMensaje(null)}
+  />
+)}
+
 
       {/* Paginación */}
       {totalPaginas > 1 && (

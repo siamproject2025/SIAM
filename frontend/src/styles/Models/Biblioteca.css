@@ -341,7 +341,7 @@
   max-width: 100%;
   width: 100%;
   margin: 0;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: rgb(246, 246, 246);
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -714,8 +714,11 @@
 }
 
 .cell-formato {
+  display: flex;
   text-align: center;
   min-width: 100px;
+  justify-content: center;
+  align-items: center;
 }
 
 /* ===== BADGES DE FORMATO ===== */
@@ -787,21 +790,7 @@
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
-.btn-eliminar {
-  background: var(--error-red-light);
-  color: var(--error-red);
-  border: 1px solid var(--error-red);
-  padding: 0.5rem;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: var(--transition);
-  font-size: 1rem;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+
 
 .btn-eliminar:hover {
   background: var(--error-red);

@@ -5,8 +5,9 @@ const LibroSchema = new mongoose.Schema({
   autor: { type: String, required: true },
   categoria: { type: String },
   disponible: { type: Boolean, default: true },
-  archivoUrl: { type: String, required: true }, // ✅ se agrega
-  nombreArchivo: { type: String, required: true }, // ✅ se agrega para eliminar luego
+  archivoUrl: { type: String, required: true }, // URL en Google Drive
+  nombreArchivo: { type: String, required: true }, // nombre interno en Drive
+  extension: { type: String }, // nueva propiedad para guardar la extensión del archivo
   fechaCreacion: { type: Date, default: Date.now },
 });
 
