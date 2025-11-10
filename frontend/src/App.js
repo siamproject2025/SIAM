@@ -36,6 +36,7 @@ import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
 import GradosPage from './screens/Models/grados';
 
 
+
 const auth = getAuth(appFirebase);
 
 function App() {
@@ -145,7 +146,8 @@ return (
           <Route path="/Calendario" element={<CalendarioActividades />} />
           <Route path="/directiva" element={<Directiva />} />  
           <Route path="/admisiones" element={<Matricula />} />
-           <Route path="/grados" element={<GradosPage />} />                                  
+           <Route path="/grados" element={<GradosPage />} /> 
+                                            
         </Route>
 
         <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>

@@ -1,13 +1,9 @@
 // controllers/matriculaController.js
 const Estudiante = require('../Models/Estudiante');
-const multer = require('multer');
+
 const sharp = require('sharp');
 
 // Configuración de multer para guardar archivos en memoria
-const upload = multer({ storage: multer.memoryStorage() });
-
-// Middleware para rutas POST/PUT
-exports.upload = upload.single('foto'); // nombre del input en el frontend
 
 // -------------------
 // Crear matrícula

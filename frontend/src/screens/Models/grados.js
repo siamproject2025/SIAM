@@ -12,8 +12,7 @@ const initialForm = () => ({
   grado: "",
   descripcion: "",
   anio_academico: new Date().getFullYear(),
-  total_creditos: 0,
-  total_horas_semanales: 0,
+  aula: "",
   estado: "Activo",
   fecha_actualizacion: new Date().toISOString(),
   timestamp: new Date().toISOString(),
@@ -96,8 +95,7 @@ export default function GradosPage() {
     if (Number.isNaN(Number(current.anio_academico)) || Number(current.anio_academico) < 1900 || Number(current.anio_academico) > 2100) {
       e.anio_academico = "El año debe estar entre 1900 y 2100.";
     }
-    if (Number(current.total_creditos) < 0) e.total_creditos = "Los créditos no pueden ser negativos.";
-    if (Number(current.total_horas_semanales) < 0) e.total_horas_semanales = "Las horas no pueden ser negativas.";
+    if (!current.aula?.trim()) e.aula = "El aula es requerida.";
     if (!["Activo", "Inactivo"].includes(current.estado)) e.estado = "Estado inválido.";
     return e;
   };
@@ -134,8 +132,7 @@ export default function GradosPage() {
           grado: form.grado,
           descripcion: form.descripcion,
           anio_academico: Number(form.anio_academico),
-          total_creditos: Number(form.total_creditos),
-          total_horas_semanales: Number(form.total_horas_semanales),
+          aula: form.aula,
           estado: form.estado,
           fecha_actualizacion: form.fecha_actualizacion,
           timestamp: form.timestamp,
@@ -152,44 +149,16 @@ export default function GradosPage() {
     }
   };
 
-  // ------ Desactivar / Restaurar ------
-  const softDelete = async (id) => {
-    if (!window.confirm("¿Desactivar este grado?")) return;
+  // ------ Eliminar ------
+  const eliminarGrado = async (id) => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar este grado? Esta acción no se puede deshacer.")) return;
     try {
       setLoading(true);
       await fetchWithToken(`${API}/${id}`, { method: "DELETE" });
       fetchList(page);
     } catch (err) {
       console.error(err);
-      alert(err.message || "No se pudo desactivar.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const restore = async (id) => {
-    try {
-      setLoading(true);
-      await fetchWithToken(`${API}/${id}/restaurar`, { method: "PATCH" });
-      fetchList(page);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "No se pudo restaurar.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ------ Eliminar permanentemente ------
-  const hardDelete = async (id) => {
-    if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente este grado? Esta acción no se puede deshacer.")) return;
-    try {
-      setLoading(true);
-      await fetchWithToken(`${API}/${id}`, { method: "DELETE" });
-      fetchList(page);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "No se pudo eliminar permanentemente.");
+      alert(err.message || "No se pudo eliminar el grado.");
     } finally {
       setLoading(false);
     }
@@ -354,10 +323,9 @@ export default function GradosPage() {
                   <tr>
                     <th>Grado</th>
                     <th>Año</th>
-                    <th>Créditos</th>
-                    <th>Horas</th>
+                    <th>Aula</th>
                     <th>Estado</th>
-                    <th className="text-end" style={{ width: 280 }}>Acciones</th>
+                    <th className="text-end" style={{ width: 200 }}>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -365,8 +333,7 @@ export default function GradosPage() {
                     <tr key={g._id}>
                       <td className="align-middle">{g.grado}</td>
                       <td className="align-middle">{g.anio_academico}</td>
-                      <td className="align-middle">{g.total_creditos}</td>
-                      <td className="align-middle">{g.total_horas_semanales}</td>
+                      <td className="align-middle">{g.aula}</td>
                       <td className="align-middle">
                         <span className={`grados-badge-${g.estado === "Activo" ? "active" : "inactive"}`}>
                           {g.estado}
@@ -377,28 +344,19 @@ export default function GradosPage() {
                           <button className="grados-btn-edit" onClick={() => openEdit(g)}>
                             <i className="fas fa-edit me-1" /> Editar
                           </button>
-                          {g.estado === "Activo" ? (
-                            <button className="grados-btn-deactivate" onClick={() => softDelete(g._id)}>
-                              <i className="fas fa-ban me-1" /> Desactivar
-                            </button>
-                          ) : (
-                            <button className="grados-btn-restore" onClick={() => restore(g._id)}>
-                              <i className="fas fa-undo me-1" /> Restaurar
-                            </button>
-                          )}
                           <button 
-                            className="grados-btn-delete" 
-                            onClick={() => hardDelete(g._id)}
-                            title="Eliminar permanentemente"
+                            className="btn btn-danger btn-sm" 
+                            onClick={() => eliminarGrado(g._id)}
+                            title="Eliminar grado"
                           >
-                            <Trash2 size={14} />
+                            <i className="fas fa-trash me-1" /> Eliminar
                           </button>
                         </div>
                       </td>
                     </tr>
                   )) : !loading && (
                     <tr>
-                      <td colSpan={6} className="text-center text-muted p-4">Sin registros.</td>
+                      <td colSpan={5} className="text-center text-muted p-4">Sin registros.</td>
                     </tr>
                   )}
                 </tbody>
@@ -473,27 +431,18 @@ export default function GradosPage() {
                   />
                 </div>
 
-                <div className="col-md-4">
-                  <label className="grados-form-label">Créditos</label>
+                <div className="col-12">
+                  <label className="grados-form-label">Aula *</label>
                   <input
-                    type="number"
-                    className={`grados-modal-input ${errors.total_creditos ? "is-invalid" : ""}`}
-                    value={form.total_creditos}
-                    onChange={(e) => setForm({ ...form, total_creditos: e.target.value })}
+                    className={`grados-modal-input ${errors.aula ? "is-invalid" : ""}`}
+                    value={form.aula}
+                    onChange={(e) => setForm({ ...form, aula: e.target.value })}
+                    placeholder="Ej: Aula 101, Laboratorio de Ciencias, etc."
                   />
-                  {errors.total_creditos && <div className="grados-invalid-feedback">{errors.total_creditos}</div>}
+                  {errors.aula && <div className="grados-invalid-feedback">{errors.aula}</div>}
                 </div>
-                <div className="col-md-4">
-                  <label className="grados-form-label">Horas semanales</label>
-                  <input
-                    type="number"
-                    className={`grados-modal-input ${errors.total_horas_semanales ? "is-invalid" : ""}`}
-                    value={form.total_horas_semanales}
-                    onChange={(e) => setForm({ ...form, total_horas_semanales: e.target.value })}
-                  />
-                  {errors.total_horas_semanales && <div className="grados-invalid-feedback">{errors.total_horas_semanales}</div>}
-                </div>
-                <div className="col-md-4">
+
+                <div className="col-12">
                   <label className="grados-form-label">Estado</label><br/>
                   <select
                     className={`grados-modal-input ${errors.estado ? "is-invalid" : ""}`}

@@ -7,7 +7,7 @@ const MateriaSchema = new Schema(
     id_materia: { type: Number, required: true, min: 1 },
     nombre: { type: String, required: true, trim: true },
     descripcion: { type: String, default: "", trim: true },
-    creditos: { type: Number, required: true, min: 0 },
+    aula: { type: String, required: true, trim: true }, // reemplaza creditos
     personal: { type: String, required: true, trim: true },
   },
   { _id: false }
@@ -42,8 +42,7 @@ const MateriaPlanSchema = new Schema(
     id_materia: { type: Number, required: true, min: 1 },
     nombre: { type: String, required: true, trim: true },
     descripcion: { type: String, default: "", trim: true },
-    creditos: { type: Number, required: true, min: 0 },
-    horas_semanales: { type: Number, required: true, min: 0 },
+    aula: { type: String, required: true, trim: true }, // reemplaza creditos
     es_obligatoria: { type: Boolean, default: true },
     personal_asignado: { type: String, required: true, trim: true },
   },
@@ -53,14 +52,13 @@ const MateriaPlanSchema = new Schema(
 /* ---------- Documento principal ---------- */
 const GradoSchema = new Schema(
   {
-    grado: { type: String, required: true, trim: true }, // "10mo Grado"
+    grado: { type: String, required: true, trim: true },
     descripcion: { type: String, default: "", trim: true },
 
     horarios_grado: { type: [HorarioGradoSchema], default: [] },
     materias_grado: { type: [MateriaPlanSchema], default: [] },
 
-    total_creditos: { type: Number, required: true, min: 0 },
-    total_horas_semanales: { type: Number, required: true, min: 0 },
+    aula: { type: String, required: true, trim: true },
 
     estado: { type: String, default: "Activo", enum: ["Activo", "Inactivo"] },
     anio_academico: { type: Number, required: true, min: 1900 },
