@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, useMotionValue, animate } from 'motion/react';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import '../styles/Landingpage/landing.css';
 import {  Music } from "lucide-react";
+
 
 const App = () => {
   const [activeFaq, setActiveFaq] = useState(null);
