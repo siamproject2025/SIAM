@@ -99,7 +99,7 @@ exports.eliminarLibro = async (req, res) => {
     }
 
     await libro.deleteOne();
-    res.status(200).json({ message: "Libro eliminado correctamente" });
+    res.status(200).json({ message: "Libro se ha eliminado correctamente" });
   } catch (error) {
     console.error("Error al eliminar libro:", error);
     res.status(500).json({ error: error.message });
