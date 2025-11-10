@@ -26,7 +26,9 @@ import {
   Download
 } from 'lucide-react';
 
-const API_URL = (process.env.REACT_APP_API_URL+"/api/directiva") || "http://localhost:5000/";
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
+
+const API_URL = process.env.REACT_APP_API_URL+"/api/directiva";
 
 const Directiva = () => {
   const [miembros, setMiembros] = useState([]);
@@ -265,18 +267,31 @@ const cargarMiembros = async () => {
 };
 
 
-const handleEliminarMiembro = async () => {
-  const miembroAEliminar = miembros.find(m => m._id === miembroSeleccionado._id);
+// Eliminar miembro
 
+const [showConfirm, setShowConfirm] = useState(false);
+const [miembroAEliminar, setMiembroAEliminar] = useState(null);
+
+const prepararEliminacionMiembro = () => {
+  if (!miembroSeleccionado) return;
+
+  const miembro = miembros.find(m => m._id === miembroSeleccionado._id);
+  if (!miembro) return;
+
+  setMiembroAEliminar(miembro);
+  setShowConfirm(true);
+};
+
+const confirmarEliminacionMiembro = async () => {
+  setShowConfirm(false);
+  if (!miembroAEliminar) return;
 
   try {
-    // Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    // Enviar solicitud DELETE con token en headers
-    const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
+    const res = await fetch(`${API_URL}/${miembroAEliminar._id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`
@@ -291,13 +306,19 @@ const handleEliminarMiembro = async () => {
     await cargarMiembros();
     setMiembroSeleccionado(null);
     resetForm();
-    showNotification(`Miembro "${miembroAEliminar?.nombre}" eliminado exitosamente`, 'success');
-
+    showNotification(`Miembro "${miembroAEliminar.nombre}" eliminado exitosamente`, 'success');
+    setMiembroAEliminar(null);
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar el miembro', 'error');
   }
 };
+
+const cancelarEliminacionMiembro = () => {
+  setShowConfirm(false);
+  setMiembroAEliminar(null);
+};
+
 
 
 // NUEVAS FUNCIONES PARA EL MODAL DE DOCUMENTOS CON MANEJO DE PDF
@@ -1477,16 +1498,26 @@ const handleVerDocumento = async (documento) => {
                   </div>
 
                   <div className="modal-actions">
-                    <motion.button 
-                      type="button" 
-                      className="btn btn-danger" 
-                      onClick={handleEliminarMiembro}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Trash2 size={16} />
-                      Eliminar
-                    </motion.button>
+                   <motion.button 
+  type="button" 
+  className="btn btn-danger" 
+  onClick={prepararEliminacionMiembro}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+>
+  <Trash2 size={16} />
+  Eliminar
+</motion.button>
+{showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar al miembro "${miembroAEliminar?.nombre}"?`}
+    onConfirm={confirmarEliminacionMiembro}
+    onCancel={cancelarEliminacionMiembro}
+    visible={showConfirm}
+  />
+)}
+
+
                     <motion.button 
                       type="button" 
                       className="btn-cancelar" 

@@ -3,7 +3,7 @@ import { auth } from "../../components/authentication/Auth";
 import "../../styles/grados.css"
 import { motion, AnimatePresence } from "framer-motion";
 import { Apple, Book, Calendar, Table2, X, FileText, Image, Trash2 } from "lucide-react";
-
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API = `${API_BASE}/api/grados`;
 
@@ -158,7 +158,67 @@ export default function GradosPage() {
       fetchList(page);
     } catch (err) {
       console.error(err);
-      alert(err.message || "No se pudo eliminar el grado.");
+      alert(err.message || "No se pudo desactivar.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const restore = async (id) => {
+    try {
+      setLoading(true);
+      await fetchWithToken(`${API}/${id}/restaurar`, { method: "PATCH" });
+      fetchList(page);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "No se pudo restaurar.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ------ Eliminar permanentemente ------
+
+const [gradoAEliminar, setGradoAEliminar] = useState(null);
+const [showConfirm, setShowConfirm] = useState(false);
+const prepararEliminacionGrado = (grado) => {
+  setGradoAEliminar(grado);
+  setShowConfirm(true);
+};
+
+const confirmarEliminacionGrado = async () => {
+  setShowConfirm(false);
+  if (!gradoAEliminar) return;
+
+  try {
+    setLoading(true);
+    await fetchWithToken(`${API}/${gradoAEliminar._id}`, { method: "DELETE" });
+    fetchList(page);
+  } catch (err) {
+    console.error(err);
+    alert(err.message || "No se pudo eliminar permanentemente.");
+  } finally {
+    setLoading(false);
+    setGradoAEliminar(null);
+  }
+};
+
+const cancelarEliminacionGrado = () => {
+  setShowConfirm(false);
+  setGradoAEliminar(null);
+};
+
+
+
+  const hardDelete = async (id) => {
+    if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente este grado? Esta acción no se puede deshacer.")) return;
+    try {
+      setLoading(true);
+      await fetchWithToken(`${API}/${id}`, { method: "DELETE" });
+      fetchList(page);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "No se pudo eliminar permanentemente.");
     } finally {
       setLoading(false);
     }
@@ -345,13 +405,16 @@ export default function GradosPage() {
                             <i className="fas fa-edit me-1" /> Editar
                           </button>
                           <button 
-                            className="btn btn-danger btn-sm" 
-                            onClick={() => eliminarGrado(g._id)}
-                            title="Eliminar grado"
-                          >
-                            <i className="fas fa-trash me-1" /> Eliminar
-                          </button>
+  className="grados-btn-delete" 
+  onClick={() => prepararEliminacionGrado(g)}
+  title="Eliminar permanentemente"
+>
+  <Trash2 size={14} />
+</button>
+
+
                         </div>
+                        
                       </td>
                     </tr>
                   )) : !loading && (
@@ -467,6 +530,15 @@ export default function GradosPage() {
           </div>
         </div>
       )}
+      {showConfirm && (
+  <ConfirmDialog
+    message={`¿Estás seguro de que quieres eliminar permanentemente el grado "${gradoAEliminar?.nombre}"? Esta acción no se puede deshacer.`}
+    onConfirm={confirmarEliminacionGrado}
+    onCancel={cancelarEliminacionGrado}
+    visible={showConfirm}
+  />
+)}
     </div>
+    
   );
 }
