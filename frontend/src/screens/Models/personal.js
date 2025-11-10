@@ -34,6 +34,8 @@ import {
   Shield
 } from 'lucide-react';
 
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
+
 const API_URL = process.env.REACT_APP_API_URL+"/api/personal";
 
 const Personal = () => {
@@ -459,6 +461,57 @@ const handleFotoChange = (e) => {
     console.error('Error al editar el empleado:', error);
     showNotification(error.message || 'Error al editar el empleado', 'error');
   }
+};
+
+
+//Eliminar personal
+const [showConfirm, setShowConfirm] = useState(false);
+const [personalAEliminar, setPersonalAEliminar] = useState(null);
+
+const prepararEliminacionPersonal = () => {
+  if (!personalSeleccionado) return;
+  setPersonalAEliminar(personalSeleccionado);
+  setShowConfirm(true);
+};
+
+const confirmarEliminacionPersonal = async () => {
+  setShowConfirm(false);
+  if (!personalAEliminar) return;
+
+  try {
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${personalAEliminar._id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || "Error al eliminar el empleado");
+    }
+
+    await cargarPersonal();
+    setPersonalSeleccionado(null);
+    resetForm();
+
+    showNotification(
+      `Empleado "${personalAEliminar.nombres} ${personalAEliminar.apellidos}" eliminado exitosamente`,
+      "success"
+    );
+    setPersonalAEliminar(null);
+  } catch (err) {
+    console.error("❌ Error eliminando personal:", err);
+    showNotification(err.message || "Error al eliminar el empleado", "error");
+  }
+};
+
+const cancelarEliminacionPersonal = () => {
+  setShowConfirm(false);
+  setPersonalAEliminar(null);
 };
 
 
@@ -1649,15 +1702,24 @@ const handleOpenEditModal = (empleado) => {
 
                 <div className="modal-actions">
                   <motion.button 
-                    type="button" 
-                    className="btn btn-danger" 
-                    onClick={handleEliminarPersonal}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Trash2 size={16} />
-                    Eliminar
-                  </motion.button>
+  type="button" 
+  className="btn btn-danger" 
+  onClick={prepararEliminacionPersonal}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+>
+  <Trash2 size={16} />
+  Eliminar
+</motion.button>
+{showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar al empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}"?`}
+    onConfirm={confirmarEliminacionPersonal}
+    onCancel={cancelarEliminacionPersonal}
+    visible={showConfirm}
+  />
+)}
+
                   <motion.button 
                     type="button" 
                     className="btn-cancelar" 
