@@ -40,8 +40,7 @@ const Login = () => {
     // Obtener el Token de ID
     const token = await user.getIdToken();
     const displayName = user.displayName;
-    console.log("Token de ID:", token); // Envía este token al backend
-    console.log("Usuario logueado con Google:", user);
+    
     await saveUserToAPI(user, displayName, null);
   } catch (error) {
     console.error("Error en login con Google:", error.message);
@@ -87,7 +86,7 @@ const Login = () => {
         }
           // Obtener el Token de ID
           const token = await user.getIdToken();
-          console.log("Token de ID:", token); // Envía este token al backend
+         
         alert("Inicio de sesión exitoso");
       } catch (error) {
         if (error.code === "auth/too-many-requests") {
@@ -123,7 +122,7 @@ const saveUserToAPI = async (user, name, password) => {
     });
 
     const data = await response.json();
-    console.log("Usuario guardado en la API:", data);
+   
 
   } catch (error) {
     console.error("Error al guardar el usuario en la API:", error);

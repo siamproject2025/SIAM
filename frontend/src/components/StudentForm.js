@@ -5,6 +5,12 @@ import {
   ImagePlus,
   Upload,
 } from 'lucide-react';
+import axios from 'axios';
+import { auth } from "../components/authentication/Auth";
+
+const API_HOST = process.env.REACT_APP_API_URL;
+const API_GRADOS = `${API_HOST}/api/grados`;
+
 const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) => {
   const [formData, setFormData] = useState({
     nombre_completo: '',
@@ -30,31 +36,66 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
 
   const [errors, setErrors] = useState({});
   const [showNotification, setShowNotification] = useState(false);
-   const [notification, setNotification] = useState(null);
-  
+  const [notification, setNotification] = useState(null);
+ const [grados, setGrados] = useState([]);
+  const [loadingGrados, setLoadingGrados] = useState(false);
 
-   useEffect(() => {
-  if (student) {
-    const formattedStudent = { ...student };
+  const obtenerGrados = async () => {
+    try {
+      setLoadingGrados(true);
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
+      const config = { 
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        } 
+      };
 
-    // Formatear fecha
-    if (student.fecha_nacimiento) {
-      formattedStudent.fecha_nacimiento = student.fecha_nacimiento.split('T')[0];
+      const response = await axios.get(API_GRADOS, config);
+      
+      // Extraer solo el campo "grado" de cada objeto
+      const gradosList = response.data.items.map(item => item.grado);
+      setGrados(gradosList);
+      
+    } catch (error) {
+      console.error("❌ Error al cargar los grados:", error);
+      mostrarNotificacion("Error al cargar la lista de grados", "error");
+      // Grados por defecto en caso de error
+      setGrados([
+        'Primer Grado',
+        'Segundo Grado', 
+        'Tercer Grado',
+        'Cuarto Grado',
+        'Quinto Grado',
+        'Sexto Grado'
+      ]);
+    } finally {
+      setLoadingGrados(false);
     }
+  };
+   useEffect(() => {
+    obtenerGrados();
+  }, []);
 
-    // Si viene imagen desde el backend (base64)
-    formattedStudent.foto_preview = student.imagen
-      ? `data:image/png;base64,${student.imagen}`
-      : null;
+  useEffect(() => {
+    if (student) {
+      const formattedStudent = { ...student };
 
-    formattedStudent.imagen = null; // evitar conflictos
+      // Formatear fecha
+      if (student.fecha_nacimiento) {
+        formattedStudent.fecha_nacimiento = student.fecha_nacimiento.split('T')[0];
+      }
 
-    setFormData(formattedStudent);
-  }
-}, [student]);
+      formattedStudent.foto_preview = student.imagen && student.imagen !== "null"
+  ? `data:image/png;base64,${student.imagen}`
+  : null;
 
+
+      setFormData(formattedStudent);
+    }
+  }, [student]);
   
-    const handleFotoChange = (e) => {
+  const handleFotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validar tamaño (5MB máximo)
@@ -69,42 +110,41 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
         return;
       }
 
-          setFormData(prev => {
-          if (prev.foto_preview) URL.revokeObjectURL(prev.foto_preview);
-          return {
-            ...prev,
-            imagen: file,
-            foto_preview: URL.createObjectURL(file)
-          };
-        });
+      setFormData(prev => {
+        if (prev.foto_preview) URL.revokeObjectURL(prev.foto_preview);
+        return {
+          ...prev,
+          imagen: file,
+          foto_preview: URL.createObjectURL(file)
+        };
+      });
     }
   };
 
-   const eliminarFoto = () => {
-      if (formData.foto_preview) {
-        URL.revokeObjectURL(formData.foto_preview);
-      }
-      setFormData(prev => ({
-        ...prev,
-        imagen: null,
-        foto_preview: null
-      }));
-    };
+  const eliminarFoto = () => {
+    if (formData.foto_preview) {
+      URL.revokeObjectURL(formData.foto_preview);
+    }
+    setFormData(prev => ({
+      ...prev,
+      imagen: null,
+      foto_preview: null
+    }));
+  };
 
   const mostrarNotificacion = (mensaje, tipo = 'success') => {
-      setNotification({ message: mensaje, type: tipo });
-      setTimeout(() => setNotification(null), 4000);
-    };
+    setNotification({ message: mensaje, type: tipo });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   // Obtener año actual para limitar fecha de nacimiento
   const getCurrentYear = () => new Date().getFullYear();
   const maxDate = `${getCurrentYear()}-12-31`;
-  const minDate = `${getCurrentYear() - 100}-01-01`; // Máximo 100 años atrás
+  const minDate = `${getCurrentYear() - 100}-01-01`;
 
   // Solo permitir números en campos de teléfono
   const handlePhoneChange = (e) => {
     const { name, value } = e.target;
-    // Solo permitir números y eliminar cualquier caracter no numérico
     const numericValue = value.replace(/[^\d]/g, '');
     
     setFormData(prev => ({
@@ -112,7 +152,6 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
       [name]: numericValue
     }));
     
-    // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -128,7 +167,6 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
       [name]: value
     }));
     
-    // Limpiar error del campo cuando el usuario empiece a escribir
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -148,7 +186,6 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     ];
 
     requiredFields.forEach(field => {
-      // Verificación segura para evitar el error de trim()
       const fieldValue = formData[field];
       if (!fieldValue || (typeof fieldValue === 'string' && !fieldValue.trim())) {
         newErrors[field] = 'Este campo es requerido';
@@ -191,32 +228,40 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
 
     setErrors(newErrors);
     
-    // Mostrar notificación si hay errores
     if (Object.keys(newErrors).length > 0) {
       setShowNotification(true);
-      // Ocultar notificación después de 5 segundos
       setTimeout(() => setShowNotification(false), 5000);
     }
     
     return Object.keys(newErrors).length === 0;
   };
 
+  // ✅ FUNCIÓN MEJORADA: Preparar datos para enviar al backend
+  const prepareDataForBackend = () => {
+    // Crear copia limpia del formData
+    const cleanData = { ...formData };
+    
+    // ❌ ELIMINAR CAMPOS QUE NO DEBEN IR AL BACKEND
+    delete cleanData.foto_preview; // Solo para preview en frontend
+    
+    // Si estamos en modo edición y no hay imagen nueva, eliminar el campo imagen
+    if (isEdit && !(cleanData.imagen instanceof File)) {
+      delete cleanData.imagen;
+    }
+    
+    return cleanData;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // ✅ Enviar solo los datos limpios al backend
+      const cleanData = prepareDataForBackend();
+     
+      onSubmit(cleanData);
     }
   };
 
-  // Grados disponibles
-  const grados = [
-    'Primer Grado',
-    'Segundo Grado', 
-    'Tercer Grado',
-    'Cuarto Grado',
-    'Quinto Grado',
-    'Sexto Grado'
-  ];
 
   return (
     <>
@@ -366,26 +411,23 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                   value={formData.grado_a_matricular}
                   onChange={handleChange}
                   className={errors.grado_a_matricular ? 'error' : ''}
+                  disabled={loadingGrados}
                 >
-                  <option value="">Seleccionar grado...</option>
+                  <option value="">
+                    {loadingGrados ? 'Cargando grados...' : 'Seleccionar grado...'}
+                  </option>
                   {grados.map((grado, index) => (
                     <option key={index} value={grado}>
                       {grado}
                     </option>
                   ))}
                 </select>
+                {loadingGrados && (
+                  <small style={{ color: '#666', fontStyle: 'italic' }}>
+                    Cargando lista de grados...
+                  </small>
+                )}
                 {errors.grado_a_matricular && <span className="error-message">{errors.grado_a_matricular}</span>}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="escuela_anterior">Escuela Anterior</label>
-                <input
-                  type="text"
-                  id="escuela_anterior"
-                  name="escuela_anterior"
-                  value={formData.escuela_anterior}
-                  onChange={handleChange}
-                />
               </div>
 
               <div className="form-group full-width">
@@ -521,73 +563,73 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                 />
                 {errors.contacto_emergencia_telefono && <span className="error-message">{errors.contacto_emergencia_telefono}</span>}
               </div>
-                <div className="form-group form-grid-full">
-                  <label>
-                    <ImagePlus size={16} />
-                    Foto del alumno
-                  </label>
-                  <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
-                    {formData.foto_preview ? (
-                      <div>
-                        <img 
-                          src={formData.foto_preview} 
-                          alt="Preview" 
-                          className="foto-preview"
-                        />
-                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                          <motion.button
-                            type="button"
-                            onClick={eliminarFoto}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="btn btn-danger"
-                          >
-                            <Trash2 size={16} />
-                            Eliminar foto
-                          </motion.button>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFotoChange}
-                            style={{ display: 'none' }}
-                            id="foto-upload-editar-replace"
-                          />
-                          <label 
-                            htmlFor="foto-upload-editar-replace"
-                            className="btn-upload-label"
-                          >
-                            <Upload size={16} />
-                            Cambiar foto
-                          </label>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
-                        <p style={{ color: '#666', marginBottom: '1rem' }}>
-                          Arrastra una imagen o haz clic para seleccionar
-                        </p>
+              <div className="form-group form-grid-full">
+                <label>
+                  <ImagePlus size={16} />
+                  Foto del alumno
+                </label>
+                <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
+                  {formData.foto_preview ? (
+                    <div>
+                      <img 
+                        src={formData.foto_preview} 
+                        alt="Preview" 
+                        className="foto-preview"
+                      />
+                      <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                        <motion.button
+                          type="button"
+                          onClick={eliminarFoto}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="btn btn-danger"
+                        >
+                          <Trash2 size={16} />
+                          Eliminar foto
+                        </motion.button>
                         <input
                           type="file"
                           accept="image/*"
                           onChange={handleFotoChange}
                           style={{ display: 'none' }}
-                          id="foto-upload-editar"
+                          id="foto-upload-editar-replace"
                         />
                         <label 
-                          htmlFor="foto-upload-editar"
+                          htmlFor="foto-upload-editar-replace"
                           className="btn-upload-label"
                         >
-                          <ImagePlus size={18} />
-                          Seleccionar imagen
+                          <Upload size={16} />
+                          Cambiar foto
                         </label>
-                        <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                          Formatos: JPG, PNG, GIF. Máximo 5MB
-                        </small>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                      <p style={{ color: '#666', marginBottom: '1rem' }}>
+                        Arrastra una imagen o haz clic para seleccionar
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFotoChange}
+                        style={{ display: 'none' }}
+                        id="foto-upload-editar"
+                      />
+                      <label 
+                        htmlFor="foto-upload-editar"
+                        className="btn-upload-label"
+                      >
+                        <ImagePlus size={18} />
+                        Seleccionar imagen
+                      </label>
+                      <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
+                        Formatos: JPG, PNG, GIF. Máximo 5MB
+                      </small>
+                    </div>
+                  )}
                 </div>
+              </div>
             </div>
           </section>
         </div>

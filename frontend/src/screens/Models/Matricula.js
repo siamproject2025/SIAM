@@ -83,10 +83,6 @@ const createStudent = async (studentData) => {
     for (const key in studentData) {
       formData.append(key, studentData[key]);
     }
-    if (studentData.imagen) {
-      formData.append('imagen', studentData.imagen);
-    }
-
     const response = await fetch(API_URL, {
       method: 'POST',
       body: formData,
@@ -128,8 +124,10 @@ const updateStudent = async (studentData) => {
     for (const key in studentData) {
       formData.append(key, studentData[key]);
     }
-    if (studentData.imagen) {
-      formData.append('imagen', studentData.imagen);
+    // DEBUG: Ver qué se está enviando
+   
+    for (let [key, value] of formData.entries()) {
+      
     }
 
     const response = await fetch(`${API_URL}/${editingStudent._id}`, {
@@ -209,8 +207,7 @@ const deleteSelectedStudents = async () => {
     return;
   }
 
-  if (!window.confirm(`¿Está seguro de que desea eliminar ${selectedStudents.length} estudiante(s)?`)) return;
-
+  
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');

@@ -7,7 +7,7 @@ const horarioSchema = new Schema({
   inicio: { type: String, required: true }, // formatear HH:mm
   fin: { type: String, required: true },
   docente_id: { type: Types.ObjectId, required: true, ref: 'Docente' },
-  grado: { type: String, required: true },
+  grado: { type: String, required: false },
   asignatura: { type: String, required: true },
   alumnos: [{type: Types.ObjectId, ref: "Alumno", default: []}]
 });

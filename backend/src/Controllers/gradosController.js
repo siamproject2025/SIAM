@@ -7,8 +7,7 @@ function validar(body, isUpdate = false) {
   if (!isUpdate) {
     const req = [
       "grado",
-      "total_creditos",
-      "total_horas_semanales",
+      "aula",
       "anio_academico",
       "estado",
       "fecha_actualizacion",
@@ -23,11 +22,8 @@ function validar(body, isUpdate = false) {
   if (body.estado && !["Activo", "Inactivo"].includes(body.estado)) {
     return "estado debe ser 'Activo' o 'Inactivo'.";
   }
-  if (body.total_creditos !== undefined && Number(body.total_creditos) < 0) {
-    return "total_creditos no puede ser negativo.";
-  }
-  if (body.total_horas_semanales !== undefined && Number(body.total_horas_semanales) < 0) {
-    return "total_horas_semanales no puede ser negativo.";
+  if (body.aula !== undefined && (!body.aula || body.aula.trim() === "")) {
+    return "aula es requerido.";
   }
   if (body.horarios_grado && !Array.isArray(body.horarios_grado)) {
     return "horarios_grado debe ser un arreglo.";
@@ -72,6 +68,7 @@ exports.listarGrados = async (req, res) => {
       where.$or = [
         { grado: { $regex: q, $options: "i" } },
         { descripcion: { $regex: q, $options: "i" } },
+        { aula: { $regex: q, $options: "i" } }, // Búsqueda por aula también
         { "materias_grado.nombre": { $regex: q, $options: "i" } },
         { "horarios_grado.materia.nombre": { $regex: q, $options: "i" } },
       ];

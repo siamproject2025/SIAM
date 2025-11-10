@@ -28,7 +28,8 @@ const CalendarioHorarios = ({ horarios = [], onDetalleHorario }) => {
 
           return {
             id: `${horario._id?.$oid || horario._id}-${dia}`,
-            title: `${horario.asignatura} - ${horario.grado}`,
+            title: `${horario.asignatura} - ${horario.grado || "Sin grado"}`,
+
             daysOfWeek: [diaNumero], // Array con el número del día
             startTime: horario.inicio,
             endTime: horario.fin,

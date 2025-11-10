@@ -14,9 +14,9 @@ import { auth } from "../../components/authentication/Auth";
 
 const API_HOST = process.env.REACT_APP_API_URL;
 const API_HORARIO = `${API_HOST}/api/horario`;
-const API_ALUMNO = `${API_HOST}/api/matriculas`;
+const API_ALUMNO = `${API_HOST}/api/matriculas`; 
 const API_DOCENTE = `${API_HOST}/api/personal`;
-const API_AULA = `${API_HOST}/api/aula`;
+const API_AULA = `${API_HOST}/api/grados`;
 
 const inicializarHorario = () => ({
   _id: "",
@@ -33,7 +33,6 @@ const inicializarHorario = () => ({
 const Horarios = () => {
   const { userRole, cargando } = useUserRole();
   const calendarioRef = useRef(null);
-
   const CAN_EDIT = userRole === "ADMIN" || userRole === "DOCENTE";
   const CAN_VIEW = userRole === "ADMIN" || userRole === "DOCENTE" || userRole === "PADRE";
   const CAN_SEE_ALL_TABS = userRole === "ADMIN" || userRole === "DOCENTE" || userRole === "PADRE";
@@ -72,8 +71,9 @@ const Horarios = () => {
         axios.get(API_DOCENTE, config),
       ]);
 
-      setHorarios(resHorario.data);console.log("ayudaaaaaaa",resHorario.data)
-      setAulas(resAulas.data);
+      setHorarios(resHorario.data);
+      setAulas(resAulas.data.items);
+      
       setAlumnos(resAlumnos.data.data);
       setDocentes(resDocentes.data);
     } catch (error) {
@@ -81,6 +81,13 @@ const Horarios = () => {
       showNotification("💥 Error al cargar datos.", "error");
     }
   }, [showNotification]);
+
+   const clickDetalleAlumnosHandler = async (id) => {
+    const res = await axios.get(`${API_HORARIO}/${id}`);
+    setHorarioSeleccionado(res.data);
+    setMostrarModalDetalle(true);
+    setEsModalDetalle(false);
+  };
 
   const clickDetalleHorarioHandler = async (id) => {
     try {
@@ -353,7 +360,7 @@ const Horarios = () => {
               horarios={horariosVisibles}
               aulas={aulas}
               onDetalleHorario={clickDetalleHorarioHandler}
-              onDetalleAlumnos={() => showNotification("Función de alumnos no implementada en esta vista.", "info")}
+              onDetalleAlumnos={clickDetalleAlumnosHandler}
               onCrearHorario={clickCrearModeloHandler}
               onEliminarHorario={clickEliminarModeloHandler}
               canEdit={CAN_EDIT}

@@ -23,7 +23,7 @@ body{
 
 .login-main{
   display: flex;
-  background: linear-gradient( #5389ff, #6dc2ff);
+  background: linear-gradient(60deg, #5389ff86, #8d2aff3a);
 
 }
 
@@ -196,7 +196,7 @@ body{
 }
 
 .login-center-buttons button:nth-child(2):hover{
-  background-color: #ececec;
+  background-color: #ffffff;
 }
 
 .login-bottom-p{

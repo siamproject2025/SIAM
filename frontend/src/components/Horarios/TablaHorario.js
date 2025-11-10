@@ -33,10 +33,9 @@ const BusquedaTablaHorarios = ({
   const cargarPersonal = async () => {
     try {
       setLoadingPersonal(true);
+      const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
        const user = auth.currentUser;
         const token = await user.getIdToken();
-      const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
-      
       const res = await fetch(API_URL, {
         headers: {
           Authorization: `Bearer ${token}`, 
@@ -46,7 +45,7 @@ const BusquedaTablaHorarios = ({
       if (!res.ok) throw new Error("Error al cargar personal");
 
       const data = await res.json();
-      console.log("Personal cargado:", data);
+     
       setPersonal(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error al obtener el personal:", err);
@@ -74,7 +73,7 @@ const BusquedaTablaHorarios = ({
   const aulasUnicas = useMemo(() => {
     return aulas.map(aula => ({
       id: normalizarId(aula._id),
-      nombre: aula.nombre
+      nombre: aula.grado
     })).sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [aulas]);
 
@@ -144,9 +143,9 @@ const BusquedaTablaHorarios = ({
 
     // Preparar datos para la tabla
     const tableData = horariosFiltrados.map(horario => {
-      const nombreAula = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id))?.nombre || "N/A";
+      const nombreAula = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id))?.grado || "N/A";
       const nombreDocente = obtenerNombreDocente(horario.docente_id);
-      
+     
       return [
         horario.dia.join(', '),
         `${horario.inicio} - ${horario.fin}`,
@@ -211,7 +210,10 @@ const BusquedaTablaHorarios = ({
 
   const generarTabla = () => {
     return horariosFiltrados.map((horario, i) => {
-      const nombreAula = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id))?.nombre || "N/A";
+    const aulaEncontrada = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id));
+const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.aula}` : "N/A";
+
+
       const nombreDocente = obtenerNombreDocente(horario.docente_id);
       
       return (
@@ -228,7 +230,7 @@ const BusquedaTablaHorarios = ({
           </td>
           <td className="cell-autor">{horario.asignatura}</td>
           <td className="cell-autor">{nombreAula}</td>
-          <td className="cell-autor">{horario.grado}</td>
+          
           <td className="cell-autor">
             {loadingPersonal ? (
               <span className="text-muted">Cargando...</span>
@@ -301,20 +303,7 @@ const BusquedaTablaHorarios = ({
         </div>
 
         {/* Filtro por Grado */}
-        <div style={{ position: "relative", minWidth: "150px" }}>
-          <select
-            className="donacion-busqueda"
-            value={filtros.grado}
-            onChange={(e) => handleFiltroChange("grado", e.target.value)}
-          >
-            <option value="">Todos los grados</option>
-            {gradosUnicos.map((grado) => (
-              <option key={grado} value={grado}>
-                {grado}
-              </option>
-            ))}
-          </select>
-        </div>
+        
 
         {/* Filtro por Aula */}
         <div style={{ position: "relative", minWidth: "150px" }}>
@@ -441,8 +430,8 @@ const BusquedaTablaHorarios = ({
               <th className="th-autor">Día</th>
               <th className="th-autor">Horario</th>
               <th className="th-autor">Asignatura</th>
-              <th className="th-autor">Aula</th>
-              <th className="th-autor">Grado</th>
+              <th className="th-autor">grado | Aula</th>
+             
               <th className="th-autor">Docente</th>
              <AdminOnly>
               <th className="th-autor" style={{ minWidth: 30 }}>
