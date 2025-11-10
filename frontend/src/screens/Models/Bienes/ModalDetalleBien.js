@@ -6,6 +6,8 @@ import {
   Upload,
 } from 'lucide-react';
 
+import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
+
 const ModalDetalleBien = ({ bien, onClose, onUpdate, onDelete }) => {
 const [bienEditado, setBienEditado] = useState({
   ...bien,
@@ -94,6 +96,18 @@ useEffect(() => {
       foto_preview: null
     }));
   };
+
+
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const prepararEliminacion = () => {
+  setShowConfirm(true);
+};
+
+const confirmarEliminacion = () => {
+  onDelete(bienEditado._id); // ✅ delega al padre
+  setShowConfirm(false);
+};
 
 
   const handleEliminar = () => {
@@ -258,9 +272,18 @@ useEffect(() => {
         <button className="btn btn-success" onClick={handleGuardar}>
           Guardar Cambios
         </button>
-        <button className="btn btn-danger" onClick={handleEliminar}>
-          Eliminar
-        </button>
+        <button className="btn btn-danger" onClick={prepararEliminacion}>
+  Eliminar
+</button>
+{showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar el bien "${bienEditado?.nombre}"?`}
+    onConfirm={confirmarEliminacion}
+    onCancel={() => setShowConfirm(false)}
+    visible={showConfirm}
+  />
+)}
+
         <button className="btn btn-secondary" onClick={onClose}>
           Cerrar
         </button>

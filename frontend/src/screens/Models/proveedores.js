@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Proveedores.css"
 import { auth } from "..//../components/authentication/Auth";
+import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 
 import { 
   Building2,
@@ -241,37 +242,57 @@ const handleEditarProveedor = async (e) => {
   }
 };
 
-const handleEliminarProveedor = async () => {
-  const proveedorAEliminar = proveedores.find(p => p._id === proveedorSeleccionado._id);
-  if (!window.confirm(`¿Seguro que deseas eliminar el proveedor "${proveedorAEliminar?.nombre}"?`)) return;
-  
+const [proveedorAEliminar, setProveedorAEliminar] = useState(null);
+const [showConfirm, setShowConfirm] = useState(false);
+
+
+const prepararEliminacionProveedor = () => {
+  if (!proveedorSeleccionado) return;
+
+  const proveedor = proveedores.find(p => p._id === proveedorSeleccionado._id);
+  if (!proveedor) return;
+
+  setProveedorAEliminar(proveedor);
+  setShowConfirm(true);
+};
+
+const confirmarEliminacionProveedor = async () => {
+  setShowConfirm(false);
+  if (!proveedorAEliminar) return;
+
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    const res = await fetch(`${API_URL}/${proveedorSeleccionado._id}`, { 
+    const res = await fetch(`${API_URL}/${proveedorAEliminar._id}`, { 
       method: 'DELETE',
       headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}`
       }
     });
-    
+
     if (!res.ok) {
       const errorData = await res.json();
       throw new Error(errorData.message || 'Error al eliminar el proveedor');
     }
-    
+
     await cargarProveedores();
     setProveedorSeleccionado(null);
     resetForm();
-    showNotification(`Proveedor "${proveedorAEliminar?.nombre}" eliminado exitosamente`, 'success');
-
+    showNotification(`Proveedor "${proveedorAEliminar.nombre}" eliminado exitosamente`, 'success');
+    setProveedorAEliminar(null);
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar el proveedor', 'error');
   }
 };
+
+const cancelarEliminacionProveedor = () => {
+  setShowConfirm(false);
+  setProveedorAEliminar(null);
+};
+
 
   const proveedoresFiltrados = proveedores.filter(p => {
     const terminoBusqueda = busqueda.toLowerCase();
@@ -1503,16 +1524,26 @@ const handleEliminarProveedor = async () => {
                         </div>
       
                         <div className="modal-actions">
-                          <motion.button 
-                            type="button" 
-                            className="btn btn-danger" 
-                            onClick={handleEliminarProveedor}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Trash2 size={16} />
-                            Eliminar
-                          </motion.button>
+                         <motion.button 
+  type="button" 
+  className="btn btn-danger" 
+  onClick={prepararEliminacionProveedor}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+>
+  <Trash2 size={16} />
+  Eliminar
+</motion.button>
+{showConfirm && (
+  <ConfirmDialog
+    message={`¿Seguro que deseas eliminar el proveedor "${proveedorAEliminar?.nombre}"?`}
+    onConfirm={confirmarEliminacionProveedor}
+    onCancel={cancelarEliminacionProveedor}
+    visible={showConfirm}
+  />
+)}
+
+
                           <motion.button 
                             type="button" 
                             className="btn-cancelar" 
