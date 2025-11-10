@@ -257,7 +257,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     if (validateForm()) {
       // ✅ Enviar solo los datos limpios al backend
       const cleanData = prepareDataForBackend();
-      console.log('📤 Datos limpios enviados:', cleanData);
+     
       onSubmit(cleanData);
     }
   };

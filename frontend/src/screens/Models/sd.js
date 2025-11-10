@@ -204,8 +204,7 @@ const Donaciones = () => {
         const donacionAEliminar = donaciones.find(d => (d._id || d.id_donacion) === (donacionSeleccionada._id || donacionSeleccionada.id_donacion));
         const idToDelete = donacionSeleccionada._id || donacionSeleccionada.id_donacion;
         
-        console.log('Eliminando donación ID:', idToDelete);
-  
+      
         const res = await fetch(`${API_URL}/${idToDelete}`, { method: 'DELETE' });
         
         if (!res.ok) {

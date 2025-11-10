@@ -125,9 +125,9 @@ const updateStudent = async (studentData) => {
       formData.append(key, studentData[key]);
     }
     // DEBUG: Ver qué se está enviando
-    console.log('📤 Datos enviados al backend:');
+   
     for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
+      
     }
 
     const response = await fetch(`${API_URL}/${editingStudent._id}`, {

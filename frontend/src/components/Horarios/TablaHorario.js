@@ -45,7 +45,7 @@ const BusquedaTablaHorarios = ({
       if (!res.ok) throw new Error("Error al cargar personal");
 
       const data = await res.json();
-      console.log("Personal cargado:", data);
+     
       setPersonal(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error al obtener el personal:", err);
@@ -145,7 +145,7 @@ const BusquedaTablaHorarios = ({
     const tableData = horariosFiltrados.map(horario => {
       const nombreAula = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id))?.grado || "N/A";
       const nombreDocente = obtenerNombreDocente(horario.docente_id);
-      console.log("pruebaa", aulas)
+     
       return [
         horario.dia.join(', '),
         `${horario.inicio} - ${horario.fin}`,

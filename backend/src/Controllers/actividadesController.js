@@ -3,7 +3,7 @@ const Actividad = require("../Models/Actividad");
 // POST /actividades
 const crearActividad = async (req, res) => {
   try {
-    console.log("📥 req.body recibido:", req.body);
+   
 
     const { nombre, fecha=Date, lugar, descripcion } = req.body;
 
@@ -28,7 +28,7 @@ const crearActividad = async (req, res) => {
       descripcion
     });
 
-    console.log("📄 Documento a guardar:", nuevaActividad);
+    
 
     await nuevaActividad.save();
 

@@ -71,9 +71,9 @@ const Horarios = () => {
         axios.get(API_DOCENTE, config),
       ]);
 
-      setHorarios(resHorario.data);console.log("ayudaaaaaaa",resHorario.data)
+      setHorarios(resHorario.data);
       setAulas(resAulas.data.items);
-      console.log("aulass",resAulas.data.items)
+      
       setAlumnos(resAlumnos.data.data);
       setDocentes(resDocentes.data);
     } catch (error) {

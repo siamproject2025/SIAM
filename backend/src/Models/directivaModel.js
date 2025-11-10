@@ -19,16 +19,28 @@ const documentoSchema = new mongoose.Schema({
     required: true,
     default: Date.now
   },
-  archivo_binario: {
-    type: Buffer
+  // Nuevos campos para Google Drive
+  driveFileId: {
+    type: String,
+    required: false
+  },
+  driveViewLink: {
+    type: String,
+    required: false
+  },
+  driveDownloadLink: {
+    type: String,
+    required: false
   },
   tamano_kb: {
     type: Number,
     min: 0
   },
-  hash_md5: {
-    type: String,
-    maxLength: 32
+  nombre_archivo_original: {
+    type: String
+  },
+  numero_sesion: {
+    type: String
   }
 });
 
@@ -121,6 +133,7 @@ directivaSchema.methods.actualizarEstado = function(nuevoEstado) {
   return this.save();
 };
 
+// Asegúrate de que el modelo se exporte correctamente
 const Directiva = mongoose.model('Directiva', directivaSchema);
 
 module.exports = Directiva;

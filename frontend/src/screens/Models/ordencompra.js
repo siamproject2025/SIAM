@@ -96,10 +96,10 @@ const [showConfirm, setShowConfirm] = useState(false);
     
     const cargarProveedores = async () => {
     const user = auth.currentUser;
-      console.log("probandoo",user)
+     
      try {
       const user = auth.currentUser;
-      console.log("probandoo",user)
+      
       if (!user) throw new Error('Usuario no autenticado');
       const token = await user.getIdToken();
 

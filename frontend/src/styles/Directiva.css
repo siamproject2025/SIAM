@@ -13,7 +13,56 @@
   margin-bottom: 2rem;
   width: 100%;
 }
+.documentos-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #bae6fd;
+}
 
+.tipo-doc-badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tipo-doc-badge.acta {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tipo-doc-badge.contrato {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.tipo-doc-badge.informe {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.tipo-doc-badge.certificado {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.tipo-doc-badge.nombramiento {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.tipo-doc-badge.otro {
+  background: #f1f5f9;
+  color: #475569;
+}
 .directiva-header h2 {
   font-size: 2rem;
   color: #333;

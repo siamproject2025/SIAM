@@ -188,12 +188,7 @@ const Donaciones = () => {
         formDataToSend.append('imagen', formData.imagen);
       }
 
-      console.log('Enviando datos:', {
-        tipo_donacion: formData.tipo_donacion,
-        cantidad_donacion: formData.cantidad_donacion,
-        id_almacen: formData.id_almacen
-      });
-
+     
       const response = await fetch(`${API_URL}`, {
         method: 'POST',
         body: formDataToSend,
