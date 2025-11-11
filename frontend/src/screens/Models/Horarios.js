@@ -191,30 +191,94 @@ const Horarios = () => {
 
   // ------------------------------ DESCARGA ------------------------------
   const descargarHorarioHandler = async (formato) => {
-    if (!calendarioRef.current) return showNotification("⚠️ El contenido del horario no está listo para descargar.", "warning");
-    setMostrarSelectorFormato(false);
-    showNotification(`⏳ Generando archivo en formato ${formato.toUpperCase()}...`, "info");
-    const nombreBase = `Horario_${gradoSeleccionado || 'General'}_${new Date().toLocaleDateString()}`;
+  if (!calendarioRef.current)
+    return showNotification("⚠️ El contenido del horario no está listo para descargar.", "warning");
 
-    try {
-      const canvas = await html2canvas(calendarioRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-      if (formato === 'png') {
-        canvas.toBlob(blob => saveAs(blob, `${nombreBase}.png`), 'image/png');
-        showNotification("✅ Horario PNG descargado con éxito.", "success");
-      } else if (formato === 'pdf') {
-        const imgData = canvas.toDataURL('image/jpeg', 1.0);
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-        const width = pdf.internal.pageSize.getWidth();
-        const height = pdf.internal.pageSize.getHeight();
-        pdf.addImage(imgData, 'JPEG', 0, 0, width, height);
-        pdf.save(`${nombreBase}.pdf`);
-        showNotification("✅ Horario PDF descargado con éxito.", "success");
+  setMostrarSelectorFormato(false);
+  showNotification(`⏳ Generando archivo en formato ${formato.toUpperCase()}...`, "info");
+
+  const nombreBase = `Horario_${gradoSeleccionado || "General"}_${new Date().toLocaleDateString("es-ES")}`;
+
+  try {
+    // 📸 Capturamos el horario con buena resolución
+    const canvas = await html2canvas(calendarioRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+    });
+
+    if (formato === "png") {
+      // Descarga en imagen
+      canvas.toBlob((blob) => saveAs(blob, `${nombreBase}.png`), "image/png");
+      showNotification("✅ Horario PNG descargado con éxito.", "success");
+    } else if (formato === "pdf") {
+      // Convertimos el horario en imagen
+      const imgData = canvas.toDataURL("image/jpeg", 1.0);
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const width = pdf.internal.pageSize.getWidth();
+      const height = pdf.internal.pageSize.getHeight();
+
+      // 🟦 Logo institucional
+      const logoUrl = "/Logo1.png";
+      try {
+        pdf.addImage(logoUrl, "PNG", 15, 10, 25, 25);
+      } catch (e) {
+        console.warn("⚠️ No se pudo cargar el logo. Verifica /public/Logo1.png");
       }
-    } catch (error) {
-      console.error(error);
-      showNotification("💥 Error al descargar el horario.", "error");
+
+      // 🏫 Encabezado
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(20);
+      pdf.setTextColor(0, 102, 204);
+      pdf.text("Escuela Experimental de Niños para la Música", width / 2, 20, { align: "center" });
+
+      pdf.setFontSize(14);
+      pdf.setTextColor(60, 60, 60);
+      pdf.text(`Horario Académico - ${gradoSeleccionado || "General"}`, width / 2, 30, { align: "center" });
+
+      // Línea decorativa
+      pdf.setDrawColor(0, 102, 204);
+      pdf.line(15, 35, width - 15, 35);
+
+      // 📅 Fecha
+      const fechaActual = new Date().toLocaleDateString("es-ES", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+      pdf.setFontSize(11);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Fecha de emisión: ${fechaActual}`, width - 90, 45);
+
+      // 🧾 Insertar el horario (imagen del div)
+      const margenX = 20;
+      const margenY = 55;
+      const contenidoAncho = width - margenX * 2;
+      const imgAltura = (canvas.height * contenidoAncho) / canvas.width;
+      pdf.addImage(imgData, "JPEG", margenX, margenY, contenidoAncho, imgAltura);
+
+      // Línea inferior
+      const footerY = margenY + imgAltura + 10;
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(15, footerY, width - 15, footerY);
+
+    
+
+      // 💾 Guardar PDF
+      pdf.save(`${nombreBase}.pdf`);
+      showNotification("✅ Horario PDF descargado con éxito.", "success");
     }
-  };
+  } catch (error) {
+    console.error(error);
+    showNotification("💥 Error al descargar el horario.", "error");
+  }
+};
+
 
   useEffect(() => { if (!cargando) obtenerHorarios(); }, [cargando, obtenerHorarios]);
 
