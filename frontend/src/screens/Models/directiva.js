@@ -1405,13 +1405,7 @@ const handleVerDocumento = async (documento) => {
                   <FileText size={16} />
                   Documentos
                 </button>
-                <button 
-                  className={`tab-button ${tabActivo === 'historial' ? 'active' : ''}`}
-                  onClick={() => setTabActivo('historial')}
-                >
-                  <Clock size={16} />
-                  Historial
-                </button>
+                
               </div>
 
               {tabActivo === 'info' && (

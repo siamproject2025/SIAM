@@ -200,8 +200,8 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     // Validación de edad numérica
     if (formData.edad) {
       const edadNum = parseInt(formData.edad);
-      if (isNaN(edadNum) || edadNum < 3 || edadNum > 25) {
-        newErrors.edad = 'Edad debe ser un número entre 3 y 25';
+      if (isNaN(edadNum) || edadNum < 5 || edadNum > 25) {
+        newErrors.edad = 'Edad debe ser un número entre 5 y 25';
       }
     }
 

@@ -11,6 +11,7 @@ import html2canvas from "html2canvas";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import { auth } from "../../components/authentication/Auth";
+import AdminOnly from "../../components/Plugins/AdminOnly";
 
 const API_HOST = process.env.REACT_APP_API_URL;
 const API_HORARIO = `${API_HOST}/api/horario`;
@@ -350,7 +351,7 @@ const Horarios = () => {
             <a href="#" className={`nav-link ${horariosContent ? "active" : ""}`} onClick={clickHorariosContent}><Table2 /> Horarios</a>
           </li>}
           {CAN_VIEW && <li className="nav-item">
-            <a href="#" className={`nav-link ${gradosContent ? "active" : ""}`} onClick={clickGradosContent}><Book /> Horario Por Grado</a>
+           <a href="#" className={`nav-link ${gradosContent ? "active" : ""}`} onClick={clickGradosContent}><Book /> Horario Por Grado</a>
           </li>}
         </motion.ul>
 
@@ -394,7 +395,7 @@ const Horarios = () => {
       </div>
 
       {/* Modal Detalle/Edición de Horario */}
-      <AnimatePresence>
+      <AdminOnly><AnimatePresence>
         {mostrarModalDetalle && <ModalDetalleHorario
           params={{ horario: horarioSeleccionado, docentes, aulas, esCreacion: esModalCreacion, alumnos, esDetalle: esModalDetalle }}
           onCerrar={clickCerrarModeloHandler}
@@ -403,7 +404,7 @@ const Horarios = () => {
           canEdit={CAN_EDIT}
           enviarNotificacion={showNotification}
         />}
-      </AnimatePresence>
+      </AnimatePresence></AdminOnly>
 
       {/* Selector de formato */}
       <AnimatePresence>

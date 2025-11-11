@@ -12,7 +12,7 @@ const {
   eliminarHorario,
 } = require("../Controllers/horariosController");
 
-router.get("/", obtenerHorarios);
+router.get("/", authenticateUser, obtenerHorarios);
 router.get("/:id", obtenerHorario);
 router.post("/", crearHorario);
 router.put("/:id", actualizarHorario);
