@@ -405,7 +405,7 @@ const cancelarEliminacionGrado = () => {
                             <i className="fas fa-edit me-1" /> Editar
                           </button>
                           <button 
-  className="grados-btn-delete" 
+  className="grados btn btn-danger" 
   onClick={() => prepararEliminacionGrado(g)}
   title="Eliminar permanentemente"
 >
