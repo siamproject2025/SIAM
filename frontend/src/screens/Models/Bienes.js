@@ -6,6 +6,8 @@ import Notification from '../../components/Notification';
 import * as XLSX from 'xlsx';
 import '../../styles/Models/Bienes.css';
 import { auth } from "..//../components/authentication/Auth";
+import { Download } from "lucide-react";
+
 
 import { 
   Package,
@@ -198,6 +200,7 @@ useEffect(() => {
     return cats.sort();
   }, [bienes]);
 
+  
   // Handlers CRUD
   const handleCrearBien = async (nuevoBien) => {
   try {
@@ -261,6 +264,118 @@ useEffect(() => {
     console.error(err.message);
     showNotification(err.message || 'Error al crear el bien', 'error');
   }
+};
+const handleExportarExcel = () => {
+  if (filteredItems.length === 0) {
+    showNotification("No hay bienes para exportar.", "error");
+    return;
+  }
+
+  // 🧾 Datos
+  const data = filteredItems.map((bien, index) => ({
+    "N°": index + 1,
+    "Código": bien.codigo,
+    "Nombre": bien.nombre,
+    "Categoría": bien.categoria,
+    "Descripción": bien.descripcion,
+    "Valor (Lps)": Number(bien.valor).toLocaleString("es-HN"),
+    "Estado": bien.estado,
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data, { origin: "A6" });
+  const wb = XLSX.utils.book_new();
+
+  // 🏫 Encabezado
+  XLSX.utils.sheet_add_aoa(
+    ws,
+    [
+      ["ESCUELA EXPERIMENTAL DE NIÑOS PARA LA MÚSICA"],
+      ["SISTEMA INTEGRADO ADMINISTRATIVO MUSICAL - S.I.A.M."],
+      [""],
+      ["LISTA DE BIENES"],
+      [""],
+    ],
+    { origin: "A1" }
+  );
+
+  // 📏 Fusionar y centrar celdas de A1 a G1, A2 a G2, etc.
+  ws["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
+  ];
+
+  // 📅 Fecha de generación
+  const fecha = new Date().toLocaleDateString("es-HN");
+  XLSX.utils.sheet_add_aoa(ws, [["Fecha de generación:", fecha]], {
+    origin: `A${data.length + 8}`,
+  });
+
+  // 📐 Ajustar ancho de columnas
+  ws["!cols"] = [
+    { wch: 5 },
+    { wch: 12 },
+    { wch: 25 },
+    { wch: 20 },
+    { wch: 40 },
+    { wch: 15 },
+    { wch: 15 },
+  ];
+
+  // ✨ Aplicar estilos básicos a celdas (bordes y centrado)
+  const cellRange = XLSX.utils.decode_range(ws["!ref"]);
+  for (let R = 0; R <= cellRange.e.r; ++R) {
+    for (let C = 0; C <= cellRange.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[cellAddress]) continue;
+      ws[cellAddress].s = {
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+        alignment: {
+          vertical: "center",
+          horizontal: "center",
+          wrapText: true,
+        },
+      };
+    }
+  }
+
+  // 🔠 Encabezados centrados y en negrita
+  for (let C = 0; C <= 6; ++C) {
+    const headerCell = XLSX.utils.encode_cell({ r: 5, c: C });
+    if (ws[headerCell]) {
+      ws[headerCell].s = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "D9E1F2" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        },
+      };
+    }
+  }
+
+  // 🏷️ Títulos del encabezado centrados y grandes
+  ["A1", "A2", "A4"].forEach((cell) => {
+    if (ws[cell]) {
+      ws[cell].s = {
+        font: { bold: true, sz: cell === "A4" ? 14 : 12 },
+        alignment: { horizontal: "center", vertical: "center" },
+      };
+    }
+  });
+
+  // 💾 Exportar
+  XLSX.utils.book_append_sheet(wb, ws, "Bienes");
+  const nombreArchivo = `Lista_de_Bienes_${fecha.replace(/\//g, "-")}.xlsx`;
+  XLSX.writeFile(wb, nombreArchivo);
 };
 
 
@@ -996,7 +1111,39 @@ const handleEliminarBien = async (id) => {
           </motion.div>
           Ayuda
         </motion.button>
-        
+        <motion.button
+  className="btn-exportar-excel"
+  onClick={handleExportarExcel}
+  title="Exportar inventario a Excel"
+  whileHover={{ 
+    scale: 1.08, 
+    boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  }}
+  whileTap={{ scale: 0.95 }}
+  transition={{ type: "spring", stiffness: 300 }}
+  style={{
+    padding: '0.75rem 1.5rem',
+    border: 'none',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg,  #667eea 0%, #764ba2 100%)',
+    color: 'white',
+    fontWeight: 600,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}
+>
+  <motion.div
+    animate={{ rotate: [0, 15, -15, 0] }}
+    transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+  >
+    <Download size={18} />
+  </motion.div>
+  Exportar Excel
+</motion.button>
+
         <motion.button 
           className="btn-nueva-bien" 
           onClick={() => setMostrarModalCrear(true)} 
