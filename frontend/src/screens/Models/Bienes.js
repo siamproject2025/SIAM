@@ -8,21 +8,32 @@ import '../../styles/Models/Bienes.css';
 import { auth } from "..//../components/authentication/Auth";
 import { Download } from "lucide-react";
 
+import { loadingController } from "../../api/loadingController";
 
-import { 
+
+import {
   Package,
+  DollarSign,
+  Calendar,
+  Shield,
+  Star,
   Search,
   HelpCircle,
   Plus,
-  Users,
-  Award,
-  Building2,
-  Truck,
-  Star,
-  Shield,
-  Calendar,
-  DollarSign
-} from 'lucide-react';
+  CheckCircle,
+  Wrench,
+  XCircle,
+  Share2,
+  Book,
+  Settings,
+  Edit,
+  Eye,
+  Trash2,
+  Filter,
+  Monitor,
+  Armchair,
+  Building, 
+} from "lucide-react";
 
 // Iconos svg
 const SearchIcon = () => (
@@ -100,6 +111,7 @@ const Bienes = () => {
 useEffect(() => {
   const cargarBienes = async () => {
     try {
+      loadingController.start();
       const user = auth.currentUser;
       if (!user) throw new Error('Usuario no autenticado');
       const token = await user.getIdToken();
@@ -116,43 +128,53 @@ useEffect(() => {
       setBienes(data);
     } catch (err) {
       console.error('Error al obtener los bienes:', err);
+    }finally {
+      loadingController.stop(); // 👈 detiene el loader
     }
   };
 
   cargarBienes();
 }, []);
+  // Calcular todo en un solo useMemo
+const { filteredItems, metrics, categorias } = useMemo(() => {
+  // Filtrado
+  let filtered = [...bienes];
+  if (filterValue) {
+    filtered = filtered.filter(bien =>
+      bien.codigo?.toLowerCase().includes(filterValue.toLowerCase()) ||
+      bien.nombre?.toLowerCase().includes(filterValue.toLowerCase()) ||
+      bien.categoria?.toLowerCase().includes(filterValue.toLowerCase()) ||
+      bien.descripcion?.toLowerCase().includes(filterValue.toLowerCase())
+    );
+  }
 
+  // Filtros adicionales...
+  if (estadoFiltro !== 'all') {
+    filtered = filtered.filter(bien => {
+      const estadoBien = bien.estado?.toUpperCase().trim();
+      const filtroEstado = estadoFiltro?.toUpperCase().trim();
+      return estadoBien === filtroEstado;
+    });
+  }
 
-  const filteredItems = useMemo(() => {
-    let filtered = [...bienes];
+  if (categoriaFiltro !== 'all') {
+    filtered = filtered.filter(bien => bien.categoria === categoriaFiltro);
+  }
 
-    // Filtro por búsqueda
-    if (filterValue) {
-      filtered = filtered.filter(bien =>
-        bien.codigo?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        bien.nombre?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        bien.categoria?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        bien.descripcion?.toLowerCase().includes(filterValue.toLowerCase())
-      );
-    }
+  // Métricas
+  const metrics = {
+    activos: bienes.filter(b => b.estado?.toUpperCase() === "ACTIVO").length,
+    mantenimiento: bienes.filter(b => b.estado?.toUpperCase() === "MANTENIMIENTO").length,
+    inactivos: bienes.filter(b => b.estado?.toUpperCase() === "INACTIVO").length,
+    prestados: bienes.filter(b => b.estado?.toUpperCase() === "PRESTAMO").length,
+    total: bienes.length
+  };
 
-    // Filtro por estado - CORREGIDO
-    if (estadoFiltro !== 'all') {
-      filtered = filtered.filter(bien => {
-        // Normalizar ambos valores para comparación
-        const estadoBien = bien.estado?.toUpperCase().trim();
-        const filtroEstado = estadoFiltro?.toUpperCase().trim();
-        return estadoBien === filtroEstado;
-      });
-    }
+  // Categorías
+  const categorias = [...new Set(bienes.map(b => b.categoria).filter(Boolean))].sort();
 
-    // Filtro por categoría
-    if (categoriaFiltro !== 'all') {
-      filtered = filtered.filter(bien => bien.categoria === categoriaFiltro);
-    }
-
-    return filtered;
-  }, [bienes, filterValue, estadoFiltro, categoriaFiltro]);
+  return { filteredItems: filtered, metrics, categorias };
+}, [bienes, filterValue, estadoFiltro, categoriaFiltro]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -171,11 +193,6 @@ useEffect(() => {
   }, []);
 
   // Calcular estadísticas
-  const totalBienes = bienes.length;
-  const bienesActivosCount = bienes.filter(b => b.estado?.toUpperCase() === "ACTIVO").length;
-  const bienesMantenimientoCount = bienes.filter(b => b.estado?.toUpperCase() === "MANTENIMIENTO").length;
-  const bienesInactivosCount = bienes.filter(b => b.estado?.toUpperCase() === "INACTIVO").length;
-  const bienesPrestadosCount = bienes.filter(b => b.estado?.toUpperCase() === "PRESTAMO").length;
   const valorTotal = bienes.reduce((sum, b) => sum + (parseFloat(b.valor) || 0), 0);
 
   const showNotification = (message, type) => {
@@ -184,26 +201,13 @@ useEffect(() => {
   };
 
   // Calcular métricas - CORREGIDO
-  const metrics = useMemo(() => {
-    return {
-      activos: bienes.filter(b => b.estado?.toUpperCase() === "ACTIVO").length,
-      mantenimiento: bienes.filter(b => b.estado?.toUpperCase() === "MANTENIMIENTO").length,
-      inactivos: bienes.filter(b => b.estado?.toUpperCase() === "INACTIVO").length,
-      prestados: bienes.filter(b => b.estado?.toUpperCase() === "PRESTAMO").length,
-      total: bienes.length
-    };
-  }, [bienes]);
 
-  // Obtener categorías únicas
-  const categorias = useMemo(() => {
-    const cats = [...new Set(bienes.map(b => b.categoria).filter(Boolean))];
-    return cats.sort();
-  }, [bienes]);
 
   
   // Handlers CRUD
   const handleCrearBien = async (nuevoBien) => {
   try {
+    loadingController.start();
     if (!nuevoBien.codigo.trim()) {
       showNotification('El código del bien es obligatorio', 'error');
       return;
@@ -263,7 +267,9 @@ useEffect(() => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al crear el bien', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 const handleExportarExcel = () => {
   if (filteredItems.length === 0) {
@@ -381,6 +387,7 @@ const handleExportarExcel = () => {
 
 const handleEditarBien = async (bienActualizado) => {
   try {
+    loadingController.start();
     if (!bienActualizado.codigo.trim()) {
       showNotification('El código del bien es obligatorio', 'error');
       return;
@@ -432,7 +439,9 @@ const handleEditarBien = async (bienActualizado) => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al editar el bien', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 
@@ -440,6 +449,7 @@ const handleEliminarBien = async (id) => {
   const bienAEliminar = bienes.find(b => b._id === id);
   
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
@@ -464,25 +474,29 @@ const handleEliminarBien = async (id) => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar el bien', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 
   // Ordenamiento
-  const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      let first = a[sortDescriptor.column];
-      let second = b[sortDescriptor.column];
+ const sortedItems = useMemo(() => {
+  if (!sortDescriptor.column) return filteredItems;
+  
+  return [...filteredItems].sort((a, b) => {
+    let first = a[sortDescriptor.column];
+    let second = b[sortDescriptor.column];
 
-      if (sortDescriptor.column === "valor") {
-        first = Number(a.valor) || 0;
-        second = Number(b.valor) || 0;
-      }
+    if (sortDescriptor.column === "valor") {
+      first = Number(a.valor) || 0;
+      second = Number(b.valor) || 0;
+    }
 
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [filteredItems, sortDescriptor]);
+    const cmp = first < second ? -1 : first > second ? 1 : 0;
+    return sortDescriptor.direction === "descending" ? -cmp : cmp;
+  });
+}, [filteredItems, sortDescriptor]);
 
   // Paginación
   const pages = Math.ceil(sortedItems.length / rowsPerPage) || 1;
@@ -586,7 +600,7 @@ const handleEliminarBien = async (id) => {
                 transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
                 style={{ marginLeft: 'auto' }}
               >
-                <Building2 size={32} color="white" />
+                <Building size={32} color="white" />
               </motion.div>
             </motion.h2>
             
@@ -1346,129 +1360,158 @@ const handleEliminarBien = async (id) => {
 
       {/* Modal Ayuda */}
       {mostrarAyuda && (
-        <div className="modal-overlay" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div className="modal-content" style={{
-            background: 'white',
-            borderRadius: '15px',
-            padding: '2rem',
-            maxWidth: '600px',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
-          }}>
-            <h3 className="modal-title" style={{
-              fontSize: '1.8rem',
-              marginBottom: '1.5rem',
-              color: '#667eea',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              📚 Guía de Uso - Sistema de Bienes
-            </h3>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ 
-                color: '#667eea',
-                marginBottom: '0.5rem',
-                fontSize: '1.2rem',
-                fontWeight: 600
-              }}>
-                🔍 Búsqueda
-              </h4>
-              <p style={{ marginBottom: '0.5rem', color: '#666' }}>
-                Puedes buscar bienes por:
-              </p>
-              <ul style={{ 
-                marginLeft: '1.5rem',
-                marginBottom: '1rem',
-                color: '#666',
-                lineHeight: 1.8
-              }}>
-                <li><strong>Código:</strong> BIEN-001, BIEN-002, etc.</li>
-                <li><strong>Nombre:</strong> Laptop, Mesa, Silla, etc.</li>
-                <li><strong>Categoría:</strong> Tecnología, Mobiliario, etc.</li>
-                <li><strong>Descripción:</strong> Cualquier palabra en la descripción</li>
-              </ul>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ 
-                color: '#667eea',
-                marginBottom: '0.5rem',
-                fontSize: '1.2rem',
-                fontWeight: 600
-              }}>
-                📋 Estados de Bienes
-              </h4>
-              <ul style={{ 
-                marginLeft: '1.5rem',
-                marginBottom: '1rem',
-                color: '#666',
-                lineHeight: 1.8
-              }}>
-                <li><strong>🟢 Activo:</strong> Bienes en uso y disponibles</li>
-                <li><strong>🟡 Mantenimiento:</strong> Bienes en reparación o mantenimiento</li>
-                <li><strong>🔴 Inactivo:</strong> Bienes no disponibles o retirados</li>
-                <li><strong>🔵 Préstamo:</strong> Bienes prestados a terceros</li>
-              </ul>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ 
-                color: '#667eea',
-                marginBottom: '0.5rem',
-                fontSize: '1.2rem',
-                fontWeight: 600
-              }}>
-                ✨ Funciones Principales
-              </h4>
-              <ul style={{ 
-                marginLeft: '1.5rem',
-                marginBottom: '1rem',
-                color: '#666',
-                lineHeight: 1.8
-              }}>
-                <li><strong>Crear Bien:</strong> Agregar nuevos bienes al inventario</li>
-                <li><strong>Editar:</strong> Hacer clic en "Ver detalles" para editar</li>
-                <li><strong>Eliminar:</strong> Opción disponible en el modal de edición</li>
-                <li><strong>Filtrar:</strong> Usa los filtros de estado y categoría</li>
-                <li><strong>Ordenar:</strong> Haz clic en los encabezados de columna</li>
-              </ul>
-            </div>
-
-            <div className="modal-actions" style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginTop: '2rem'
-            }}>
+        <div className="horarios-modal-overlay horarios-modal-show">
+          <div className="horarios-modal-content">
+            <div className="horarios-modal-header">
+              <h3 className="horarios-modal-title">
+                <Package size={24} />
+                Ayuda - Sistema de Bienes
+              </h3>
               <button 
-                className="btn-cerrar" 
+                className="horarios-modal-close"
                 onClick={() => setMostrarAyuda(false)}
-                style={{
-                  padding: '0.75rem 2rem',
-                  border: 'none',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  fontWeight: 600,
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
               >
-                ✅ Entendido
+                <p size={20}>x</p>
+              </button>
+            </div>
+
+            <div className="horarios-modal-body">
+              <div className="horarios-help-section">
+                <h4 className="horarios-help-title">¿Cómo funciona el sistema de bienes?</h4>
+                <p className="horarios-help-text">
+                  El módulo de bienes te permite gestionar el inventario institucional, 
+                  controlando el estado, ubicación y mantenimiento de todos los activos.
+                </p>
+              </div>
+
+              <div className="horarios-help-section">
+                <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+                <ul className="horarios-help-list">
+                  <li className="horarios-help-item">
+                    <strong>Búsqueda y filtros:</strong> Encuentra bienes por código, nombre, categoría o descripción
+                  </li>
+                  <li className="horarios-help-item">
+                    <strong>Gestión de inventario:</strong> Crea, edita y actualiza información de bienes
+                  </li>
+                  <li className="horarios-help-item">
+                    <strong>Estados de bienes:</strong> Controla el estado (Activo, Mantenimiento, Inactivo, Préstamo)
+                  </li>
+                  <li className="horarios-help-item">
+                    <strong>Categorización:</strong> Organiza bienes por categorías como Tecnología, Mobiliario, etc.
+                  </li>
+                  <li className="horarios-help-item">
+                    <strong>Seguimiento:</strong> Monitorea ubicación y condición de cada bien
+                  </li>
+                </ul>
+              </div>
+
+              <div className="horarios-help-section">
+                <h4 className="horarios-help-title">Estados de bienes:</h4>
+                <div className="horarios-icons-grid">
+                  <div className="horarios-icon-item">
+                    <CheckCircle size={16} className="horarios-icon-success" />
+                    <span>ACTIVO - Bienes en uso y disponibles</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Wrench size={16} className="horarios-icon-warning" />
+                    <span>MANTENIMIENTO - Bienes en reparación</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <XCircle size={16} className="horarios-icon-danger" />
+                    <span>INACTIVO - Bienes no disponibles o retirados</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Share2 size={16} className="horarios-icon-info" />
+                    <span>PRÉSTAMO - Bienes prestados a terceros</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="horarios-help-section">
+                <h4 className="horarios-help-title">Categorías comunes:</h4>
+                <div className="horarios-icons-grid">
+                  <div className="horarios-icon-item">
+                    <Monitor size={16} className="horarios-icon-primary" />
+                    <span>Tecnología - Computadoras, impresoras, equipos</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Armchair size={16} className="horarios-icon-info" />
+                    <span>Mobiliario - Mesas, sillas, escritorios</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Book size={16} className="horarios-icon-success" />
+                    <span>Material Educativo - Libros, recursos didácticos</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Settings size={16} className="horarios-icon-warning" />
+                    <span>Equipos Especializados - Laboratorios, talleres</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="horarios-help-section">
+                <h4 className="horarios-help-title">Iconos y acciones:</h4>
+                <div className="horarios-icons-grid">
+                  <div className="horarios-icon-item">
+                    <Plus size={16} className="horarios-icon-new" />
+                    <span>Crear nuevo bien en el inventario</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Edit size={16} className="horarios-icon-primary" />
+                    <span>Editar información del bien</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Eye size={16} className="horarios-icon-info" />
+                    <span>Ver detalles completos del bien</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Trash2 size={16} className="horarios-icon-danger" />
+                    <span>Eliminar bien del inventario</span>
+                  </div>
+                  <div className="horarios-icon-item">
+                    <Filter size={16} className="horarios-icon-success" />
+                    <span>Filtrar por estado y categoría</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="horarios-help-section">
+                <h4 className="horarios-help-title">Consejos de uso:</h4>
+                <div className="horarios-tips">
+                  <div className="horarios-tip">
+                    <span className="horarios-tip-badge">🔍</span>
+                    <span>Usa la búsqueda para encontrar bienes rápidamente por código, nombre o descripción</span>
+                  </div>
+                  <div className="horarios-tip">
+                    <span className="horarios-tip-badge">📋</span>
+                    <span>Haz clic en "Ver detalles" para acceder a todas las opciones de edición</span>
+                  </div>
+                  <div className="horarios-tip">
+                    <span className="horarios-tip-badge">🔄</span>
+                    <span>Actualiza regularmente los estados de los bienes según su condición actual</span>
+                  </div>
+                  <div className="horarios-tip">
+                    <span className="horarios-tip-badge">📊</span>
+                    <span>Utiliza los filtros para organizar la vista por estado o categoría</span>
+                  </div>
+                  <div className="horarios-tip">
+                    <span className="horarios-tip-badge">🏷️</span>
+                    <span>Mantén un sistema de codificación consistente (BIEN-001, BIEN-002, etc.)</span>
+                  </div>
+                  <div className="horarios-tip">
+                    <span className="horarios-tip-badge">📝</span>
+                    <span>Proporciona descripciones detalladas para facilitar la identificación</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="horarios-modal-footer">
+              <button 
+                className="horarios-modal-btn-close"
+                onClick={() => setMostrarAyuda(false)}
+              >
+                Cerrar Ayuda
               </button>
             </div>
           </div>

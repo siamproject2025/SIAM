@@ -10,7 +10,7 @@ import { auth } from "..//components/authentication/Auth";
 import { 
   Calendar,
   Clock,
-  MapPin,
+  MapPin,X,Eye,Edit,Trash2,
   Users,
   Award,
   Plus,
@@ -668,57 +668,141 @@ function categorizarActividad(fechaActividad) {
 
       {/* Modal Ayuda */}
       {mostrarAyuda && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">📚 Guía de Uso - Sistema de Actividades</h3>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>🔍 Búsqueda</h4>
-              <p>Puedes buscar actividades por:</p>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                <li><strong>Nombre:</strong> Reunión, Capacitación, etc.</li>
-                <li><strong>Lugar:</strong> Sala de juntas, Auditorio, etc.</li>
-                <li><strong>Descripción:</strong> Cualquier palabra clave</li>
-              </ul>
-            </div>
+  <div className="horarios-modal-overlay horarios-modal-show">
+    <div className="horarios-modal-content">
+      <div className="horarios-modal-header">
+        <h3 className="horarios-modal-title">
+          <Calendar size={24} />
+          Ayuda - Sistema de Actividades
+        </h3>
+        <button 
+          className="horarios-modal-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>📋 Categorías Temporales</h4>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                <li><strong>🔴 Hoy:</strong> Actividades programadas para hoy</li>
-                <li><strong>🟡 Próximos 7 días:</strong> Actividades de la próxima semana</li>
-                <li><strong>🟢 Futuras:</strong> Actividades programadas a más de 7 días</li>
-                <li><strong>⚫ Finalizadas:</strong> Actividades que ya pasaron</li>
-              </ul>
-            </div>
+      <div className="horarios-modal-body">
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">¿Cómo funciona el sistema de actividades?</h4>
+          <p className="horarios-help-text">
+            El módulo de actividades te permite gestionar eventos, reuniones y actividades programadas, 
+            organizándolas automáticamente por categorías temporales para un mejor control.
+          </p>
+        </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>✨ Funciones Principales</h4>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                <li><strong>Crear Actividad:</strong> Agregar nuevas actividades programadas</li>
-                <li><strong>Editar:</strong> Hacer clic en cualquier actividad para modificarla</li>
-                <li><strong>Eliminar:</strong> Opción disponible en el modal de edición</li>
-                <li><strong>Filtrar:</strong> Usa la barra de búsqueda para encontrar actividades</li>
-              </ul>
-            </div>
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+          <ul className="horarios-help-list">
+            <li className="horarios-help-item">
+              <strong>Búsqueda y filtros:</strong> Encuentra actividades por nombre, lugar o descripción
+            </li>
+            <li className="horarios-help-item">
+              <strong>Gestión de eventos:</strong> Crea, edita y programa actividades
+            </li>
+            <li className="horarios-help-item">
+              <strong>Organización temporal:</strong> Las actividades se categorizan automáticamente por fecha
+            </li>
+            <li className="horarios-help-item">
+              <strong>Control de horarios:</strong> Especifica fecha, hora y lugar correctamente
+            </li>
+            <li className="horarios-help-item">
+              <strong>Validación de fechas:</strong> No se permiten actividades con fechas pasadas
+            </li>
+          </ul>
+        </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h4 style={{ color: 'var(--accent-color)', marginBottom: '0.5rem' }}>⚠️ Importante</h4>
-              <ul style={{ marginLeft: '1rem', marginBottom: '1rem' }}>
-                <li>No puedes crear actividades con fechas pasadas</li>
-                <li>Las actividades se categorizan automáticamente según su fecha</li>
-                <li>Recuerda especificar fecha, hora y lugar correctamente</li>
-              </ul>
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Categorías temporales:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <AlertCircle size={16} className="horarios-icon-danger" />
+              <span>HOY - Actividades programadas para hoy</span>
             </div>
-
-            <div className="modal-actions-actividades">
-              <button className="btn-cerrar" onClick={() => setMostrarAyuda(false)}>
-                ✅ Entendido
-              </button>
+            <div className="horarios-icon-item">
+              <Clock size={16} className="horarios-icon-warning" />
+              <span>PRÓXIMOS 7 DÍAS - Actividades de la próxima semana</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Calendar size={16} className="horarios-icon-success" />
+              <span>FUTURAS - Actividades programadas a más de 7 días</span>
+            </div>
+            <div className="horarios-icon-item">
+              <CheckCircle size={16} className="horarios-icon-secondary" />
+              <span>FINALIZADAS - Actividades que ya pasaron</span>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Iconos y acciones:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <Plus size={16} className="horarios-icon-new" />
+              <span>Crear Actividad - Programar nuevo evento</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Edit size={16} className="horarios-icon-primary" />
+              <span>Editar - Modificar información de actividad</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Eye size={16} className="horarios-icon-info" />
+              <span>Ver detalles - Información completa</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Trash2 size={16} className="horarios-icon-danger" />
+              <span>Eliminar - Cancelar actividad programada</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Search size={16} className="horarios-icon-success" />
+              <span>Buscar - Encontrar actividades específicas</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Consejos de uso:</h4>
+          <div className="horarios-tips">
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🔍</span>
+              <span>Usa la búsqueda para encontrar actividades rápidamente por nombre, lugar o descripción</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📅</span>
+              <span>Las actividades se categorizan automáticamente según su fecha</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">⏰</span>
+              <span>No puedes crear actividades con fechas pasadas</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📍</span>
+              <span>Recuerda especificar fecha, hora y lugar correctamente al crear actividades</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📱</span>
+              <span>Haz clic en cualquier actividad para ver y editar sus detalles</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🔄</span>
+              <span>Las categorías se actualizan automáticamente según la fecha actual</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="horarios-modal-footer">
+        <button 
+          className="horarios-modal-btn-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          Cerrar Ayuda
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

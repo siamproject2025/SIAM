@@ -3,30 +3,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Proveedores.css"
 import { auth } from "..//../components/authentication/Auth";
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
-
+import { loadingController } from "../../api/loadingController";
 import { 
   Building2,
   Mail,
   Phone,
   MapPin,
-  Globe,
-  Star,
-  FileText,
-  Calendar,
   Hash,
   Search,
   HelpCircle,
   Plus,
   Edit,
   Trash2,
-  X,
+  X,Clock,
   Save,
   Check,
   Package,
   Briefcase,
-  Shield,
-  Users,
-  Truck,
+  Users, Truck,          // Para Proveedores
+  CheckCircle,    // Para Activos
+  XCircle,        // Para Inactivos
+  Settings,       // Para Servicios
+  Boxes,          // Para Mixto
+  Star,           // Para Calificación
+  Eye,  
   Award
 } from 'lucide-react';
 
@@ -69,6 +69,7 @@ const Proveedores = () => {
 
   const cargarProveedores = async () => {
   try {
+    loadingController.start();
     setLoading(true);
 
     const user = auth.currentUser;
@@ -92,6 +93,7 @@ const Proveedores = () => {
     setProveedores([]);
   } finally {
     setLoading(false);
+    loadingController.stop();
   }
 };
 
@@ -1614,94 +1616,154 @@ const cancelarEliminacionProveedor = () => {
               {/* Modal Ayuda */}
               <AnimatePresence>
                 {mostrarAyuda && (
-                  <motion.div 
-                    className="modal-overlay" 
-                    onClick={() => setMostrarAyuda(false)}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <motion.div 
-                      className="modal-content" 
-                      style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto', paddingBottom: '80px' }} 
-                      onClick={(e) => e.stopPropagation()}
-                      initial={{ scale: 0.9, y: 50 }}
-                      animate={{ scale: 1, y: 0 }}
-                      exit={{ scale: 0.9, y: 50 }}
-                      transition={{ type: "spring", damping: 25 }}
-                    >
-                      <h3 className="modal-title">
-                        <FileText size={20} />
-                        Guía de Uso - Sistema de Proveedores
-                      </h3>
-                      
-                      <div style={{ marginBottom: '1rem' }}>
-                        <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Search size={16} />
-                          Búsqueda
-                        </h4>
-                        <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por: nombre, empresa, email, teléfono o ubicación.</p>
-                      </div>
-      
-                      <div style={{ marginBottom: '1rem' }}>
-                        <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Shield size={16} />
-                          Categorías
-                        </h4>
-                        <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                          <li><strong>🟢 Activos:</strong> Relación comercial activa</li>
-                          <li><strong>🔴 Inactivos:</strong> Sin actividad reciente</li>
-                          <li><strong>🟡 Suspendidos:</strong> Temporalmente suspendidos</li>
-                        </ul>
-                      </div>
-      
-                      <div style={{ marginBottom: '1rem' }}>
-                        <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Package size={16} />
-                          Tipos
-                        </h4>
-                        <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                          <li><strong>PRODUCTOS:</strong> Productos físicos</li>
-                          <li><strong>SERVICIOS:</strong> Proveedores de servicios</li>
-                          <li><strong>MIXTO:</strong> Productos y servicios</li>
-                        </ul>
-                      </div>
-      
-                      <div style={{ marginBottom: '1rem' }}>
-                        <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          ✨ Funciones
-                        </h4>
-                        <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                          <li>Clic en fila para ver/editar detalles</li>
-                          <li>Sistema de calificación 1-5 estrellas</li>
-                          <li>Búsqueda en tiempo real</li>
-                          <li>Vista organizada por estado</li>
-                        </ul>
-                      </div>
-                      <div style={{ 
-                        position: 'none', 
-                        
-                        padding: '1rem', 
-                        background: 'white', 
-                        borderTop: '1px solid #e0e0e0',
-                      
-                        display: 'flex',
-                        justifyContent: 'center'
-                      }}>
-                        <motion.button 
-                          className="btn-cerrar" 
+                  <div className="horarios-modal-overlay horarios-modal-show">
+                    <div className="horarios-modal-content">
+                      <div className="horarios-modal-header">
+                        <h3 className="horarios-modal-title">
+                          <Truck size={24} />
+                          Ayuda - Sistema de Proveedores
+                        </h3>
+                        <button 
+                          className="horarios-modal-close"
                           onClick={() => setMostrarAyuda(false)}
-                          style={{ width: '200px' }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
                         >
-                          <Check size={16} />
-                          Entendido
-                        </motion.button>
+                          <X size={20} />
+                        </button>
                       </div>
-                    </motion.div>
-                    
-                  </motion.div>
+
+                      <div className="horarios-modal-body">
+                        <div className="horarios-help-section">
+                          <h4 className="horarios-help-title">¿Cómo funciona el sistema de proveedores?</h4>
+                          <p className="horarios-help-text">
+                            El módulo de proveedores te permite gestionar todas las relaciones comerciales, 
+                            controlando la información de contacto, categorías y calificaciones de cada proveedor.
+                          </p>
+                        </div>
+
+                        <div className="horarios-help-section">
+                          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+                          <ul className="horarios-help-list">
+                            <li className="horarios-help-item">
+                              <strong>Búsqueda y filtros:</strong> Encuentra proveedores por nombre, empresa, email, teléfono o ubicación
+                            </li>
+                            <li className="horarios-help-item">
+                              <strong>Gestión de contactos:</strong> Crea, edita y actualiza información de proveedores
+                            </li>
+                            <li className="horarios-help-item">
+                              <strong>Estados comerciales:</strong> Controla el estado (Activo, Inactivo, Suspendido) de cada proveedor
+                            </li>
+                            <li className="horarios-help-item">
+                              <strong>Tipos de proveedor:</strong> Clasifica por Productos, Servicios o Mixto
+                            </li>
+                            <li className="horarios-help-item">
+                              <strong>Sistema de calificación:</strong> Evalúa proveedores con sistema de 1-5 estrellas
+                            </li>
+                          </ul>
+                        </div>
+
+                        <div className="horarios-help-section">
+                          <h4 className="horarios-help-title">Estados comerciales:</h4>
+                          <div className="horarios-icons-grid">
+                            <div className="horarios-icon-item">
+                              <CheckCircle size={16} className="horarios-icon-success" />
+                              <span>ACTIVOS - Relación comercial activa</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <XCircle size={16} className="horarios-icon-danger" />
+                              <span>INACTIVOS - Sin actividad reciente</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Clock size={16} className="horarios-icon-warning" />
+                              <span>SUSPENDIDOS - Temporalmente suspendidos</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="horarios-help-section">
+                          <h4 className="horarios-help-title">Tipos de proveedor:</h4>
+                          <div className="horarios-icons-grid">
+                            <div className="horarios-icon-item">
+                              <Package size={16} className="horarios-icon-primary" />
+                              <span>PRODUCTOS - Proveedores de productos físicos</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Settings size={16} className="horarios-icon-info" />
+                              <span>SERVICIOS - Proveedores de servicios</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Boxes size={16} className="horarios-icon-success" />
+                              <span>MIXTO - Productos y servicios</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="horarios-help-section">
+                          <h4 className="horarios-help-title">Iconos y acciones:</h4>
+                          <div className="horarios-icons-grid">
+                            <div className="horarios-icon-item">
+                              <Plus size={16} className="horarios-icon-new" />
+                              <span>Nuevo Proveedor - Registrar nuevo contacto</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Edit size={16} className="horarios-icon-primary" />
+                              <span>Editar - Modificar información del proveedor</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Eye size={16} className="horarios-icon-info" />
+                              <span>Ver detalles - Información completa</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Star size={16} className="horarios-icon-warning" />
+                              <span>Calificación - Sistema de 1-5 estrellas</span>
+                            </div>
+                            <div className="horarios-icon-item">
+                              <Trash2 size={16} className="horarios-icon-danger" />
+                              <span>Eliminar - Remover proveedor del sistema</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="horarios-help-section">
+                          <h4 className="horarios-help-title">Consejos de uso:</h4>
+                          <div className="horarios-tips">
+                            <div className="horarios-tip">
+                              <span className="horarios-tip-badge">🔍</span>
+                              <span>Usa la búsqueda para encontrar proveedores rápidamente por cualquier campo</span>
+                            </div>
+                            <div className="horarios-tip">
+                              <span className="horarios-tip-badge">📋</span>
+                              <span>Haz clic en cualquier fila para ver y editar los detalles del proveedor</span>
+                            </div>
+                            <div className="horarios-tip">
+                              <span className="horarios-tip-badge">⭐</span>
+                              <span>Utiliza el sistema de calificación para evaluar el desempeño de los proveedores</span>
+                            </div>
+                            <div className="horarios-tip">
+                              <span className="horarios-tip-badge">📊</span>
+                              <span>Organiza la vista por estado comercial para mejor control</span>
+                            </div>
+                            <div className="horarios-tip">
+                              <span className="horarios-tip-badge">📞</span>
+                              <span>Mantén actualizada la información de contacto de cada proveedor</span>
+                            </div>
+                            <div className="horarios-tip">
+                              <span className="horarios-tip-badge">🏷️</span>
+                              <span>Clasifica correctamente el tipo de proveedor para mejor organización</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="horarios-modal-footer">
+                        <button 
+                          className="horarios-modal-btn-close"
+                          onClick={() => setMostrarAyuda(false)}
+                        >
+                          Cerrar Ayuda
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </AnimatePresence>
             </div>

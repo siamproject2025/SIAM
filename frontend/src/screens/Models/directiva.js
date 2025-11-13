@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "../../styles/Directiva.css";
 import { auth } from "..//../components/authentication/Auth";
+import { loadingController } from "../../api/loadingController";
 
 import { 
   Users,
@@ -86,7 +87,7 @@ const Directiva = () => {
 const cargarMiembros = async () => {
   try {
     setLoading(true);
-
+    loadingController.start();
     // Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
@@ -109,6 +110,7 @@ const cargarMiembros = async () => {
     setMiembros([]);
   } finally {
     setLoading(false);
+    loadingController.stop()
   }
 };
 
@@ -213,6 +215,7 @@ const cargarMiembros = async () => {
   e.preventDefault();
 
   try {
+    loadingController.start();
     if (!formData.nombre.trim()) {
       showNotification('El nombre del miembro es obligatorio', 'error');
       return;
@@ -263,7 +266,9 @@ const cargarMiembros = async () => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al editar el miembro', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 
@@ -287,6 +292,7 @@ const confirmarEliminacionMiembro = async () => {
   if (!miembroAEliminar) return;
 
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
@@ -311,7 +317,9 @@ const confirmarEliminacionMiembro = async () => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar el miembro', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 const cancelarEliminacionMiembro = () => {
@@ -330,6 +338,7 @@ const handleAgregarDocumentoModal = async (e) => {
   }
 
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
@@ -371,10 +380,13 @@ const handleAgregarDocumentoModal = async (e) => {
     showNotification('Documento agregado exitosamente', 'success');
     resetDocumentoModalForm();
     cargarMiembros();
+    handleCloseModals();
   } catch (err) {
     console.error('Error detallado:', err);
     showNotification(err.message || 'Error al agregar documento', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 const handleEditarDocumentoModal = async (e) => {
@@ -428,6 +440,7 @@ const handleEditarDocumentoModal = async (e) => {
 
 const handleEliminarDocumentoModal = async (documentoId) => {
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
@@ -452,7 +465,9 @@ const handleEliminarDocumentoModal = async (documentoId) => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al eliminar documento', 'error');
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 // FUNCIÓN PARA DESCARGAR DOCUMENTOS
@@ -1662,6 +1677,7 @@ const handleVerDocumento = async (documento) => {
         <motion.button 
           type="submit" 
           className="btn-guardar"
+         
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
@@ -1767,7 +1783,7 @@ const handleVerDocumento = async (documento) => {
           Gestión de Documentos - {miembroSeleccionado.nombre}
         </h3>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
           {/* Lista de Documentos Existentes */}
           <div>
             <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Documentos Existentes</h4>
@@ -1947,99 +1963,159 @@ const handleVerDocumento = async (documento) => {
       {/* Modal Ayuda */}
       <AnimatePresence>
         {mostrarAyuda && (
-          <motion.div 
-            className="modal-overlay" 
-            onClick={() => setMostrarAyuda(false)}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="modal-content" 
-              style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto', paddingBottom: '80px' }} 
-              onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              transition={{ type: "spring", damping: 25 }}
-            >
-              <h3 className="modal-title">
-                <FileText size={20} />
-                Guía de Uso - Gestión de Directiva
-              </h3>
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Search size={16} />
-                  Búsqueda
-                </h4>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por: nombre, cargo, email, teléfono o empresa.</p>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Shield size={16} />
-                  Estados
-                </h4>
-                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li><strong>🟢 Activo:</strong> Miembro activo en la directiva</li>
-                  <li><strong>🔴 Inactivo:</strong> Miembro inactivo temporalmente</li>
-                  <li><strong>🟡 Suspendido:</strong> Miembro suspendido de funciones</li>
-                </ul>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileText size={16} />
-                  Documentos
-                </h4>
-                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li><strong>Actas:</strong> Documentos oficiales de reuniones</li>
-                  <li><strong>Contratos:</strong> Acuerdos y contratos firmados</li>
-                  <li><strong>Informes:</strong> Reportes y evaluaciones</li>
-                  <li><strong>Certificados:</strong> Certificaciones y acreditaciones</li>
-                  <li><strong>Nombramientos:</strong> Documentos de designación</li>
-                </ul>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Clock size={16} />
-                  Historial
-                </h4>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                  Registra el historial de cargos que ha ocupado cada miembro en la directiva.
-                </p>
-              </div>
-
-              <div style={{ 
-                position: 'sticky', 
-                bottom: '0', 
-                left: '0', 
-                right: '0', 
-                padding: '1rem', 
-                background: 'white', 
-                borderTop: '1px solid #e0e0e0',
-                marginLeft: '-2rem',
-                marginRight: '-2rem',
-                marginBottom: '-2rem',
-                display: 'flex',
-                justifyContent: 'center'
-              }}>
-                <motion.button 
-                  className="btn-cerrar" 
+          <div className="horarios-modal-overlay horarios-modal-show">
+            <div className="horarios-modal-content">
+              <div className="horarios-modal-header">
+                <h3 className="horarios-modal-title">
+                  <HelpCircle size={24} />
+                  Ayuda - Gestión de Directiva
+                </h3>
+                <button 
+                  className="horarios-modal-close"
                   onClick={() => setMostrarAyuda(false)}
-                  style={{ width: '200px' }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                 >
-                  <Check size={16} />
-                  Entendido
-                </motion.button>
+                  <X size={20} />
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
+
+              <div className="horarios-modal-body">
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">¿Cómo funciona el sistema de directiva?</h4>
+                  <p className="horarios-help-text">
+                    El módulo de directiva te permite gestionar los miembros de la directiva, 
+                    asignando cargos, contactos y documentación relevante para cada miembro.
+                  </p>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+                  <ul className="horarios-help-list">
+                    <li className="horarios-help-item">
+                      <strong>Búsqueda y filtros:</strong> Encuentra miembros por nombre, cargo, email, teléfono o empresa
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Gestión de miembros:</strong> Crea, edita y elimina miembros de la directiva
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Estados de miembros:</strong> Controla el estado (Activo, Inactivo, Suspendido) de cada miembro
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Gestión de documentos:</strong> Adjunta documentos PDF como actas, contratos, informes, etc.
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Historial de cargos:</strong> Registra el historial de cargos que ha ocupado cada miembro
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Estados de miembros:</h4>
+                  <div className="horarios-icons-grid">
+                    <div className="horarios-icon-item">
+                      <UserCheck size={16} className="horarios-icon-success" />
+                      <span>Activo - Miembro activo en funciones</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Clock size={16} className="horarios-icon-warning" />
+                      <span>Inactivo - Miembro inactivo temporalmente</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Shield size={16} className="horarios-icon-danger" />
+                      <span>Suspendido - Miembro suspendido de funciones</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Tipos de documentos:</h4>
+                  <div className="horarios-icons-grid">
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-primary" />
+                      <span>Actas - Documentos oficiales de reuniones</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-info" />
+                      <span>Contratos - Acuerdos y contratos firmados</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-success" />
+                      <span>Informes - Reportes y evaluaciones</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-warning" />
+                      <span>Certificados - Certificaciones y acreditaciones</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-new" />
+                      <span>Nombramientos - Documentos de designación</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Iconos y acciones:</h4>
+                  <div className="horarios-icons-grid">
+                    <div className="horarios-icon-item">
+                      <Edit size={16} className="horarios-icon-primary" />
+                      <span>Editar información del miembro</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-success" />
+                      <span>Gestionar documentos del miembro</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Trash2 size={16} className="horarios-icon-danger" />
+                      <span>Eliminar miembro</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Download size={16} className="horarios-icon-info" />
+                      <span>Descargar documento</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Plus size={16} className="horarios-icon-new" />
+                      <span>Nuevo miembro</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Consejos de uso:</h4>
+                  <div className="horarios-tips">
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge">🔍</span>
+                      <span>Usa la búsqueda para encontrar miembros rápidamente por cualquier campo</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge">📁</span>
+                      <span>Gestiona los documentos desde el icono de "FileText" en cada miembro</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge">📊</span>
+                      <span>Revisa las estadísticas en el encabezado para un resumen rápido del estado de la directiva</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge">🔄</span>
+                      <span>Actualiza regularmente los estados de los miembros según su situación actual</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge">💾</span>
+                      <span>Guarda documentos importantes como actas y contratos para mantener un registro histórico</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="horarios-modal-footer">
+                <button 
+                  className="horarios-modal-btn-close"
+                  onClick={() => setMostrarAyuda(false)}
+                >
+                  Cerrar Ayuda
+                </button>
+              </div>
+            </div>
+          </div>
+                )}
       </AnimatePresence>
     </>
   );

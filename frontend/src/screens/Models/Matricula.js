@@ -7,7 +7,7 @@ import StudentForm from '..//..//components/StudentForm';
 import Modal from '..//..//components/Modal';
 import Notification from '../../components/Notification';
 import { auth } from "..//../components/authentication/Auth";
-
+import { loadingController } from "../../api/loadingController";
 const API_URL = process.env.REACT_APP_API_URL+'/api/matriculas';
 
 function App() {
@@ -25,6 +25,7 @@ function App() {
     setError(null);
 
     try {
+      loadingController.start();
       const user = auth.currentUser;
       if (!user) {
         setError('No estás autenticado. Por favor inicia sesión.');
@@ -54,6 +55,7 @@ function App() {
       setStudents([]); // Asegurar que students sea un array vacío en caso de error
     } finally {
       setLoading(false);
+      loadingController.stop()
     }
   };
 
@@ -75,6 +77,7 @@ function App() {
 // Crear estudiante
 const createStudent = async (studentData) => {
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
@@ -110,12 +113,15 @@ const createStudent = async (studentData) => {
       message: error.message || "Ocurrió un error al crear el estudiante",
       type: "error",
     });
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 // Actualizar estudiante
 const updateStudent = async (studentData) => {
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
@@ -158,7 +164,9 @@ const updateStudent = async (studentData) => {
       message: error.message || "Ocurrió un error al actualizar el estudiante",
       type: "error",
     });
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 // Eliminar estudiante

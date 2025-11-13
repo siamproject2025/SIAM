@@ -1,16 +1,14 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import ModalCrearOrden from "../Models/OrdenCompra/ModalCrearOrden";
 import ModalDetalleOrden from "../Models/OrdenCompra/ModalDetalleOrden";
 import '../../styles/Models/ordencompra.css';
 import { auth } from "..//../components/authentication/Auth";
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
-
+import { loadingController } from "../../api/loadingController";
 import { 
   Search,
-  HelpCircle,
   Plus,
-  Users,
   Award,
   FileText,
   Truck,
@@ -18,7 +16,6 @@ import {
   Calendar,
   DollarSign,
   Filter,
-  Columns
 } from 'lucide-react';
 
 // Iconos SVG
@@ -98,6 +95,7 @@ const [showConfirm, setShowConfirm] = useState(false);
     const user = auth.currentUser;
      
      try {
+      loadingController.start();
       const user = auth.currentUser;
       
       if (!user) throw new Error('Usuario no autenticado');
@@ -116,6 +114,8 @@ const [showConfirm, setShowConfirm] = useState(false);
     } catch (err) {
       console.error('Error al cargar proveedores:', err);
       showNotification(err.message || 'Error al cargar proveedores', 'error');
+    }finally {
+      loadingController.stop(); // 👈 detiene el loader
     }
   };
 
