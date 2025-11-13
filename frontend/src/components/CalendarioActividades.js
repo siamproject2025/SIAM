@@ -6,7 +6,14 @@ import interactionPlugin from "@fullcalendar/interaction";
 import esLocale from "@fullcalendar/core/locales/es";
 import axios from "axios";
 import { auth } from "..//components/authentication/Auth";
-
+import {
+  Calendar,
+  MapPin,
+  FileText,
+  Tag,
+  Inbox,
+  X
+} from 'lucide-react';
 import "../styles/Models/Calendario.css"; // Importamos los estilos
 
 const API_URL = process.env.REACT_APP_API_URL+"/api/actividades"
@@ -398,13 +405,13 @@ const CalendarioActividades = forwardRef((props, ref) => {
             }}
           >
             <div className="tooltip-header">
-              <span className="tooltip-icon">📌</span>
+              <MapPin size={16} className="tooltip-icon" />
               <h3 className="tooltip-title">{tooltip.content.titulo}</h3>
             </div>
             
             <div className="tooltip-content">
               <div className="tooltip-item">
-                <span className="tooltip-item-icon">📅</span>
+                <Calendar size={16} className="tooltip-item-icon" />
                 <div className="tooltip-item-text">
                   <strong>Fecha</strong>
                   {tooltip.content.fecha}
@@ -412,7 +419,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
               </div>
               
               <div className="tooltip-item">
-                <span className="tooltip-item-icon">📍</span>
+                <MapPin size={16} className="tooltip-item-icon" />
                 <div className="tooltip-item-text">
                   <strong>Lugar</strong>
                   {tooltip.content.lugar}
@@ -420,7 +427,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
               </div>
               
               <div className="tooltip-item">
-                <span className="tooltip-item-icon">📝</span>
+                <FileText size={16} className="tooltip-item-icon" />
                 <div className="tooltip-item-text">
                   <strong>Descripción</strong>
                   {tooltip.content.descripcion}
@@ -439,9 +446,13 @@ const CalendarioActividades = forwardRef((props, ref) => {
           color: "#2c3e50",
           marginBottom: "15px",
           paddingBottom: "10px",
-          borderBottom: "2px solid #e0e0e0"
+          borderBottom: "2px solid #e0e0e0",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px"
         }}>
-          📅 Próximos Eventos
+          <Calendar size={20} />
+          Próximos Eventos
         </h3>
         
         {proximosEventos.length > 0 ? (
@@ -470,7 +481,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
                     {/* DETALLES DEBAJO */}
                     <div className="evento-detalles">
                       <div className="detalle-item">
-                        <span className="detalle-icon">📅</span>
+                        <Calendar size={14} className="detalle-icon" />
                         <span className="detalle-text">
                           {new Date(evento.date || "T00:00:00").toLocaleDateString("es-ES", {
                             weekday: "long",
@@ -481,12 +492,12 @@ const CalendarioActividades = forwardRef((props, ref) => {
                       </div>
                       
                       <div className="detalle-item">
-                        <span className="detalle-icon">📍</span>
+                        <MapPin size={14} className="detalle-icon" />
                         <span className="detalle-text">{evento.extendedProps.lugar}</span>
                       </div>
                       
                       <div className="detalle-item">
-                        <span className="detalle-icon">📝</span>
+                        <FileText size={14} className="detalle-icon" />
                         <span className="detalle-text">
                           {evento.extendedProps.descripcion.substring(0, 60)}
                           {evento.extendedProps.descripcion.length > 60 ? '...' : ''}
@@ -494,7 +505,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
                       </div>
                       
                       <div className="detalle-item">
-                        <span className="detalle-icon">🏷️</span>
+                        <Tag size={14} className="detalle-icon" />
                         <span className={`evento-badge ${categoria}`}>
                           {categoria}
                         </span>
@@ -511,10 +522,15 @@ const CalendarioActividades = forwardRef((props, ref) => {
             padding: "30px", 
             color: "#7f8c8d",
             background: "#f8f9fa",
-            borderRadius: "10px"
+            borderRadius: "10px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "8px"
           }}>
+            <Inbox size={24} />
             <p style={{ margin: 0, fontSize: "14px" }}>
-              📭 No hay eventos próximos
+              No hay eventos próximos
             </p>
           </div>
         )}
@@ -537,13 +553,13 @@ const CalendarioActividades = forwardRef((props, ref) => {
                 onClick={cerrarModal}
                 aria-label="Cerrar"
               >
-                ×
+                <X size={20} />
               </button>
             </div>
             
             <div className="modal-body">
               <div className="modal-item">
-                <div className="modal-item-icon">📅</div>
+                <Calendar size={18} className="modal-item-icon" />
                 <div className="modal-item-content">
                   <div className="modal-item-label">Fecha</div>
                   <div className="modal-item-value">{modal.content.fecha}</div>
@@ -551,7 +567,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
               </div>
               
               <div className="modal-item">
-                <div className="modal-item-icon">📍</div>
+                <MapPin size={18} className="modal-item-icon" />
                 <div className="modal-item-content">
                   <div className="modal-item-label">Lugar</div>
                   <div className="modal-item-value">{modal.content.lugar}</div>
@@ -559,7 +575,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
               </div>
               
               <div className="modal-item">
-                <div className="modal-item-icon">📝</div>
+                <FileText size={18} className="modal-item-icon" />
                 <div className="modal-item-content">
                   <div className="modal-item-label">Descripción</div>
                   <div className="modal-item-value">{modal.content.descripcion}</div>
@@ -567,7 +583,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
               </div>
               
               <div className="modal-item">
-                <div className="modal-item-icon">🏷️</div>
+                <Tag size={18} className="modal-item-icon" />
                 <div className="modal-item-content">
                   <div className="modal-item-label">Categoría</div>
                   <div className="modal-item-value">

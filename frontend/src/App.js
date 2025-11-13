@@ -7,7 +7,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import axios from "axios";
 import NavBar from './components/navBar';
 import Login from './components/authentication/Login';
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as  Router,Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Landing from "./screens/Landing";
 import Home from "./screens/Home";
 import Footer from './components/Footer';

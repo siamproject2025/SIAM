@@ -3,7 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Personal.css"
 import { auth } from "..//../components/authentication/Auth";
 import { 
-
+Sun,           // Para Vacaciones
+  UserX,         // Para Temporal
+  GraduationCap, // Para Practicante
+  Eye , UserCheck,
   Mail,
   Phone,
   Upload,
@@ -1789,100 +1792,167 @@ const handleOpenEditModal = (empleado) => {
       {/* Modal Ayuda */}
       <AnimatePresence>
         {mostrarAyuda && (
-          <motion.div 
-            className="modal-overlay-personal" 
-            onClick={() => setMostrarAyuda(false)}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="modal-content" 
-              style={{ maxWidth: '600px', maxHeight: '80vh', overflow: 'auto', paddingBottom: '80px' }} 
-              onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              transition={{ type: "spring", damping: 25 }}
-            >
-              <h3 className="modal-title">
-                <FileText size={20} />
-                Guía de Uso - Sistema de Personal
-              </h3>
-              
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Search size={16} />
-                  Búsqueda
-                </h4>
-                <p style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>Busca por: código, nombre, identidad, cargo, área o email.</p>
-              </div>
+  <div className="horarios-modal-overlay horarios-modal-show">
+    <div className="horarios-modal-content">
+      <div className="horarios-modal-header">
+        <h3 className="horarios-modal-title">
+          <Users size={24} />
+          Ayuda - Sistema de Personal
+        </h3>
+        <button 
+          className="horarios-modal-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Shield size={16} />
-                  Estados
-                </h4>
-                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li><strong>🟢 ACTIVO:</strong> Personal trabajando normalmente</li>
-                  <li><strong>🟡 VACACIONES:</strong> Personal en vacaciones</li>
-                  <li><strong>🟠 LICENCIA:</strong> Personal con licencia</li>
-                  <li><strong>🔴 INACTIVO:</strong> Personal retirado</li>
-                </ul>
-              </div>
+      <div className="horarios-modal-body">
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">¿Cómo funciona el sistema de personal?</h4>
+          <p className="horarios-help-text">
+            El módulo de personal te permite gestionar toda la información del personal académico y administrativo, 
+            incluyendo datos personales, contratos, estados laborales y documentación relevante.
+          </p>
+        </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Briefcase size={16} />
-                  Tipos de Contrato
-                </h4>
-                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li><strong>TIEMPO COMPLETO:</strong> 40 horas semanales</li>
-                  <li><strong>MEDIO TIEMPO:</strong> 20 horas semanales</li>
-                  <li><strong>TEMPORAL:</strong> Tiempo definido</li>
-                  <li><strong>HONORARIOS:</strong> Servicios profesionales</li>
-                  <li><strong>PRACTICANTE:</strong> En formación</li>
-                </ul>
-              </div>
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+          <ul className="horarios-help-list">
+            <li className="horarios-help-item">
+              <strong>Búsqueda y filtros:</strong> Encuentra personal por código, nombre, identidad, cargo, área o email
+            </li>
+            <li className="horarios-help-item">
+              <strong>Gestión de personal:</strong> Crea, edita y actualiza información del personal
+            </li>
+            <li className="horarios-help-item">
+              <strong>Estados laborales:</strong> Controla el estado (Activo, Vacaciones, Licencia, Inactivo) de cada empleado
+            </li>
+            <li className="horarios-help-item">
+              <strong>Tipos de contrato:</strong> Gestiona diferentes modalidades contractuales
+            </li>
+            <li className="horarios-help-item">
+              <strong>Documentación:</strong> Adjunta documentos importantes como contratos, identificaciones, etc.
+            </li>
+          </ul>
+        </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ color: '#667eea', marginBottom: '0.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ✨ Funciones
-                </h4>
-                <ul style={{ marginLeft: '1rem', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
-                  <li>Clic en fila para ver/editar detalles</li>
-                  <li>Búsqueda en tiempo real</li>
-                  <li>Ordenar por nombre y salario</li>
-                  <li>Vista organizada por estado</li>
-                </ul>
-              </div>
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Estados laborales:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <UserCheck size={16} className="horarios-icon-success" />
+              <span>ACTIVO - Personal trabajando normalmente</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Sun size={16} className="horarios-icon-warning" />
+              <span>VACACIONES - Personal en vacaciones</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Clock size={16} className="horarios-icon-orange" />
+              <span>LICENCIA - Personal con licencia</span>
+            </div>
+            <div className="horarios-icon-item">
+              <UserX size={16} className="horarios-icon-danger" />
+              <span>INACTIVO - Personal retirado</span>
+            </div>
+          </div>
+        </div>
 
-              <div style={{ 
-                position: 'sticky', 
-                bottom: '0', 
-                left: '0', 
-                right: '0', 
-                padding: '1rem', 
-                background: 'white', 
-                borderTop: '1px solid #e0e0e0',
-               
-                display: 'flex',
-                justifyContent: 'center'
-              }}>
-                <motion.button 
-                  className="btn-cerrar" 
-                  onClick={() => setMostrarAyuda(false)}
-                  style={{ width: '200px' }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Check size={16} />
-                  Entendido
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Tipos de contrato:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <Briefcase size={16} className="horarios-icon-primary" />
+              <span>TIEMPO COMPLETO - 40 horas semanales</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Briefcase size={16} className="horarios-icon-info" />
+              <span>MEDIO TIEMPO - 20 horas semanales</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Calendar size={16} className="horarios-icon-warning" />
+              <span>TEMPORAL - Tiempo definido</span>
+            </div>
+            <div className="horarios-icon-item">
+              <FileText size={16} className="horarios-icon-success" />
+              <span>HONORARIOS - Servicios profesionales</span>
+            </div>
+            <div className="horarios-icon-item">
+              <GraduationCap size={16} className="horarios-icon-new" />
+              <span>PRACTICANTE - En formación</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Iconos y acciones:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <Edit size={16} className="horarios-icon-primary" />
+              <span>Editar información del personal</span>
+            </div>
+            <div className="horarios-icon-item">
+              <FileText size={16} className="horarios-icon-success" />
+              <span>Gestionar documentos del empleado</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Trash2 size={16} className="horarios-icon-danger" />
+              <span>Eliminar registro de personal</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Eye size={16} className="horarios-icon-info" />
+              <span>Ver detalles completos</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Plus size={16} className="horarios-icon-new" />
+              <span>Nuevo empleado</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Consejos de uso:</h4>
+          <div className="horarios-tips">
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🔍</span>
+              <span>Usa la búsqueda para encontrar personal rápidamente por cualquier campo</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📋</span>
+              <span>Clic en cualquier fila para ver y editar los detalles del personal</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🔄</span>
+              <span>Actualiza regularmente los estados laborales según la situación actual</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📊</span>
+              <span>Utiliza los filtros para organizar la vista por estado o tipo de contrato</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">💾</span>
+              <span>Mantén actualizada la documentación de cada empleado</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📈</span>
+              <span>Ordena por nombre o salario para análisis rápidos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="horarios-modal-footer">
+        <button 
+          className="horarios-modal-btn-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          Cerrar Ayuda
+        </button>
+      </div>
+    </div>
+  </div>
+)}
       </AnimatePresence>
     </>
   );

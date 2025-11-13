@@ -3,6 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Donaciones.css"
 import { auth } from "..//../components/authentication/Auth";
 import { 
+   Heart,          // Para Donaciones
+  ShoppingCart,   // Para Alimentos
+  Music,          // Para Instrumentos musicales
+  PlusCircle,     // Para Medicina
+  Home,           // Para Enseres
+  Music2,         // Para Accesorios Musicales
+  BookOpen,        // Para Productos de higiene
+  Video,          // Para Otro
+  Camera,          // Para Fotos
   Apple,
   Shirt,
   Pill,
@@ -19,17 +28,13 @@ import {
   Hash,
   Edit,
   Trash2, Users,
-  X,
+  X,Eye,
   Save,
-  Check,
   ImagePlus,
   Upload,
   AlertCircle,
   CheckCircle,
-  Sparkles,
-  Heart,
   Gift,
-  HandHeart
 } from 'lucide-react';
 
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
@@ -1210,103 +1215,171 @@ const confirmarEliminacionDonacion = async () => {
         {/* Modal Ayuda Mejorado */}
         <AnimatePresence>
           {mostrarAyuda && (
-            <motion.div 
-              className="modal-overlay-donaciones" 
-              onClick={() => setMostrarAyuda(false)}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div 
-                className="modal-content-donaciones" 
-                style={{ maxWidth: '580px', maxHeight: '85vh' }}
-                onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.8, rotateX: 90 }}
-                animate={{ scale: 1, rotateX: 0 }}
-                exit={{ scale: 0.8, rotateX: 90 }}
-                transition={{ type: "spring", damping: 20 }}
-              >
-                <h3 className="modal-title">
-                  <Sparkles size={24} />
-                  Guía de Uso - Sistema de Donaciones
-                </h3>
-                
-                <div className="help-section">
-                  <h4>
-                    <Search size={18} />
-                    Búsqueda Inteligente
-                  </h4>
-                  <p>Utiliza la barra de búsqueda para filtrar donaciones por tipo, descripción, almacén o cantidad. Los resultados se actualizan en tiempo real.</p>
-                </div>
+  <div className="horarios-modal-overlay horarios-modal-show">
+    <div className="horarios-modal-content">
+      <div className="horarios-modal-header">
+        <h3 className="horarios-modal-title">
+          <Heart size={24} />
+          Ayuda - Sistema de Donaciones
+        </h3>
+        <button 
+          className="horarios-modal-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-                <div className="help-section">
-                  <h4>
-                    <Package size={18} />
-                    Tipos de Donación Disponibles
-                  </h4>
-                  <ul>
-                    <li><strong>Alimentos:</strong> </li>
-                    <li><strong>Instrumentos musicales:</strong> </li>
-                    <li><strong>Medicina:</strong> </li>
-                    <li><strong>Enseres:</strong> </li>
-                    <li><strong>Accesiorios Musuicales:</strong> </li>
-                    <li><strong>Útiles escolares:</strong> </li>
-                    <li><strong>Productos de higiene:</strong> </li>
-                    <li><strong>Material Audiovisual:</strong> </li>
-                    <li><strong>Material didactico:</strong> </li>
-                    <li><strong>Otro:</strong> </li>
-                  </ul>
-                </div>
+      <div className="horarios-modal-body">
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">¿Cómo funciona el sistema de donaciones?</h4>
+          <p className="horarios-help-text">
+            El módulo de donaciones te permite gestionar todas las donaciones recibidas, 
+            clasificándolas por tipo, almacén y estado para un control eficiente del inventario.
+          </p>
+        </div>
 
-                <div className="help-section">
-                  <h4>
-                    <Sparkles size={18} />
-                    Funciones Principales
-                  </h4>
-                  <ul>
-                    <li><strong>Agregar:</strong> Clic en "Nueva Donación" para registrar</li>
-                    <li><strong>Editar:</strong> Clic en cualquier fila para ver/editar detalles</li>
-                    <li><strong>Eliminar:</strong> Dentro del modal de edición</li>
-                    <li><strong>Fotos:</strong> Adjunta imágenes de hasta 5MB</li>
-                    <li><strong>Auto-guardado:</strong> La fecha se registra automáticamente</li>
-                    <li><strong>Sincronización:</strong> Los datos se actualizan cada 30 segundos</li>
-                  </ul>
-                </div>
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+          <ul className="horarios-help-list">
+            <li className="horarios-help-item">
+              <strong>Búsqueda inteligente:</strong> Filtra donaciones por tipo, descripción, almacén o cantidad
+            </li>
+            <li className="horarios-help-item">
+              <strong>Gestión completa:</strong> Registra, edita y actualiza información de donaciones
+            </li>
+            <li className="horarios-help-item">
+              <strong>Clasificación:</strong> Organiza donaciones por tipos específicos
+            </li>
+            <li className="horarios-help-item">
+              <strong>Control de almacenes:</strong> Asigna donaciones a almacenes específicos
+            </li>
+            <li className="horarios-help-item">
+              <strong>Gestión multimedia:</strong> Adjunta fotos de hasta 5MB por donación
+            </li>
+          </ul>
+        </div>
 
-                <div className="help-section">
-                  <h4>
-                    <Warehouse size={18} />
-                    Almacenes Disponibles
-                  </h4>
-                  <p>Selecciona el almacén donde se almacenará la donación. Cada almacén tiene un color distintivo para fácil identificación visual.</p>
-                </div>
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Tipos de donación:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <ShoppingCart size={16} className="horarios-icon-primary" />
+              <span>Alimentos - Productos alimenticios</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Music size={16} className="horarios-icon-info" />
+              <span>Instrumentos musicales - Equipos de música</span>
+            </div>
+            <div className="horarios-icon-item">
+              <PlusCircle size={16} className="horarios-icon-success" />
+              <span>Medicina - Productos médicos y farmacéuticos</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Home size={16} className="horarios-icon-warning" />
+              <span>Enseres - Artículos para el hogar</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Music2 size={16} className="horarios-icon-new" />
+              <span>Accesorios Musicales - Complementos para instrumentos</span>
+            </div>
+          </div>
+        </div>
 
-                <div style={{ 
-                  position: 'sticky',
-                  bottom: '0', 
-                  left: '0', 
-                  right: '0', 
-                  
-                  background: 'white', 
-                  borderTop: '2px solid #f0f0f0',
-                  
-                  display: 'flex',
-                  justifyContent: 'center'
-                }}>
-                  <motion.button 
-                    className="btn-cerrar-donaciones" 
-                    onClick={() => setMostrarAyuda(false)}
-                    style={{ minWidth: '200px' }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Check size={18} />
-                    ¡Entendido!
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Más tipos de donación:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <BookOpen size={16} className="horarios-icon-success" />
+              <span>Útiles escolares - Material educativo</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Droplet size={16} className="horarios-icon-info" />
+              <span>Productos de higiene - Artículos de limpieza personal</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Video size={16} className="horarios-icon-primary" />
+              <span>Material Audiovisual - Equipos de video y audio</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Book size={16} className="horarios-icon-warning" />
+              <span>Material didáctico - Recursos educativos</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Package size={16} className="horarios-icon-new" />
+              <span>Otro - Otras categorías de donación</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Iconos y acciones:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <Plus size={16} className="horarios-icon-new" />
+              <span>Nueva Donación - Registrar nueva donación</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Edit size={16} className="horarios-icon-primary" />
+              <span>Editar - Modificar información de donación</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Eye size={16} className="horarios-icon-info" />
+              <span>Ver detalles - Información completa</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Trash2 size={16} className="horarios-icon-danger" />
+              <span>Eliminar - Remover donación del sistema</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Camera size={16} className="horarios-icon-success" />
+              <span>Fotos - Adjuntar imágenes (hasta 5MB)</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Consejos de uso:</h4>
+          <div className="horarios-tips">
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🔍</span>
+              <span>Usa la búsqueda para encontrar donaciones rápidamente por cualquier campo</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📋</span>
+              <span>Haz clic en cualquier fila para ver y editar los detalles de la donación</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🔄</span>
+              <span>Los datos se sincronizan automáticamente cada 30 segundos</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">🏪</span>
+              <span>Selecciona el almacén adecuado para cada donación</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">📸</span>
+              <span>Adjunta fotos de las donaciones para mejor identificación</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">⏰</span>
+              <span>La fecha se registra automáticamente al crear la donación</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="horarios-modal-footer">
+        <button 
+          className="horarios-modal-btn-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          Cerrar Ayuda
+        </button>
+      </div>
+    </div>
+  </div>
+)}
         </AnimatePresence>
       </div>
     </>

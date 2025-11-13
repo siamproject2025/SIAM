@@ -7,7 +7,7 @@ import useUserRole from "./hooks/useUserRole";
 import "../styles/Models/Biblioteca.css";
 import { auth } from "../components/authentication/Auth";
 import ConfirmDialog from "./ConfirmDialog/ConfirmDialog";
-
+import { loadingController } from "../api/loadingController";
 import { 
   FiSearch,
   FiUpload,
@@ -62,6 +62,7 @@ export default function BibliotecaTest() {
   const cargarLibros = async () => {
     setLoading(true);
     try {
+      loadingController.start();
       const user = auth.currentUser;
       if (!user) throw new Error("Usuario no autenticado");
       const token = await user.getIdToken();
@@ -78,6 +79,7 @@ export default function BibliotecaTest() {
       showNotification(error.message || "Error al cargar libros", "error");
     } finally {
       setLoading(false);
+      loadingController.stop();
     }
   };
 
@@ -187,6 +189,7 @@ const prepararEliminacion = (libro) => {
   if (!libroAEliminar) return;
 
   try {
+    loadingController.start();
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
     const token = await user.getIdToken();
@@ -203,7 +206,9 @@ const prepararEliminacion = (libro) => {
   } catch (error) {
     console.error("Error al eliminar libro:", error);
     showNotification("❌ No se pudo eliminar el libro.", "error");
-  }
+  }finally {
+      loadingController.stop(); // 👈 detiene el loader
+    }
 };
 
 

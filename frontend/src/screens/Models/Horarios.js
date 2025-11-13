@@ -12,6 +12,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import { auth } from "../../components/authentication/Auth";
 import AdminOnly from "../../components/Plugins/AdminOnly";
+import { loadingController } from "../../api/loadingController";
 
 const API_HOST = process.env.REACT_APP_API_URL;
 const API_HORARIO = `${API_HOST}/api/horario`;
@@ -61,6 +62,7 @@ const Horarios = () => {
   // ------------------------------ FUNCIONES CON TOKEN ------------------------------
   const obtenerHorarios = useCallback(async () => {
     try {
+      loadingController.start();
       const user = auth.currentUser;
       const token = await user.getIdToken();
       const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -80,6 +82,8 @@ const Horarios = () => {
     } catch (error) {
       console.error("❌ Error al cargar los datos:", error);
       showNotification("💥 Error al cargar datos.", "error");
+    }finally {
+      loadingController.stop(); // 👈 detiene el loader
     }
   }, [showNotification]);
 
@@ -123,6 +127,7 @@ const Horarios = () => {
   const clickGuardarModeloHandler = async (horario, esCreacion) => {
     if (!CAN_EDIT) return showNotification("❌ Permiso denegado para guardar cambios.", "error");
     try {
+      loadingController.start();
       const user = auth.currentUser;
       const token = await user.getIdToken();
       const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
@@ -142,12 +147,15 @@ const Horarios = () => {
     } catch (error) {
       const { type, message } = error.response?.data || {};
       showNotification(`Error al guardar: ${message || error.message}`, "error");
+    }finally {
+      loadingController.stop(); // 👈 detiene el loader
     }
   };
 
   const clickEliminarModeloHandler = async (id_horario) => {
     if (!CAN_EDIT) return showNotification("❌ Permiso denegado para eliminar horarios.", "error");
     try {
+      loadingController.start();
       const user = auth.currentUser;
       const token = await user.getIdToken();
       await axios.delete(`${API_HORARIO}/${id_horario}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -156,6 +164,8 @@ const Horarios = () => {
     } catch (error) {
       const { type, message } = error.response?.data || {};
       showNotification(`Error al eliminar: ${message || error.message}`, "error");
+    }finally {
+      loadingController.stop(); // 👈 detiene el loader
     }
     clickCerrarModeloHandler();
   };

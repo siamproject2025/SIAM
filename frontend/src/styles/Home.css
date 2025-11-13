@@ -1,12 +1,11 @@
 .plugins-container {
   display: grid!important;
   grid-template-columns: repeat(4, 1fr); /* 🔹 4 columnas fijas */
-  gap: 1.5rem;
-  padding: 2rem;
+  gap: 30px;
+  padding: 40px 40px 15px 40px;
   background: #f5f7fa;
   margin: 0 auto;
   box-sizing: border-box;
-  margin-top: 15px;
 }
 
 /* === Cards Generales === */
