@@ -11,7 +11,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
     const [newQuestion, setNewQuestion] = useState({ title: '', content: '' });
     const [error, setError] = useState(null);
     
-    // 💡 NUEVO ESTADO: Para manejar la notificación
+    //  NUEVO ESTADO: Para manejar la notificación
     const [notification, setNotification] = useState(null); 
 
     useEffect(() => {
@@ -21,24 +21,24 @@ const QuestionList = ({ canAnswer, canAsk }) => {
    
     const fetchQuestions = async () => {
     try {
-        // 🔹 Obtener el usuario actual
+        //  Obtener el usuario actual
         const user = auth.currentUser;
         if (!user) {
             setError("Usuario no autenticado");
             return;
         }
 
-        // 🔹 Obtener token JWT del usuario
+        //  Obtener token JWT del usuario
         const token = await user.getIdToken();
 
-        // 🔹 Hacer la solicitud GET enviando el token en el header Authorization
+        //  Hacer la solicitud GET enviando el token en el header Authorization
         const res = await axios.get(`${API_URL}/questions`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
 
-        // 🔹 Guardar preguntas en estado
+        //  Guardar preguntas en estado
         setQuestions(res.data);
         setError(null);
     } catch (err) {
@@ -47,7 +47,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
     }
 };
 
-    // 💡 FUNCIÓN PARA CERRAR LA NOTIFICACIÓN
+    //  FUNCIÓN PARA CERRAR LA NOTIFICACIÓN
     const closeNotification = () => setNotification(null);
 
     const handleNewQuestionSubmit = async (e) => {
@@ -61,7 +61,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
     }
 
     try {
-        // 🔐 Obtener token JWT del usuario autenticado
+        //  Obtener token JWT del usuario autenticado
         const user = auth.currentUser;
         if (!user) throw new Error("Usuario no autenticado");
         const token = await user.getIdToken();
@@ -75,7 +75,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         setNewQuestion({ title: '', content: '' });
         fetchQuestions();
         
-        // 💡 Notificación de éxito
+        //  Notificación de éxito
         setNotification({
             message: "¡Pregunta publicada con éxito!",
             type: 'success'
@@ -83,7 +83,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         
     } catch (err) {
         const errorMessage = err.response?.data?.message || err.message || 'Error desconocido al crear la pregunta.';
-        // 💡 Notificación de error
+        //  Notificación de error
         setNotification({
             message: `Error al publicar: ${errorMessage}.`,
             type: 'error'
@@ -96,7 +96,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
     return (
         <div className="question-list-container">
             
-            {/* 💡 RENDERIZADO DEL COMPONENTE NOTIFICACIÓN */}
+            {/*  RENDERIZADO DEL COMPONENTE NOTIFICACIÓN */}
             {notification && (
                 <Notification
                     message={notification.message}
@@ -110,7 +110,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
 
             {canAsk && (
                 <div className="new-question-form-card">
-                    <h3>Hacer una nueva pregunta ❓</h3>
+                    <h3>Hacer una nueva pregunta </h3>
                     <form onSubmit={handleNewQuestionSubmit}>
                         <input
                             type="text"
@@ -141,7 +141,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
                             question={q}
                             canAnswer={canAnswer}
                             fetchQuestions={fetchQuestions}
-                            // 💡 PASAMOS LA FUNCIÓN PARA MOSTRAR NOTIFICACIONES
+                            //  PASAMOS LA FUNCIÓN PARA MOSTRAR NOTIFICACIONES
                             setGlobalNotification={setNotification} 
                         />
                     ))

@@ -36,7 +36,7 @@ const ChatFlotanteConsultas = () => {
 
             <div className={`chat-panel ${isOpen ? 'is-visible' : 'is-hidden'}`}>
                 <div className="chat-header">
-                    <h3>💬 {title}</h3>
+                    <h3> {title}</h3>
                     <button onClick={() => setIsOpen(false)} className="close-panel-btn">
                         <X size={20} />
                     </button>

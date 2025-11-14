@@ -363,20 +363,15 @@
   .btn-cancelar-donaciones,
   
   .btn-cerrar-donaciones {
-    padding: 0.8rem 0.8rem;
-    border: none;
+    padding: 8px 8px;
+    margin-left: 5px;
     border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
-    margin:5px;
+    border: none;
+    font-family: inherit;
   }
 
   .btn-guardar-donaciones {
-    background: #4CAF50;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
   }
 

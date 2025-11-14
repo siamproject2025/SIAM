@@ -12,14 +12,14 @@
     align-items: center;
     justify-content: center;
 }
-.grados-modal-input{
-
+.container-fluid{
+  padding: 0;
 }
 /* Header y botones */
 .grados-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 1.5rem 0;
+  padding: 25px 0;
   margin-bottom: 2rem;
   border-radius: 0 0 15px 15px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -40,6 +40,7 @@
   font-weight: 600;
   box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
   transition: all 0.3s ease;
+  
 }
 
 .grados-btn-primary:hover {

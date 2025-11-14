@@ -35,8 +35,8 @@ app.use(cors({ origin: true }));
 
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("🚀 Conectado a MongoDB"))
-  .catch(err => console.error("❌ Error MongoDB:", err));
+  .then(() => console.log(" Conectado a MongoDB"))
+  .catch(err => console.error(" Error MongoDB:", err));
 
 // Rutas API
 app.use("/api/compras", ordencompra);
@@ -65,9 +65,9 @@ app.use(express.static(path.join(__dirname, "../../frontend/build")));
 
 // Capturar cualquier ruta que no sea API
 app.get(/^\/(?!api).*/, (req, res) => {
-   res.send("¡Servidor funcionando correctamente! 🚀");
+   res.send("¡Servidor funcionando correctamente! ");
 });
 
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`✅ Servidor corriendo en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(` Servidor corriendo en http://localhost:${PORT}`));

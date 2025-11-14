@@ -35,8 +35,8 @@ const LogoutButton = () => {
   return (
     <div>
       <a
-        style={{ marginTop: "10px", width: "100px" }}
-        className="buttonExit"
+        
+        className="exitButton"
         onClick={handleLogout}
       >
         Salir

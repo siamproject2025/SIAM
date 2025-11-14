@@ -2,18 +2,18 @@ const mongoose = require("mongoose");
 const { Types } = mongoose;
 const Horario = require("../Models/Horario");
 
-// 🔹 Convierte "HH:MM" a minutos totales
+//  Convierte "HH:MM" a minutos totales
 function timeToMinutes(hhmm) {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
 }
 
-// 🔹 Verifica formato HH:MM
+//  Verifica formato HH:MM
 function validarFormatoHora(hora) {
   return /^\d{2}:\d{2}$/.test(hora);
 }
 
-// 🔹 Valida datos obligatorios y formato
+//  Valida datos obligatorios y formato
 function validarDatos(horario) {
   const camposRequeridos = [
     "aula_id",
@@ -49,7 +49,7 @@ function validarDatos(horario) {
   return null; // Sin errores
 }
 
-// 🔹 Comprueba conflictos con otros horarios
+//  Comprueba conflictos con otros horarios
 const validarSinConflictos = async (datos, idExcluido = null) => {
   const conflictos = {};
 
@@ -80,10 +80,10 @@ const validarSinConflictos = async (datos, idExcluido = null) => {
 
 
 // =======================
-// 🔸 CONTROLADORES CRUD
+//  CONTROLADORES CRUD
 // =======================
 
-// 🔹 Crear horario
+//  Crear horario
 exports.crearHorario = async (req, res) => {
   try {
     const { aula_id, docente_id, alumnos, dia, inicio, fin, grado, asignatura } = req.body;
@@ -102,7 +102,7 @@ exports.crearHorario = async (req, res) => {
     if (camposFaltantes.length > 0) {
       return res.status(400).json({
         type: "VALIDACION",
-        message: `⚠️ Faltan campos obligatorios: ${camposFaltantes.join(", ")}`,
+        message: ` Faltan campos obligatorios: ${camposFaltantes.join(", ")}`,
       });
     }
 
@@ -154,19 +154,19 @@ exports.crearHorario = async (req, res) => {
     await nuevoHorario.save();
 
     res.status(201).json({
-      message: "✅ El horario fue creado exitosamente y no presenta conflictos.",
+      message: " El horario fue creado exitosamente y no presenta conflictos.",
     });
   } catch (err) {
     res.status(500).json({
       type: "SERVER",
-      message: "💥 Ocurrió un error interno al intentar crear el horario. Detalles: " + err.message,
+      message: " Ocurrió un error interno al intentar crear el horario. Detalles: " + err.message,
     });
   }
 };
 
 
-// 🔹 Actualizar horario
-// 🔹 Actualizar horario
+//  Actualizar horario
+//  Actualizar horario
 exports.actualizarHorario = async (req, res) => {
   try {
     const { aula_id, docente_id, alumnos, dia, inicio, fin, grado, asignatura } = req.body;
@@ -185,7 +185,7 @@ exports.actualizarHorario = async (req, res) => {
     if (camposFaltantes.length > 0) {
       return res.status(400).json({
         type: "VALIDACION",
-        message: `⚠️ Faltan campos obligatorios: ${camposFaltantes.join(", ")}`,
+        message: ` Faltan campos obligatorios: ${camposFaltantes.join(", ")}`,
       });
     }
 
@@ -238,18 +238,18 @@ exports.actualizarHorario = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "✅ Los datos del horario fueron actualizados correctamente.",
+      message: " Los datos del horario fueron actualizados correctamente.",
     });
   } catch (err) {
     res.status(500).json({
       type: "SERVER",
       message:
-        "💥 Ocurrió un error interno al intentar actualizar el horario. Detalles: " + err.message,
+        " Ocurrió un error interno al intentar actualizar el horario. Detalles: " + err.message,
     });
   }
 };
 
-// 🔹 Obtener todos los horarios
+//  Obtener todos los horarios
 exports.obtenerHorarios = async (req, res) => {
   try {
     const horarios = await Horario.find();
@@ -273,7 +273,7 @@ exports.obtenerHorarios = async (req, res) => {
   }
 };
 
-// 🔹 Obtener un horario por ID
+//  Obtener un horario por ID
 exports.obtenerHorario = async (req, res) => {
   try {
     const horario = await Horario.findById(req.params.id);
@@ -293,7 +293,7 @@ exports.obtenerHorario = async (req, res) => {
   }
 };
 
-// 🔹 Eliminar horario
+//  Eliminar horario
 exports.eliminarHorario = async (req, res) => {
   try {
     const horario = await Horario.findByIdAndDelete(req.params.id);
@@ -305,7 +305,7 @@ exports.eliminarHorario = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "🗑️ El horario fue eliminado exitosamente.",
+      message: " El horario fue eliminado exitosamente.",
     });
   } catch (error) {
     res.status(500).json({

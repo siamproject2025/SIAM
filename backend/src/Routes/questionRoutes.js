@@ -58,7 +58,7 @@ router.post('/:id/answers', async (req, res) => {
     }
 });
 
-// 💡 Ruta GET para obtener todas las preguntas (necesaria para el fetchQuestions del frontend)
+//  Ruta GET para obtener todas las preguntas (necesaria para el fetchQuestions del frontend)
 router.get('/', async (req, res) => {
     try {
         const questions = await Question.find().sort({ createdAt: -1 });

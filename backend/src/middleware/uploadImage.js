@@ -33,8 +33,8 @@ mongoose.connection.once('open', () => {
 const uploadToGridFS = (file) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log(`📁 Archivo original: ${file.originalname}`);
-      console.log(`📊 Tamaño original: ${(file.buffer.length / 1024 / 1024).toFixed(2)} MB`);
+      console.log(` Archivo original: ${file.originalname}`);
+      console.log(` Tamaño original: ${(file.buffer.length / 1024 / 1024).toFixed(2)} MB`);
 
       const filename = `donacion-${Date.now()}-${file.originalname}`;
       
@@ -44,7 +44,7 @@ const uploadToGridFS = (file) => {
       
       const width = metadata.width;
       const height = metadata.height;
-      console.log(`📐 Dimensiones originales: ${width}x${height}`);
+      console.log(` Dimensiones originales: ${width}x${height}`);
 
       // *** REQUISITO 1: Redimensión FORZADA a 600x600 píxeles ***
       const TARGET_WIDTH = 600;
@@ -94,12 +94,12 @@ const uploadToGridFS = (file) => {
       const reduction = ((originalSize - processedSize) / originalSize * 100).toFixed(2);
       const meetsSizeRequirement = processedSize <= HALF_MB;
 
-      console.log(`✅ RESULTADOS PROCESAMIENTO CON SHARP:`);
+      console.log(` RESULTADOS PROCESAMIENTO CON SHARP:`);
       console.log(`   Dimensiones Finales: ${TARGET_WIDTH}x${TARGET_HEIGHT} (Forzado)`);
       console.log(`   Tipo de Archivo Final: ${targetMimeType}`);
       console.log(`   Original: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
       console.log(`   Procesado: ${(processedSize / 1024 / 1024).toFixed(2)} MB (Límite: 0.5 MB)`);
-      console.log(`   Estatus Peso: ${meetsSizeRequirement ? '🟢 OK' : '🔴 EXCEDIDO'}`);
+      console.log(`   Estatus Peso: ${meetsSizeRequirement ? ' OK' : ' EXCEDIDO'}`);
       console.log(`   Reducción: ${reduction}%`);
 
       // Subir a GridFS
@@ -117,13 +117,13 @@ const uploadToGridFS = (file) => {
 
       uploadStream.end(processedBuffer);
       uploadStream.on('finish', (file) => {
-        console.log(`📤 Archivo subido: ${file._id}`);
+        console.log(` Archivo subido: ${file._id}`);
         resolve(file);
       });
       uploadStream.on('error', reject);
 
     } catch (err) {
-      console.error('❌ Error en procesamiento:', err);
+      console.error(' Error en procesamiento:', err);
       reject(err);
     }
   });

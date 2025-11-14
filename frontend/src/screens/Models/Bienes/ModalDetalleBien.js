@@ -39,7 +39,7 @@ useEffect(() => {
     // Esto se ejecuta al desmontarse, es decir, al cerrar el modal
     if (bienEditado.foto_preview) {
       URL.revokeObjectURL(bienEditado.foto_preview);
-      console.log('✅ URL temporal revocada al cerrar modal');
+     
     }
   };
 }, [bienEditado.foto_preview]);
@@ -105,7 +105,7 @@ useEffect(() => {
 };
 
 const confirmarEliminacion = () => {
-  onDelete(bienEditado._id); // ✅ delega al padre
+  onDelete(bienEditado._id); //  delega al padre
   setShowConfirm(false);
 };
 
@@ -119,7 +119,7 @@ const confirmarEliminacion = () => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3 className="modal-title">📋 Detalle del Bien</h3>
+        <h3 className="modal-title"> Detalle del Bien</h3>
 
         <div className="modal-form-grid">
           <div className="form-group">
@@ -158,10 +158,10 @@ const confirmarEliminacion = () => {
               value={bienEditado.estado}
               onChange={(e) => setBienEditado({ ...bienEditado, estado: e.target.value })}
             >
-              <option value="ACTIVO">🟢 ACTIVO</option>
-              <option value="INACTIVO">🔴 INACTIVO</option>
-              <option value="MANTENIMIENTO">🟡 MANTENIMIENTO</option>
-              <option value="PRESTAMO">🔵 PRESTAMO</option>
+              <option value="ACTIVO"> ACTIVO</option>
+              <option value="INACTIVO"> INACTIVO</option>
+              <option value="MANTENIMIENTO"> MANTENIMIENTO</option>
+              <option value="PRESTAMO"> PRESTAMO</option>
             </select>
           </div>
 
@@ -215,19 +215,10 @@ const confirmarEliminacion = () => {
                     className="foto-preview"
                   />
                   <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                    <motion.button
-                      type="button"
-                      onClick={eliminarFoto}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="btn btn-danger"
-                    >
-                      <Trash2 size={16} />
-                      Eliminar foto
-                    </motion.button>
+                    
                     <input
                       type="file"
-                      accept="image/*"
+                      accept=".jpg,.jpeg"
                       onChange={handleFotoChange}
                       style={{ display: 'none' }}
                       id="foto-upload-editar-replace"
@@ -262,14 +253,14 @@ const confirmarEliminacion = () => {
                     Seleccionar imagen
                   </label>
                   <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                    Formatos: JPG, PNG, GIF. Máximo 5MB
+                    Formatos: JPG, JPEG
                   </small>
                 </div>
               )}
             </div>
           </div>
         <div className="modal-actions-orden d-flex flex-wrap gap-2 justify-content-end">
-        <button className="btn btn-success" onClick={handleGuardar}>
+        <button className="btn-guardar-donaciones" onClick={handleGuardar}>
           Guardar Cambios
         </button>
         <button className="btn btn-danger" onClick={prepararEliminacion}>
@@ -284,7 +275,7 @@ const confirmarEliminacion = () => {
   />
 )}
 
-        <button className="btn btn-secondary" onClick={onClose}>
+        <button className="btn btn-dark" onClick={onClose}>
           Cerrar
         </button>
       </div>

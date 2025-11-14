@@ -53,13 +53,7 @@ a {
     background-color: #4267b2;
     transition: 0.4s;
 }
-.item5 {
-    font-size: 20px;
-    background: #202025;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+
 .item5:hover {
     background-color: #da0e0e;
     transition: 0.4s;
@@ -73,7 +67,7 @@ a {
     font-size: 15px;
     width: 100%;
     display: grid;
-    grid-template-columns: 3fr 6fr 1fr 1fr 1fr;
+    grid-template-columns: 3fr 6fr 1fr 1fr;
 }
 
 /* Extra small devices (phones, 600px and down) */

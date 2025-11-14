@@ -110,17 +110,36 @@ const BusquedaTablaHorarios = ({
 
   // Función para descargar PDF
   const descargarPDF = () => {
-    const doc = new jsPDF();
-    
-    // Título del documento
-    doc.setFontSize(16);
-    doc.setTextColor(40, 40, 40);
-    doc.text("Reporte de Horarios", 14, 15);
-    
-    // Información de filtros aplicados
+    const doc = new jsPDF("p", "mm", "a4");
+  
+    //  Logo institucional
+    const logoUrl = "/Logo1.png";
+    try {
+      doc.addImage(logoUrl, "PNG", 15, 10, 25, 25);
+    } catch (e) {
+      console.warn(" No se pudo cargar el logo. Verifica /public/Logo1.png");
+    }
+  
+    //  Encabezado institucional
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(0, 102, 204);
+    doc.text("Escuela Experimental de Niños para la Música", 105, 20, { align: "center" });
+  
+    //  Subtítulo del reporte
+    doc.setFontSize(14);
+    doc.setTextColor(60, 60, 60);
+    doc.text(" Reporte General de Horarios", 105, 28, { align: "center" });
+  
+    // Línea decorativa azul
+    doc.setDrawColor(0, 102, 204);
+    doc.line(14, 32, 196, 32);
+  
+    //  Información de filtros aplicados
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    
+    doc.setTextColor(80, 80, 80);
+  
     let infoFiltros = `Total de horarios: ${horariosFiltrados.length}`;
     if (filtros.grado) infoFiltros += ` | Grado: ${filtros.grado}`;
     if (filtros.aula) {
@@ -128,68 +147,99 @@ const BusquedaTablaHorarios = ({
       infoFiltros += ` | Aula: ${nombreAula || filtros.aula}`;
     }
     if (filtros.busqueda) infoFiltros += ` | Búsqueda: ${filtros.busqueda}`;
-    
-    doc.text(infoFiltros, 14, 25);
-    
-    // Fecha de generación
-    const fecha = new Date().toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  
+    doc.text(infoFiltros, 14, 40);
+  
+    //  Fecha de generación
+    const fecha = new Date().toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
     });
-    doc.text(`Generado: ${fecha}`, 14, 32);
-
-    // Preparar datos para la tabla
-    const tableData = horariosFiltrados.map(horario => {
-      const nombreAula = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id))?.grado || "N/A";
+    doc.text(`Generado: ${fecha}`, 14, 47);
+  
+    // Línea suave
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 50, 196, 50);
+  
+    //  Preparar datos para la tabla
+    const tableData = horariosFiltrados.map((horario) => {
+      const nombreAula =  aulas.find((aula) => normalizarId(aula._id) === normalizarId(horario.aula_id))?.aula || "N/A";
+      const nombreGrado =  aulas.find((aula) => normalizarId(aula._id) === normalizarId(horario.aula_id))?.grado || "N/A";
       const nombreDocente = obtenerNombreDocente(horario.docente_id);
-     
       return [
-        horario.dia.join(', '),
+        horario.dia.join(", "),
         `${horario.inicio} - ${horario.fin}`,
         horario.asignatura,
         nombreAula,
-        horario.grado,
+        nombreGrado,
         nombreDocente
       ];
     });
-
-    // Configurar y generar la tabla
+  
+    //  Generar tabla con estilo
     autoTable(doc, {
-      startY: 40,
-      head: [['Día', 'Horario', 'Asignatura', 'Aula', 'Grado', 'Docente']],
+      startY: 55,
+      head: [["Día", "Horario", "Asignatura", "Aula", "Grado", "Docente"]],
       body: tableData,
-      theme: 'grid',
+      theme: "striped",
       styles: {
-        fontSize: 8,
-        cellPadding: 2,
+        fontSize: 9,
+        cellPadding: 3,
+        textColor: [60, 60, 60],
       },
       headStyles: {
-        fillColor: [41, 128, 185],
+        fillColor: [0, 102, 204],
         textColor: 255,
-        fontStyle: 'bold'
+        fontStyle: "bold",
       },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
+      alternateRowStyles: { fillColor: [245, 248, 250] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 30 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 35 },
       },
-      margin: { top: 40 },
-      didDrawPage: function (data) {
-        // Footer
-        doc.setFontSize(8);
-        doc.setTextColor(150);
+      didDrawPage: (data) => {
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
+  
+        //  Encabezado (en cada página)
+        if (doc.internal.getNumberOfPages() > 1) {
+          doc.addImage(logoUrl, "PNG", 15, 10, 20, 20);
+          doc.setFontSize(14);
+          doc.setTextColor(0, 102, 204);
+          doc.text("Escuela Experimental de Niños para la Música", pageWidth / 2, 20, { align: "center" });
+          doc.setFontSize(11);
+          doc.setTextColor(60, 60, 60);
+          doc.text("Reporte General de Horarios", pageWidth / 2, 27, { align: "center" });
+          doc.line(14, 32, pageWidth - 14, 32);
+        }
+  
+        //  Footer institucional
+        doc.setFontSize(9);
+        doc.setTextColor(130, 130, 130);
         doc.text(
-          `Página ${doc.internal.getNumberOfPages()}`,
-          doc.internal.pageSize.width / 2,
-          doc.internal.pageSize.height - 10,
-          { align: 'center' }
+          "Documento generado automáticamente por la Escuela Experimental de Niños para la Música - S.I.A.M.",
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
         );
-      }
+  
+        //  Número de página
+        const pageNum = doc.internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(`Página ${pageNum}`, pageWidth - 20, pageHeight - 10);
+      },
     });
-
-    // Guardar el PDF
-    const nombreArchivo = `horarios_${new Date().toISOString().split('T')[0]}.pdf`;
+  
+    //  Guardar PDF
+    const nombreArchivo = `reporte_horarios_${new Date().toISOString().split("T")[0]}.pdf`;
     doc.save(nombreArchivo);
   };
 
@@ -546,15 +596,15 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
               <h4 className="horarios-help-title">Consejos de uso:</h4>
               <div className="horarios-tips">
                 <div className="horarios-tip">
-                  <span className="horarios-tip-badge">💡</span>
+                  <span className="horarios-tip-badge"></span>
                   <span>Usa los filtros para encontrar horarios específicos rápidamente</span>
                 </div>
                 <div className="horarios-tip">
-                  <span className="horarios-tip-badge">📅</span>
+                  <span className="horarios-tip-badge"></span>
                   <span>Verifica que no haya conflictos de horarios para el mismo docente o aula</span>
                 </div>
                 <div className="horarios-tip">
-                  <span className="horarios-tip-badge">👥</span>
+                  <span className="horarios-tip-badge"></span>
                   <span>Gestiona los alumnos desde el icono de "Usuarios" en cada horario</span>
                 </div>
               </div>

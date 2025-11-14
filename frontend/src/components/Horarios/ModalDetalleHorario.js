@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Edit, Trash, Plus } from "lucide-react";
+import axios from 'axios';
+import { auth } from "../../components/authentication/Auth";
 
 const diasSemana = {
   LUN: "Lunes",
@@ -25,6 +27,56 @@ const ModalDetalleHorario = ({
   const [vistaAlumnos, setVistaAlumnos] = useState(!params.esDetalle);
   const [filtroGrado, setFiltroGrado] = useState("");
   const [filtroNombre, setFiltroNombre] = useState("");
+   const [grados, setGrados] = useState([]);
+  const API_HOST = process.env.REACT_APP_API_URL;
+  const API_GRADOS = `${API_HOST}/api/grados`;
+
+ const obtenerGrados = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
+      const config = { 
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        } 
+      };
+  
+      const response = await axios.get(API_GRADOS, config);
+  
+      // Mapear cada grado con _id y nombre
+      const gradosList = response.data.items.map(item => ({
+        _id: item._id,
+        nombre: item.grado // Ajusta según tu API
+      }));
+  
+      setGrados(gradosList);
+  
+    } catch (error) {
+      console.error(" Error al cargar los grados:", error);
+     
+  
+      // Grados por defecto en caso de error (usando _id falso para compatibilidad)
+      setGrados([
+        { _id: '1', nombre: 'Primer Grado' },
+        { _id: '2', nombre: 'Segundo Grado' },
+        { _id: '3', nombre: 'Tercer Grado' },
+        { _id: '4', nombre: 'Cuarto Grado' },
+        { _id: '5', nombre: 'Quinto Grado' },
+        { _id: '6', nombre: 'Sexto Grado' }
+      ]);
+  
+    } 
+  };
+  
+  
+     useEffect(() => {
+      obtenerGrados();
+    }, []);
+  
+    const getNombreGrado = (gradoId) => {
+    const grado = grados.find(g => g._id === gradoId);
+    return grado ? grado.nombre : gradoId; // Si no encuentra, devuelve el ID como fallback
+  };
 
   const clickVistaDetalle = () => {
     setVistaDetalle(true);
@@ -83,11 +135,11 @@ const ModalDetalleHorario = ({
   };
 
   // Obtener grados únicos para el filtro
-  const gradosUnicos = [...new Set(params.alumnos.map(alumno => alumno.grado_a_matricular))].sort();
+  const gradosUnicos = [...new Set(params.alumnos.map(alumno => getNombreGrado(alumno.grado_a_matricular)))].sort();
 
   // Filtrar alumnos según los criterios
   const alumnosFiltrados = params.alumnos.filter(alumno => {
-    const coincideGrado = filtroGrado ? alumno.grado_a_matricular === filtroGrado : true;
+    const coincideGrado = filtroGrado ? getNombreGrado(alumno.grado_a_matricular) === filtroGrado : true;
     const coincideNombre = filtroNombre ? 
       alumno.nombre_completo.toLowerCase().includes(filtroNombre.toLowerCase()) : true;
     
@@ -336,7 +388,8 @@ const ModalDetalleHorario = ({
                         <tr key={key}>
                           <td>{alumno.id_documento}</td>
                           <td>{alumno.nombre_completo}</td>
-                          <td>{alumno.grado_a_matricular}</td>
+                          <td>{getNombreGrado(alumno.grado_a_matricular)}</td>
+
                           <td>
                             <button
                               className="btn btn-danger btn-sm text-sm"
@@ -419,7 +472,7 @@ const ModalDetalleHorario = ({
                             </td>
                             <td>{alumno.id_documento}</td>
                             <td>{alumno.nombre_completo}</td>
-                            <td>{alumno.grado_a_matricular}</td>
+                            <td>{getNombreGrado(alumno.grado_a_matricular)}</td>
                           </tr>
                         ))}
                         {alumnosFiltrados.length === 0 && (
@@ -455,7 +508,7 @@ const ModalDetalleHorario = ({
 
         <div className="modal-actions-donaciones justify-content-between">
           <motion.button
-            className="btn-guardar"
+            className="btn-guardar-donaciones"
             onClick={() => onGuardar(horarioEdicion, esCreacion)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -474,7 +527,7 @@ const ModalDetalleHorario = ({
           )}
           <motion.button
             type="button"
-            className="btn-cerrar"
+            className="btn btn-dark"
             onClick={() => onCerrar()}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

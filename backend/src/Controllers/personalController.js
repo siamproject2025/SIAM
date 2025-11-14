@@ -3,7 +3,7 @@ const Personal = require('../Models/personalModel');
 const multer = require('multer');
 const sharp = require('sharp');
 
-// 🧩 Configuración de multer para almacenar archivos en memoria
+//  Configuración de multer para almacenar archivos en memoria
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Ejemplo de uso en rutas:
@@ -11,7 +11,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 exports.uploadMiddleware = upload.single('imagen');
 
-// ✅ Obtener todo el personal
+//  Obtener todo el personal
 exports.obtenerPersonal = async (req, res) => {
   try {
     const personal = await Personal.find().sort({ fecha_creacion: -1 });
@@ -25,7 +25,7 @@ exports.obtenerPersonal = async (req, res) => {
   }
 };
 
-// ✅ Obtener un empleado por ID
+//  Obtener un empleado por ID
 exports.obtenerPersonalPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -52,7 +52,7 @@ exports.obtenerPersonalPorId = async (req, res) => {
   }
 };
 
-// ✅ Crear nuevo empleado (con soporte para imagen)
+//  Crear nuevo empleado (con soporte para imagen)
 exports.crearPersonal = async (req, res) => {
   try {
     const {
@@ -74,7 +74,7 @@ exports.crearPersonal = async (req, res) => {
       fecha_ingreso
     } = req.body;
 
-    // 🔍 Validaciones de duplicados
+    //  Validaciones de duplicados
     const [codigoExiste, identidadExiste] = await Promise.all([
       Personal.findOne({ codigo }),
       Personal.findOne({ numero_identidad })
@@ -87,12 +87,12 @@ exports.crearPersonal = async (req, res) => {
       return res.status(400).json({ message: 'Ya existe un empleado con este número de identidad' });
     }
 
-    // 🖼️ Procesamiento de imagen (si existe)
+    // ️ Procesamiento de imagen (si existe)
     let imagenBase64 = null;
     let tipoImagen = null;
 
     if (req.file) {
-      console.log('🟢 Archivo de imagen recibido, procesando...');
+      console.log(' Archivo de imagen recibido, procesando...');
       const TARGET_WIDTH = 600;
       const TARGET_HEIGHT = 600;
       const QUALITY = 60;
@@ -102,7 +102,7 @@ exports.crearPersonal = async (req, res) => {
 
       imagenBase64 = processedBuffer.toString('base64');
       tipoImagen = 'image/jpeg';
-      console.log(`✅ Imagen procesada (${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(` Imagen procesada (${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB)`);
     }
         let cargoAsignacionObj = null;
     if (cargo_asignacion) {
@@ -112,7 +112,7 @@ exports.crearPersonal = async (req, res) => {
         return res.status(400).json({ message: 'Formato de cargo_asignacion inválido' });
       }
     }
-    // 🧠 Crear nuevo registro
+    //  Crear nuevo registro
    const nuevoEmpleado = new Personal({
       codigo,
       nombres,
@@ -141,7 +141,7 @@ exports.crearPersonal = async (req, res) => {
       data: empleadoGuardado
     });
   } catch (error) {
-    console.error('❌ Error al crear empleado:', error);
+    console.error(' Error al crear empleado:', error);
     res.status(500).json({
       success: false,
       message: 'Error al crear el empleado',
@@ -150,12 +150,12 @@ exports.crearPersonal = async (req, res) => {
   }
 };
 
-// ✅ Actualizar empleado (también permite nueva imagen)
+//  Actualizar empleado (también permite nueva imagen)
 exports.actualizarPersonal = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 🔍 Obtener los datos del body
+    //  Obtener los datos del body
     const {
       codigo,
       nombres,
@@ -175,7 +175,7 @@ exports.actualizarPersonal = async (req, res) => {
       fecha_ingreso
     } = req.body;
 
-    // 🔍 Validar duplicados (excluyendo el propio registro)
+    //  Validar duplicados (excluyendo el propio registro)
     const [codigoExiste, identidadExiste] = await Promise.all([
       codigo ? Personal.findOne({ codigo, _id: { $ne: id } }) : null,
       numero_identidad ? Personal.findOne({ numero_identidad, _id: { $ne: id } }) : null
@@ -188,12 +188,12 @@ exports.actualizarPersonal = async (req, res) => {
       return res.status(400).json({ message: 'Ya existe un empleado con este número de identidad' });
     }
 
-    // 🖼️ Procesamiento de imagen (si se envía una nueva)
+    // ️ Procesamiento de imagen (si se envía una nueva)
     let imagenBase64 = null;
     let tipoImagen = null;
 
     if (req.file) {
-      console.log('🟢 Archivo de imagen recibido, procesando...');
+      console.log(' Archivo de imagen recibido, procesando...');
       const TARGET_WIDTH = 600;
       const TARGET_HEIGHT = 600;
       const QUALITY = 60;
@@ -206,10 +206,10 @@ exports.actualizarPersonal = async (req, res) => {
       imagenBase64 = processedBuffer.toString('base64');
       tipoImagen = 'image/jpeg';
 
-      console.log(`✅ Imagen procesada (${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(` Imagen procesada (${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB)`);
     }
 
-    // 🧩 Parsear cargo_asignacion si viene como string
+    //  Parsear cargo_asignacion si viene como string
     let cargoAsignacionObj = null;
     if (cargo_asignacion) {
       try {
@@ -219,7 +219,7 @@ exports.actualizarPersonal = async (req, res) => {
       }
     }
 
-    // 🧠 Construir objeto de actualización
+    //  Construir objeto de actualización
     const updateData = {
       codigo,
       nombres,
@@ -238,7 +238,7 @@ exports.actualizarPersonal = async (req, res) => {
       ...(imagenBase64 && { imagen: imagenBase64, tipo_imagen: tipoImagen })
     };
 
-    // 🛠️ Actualizar en la base de datos
+    // ️ Actualizar en la base de datos
     const empleadoActualizado = await Personal.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true
@@ -255,7 +255,7 @@ exports.actualizarPersonal = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error al actualizar empleado:', error);
+    console.error(' Error al actualizar empleado:', error);
     res.status(500).json({
       success: false,
       message: 'Error al actualizar el empleado',
@@ -265,7 +265,7 @@ exports.actualizarPersonal = async (req, res) => {
 };
 
 
-// ✅ Eliminar empleado
+//  Eliminar empleado
 exports.eliminarPersonal = async (req, res) => {
   try {
     const { id } = req.params;
@@ -290,7 +290,7 @@ exports.eliminarPersonal = async (req, res) => {
   }
 };
 
-// ✅ Buscar por estado
+//  Buscar por estado
 exports.buscarPorEstado = async (req, res) => {
   try {
     const { estado } = req.params;
@@ -309,7 +309,7 @@ exports.buscarPorEstado = async (req, res) => {
   }
 };
 
-// ✅ Buscar por cargo
+//  Buscar por cargo
 exports.buscarPorCargo = async (req, res) => {
   try {
     const { cargo } = req.params;

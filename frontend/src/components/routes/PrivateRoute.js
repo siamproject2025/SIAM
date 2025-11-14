@@ -18,7 +18,7 @@ const PrivateRoute = ({ allowedRoles = [] }) => {
       const user = auth.currentUser;
 
       if (!user) {
-        console.log("⚠️ No hay usuario autenticado");
+        console.log("️ No hay usuario autenticado");
         setAuthState({
           loading: false,
           isAuth: false,
@@ -71,7 +71,7 @@ const PrivateRoute = ({ allowedRoles = [] }) => {
         });
       }
     } catch (error) {
-      console.error("❌ Error verificando usuario:", error.message);
+      console.error(" Error verificando usuario:", error.message);
       setAuthState({
         loading: false,
         isAuth: false,

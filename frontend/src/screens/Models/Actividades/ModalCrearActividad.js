@@ -18,7 +18,7 @@ const ModalCrearActividad = ({ onClose, onCreate }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3 className="modal-title">✨ Crear Nueva Actividad</h3>
+        <h3 className="modal-title"> Crear Nueva Actividad</h3>
 
         <div className="modal-form-grid">
           <div className="form-group full-width">
@@ -70,8 +70,8 @@ const ModalCrearActividad = ({ onClose, onCreate }) => {
         </div>
 
         <div className="modal-actions">
-          <button className="btn-cancelar" onClick={onClose}>Cancelar</button>
-          <button className="btn-guardar" onClick={handleCrear}>Crear Actividad</button>
+          <button className="btn btn-dark" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-guardar-donaciones" onClick={handleCrear}>Crear Actividad</button>
         </div>
       </div>
     </div>

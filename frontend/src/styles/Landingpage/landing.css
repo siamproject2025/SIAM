@@ -82,6 +82,16 @@ body {
   font-size: 1.5rem;
 }
 
+.imgLanding img{
+  content: "";
+  width: 80vw;
+  height: 95vh;
+  margin: 200px;
+  background-image: linear-gradient(to top, #22577a, transparent);
+   mask-image: linear-gradient(to right, transparent, black);
+  -webkit-mask-image: linear-gradient(to right, transparent, black);
+}
+
 .landing-logo-icon {
   margin-right: 10px;
   font-size: 1.8rem;
@@ -347,7 +357,7 @@ body {
 
 .landing-card-icon {
   font-size: 2.5rem;
-  margin-bottom: 15px;
+  margin-bottom: 0;
 }
 
 .landing-visual-card h4 {
@@ -414,7 +424,6 @@ body {
 
 .landing-card-icon {
   font-size: 3rem;
-  margin-bottom: 20px;
 }
 
 .landing-card-title {

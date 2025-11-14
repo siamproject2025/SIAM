@@ -1,10 +1,24 @@
 .profile-container {
   display: flex;
-  justify-content: flex-end; /* mueve el perfil a la derecha si está en un header */
+  justify-content: flex-end;
   align-items: center;
-  overflow: visible; /* evita que se oculte el menú */
+  overflow: visible;
 }
-
+.exitButton{
+  background-color: rgb(49, 49, 49);
+  block-size: 0cap;
+  display: inline-block;
+  color: white;
+  width: 100%;
+  height: 40px;
+  padding: 7px;
+  text-decoration: none;
+  border-radius: 8px;
+  text-align: center;
+}
+.exitButton:hover{
+  cursor: pointer;
+}
 /* Botón principal del dropdown */
 .drop-notification button {
   border: none;
@@ -16,6 +30,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.drop-notification button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(139, 95, 191, 0.3);
 }
 
 /* Imagen dentro del botón */
@@ -24,26 +45,112 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease;
+}
+
+.drop-notification button:hover .img-box {
+  border-color: #8B5FBF;
 }
 
 /* Menú del dropdown */
 .drop-notification .dropdown-menu.show {
   background-color: #ffffff;
-  border-radius: 12px;
-  padding: 18px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  width: auto !important;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid #f0f0f0;
+  width: 280px !important;
   right: 0;
   left: auto !important;
-}
-.drop-notification p,.drop-notification h6 {
-  color: rgb(56, 56, 56);
-  padding: 5px;
-  border-bottom:1px solid #383838;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
 }
 
-.drop-notification p{
+
+/* Header del dropdown */
+.dropdown-header {
+  background: linear-gradient(135deg, #795a9c 0%, #6A3093 100%);
+  color: white!important;
+  padding: 20px;
+  text-align: center;
+  border-radius: 8px;
+  margin: 0;
+}
+
+.dropdown-header h6 {
+  color: white!important;
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: none;
+}
+
+.dropdown-header p {
+  color: rgba(255, 255, 255, 0.9)!important;
+  font-size: 13px;
+  margin: 4px 0 0 0;
+  border-bottom: none;
+}
+
+/* Contenido principal */
+.drop-notification .dropdown-menu > div {
+  padding: 20px;
+}
+
+/* Estilos para el contenido de Profile */
+.drop-notification h6 {
+  color: #2D3748;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding: 0;
+  border-bottom: none;
+  line-height: 1.4;
+}
+
+.drop-notification p {
+  color: #718096;
   font-size: 14px;
+  margin: 0 0 16px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Información del usuario */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #8B5FBF;
+}
+
+.user-details h6 {
+  color: #2D3748;
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.user-details p {
+  color: #718096;
+  margin: 0;
+  font-size: 12px;
+  border-bottom: none;
+  padding: 0;
 }
 
 /* Evita el ícono de flecha del botón */
@@ -51,24 +158,14 @@
   content: none !important;
 }
 
-/* Botón de logout dentro del menú */
-.button-logout {
-  text-align: center;
-  margin-top: 10px;
-}
-
-.buttonExit {
-  color: rgb(255, 255, 255);
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  background-color: #000;
-  padding: 5px 40px;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.button-logout button:hover {
-  color: #000;
-  cursor: pointer;
+/* Animaciones */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

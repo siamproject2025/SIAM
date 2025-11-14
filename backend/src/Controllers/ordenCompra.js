@@ -74,7 +74,7 @@ exports.eliminarOrden = async (req, res) => {
     }
     res.status(200).json({ mensaje: "Orden eliminada correctamente" });
   } catch (err) {
-    res.status(500).json({ error: err.message }); // ✅ CORREGIDO: era err.Message
+    res.status(500).json({ error: err.message }); 
   }
 };
 

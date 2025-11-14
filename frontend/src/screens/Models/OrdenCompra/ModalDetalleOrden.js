@@ -11,19 +11,19 @@ const ModalDetalleOrden = ({
   onDelete,
   proveedores = []
 }) => {
-  // 🔹 Estado para notificaciones
+  //  Estado para notificaciones
   const [notificacion, setNotificacion] = useState(null);
 
 
 
   //const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
-  // 🔹 Mostrar notificación
+  //  Mostrar notificación
  const mostrarNotificacion = (mensaje, tipo = 'info', duration = 3000) => {
   setNotificacion({ message: mensaje, type: tipo, duration });
 };  
 
-  // 🔹 Estado de edición
+  //  Estado de edición
   const [ordenEditada, setOrdenEditada] = useState(() => {
     const ordenNormalizada = { ...orden };
     if (ordenNormalizada.proveedor_id && typeof ordenNormalizada.proveedor_id === 'object') {
@@ -32,7 +32,7 @@ const ModalDetalleOrden = ({
     return ordenNormalizada;
   });
 
-  // 🔹 Función para calcular total
+  //  Función para calcular total
   const calcularTotal = (items = []) =>
     items.reduce((acc, item) => acc + (item.cantidad || 0) * (item.costoUnit || 0), 0).toFixed(2);
 
@@ -88,65 +88,158 @@ const handleGuardar = () => {
 
 
 const handleEliminar = () => {
-  onDelete(ordenEditada._id); // ✅ delega al padre
+  onDelete(ordenEditada._id); //  delega al padre
 };
 
 
 
   const handleDescargarPDF = () => {
-    try {
-      const doc = new jsPDF();
+  try {
+    const doc = new jsPDF("p", "mm", "a4");
 
-      const proveedorObj = typeof ordenEditada.proveedor_id === 'string' 
-        ? proveedores.find(p => p._id === ordenEditada.proveedor_id)
+    //  Logo
+    const logoUrl = "/Logo1.png";
+    try {
+      doc.addImage(logoUrl, "PNG", 15, 10, 25, 25);
+    } catch (e) {
+      console.warn("No se pudo cargar el logo (verifica /public/Logo1.png)");
+    }
+
+    //  Encabezado institucional
+    doc.setFontSize(18);
+    doc.setTextColor(0, 102, 204);
+    doc.setFont("helvetica", "bold");
+    doc.text("Escuela Experimental de Niños para la Música", 105, 20, { align: "center" });
+
+    // Línea azul
+    doc.setDrawColor(0, 102, 204);
+    doc.line(14, 25, 196, 25);
+
+    //  Subtítulo
+    doc.setFontSize(16);
+    doc.text("ORDEN DE COMPRA", 105, 35, { align: "center" });
+
+    //  Datos de la orden
+    const proveedorObj =
+      typeof ordenEditada.proveedor_id === "string"
+        ? proveedores.find((p) => p._id === ordenEditada.proveedor_id)
         : orden.proveedor_id;
 
-      doc.setFontSize(16);
-      doc.text(`Orden de Compra - ${ordenEditada.numero}`, 14, 20);
+    const fechaActual = new Date().toLocaleDateString("es-ES");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 30, 30);
 
-      doc.setFontSize(12);
-      doc.text(
-        `Proveedor: ${proveedorObj?.nombre || 'N/A'} (${proveedorObj?.empresa || 'N/A'})`,
-        14,
-        30
-      );
-      doc.text(`Estado: ${ordenEditada.estado}`, 14, 40);
+    doc.text(`Nombre de la empresa: Escuela Experimental de Niños para la Música`, 14, 50);
+    doc.text(`No. Orden: ${ordenEditada.numero}`, 140, 50);
+    doc.text(`Dirección: Colonia Kennedy, Tegucigalpa`, 14, 57);
+    doc.text(`Fecha: ${fechaActual}`, 140, 57);
+    doc.text(`Ciudad: Tegucigalpa`, 14, 64);
 
-      const fechaHoraActual = new Date();
-      const fechaFormateada = fechaHoraActual.toLocaleDateString("es-ES");
-      const horaFormateada = fechaHoraActual.toLocaleTimeString("es-ES", {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      doc.text(`Fecha: ${fechaFormateada} ${horaFormateada}`, 14, 50);
+    //  Vendedor / Destinatario
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 102, 204);
+    doc.text("Vendedor:", 14, 78);
+    doc.text("Destinatario:", 110, 78);
 
-      const rows = ordenEditada.items.map((item) => [
-        item.descripcion,
-        item.cantidad,
-        `$${item.costoUnit.toFixed(2)}`,
-        `$${(item.cantidad * item.costoUnit).toFixed(2)}`
-      ]);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50, 50, 50);
+    doc.text(`Empresa: ${proveedorObj?.empresa || "N/A"}`, 14, 85);
+    doc.text(`Contacto: ${proveedorObj?.nombre || "N/A"}`, 14, 92);
+    doc.text(`Dirección: ${proveedorObj?.direccion || "N/A"}`, 14, 99);
+    doc.text(`Teléfono: ${proveedorObj?.telefono || "N/A"}`, 14, 106);
 
-      autoTable(doc, {
-        startY: 60,
-        head: [['Descripción', 'Cantidad', 'Costo Unitario', 'Subtotal']],
-        body: rows,
-        theme: 'grid',
-        headStyles: { fillColor: [41, 128, 185] }
-      });
+    doc.text(`Empresa: Escuela Experimental de Niños para la Música`, 110, 85);
+    doc.text(`Departamento: Administración`, 110, 92);
+    doc.text(`Dirección: Col. Kennedy`, 110, 99);
+    doc.text(`Teléfono: (504) 2222-2222`, 110, 106);
 
-      const total = calcularTotal(ordenEditada.items);
-      const finalY = doc.lastAutoTable?.finalY || 60;
-      doc.setFontSize(14);
-      doc.text(`Total: $${total}`, 14, finalY + 10);
-      doc.save(`orden_${ordenEditada.numero}.pdf`);
+    // Línea divisoria
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 112, 196, 112);
 
-      mostrarNotificacion('PDF descargado exitosamente', 'success');
-    } catch (error) {
-      mostrarNotificacion('Error al generar el PDF', 'error');
-      console.error('Error PDF:', error);
-    }
-  };
+    //  Tabla de ítems
+    const rows = ordenEditada.items.map((item) => [
+      item.descripcion,
+      item.cantidad,
+      `$${item.costoUnit.toFixed(2)}`,
+      `$${(item.cantidad * item.costoUnit).toFixed(2)}`
+    ]);
+
+    autoTable(doc, {
+      startY: 118,
+      head: [["Descripción", "Cantidad", "Costo Unitario", "Subtotal"]],
+      body: rows,
+      theme: "grid",
+      headStyles: {
+        fillColor: [0, 102, 204],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      styles: { fontSize: 11 },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 25, halign: "center" },
+        2: { cellWidth: 40, halign: "right" },
+        3: { cellWidth: 35, halign: "right" },
+      },
+    });
+
+    //  Subtotales
+    const finalY = doc.lastAutoTable.finalY + 10;
+    const subtotal = calcularTotal(ordenEditada.items);
+    const descuento = 0;
+    const impuestos = 0;
+    const envio = 0;
+    const total = subtotal;
+
+    doc.setFont("helvetica", "normal");
+    doc.text("SUBTOTAL:", 120, finalY);
+    doc.text(`$${subtotal}`, 180, finalY, { align: "right" });
+
+    doc.text("DESCUENTO (%):", 120, finalY + 7);
+    doc.text(`${descuento}%`, 180, finalY + 7, { align: "right" });
+
+    doc.text("TOTAL IMPUESTOS:", 120, finalY + 14);
+    doc.text(`$${impuestos}`, 180, finalY + 14, { align: "right" });
+
+    doc.text("ENVÍO / ALMACENAJE:", 120, finalY + 21);
+    doc.text(`$${envio}`, 180, finalY + 21, { align: "right" });
+
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL:", 120, finalY + 30);
+    doc.text(`$${total}`, 180, finalY + 30, { align: "right" });
+
+    //  Observaciones
+    doc.setTextColor(0, 102, 204);
+    doc.setFontSize(12);
+    doc.text("Observaciones:", 14, finalY + 10);
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.text("__________________________________________", 14, finalY + 17);
+
+    //  Firma
+    doc.setFont("helvetica", "normal");
+    doc.text("Firma:", 14, 275);
+    doc.line(30, 275, 80, 275);
+
+    //  Pie de página
+    doc.setFontSize(9);
+    doc.setTextColor(130, 130, 130);
+    doc.text(
+      "Documento generado automáticamente por la Escuela Experimental de Niños para la Música - S.I.A.M.",
+      105,
+      285,
+      { align: "center" }
+    );
+
+    doc.save(`Orden_${ordenEditada.numero}.pdf`);
+    mostrarNotificacion(" Orden descargada exitosamente", "success");
+  } catch (error) {
+    mostrarNotificacion(" Error al generar el PDF", "error");
+    console.error("Error PDF:", error);
+  }
+};
 
   const obtenerNombreProveedor = () => {
     if (typeof ordenEditada.proveedor_id === 'string') {
@@ -161,7 +254,7 @@ const handleEliminar = () => {
 return (
   <div className="modal-overlay bg-dark bg-opacity-50 d-flex justify-content-center align-items-center position-fixed top-0 start-0 w-100 h-100" style={{ zIndex: 1050 }}>
     <div className="modal-content bg-white p-4 rounded shadow w-100" style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}>
-      <h3 className="modal-title mb-4 text-primary fw-bold">📋 Detalle de la Orden</h3>
+      <h3 className="modal-title mb-4 text-primary fw-bold"> Detalle de la Orden</h3>
 
       {/* Datos generales */}
       <div className="row g-3 mb-4">
@@ -183,10 +276,10 @@ return (
             value={ordenEditada.estado}
             onChange={(e) => setOrdenEditada({ ...ordenEditada, estado: e.target.value })}
           >
-            <option value="BORRADOR">📝 BORRADOR</option>
-            <option value="ENVIADA">📤 ENVIADA</option>
-            <option value="RECIBIDA">📦 RECIBIDA</option>
-            <option value="CERRADA">✅ CERRADA</option>
+            <option value="BORRADOR"> BORRADOR</option>
+            <option value="ENVIADA"> ENVIADA</option>
+            <option value="RECIBIDA"> RECIBIDA</option>
+            <option value="CERRADA"> CERRADA</option>
           </select>
         </div>
 
@@ -202,7 +295,7 @@ return (
       </div>
 
       {/* Tabla de ítems */}
-      <h4 className="mb-3 text-secondary">📦 Ítems de la Orden</h4>
+      <h4 className="mb-3 text-secondary"> Ítems de la Orden</h4>
       <div className="table-responsive mb-4">
         <table className="table table-bordered align-middle">
           <thead className="table-light">
@@ -250,11 +343,11 @@ return (
                 </td>
                 <td className="text-center">
                   <button
-                    className="btn btn-sm btn-outline-danger"
+                    className="btn btn-danger"
                     onClick={() => handleEliminarItem(idx)}
                     title="Eliminar ítem"
                   >
-                    🗑️
+                   Eliminar
                   </button>
                 </td>
               </tr>
@@ -265,12 +358,12 @@ return (
 
       {/* Total */}
       <div className="text-end mb-4">
-        <h4 className="fw-bold text-success">💰 Total: ${calcularTotal(ordenEditada.items)}</h4>
+        <h4 className="fw-bold text-success"> Total: ${calcularTotal(ordenEditada.items)}</h4>
       </div>
 
       {/* Botones de acción */}
       <div className="modal-actions-orden d-flex flex-wrap gap-2 justify-content-end">
-        <button className="btn btn-success" onClick={handleGuardar}>
+        <button className="btn btn-guardar-donaciones" onClick={handleGuardar}>
           Guardar Cambios
         </button>
         <button className="btn btn-danger" onClick={handleEliminar}>
@@ -279,7 +372,7 @@ return (
         <button className="btn btn-primary" onClick={handleDescargarPDF}>
           Descargar PDF
         </button>
-        <button className="btn btn-secondary" onClick={onClose}>
+        <button className="btn btn-dark" onClick={onClose}>
           Cerrar
         </button>
       </div>

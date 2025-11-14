@@ -6,13 +6,26 @@ const PrivacyModal = (props) => {
     const [open, setOpen] = React.useState(false);
     const policyText = (
         <p>
-           En SIAM, valoramos y respetamos su privacidad. Esta política de privacidad describe cómo recopilamos, utilizamos y protegemos su información personal cuando interactúa con nuestra plataforma dedicada al mundo de la fotografía. Esta incluye la publicación de fotos, concursos, reseñas de libros y podcasts.
+          En S.I.A.M. nos comprometemos a proteger su información personal. Esta política explica cómo manejamos sus datos:
             <br/>
             <br/>
-            1. Recopilación de Información
-            En SIAM, recopilamos la información que usted nos proporciona directamente cuando se registra, participa en concursos, publica fotos, comenta en reseñas de libros o suscribe a nuestros podcasts. Esta información puede incluir su nombre, dirección de correo electrónico, y cualquier otro dato relevante que nos ayude a mejorar su experiencia en nuestra plataforma.
-
-        </p>
+            <strong>Información que recopilamos:</strong>
+            <br/>
+            Datos personales (nombre, contacto, información académica/laboral)
+            Información de uso de la plataforma
+            Datos técnicos del dispositivo<br/>
+            <strong>Cómo usamos su información:</strong> 
+            <br/>
+            Para gestionar procesos académicos y administrativos
+            Para mejorar nuestra plataforma
+            Para comunicarnos sobre servicios importantes
+            Para garantizar la seguridad del sistema<br/>
+             <strong>Protección de datos:</strong>
+            <br/>
+            No vendemos ni compartimos su información con terceros no autorizados
+            Solo el personal autorizado tiene acceso a los datos necesarios para sus funciones
+            Implementamos medidas de seguridad para proteger su información
+                    </p>
     );
     return (
         <>

@@ -27,7 +27,7 @@ function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
- // 2. 🚀 Llamar al Custom Hook para obtener el rol
+ // 2.  Llamar al Custom Hook para obtener el rol
   const { userRole, cargando } = useUserRole();
 
   // Función para capitalizar la primera letra del rol
@@ -84,7 +84,7 @@ function NavBar() {
         })}
       </div>
 
-      {/* 3. 🛡️ Visualización del Rol (Nuevo elemento) */}
+      {/* 3. ️ Visualización del Rol (Nuevo elemento) */}
       <div className="nav-role-display">
         {cargando ? (
             <span className="role-loading">Cargando...</span>

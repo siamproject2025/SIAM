@@ -41,38 +41,46 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
   const [loadingGrados, setLoadingGrados] = useState(false);
 
   const obtenerGrados = async () => {
-    try {
-      setLoadingGrados(true);
-      const user = auth.currentUser;
-      const token = await user.getIdToken();
-      const config = { 
-        headers: { 
-          Authorization: `Bearer ${token}` 
-        } 
-      };
+  try {
+    setLoadingGrados(true);
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+    const config = { 
+      headers: { 
+        Authorization: `Bearer ${token}` 
+      } 
+    };
 
-      const response = await axios.get(API_GRADOS, config);
-      
-      // Extraer solo el campo "grado" de cada objeto
-      const gradosList = response.data.items.map(item => item.grado);
-      setGrados(gradosList);
-      
-    } catch (error) {
-      console.error("❌ Error al cargar los grados:", error);
-      mostrarNotificacion("Error al cargar la lista de grados", "error");
-      // Grados por defecto en caso de error
-      setGrados([
-        'Primer Grado',
-        'Segundo Grado', 
-        'Tercer Grado',
-        'Cuarto Grado',
-        'Quinto Grado',
-        'Sexto Grado'
-      ]);
-    } finally {
-      setLoadingGrados(false);
-    }
-  };
+    const response = await axios.get(API_GRADOS, config);
+
+    // Mapear cada grado con _id y nombre
+    const gradosList = response.data.items.map(item => ({
+      _id: item._id,
+      nombre: item.grado // Ajusta según tu API
+    }));
+
+    setGrados(gradosList);
+
+  } catch (error) {
+    console.error(" Error al cargar los grados:", error);
+    mostrarNotificacion("Error al cargar la lista de grados", "error");
+
+    // Grados por defecto en caso de error (usando _id falso para compatibilidad)
+    setGrados([
+      { _id: '1', nombre: 'Primer Grado' },
+      { _id: '2', nombre: 'Segundo Grado' },
+      { _id: '3', nombre: 'Tercer Grado' },
+      { _id: '4', nombre: 'Cuarto Grado' },
+      { _id: '5', nombre: 'Quinto Grado' },
+      { _id: '6', nombre: 'Sexto Grado' }
+    ]);
+
+  } finally {
+    setLoadingGrados(false);
+  }
+};
+
+
    useEffect(() => {
     obtenerGrados();
   }, []);
@@ -236,15 +244,15 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ FUNCIÓN MEJORADA: Preparar datos para enviar al backend
+  
   const prepareDataForBackend = () => {
-    // Crear copia limpia del formData
+    // Crea copia limpia del formData
     const cleanData = { ...formData };
     
-    // ❌ ELIMINAR CAMPOS QUE NO DEBEN IR AL BACKEND
+    
     delete cleanData.foto_preview; // Solo para preview en frontend
     
-    // Si estamos en modo edición y no hay imagen nueva, eliminar el campo imagen
+   
     if (isEdit && !(cleanData.imagen instanceof File)) {
       delete cleanData.imagen;
     }
@@ -255,7 +263,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // ✅ Enviar solo los datos limpios al backend
+      //  Enviar solo los datos limpios al backend
       const cleanData = prepareDataForBackend();
      
       onSubmit(cleanData);
@@ -416,12 +424,14 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                   <option value="">
                     {loadingGrados ? 'Cargando grados...' : 'Seleccionar grado...'}
                   </option>
-                  {grados.map((grado, index) => (
-                    <option key={index} value={grado}>
-                      {grado}
+                  {grados.map((grado) => (
+                    <option key={grado._id} value={grado._id}>
+                      {grado.nombre}  {/* ️ Aquí accedes al nombre */}
+                      {console.log("Debug grados", grado)}
                     </option>
                   ))}
                 </select>
+
                 {loadingGrados && (
                   <small style={{ color: '#666', fontStyle: 'italic' }}>
                     Cargando lista de grados...
@@ -624,7 +634,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                         Seleccionar imagen
                       </label>
                       <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                        Formatos: JPG, PNG, GIF. Máximo 5MB
+                        Formatos: JPG, JPEG
                       </small>
                     </div>
                   )}

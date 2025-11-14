@@ -1,6 +1,5 @@
 /* Estilos generales del componente */
 .RolHeader {
-  padding: 2rem;
   margin: 0 auto;
   background-color: rgb(239, 244, 246);;
   
@@ -373,7 +372,7 @@
   
   font-family: "Segoe UI", sans-serif;
   color: #0a2d56;
-  padding: 30px 40px 40px 40px;
+  padding: 25px;
   background-color: rgb(239, 244, 246);;
 }
 

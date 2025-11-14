@@ -8,7 +8,7 @@ const crearActividad = async (req, res) => {
     const { nombre, fecha=Date, lugar, descripcion } = req.body;
 
     if (!nombre || !fecha || !lugar || !descripcion) {
-      console.log("❌ Faltan campos obligatorios");
+      console.log(" Faltan campos obligatorios");
       return res.status(400).json({ mensaje: "Todos los campos son obligatorios." });
     }
 
@@ -17,7 +17,7 @@ const crearActividad = async (req, res) => {
     hoy.setHours(0, 0, 0, 0);
 
     if (fechaIngresada < hoy) {
-      console.log("❌ Fecha pasada");
+      console.log(" Fecha pasada");
       return res.status(400).json({ mensaje: "La fecha no puede ser en el pasado." });
     }
 
@@ -32,10 +32,10 @@ const crearActividad = async (req, res) => {
 
     await nuevaActividad.save();
 
-    console.log("✅ Actividad guardada");
+    console.log("Actividad guardada");
     res.status(201).json(nuevaActividad);
   } catch (error) {
-    console.error("❌ Error al registrar actividad:", error);
+    console.error(" Error al registrar actividad:", error);
     res.status(500).json({ mensaje: "Error del servidor al crear la actividad." });
   }
 };

@@ -3,11 +3,10 @@ import "../styles/Footer.css";
 import PrivacyModal from "./ModalView2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-    faYoutube,
-    faGithub,
+    
     faFacebook,
 } from "@fortawesome/free-brands-svg-icons";
-import { faCopyright } from "@fortawesome/free-solid-svg-icons";
+import { faCopyright,faMapLocationDot } from "@fortawesome/free-solid-svg-icons";
 
 const Footer = () => {
     return (
@@ -26,25 +25,18 @@ const Footer = () => {
                     </span>
                 </div>
                 <a
-                    href="https://github.com/IsaiasDZ/mernKanbanIV"
+                    href="https://www.google.com/maps?ll=14.072764,-87.174164&z=16&t=m&hl=es&gl=US&mapclient=embed&cid=3518583077954966735"
                     target="_blank"
                     className="item3"
                 >
-                    <FontAwesomeIcon icon={faGithub} />
+                    <FontAwesomeIcon icon={faMapLocationDot} />
                 </a>
                 <a
-                    href="https://www.facebook.com/?locale=es_LA"
+                    href="https://www.facebook.com/p/Escuela-Experimental-de-Ni%C3%B1os-para-la-M%C3%BAsica-HN-100063479051786/?locale=es_LA"
                     target="_blank"
                     className="item4"
                 >
                     <FontAwesomeIcon icon={faFacebook} />
-                </a>
-                <a
-                    href="https://www.youtube.com/"
-                    target="_blank"
-                    className="item5"
-                >
-                    <FontAwesomeIcon icon={faYoutube} />
                 </a>
 
                 {false && <PrivacyModal click={true} />}

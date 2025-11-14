@@ -87,7 +87,7 @@ const Donaciones = () => {
 
     const response = await fetch(API_URL, {
       headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}` //  Token agregado
       }
     });
 
@@ -198,7 +198,7 @@ const Donaciones = () => {
         method: 'POST',
         body: formDataToSend,
         headers: {
-          Authorization: `Bearer ${token}` // ✅ Token agregado
+          Authorization: `Bearer ${token}` //  Token agregado
         }
       });
 
@@ -256,7 +256,7 @@ const handleSubmitEditar = async (e) => {
       method: 'PUT',
       body: formDataToSend,
       headers: {
-        Authorization: `Bearer ${token}` // ✅ Token agregado
+        Authorization: `Bearer ${token}` //  Token agregado
       }
     });
 
@@ -894,15 +894,7 @@ const confirmarEliminacionDonacion = async () => {
                               className="foto-preview"
                             />
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                              <motion.button
-                                type="button"
-                                onClick={eliminarFoto}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
-                              >
-                                <Trash2 size={16} /> Eliminar foto
-                              </motion.button>
+                              
                             </div>
                           </div>
                         ) : (
@@ -913,7 +905,7 @@ const confirmarEliminacionDonacion = async () => {
                             </p>
                             <input
                               type="file"
-                              accept="image/*"
+                              accept=".jpg,.jpeg"
                               onChange={handleFotoChange}
                               style={{ display: 'none' }}
                               id="foto-upload-nueva"
@@ -923,7 +915,7 @@ const confirmarEliminacionDonacion = async () => {
                               Seleccionar imagen
                             </label>
                             <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                              Formatos: JPG, PNG, GIF. Máximo 5MB
+                              Formatos: JPG, JPEG
                             </small>
                           </div>
                         )}
@@ -1077,19 +1069,10 @@ const confirmarEliminacionDonacion = async () => {
                               className="foto-preview"
                             />
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                              <motion.button
-                                type="button"
-                                onClick={eliminarFoto}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
-                              >
-                                <Trash2 size={16} />
-                                Eliminar foto
-                              </motion.button>
+                              
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept=".jpg,.jpeg"
                                 onChange={handleFotoChange}
                                 style={{ display: 'none' }}
                                 id="foto-upload-editar-replace"
@@ -1111,7 +1094,7 @@ const confirmarEliminacionDonacion = async () => {
                             </p>
                             <input
                               type="file"
-                              accept="image/*"
+                              accept=".jpg,.jpeg"
                               onChange={handleFotoChange}
                               style={{ display: 'none' }}
                               id="foto-upload-editar"
@@ -1124,7 +1107,7 @@ const confirmarEliminacionDonacion = async () => {
                               Seleccionar imagen
                             </label>
                             <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                              Formatos: JPG, PNG, GIF. Máximo 5MB
+                              Formatos: JPG, JPEG
                             </small>
                           </div>
                         )}
@@ -1134,22 +1117,22 @@ const confirmarEliminacionDonacion = async () => {
 
                   <div className="modal-actions-donaciones">
                    <motion.button 
-  type="button" 
-  className="btn btn-danger" 
-  onClick={prepararEliminacionDonacion}
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
->
-  <Trash2 size={16} /> Eliminar
-</motion.button>
-{showConfirm && (
-  <ConfirmDialog
-    message="¿Estás seguro de que deseas eliminar esta donación?"
-    onConfirm={confirmarEliminacionDonacion}
-    onCancel={() => setShowConfirm(false)}
-    visible={showConfirm}
-  />
-)}
+                    type="button" 
+                    className="btn btn-danger" 
+                    onClick={prepararEliminacionDonacion}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                     Eliminar
+                  </motion.button>
+                  {showConfirm && (
+                    <ConfirmDialog
+                      message="¿Estás seguro de que deseas eliminar esta donación?"
+                      onConfirm={confirmarEliminacionDonacion}
+                      onCancel={() => setShowConfirm(false)}
+                      visible={showConfirm}
+                    />
+                  )}
 
 
                     <motion.button 
@@ -1159,7 +1142,7 @@ const confirmarEliminacionDonacion = async () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <X size={16} />
+                      
                       Cancelar
                     </motion.button>
                     <motion.button 
@@ -1168,7 +1151,7 @@ const confirmarEliminacionDonacion = async () => {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Save size={16} />
+                      
                       Guardar Cambios
                     </motion.button>
                   </div>
@@ -1342,23 +1325,23 @@ const confirmarEliminacionDonacion = async () => {
           <h4 className="horarios-help-title">Consejos de uso:</h4>
           <div className="horarios-tips">
             <div className="horarios-tip">
-              <span className="horarios-tip-badge">🔍</span>
+              <span className="horarios-tip-badge"></span>
               <span>Usa la búsqueda para encontrar donaciones rápidamente por cualquier campo</span>
             </div>
             <div className="horarios-tip">
-              <span className="horarios-tip-badge">📋</span>
+              <span className="horarios-tip-badge"></span>
               <span>Haz clic en cualquier fila para ver y editar los detalles de la donación</span>
             </div>
             <div className="horarios-tip">
-              <span className="horarios-tip-badge">🔄</span>
+              <span className="horarios-tip-badge"></span>
               <span>Los datos se sincronizan automáticamente cada 30 segundos</span>
             </div>
             <div className="horarios-tip">
-              <span className="horarios-tip-badge">🏪</span>
+              <span className="horarios-tip-badge"></span>
               <span>Selecciona el almacén adecuado para cada donación</span>
             </div>
             <div className="horarios-tip">
-              <span className="horarios-tip-badge">📸</span>
+              <span className="horarios-tip-badge"></span>
               <span>Adjunta fotos de las donaciones para mejor identificación</span>
             </div>
             <div className="horarios-tip">

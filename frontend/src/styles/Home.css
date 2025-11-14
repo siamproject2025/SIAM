@@ -1,9 +1,9 @@
 .plugins-container {
   display: grid!important;
-  grid-template-columns: repeat(4, 1fr); /* 🔹 4 columnas fijas */
+  grid-template-columns: repeat(4, 1fr); /*  4 columnas fijas */
   gap: 30px;
   padding: 40px 40px 15px 40px;
-  background: #f5f7fa;
+  background-color: rgb(239, 244, 246);;
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -21,7 +21,7 @@
   justify-content: space-between;
   max-height: 300px;
   width: 100%;        /* ocupa todo el ancho de la columna */
-  max-width: 480px;   /* 🔹 ancho máximo de la card */
+  max-width: 480px;   /*  ancho máximo de la card */
 }
 
 .plugins-card:hover {
@@ -100,7 +100,7 @@
   grid-column: span 2;
   min-height: 300px;
   width: 100%; /* ocupa todo el espacio de las 2 columnas */
-  max-width: none; /* 🔹 permite que se expanda */
+  max-width: none; /*  permite que se expanda */
 }
 
 /* === Card Actividades === */

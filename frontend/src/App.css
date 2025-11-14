@@ -1,7 +1,9 @@
 .with-margin {
   margin-top: 8vh;
 }
-
+html{
+  background-color: rgb(239, 244, 246);;
+}
 .no-margin {
   margin-top: 0;
 }
@@ -34,6 +36,9 @@
   flex: 1;
   overflow-y: auto;
   
+}
+.btn{
+  padding: 10px!important;
 }
 
 

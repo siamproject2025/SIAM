@@ -17,7 +17,7 @@ exports.createDonacion = async (req, res) => {
     let tipoImagen = null;
 
     if (req.file) {
-      console.log('🟢 Archivo recibido, procesando con Sharp...');
+      console.log(' Archivo recibido, procesando con Sharp...');
 
       // Procesar con Sharp
       const TARGET_WIDTH = 600;
@@ -42,7 +42,7 @@ exports.createDonacion = async (req, res) => {
         tipoImagen = 'image/jpeg';
       }
 
-      console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
+      console.log(` Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
     }
 
     const donacionData = {
@@ -60,7 +60,7 @@ exports.createDonacion = async (req, res) => {
       data: donacion
     });
   } catch (error) {
-    console.error('❌ Error en createDonacion:', error);
+    console.error(' Error en createDonacion:', error);
     res.status(400).json({
       success: false,
       message: 'Error al crear la donación',

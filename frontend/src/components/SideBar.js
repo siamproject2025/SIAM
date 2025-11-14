@@ -10,7 +10,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const SideBar = () => {
   const [modulos, setModulos] = useState([]);
-  const [loading, setLoading] = useState(true); // 🕒 Estado para loading
+  const [loading, setLoading] = useState(true); //  Estado para loading
   const navigate = useNavigate();
   const location = useLocation();
   const [minimizado, setMinimizado] = useState(false);
@@ -62,7 +62,7 @@ const SideBar = () => {
     fetchModulos();
   }, []);
 
-  // 🔄 Mostrar loading mientras carga
+  //  Mostrar loading mientras carga
   if (loading) {
     return (
       <div className="dashboard-sidebar loading">

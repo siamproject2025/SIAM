@@ -16,10 +16,10 @@ export default function ResetPassword() {
 
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage("✅ Se ha enviado un correo para restablecer tu contraseña.");
+      setMessage(" Se ha enviado un correo para restablecer tu contraseña.");
     } catch (err) {
       console.error(err);
-      setError("❌ Error: " + err.message);
+      setError(" Error: " + err.message);
     }
   };
 

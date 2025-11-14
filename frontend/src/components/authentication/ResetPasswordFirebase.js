@@ -28,25 +28,25 @@ export default function ResetPasswordSeguro() {
 
     if (!validarContrasena(password)) {
       setError(
-        "❌ La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo."
+        " La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un símbolo."
       );
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("❌ Las contraseñas no coinciden.");
+      setError(" Las contraseñas no coinciden.");
       return;
     }
 
     try {
       await confirmPasswordReset(auth, oobCode, password);
-      setMessage("✅ Contraseña restablecida correctamente.");
+      setMessage(" Contraseña restablecida correctamente.");
       
       // Redirige al login después de 3 segundos
       setTimeout(() => navigate("/login"), 3000);
     } catch (err) {
       console.error(err);
-      setError("❌ Error: " + err.message);
+      setError(" Error: " + err.message);
     }
   };
 

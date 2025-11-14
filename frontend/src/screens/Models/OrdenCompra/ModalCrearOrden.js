@@ -31,7 +31,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [proveedores, setProveedores] = useState([]);
   const [cargandoProveedores, setCargandoProveedores] = useState(true);
 
-  // 🔹 Llamada a la API de proveedores
+  //  Llamada a la API de proveedores
   useEffect(() => {
     const fetchProveedores = async () => {
       try {
@@ -129,7 +129,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
 
     // Validar ítems
     if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
-      mostrarNotificacion('🚫 Debes agregar al menos un ítem a la orden antes de guardar', 'warning');
+      mostrarNotificacion(' Debes agregar al menos un ítem a la orden antes de guardar', 'warning');
       return;
     }
 
@@ -148,7 +148,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
 
     // Si todo está bien, crear la orden
     onCreate(nuevaOrden);
-    mostrarNotificacion('✅ Orden creada exitosamente', 'success');
+    mostrarNotificacion(' Orden creada exitosamente', 'success');
   };
 
   // Calcular total
@@ -195,7 +195,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           position: 'relative',
           zIndex: 1001
         }}>
-          <h3 className="modal-title">✨ Crear Nueva Orden de Compra</h3>
+          <h3 className="modal-title"> Crear Nueva Orden de Compra</h3>
 
           <div className="modal-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {/* Número de orden */}
@@ -210,7 +210,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
               />
             </div>
 
-            {/* 🔹 Selector de proveedor mejorado */}
+            {/*  Selector de proveedor mejorado */}
             <div className="form-group">
               <label>Proveedor * {cargandoProveedores && '(Cargando...)'}</label>
               <select
@@ -247,10 +247,10 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
                 onChange={(e) => setNuevaOrden({ ...nuevaOrden, estado: e.target.value })}
                 required
               >
-                <option value="BORRADOR">📝 Borrador</option>
-                <option value="ENVIADA">📤 Enviada</option>
-                <option value="RECIBIDA">📦 Recibida</option>
-                <option value="CERRADA">✅ Cerrada</option>
+                <option value="BORRADOR"> Borrador</option>
+                <option value="ENVIADA"> Enviada</option>
+                <option value="RECIBIDA"> Recibida</option>
+                <option value="CERRADA"> Cerrada</option>
               </select>
             </div>
           </div>
@@ -265,7 +265,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
               border: '1px solid #0ea5e9'
             }}>
               <h4 style={{ margin: '0 0 0.5rem 0', color: '#0369a1', fontSize: '0.9rem' }}>
-                📋 Información del Proveedor
+                 Información del Proveedor
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', fontSize: '0.85rem' }}>
                 <div><strong>ID:</strong> {proveedorSeleccionado.id_proveedor}</div>
@@ -284,7 +284,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           )}
 
           {/* Sección ítems */}
-          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>📦 Ítems de la Orden</h4>
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem' }}> Ítems de la Orden</h4>
 
           <div className="item-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '0.5rem', marginBottom: '0.5rem' }}>
             <input
@@ -318,16 +318,16 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
               title="Limpiar campos"
               style={{ padding: '0.5rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
             >
-              ✖
+              
             </button>
           </div>
 
           <button 
-            className="btn-agregar" 
+            className="btn-guardar-donaciones" 
             onClick={handleAgregarItem}
-            style={{ width: '100%', padding: '0.75rem', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+            
           >
-            ➕ Agregar Ítem
+            + Agregar Ítem
           </button>
 
           {/* Lista de ítems agregados */}
@@ -362,7 +362,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
                       onClick={() => handleEliminarItem(idx)}
                       style={{ padding: '0.25rem 0.5rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     >
-                      🗑
+                      
                     </button>
                   </li>
                 ))}
@@ -386,17 +386,16 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           {/* Acciones del modal */}
           <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
             <button 
-              className="btn-cancelar" 
+              className="btn btn-dark" 
               onClick={onClose}
-              style={{ padding: '0.75rem 1.5rem', background: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              
             >
               Cancelar
             </button>
             <button 
-              className="btn-crear" 
+              className="btn btn-guardar-donaciones" 
               onClick={handleCrear}
-              style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-             
+              
             >
               Crear Orden
             </button>

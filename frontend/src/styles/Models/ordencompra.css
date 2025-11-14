@@ -46,7 +46,7 @@
 
 /* ===== CONTENEDOR PRINCIPAL ===== */
 .orden-compra-container {
-  padding: 1.5rem;
+  padding: 25px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   max-width: 100%;  /* ⬅️ CAMBIO AQUÍ */
   width: 100%;      /* ⬅️ AGREGAR ESTA LÍNEA */

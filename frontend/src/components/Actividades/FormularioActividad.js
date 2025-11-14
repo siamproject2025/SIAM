@@ -1,0 +1,810 @@
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from 'framer-motion';
+import ModalCrearActividad from '../../screens/Models/Actividades/ModalCrearActividad';
+import ModalDetalleActividad from '../../screens/Models/Actividades/ModalDetalleActividad';
+import Notification from '../Notification';
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog';
+import '../../../src/styles/Models/Actividades.css';
+import { auth } from "../authentication/Auth";
+
+import { 
+  Calendar,
+  Clock,
+  MapPin,X,Eye,Edit,Trash2,
+  Users,
+  Award,
+  Plus,
+  HelpCircle,
+  Search,
+  Star,
+  Target,
+  CheckCircle,
+  AlertCircle
+} from 'lucide-react';
+
+const API_URL = process.env.REACT_APP_API_URL+"/api/actividades";
+
+const Actividades = () => {
+
+const [showConfirm, setShowConfirm] = useState(false);
+const [actividadAEliminar, setActividadAEliminar] = useState(null);
+
+  const [actividades, setActividades] = useState([]);
+  const [actividadSeleccionada, setActividadSeleccionada] = useState(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [mostrarAyuda, setMostrarAyuda] = useState(false);
+
+
+// Funciones para el diálogo de confirmación de cancelacion
+const cancelarEliminacion = () => {
+  setShowConfirm(false);
+  setActividadAEliminar(null);
+};
+
+
+  useEffect(() => {
+  const cargarActividades = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+
+      const token = await user.getIdToken();
+
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!res.ok) throw new Error('Error al obtener las actividades');
+      const data = await res.json();
+      setActividades(data);
+    } catch (err) {
+      console.error('Error al obtener las actividades:', err);
+    }
+  };
+
+  cargarActividades();
+}, []);
+
+  // Calcular estadísticas
+  const totalActividades = actividades.length;
+  const actividadesHoyCount = actividades.filter(a => categorizarActividad(a.fecha) === 'HOY').length;
+  const actividadesProximasCount = actividades.filter(a => categorizarActividad(a.fecha) === 'PROXIMA').length;
+  const actividadesFuturasCount = actividades.filter(a => categorizarActividad(a.fecha) === 'FUTURA').length;
+  const actividadesFinalizadasCount = actividades.filter(a => categorizarActividad(a.fecha) === 'FINALIZADA').length;
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+  };
+
+  const closeNotification = () => {
+    setNotification(null);
+  };
+
+const handleCrearActividad = async (nuevaActividad) => {
+  try {
+    // Validaciones
+    if (!nuevaActividad.nombre.trim()) {
+      showNotification('El nombre de la actividad es obligatorio', 'error');
+      return;
+    }
+    if (!nuevaActividad.fecha) {
+      showNotification('La fecha y hora son obligatorias', 'error');
+      return;
+    }
+    if (!nuevaActividad.lugar.trim()) {
+      showNotification('El lugar es obligatorio', 'error');
+      return;
+    }
+    if (!nuevaActividad.descripcion.trim()) {
+      showNotification('La descripción es obligatoria', 'error');
+      return;
+    }
+
+    // Verificar que la fecha no sea pasada
+    const fechaActividad = new Date(nuevaActividad.fecha);
+    const ahora = new Date();
+    if (fechaActividad < ahora) {
+      showNotification('No puedes crear una actividad con fecha pasada', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      showNotification('No estás autenticado', 'error');
+      return;
+    }
+    const token = await user.getIdToken();
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(nuevaActividad)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al crear la actividad');
+    }
+
+    const actividadCreada = await res.json();
+    setActividades([...actividades, actividadCreada]);
+    setMostrarModalCrear(false);
+    showNotification(`Actividad "${actividadCreada.nombre}" creada exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al crear la actividad', 'error');
+  }
+};
+
+
+  const handleEditarActividad = async (actividadActualizada) => {
+  try {
+    // Validaciones
+    if (!actividadActualizada.nombre.trim()) {
+      showNotification('El nombre de la actividad es obligatorio', 'error');
+      return;
+    }
+    if (!actividadActualizada.fecha) {
+      showNotification('La fecha y hora son obligatorias', 'error');
+      return;
+    }
+    if (!actividadActualizada.lugar.trim()) {
+      showNotification('El lugar es obligatorio', 'error');
+      return;
+    }
+    if (!actividadActualizada.descripcion.trim()) {
+      showNotification('La descripción es obligatoria', 'error');
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      showNotification('No estás autenticado', 'error');
+      return;
+    }
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${actividadActualizada._id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(actividadActualizada)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al editar la actividad');
+    }
+
+    const actualizada = await res.json();
+    setActividades(actividades.map(a => a._id === actualizada._id ? actualizada : a));
+    setActividadSeleccionada(null);
+    showNotification(`Actividad "${actualizada.nombre}" actualizada exitosamente`, 'success');
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al editar la actividad', 'error');
+  }
+};
+
+
+const handleEliminarActividad = (id) => {
+  const actividad = actividades.find(a => a._id === id);
+  setActividadAEliminar(actividad);
+  setShowConfirm(true);
+};
+
+
+const confirmarEliminacion = async () => {
+  setShowConfirm(false);
+  if (!actividadAEliminar) return;
+
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      showNotification('No estás autenticado', 'error');
+      return;
+    }
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_URL}/${actividadAEliminar._id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Error al eliminar la actividad');
+    }
+
+    setActividades(actividades.filter(a => a._id !== actividadAEliminar._id));
+    setActividadSeleccionada(null);
+    showNotification(`Actividad "${actividadAEliminar.nombre}" eliminada exitosamente`, 'success');
+    setActividadAEliminar(null);
+
+  } catch (err) {
+    console.error(err.message);
+    showNotification(err.message || 'Error al eliminar la actividad', 'error');
+  }
+};
+
+
+  // Categorizar actividades según la fecha
+function categorizarActividad(fechaActividad) {
+  const fecha = new Date(fechaActividad);
+  const hoy = new Date();
+
+  hoy.setHours(0, 0, 0, 0);
+  fecha.setHours(0, 0, 0, 0);
+
+  if (fecha.getTime() === hoy.getTime()) return 'HOY';
+  if (fecha > hoy && (fecha - hoy) <= 7 * 24 * 60 * 60 * 1000) return 'PROXIMA';
+  if (fecha > hoy) return 'FUTURA';
+  if (fecha < hoy) return 'FINALIZADA';
+  
+  return 'DESCONOCIDA';
+}
+
+  const actividadesFiltradas = actividades.filter(a => {
+    const terminoBusqueda = busqueda.toLowerCase();
+    return (
+      a.nombre?.toLowerCase().includes(terminoBusqueda) ||
+      a.lugar?.toLowerCase().includes(terminoBusqueda) ||
+      a.descripcion?.toLowerCase().includes(terminoBusqueda)
+    );
+  });
+
+  const actividadesHoy = actividadesFiltradas.filter(a => categorizarActividad(a.fecha) === 'HOY');
+  const actividadesProximas = actividadesFiltradas.filter(a => categorizarActividad(a.fecha) === 'PROXIMA');
+  const actividadesFuturas = actividadesFiltradas.filter(a => categorizarActividad(a.fecha) === 'FUTURA');
+  const actividadesFinalizadas = actividadesFiltradas.filter(a => categorizarActividad(a.fecha) === 'FINALIZADA');
+
+  const formatearFecha = (fecha) => {
+    return new Date(fecha).toLocaleString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const renderGrupoActividades = (titulo, lista, color) => (
+    <motion.div 
+      className="actividad-categoria-section"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div 
+        className="actividad-categoria-header"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h3 className="actividad-subtitulo">
+          <motion.div
+            initial={{ rotate: -180, scale: 0 }}
+            animate={{ rotate: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 15 }}
+            style={{ color }}
+          >
+            <Calendar size={20} />
+          </motion.div>
+          {titulo} ({lista.length})
+        </h3>
+      </motion.div>
+
+      {lista.length === 0 ? (
+        <motion.p 
+          className="actividad-vacio"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          No hay actividades en esta categoría.
+        </motion.p>
+      ) : (
+        <motion.div 
+          className="actividad-listado"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          {lista.map((actividad, index) => {
+            const categoria = categorizarActividad(actividad.fecha);
+            return (
+              <motion.div 
+                key={actividad._id} 
+                className="actividad-card" 
+                onClick={() => setActividadSeleccionada(actividad)}
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ 
+                  delay: Math.min(index * 0.05, 1),
+                  duration: 0.4,
+                  type: "spring",
+                  stiffness: 100
+                }}
+                whileHover={{ 
+                  scale: 1.02,
+                  transition: { duration: 0.2 }
+                }}
+              >
+                <div className="actividad-card-header">
+                  <span className={`actividad-estado-badge ${categoria}`}>
+                    {categoria === 'HOY' && <AlertCircle size={14} />}
+                    {categoria === 'PROXIMA' && <Clock size={14} />}
+                    {categoria === 'FUTURA' && <Target size={14} />}
+                    {categoria === 'FINALIZADA' && <CheckCircle size={14} />}
+                    {categoria === 'HOY' && 'HOY'}
+                    {categoria === 'PROXIMA' && 'PRÓXIMA'}
+                    {categoria === 'FUTURA' && 'FUTURA'}
+                    {categoria === 'FINALIZADA' && 'FINALIZADA'}
+                  </span>
+                  <span className="actividad-fecha">{formatearFecha(actividad.fecha)}</span>
+                </div>
+                <div className="actividad-card-body">
+                  <div className="actividad-info-item full-width">
+                    <span className="actividad-info-label">Nombre</span>
+                    <span className="actividad-info-value actividad-nombre">{actividad.nombre}</span>
+                  </div>
+                  <div className="actividad-info-item">
+                    <span className="actividad-info-label">
+                      <MapPin size={14} />
+                      Lugar
+                    </span>
+                    <span className="actividad-info-value">{actividad.lugar}</span>
+                  </div>
+                  <div className="actividad-info-item full-width">
+                    <span className="actividad-info-label">Descripción</span>
+                    <span className="actividad-info-value actividad-descripcion">{actividad.descripcion}</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      )}
+    </motion.div>
+  );
+
+  return (
+    <div className="actividad-container">
+      {/* Notificación */}
+      <AnimatePresence>
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={closeNotification}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ENCABEZADO */}
+      <motion.div 
+        className="actividad-header"
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+      >
+        <motion.div
+          className="header-gradient"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+        >
+          <div className="header-pattern" />
+
+          <div className="header-content">
+            <motion.h2
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <motion.div
+                initial={{ rotate: -180, scale: 0 }}
+                animate={{ rotate: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+              >
+                <Calendar size={36} fill="white" color="white" />
+              </motion.div>
+              Sistema de Actividades
+              <motion.div
+                animate={{ 
+                  rotate: [0, 10, -10, 0],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                className="floating-main-icon"
+              >
+                <Target size={32} color="white" />
+              </motion.div>
+            </motion.h2>
+            
+            <motion.p
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="header-subtitle"
+            >
+              Organiza y gestiona todas tus actividades programadas de manera profesional
+            </motion.p>
+
+            <motion.div 
+              className="header-stats"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <div className="stat-icon">
+                  <Calendar size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value" style={{color:"white"}}>{totalActividades}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Total Actividades</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+              >
+                <div className="stat-icon">
+                  <AlertCircle size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value"  style={{color:"white"}}>{actividadesHoyCount}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Para Hoy</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+              >
+                <div className="stat-icon">
+                  <Clock size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value"  style={{color:"white"}}>{actividadesProximasCount}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Próximas</div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.05, y: -2 }}
+                transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
+              >
+                <div className="stat-icon">
+                  <CheckCircle size={20} color="white" />
+                </div>
+                <div className="stat-text">
+                  <div className="stat-value"  style={{color:"white"}}>{actividadesFinalizadasCount}</div>
+                  <div className="stat-label"  style={{color:"white"}}>Finalizadas</div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            <motion.div 
+              className="floating-icons"
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -10, 0],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Users size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -15, 0],
+                  rotate: [0, -8, 8, 0]
+                }}
+                transition={{ 
+                  duration: 3.5, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              >
+                <Award size={20} color="white" />
+              </motion.div>
+              <motion.div 
+                className="floating-icon"
+                animate={{ 
+                  y: [0, -12, 0],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 4.2, 
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              >
+                <Star size={20} color="white" />
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* BARRA DE BÚSQUEDA Y ACCIONES */}
+        <motion.div 
+          className="actividad-busqueda-bar"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <div style={{ position: 'relative', flex: 1 }}>
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
+            >
+              <Search size={18} />
+            </motion.div>
+            <input
+              type="text"
+              className="actividad-busqueda"
+              placeholder="Buscar por nombre, lugar o descripción..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+          
+          <motion.button 
+            className="btn-ayuda" 
+            onClick={() => setMostrarAyuda(true)} 
+            title="Ver ayuda"
+            whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <motion.div
+              animate={{ rotate: [0, 15, -15, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            >
+              <HelpCircle size={18} />
+            </motion.div>
+            Ayuda
+          </motion.button>
+          
+          <motion.button 
+            className="btn-nueva-actividad" 
+            onClick={() => setMostrarModalCrear(true)}
+            whileHover={{ 
+              scale: 1.08, 
+              boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+              <Plus size={18} />
+            </motion.div>
+            Nueva Actividad
+          </motion.button>
+        </motion.div>
+      </motion.div>
+
+      {/* CONTENIDO PRINCIPAL */}
+      <motion.div 
+        className="actividad-categorias-container"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+      >
+        {renderGrupoActividades("Actividades de Hoy", actividadesHoy, "#FF6B6B")}
+        {renderGrupoActividades("Próximos 7 días", actividadesProximas, "#FFD93D")}
+        {renderGrupoActividades("Actividades futuras", actividadesFuturas, "#6BCF7F")}
+        {renderGrupoActividades("Actividades finalizadas", actividadesFinalizadas, "#4D4D4D")}
+      </motion.div>
+
+      {/* Modales */}
+      {mostrarModalCrear && (
+        <ModalCrearActividad
+          onClose={() => setMostrarModalCrear(false)}
+          onCreate={handleCrearActividad}
+        />
+      )}
+
+      {actividadSeleccionada && (
+        <ModalDetalleActividad
+          actividad={actividadSeleccionada}
+          onClose={() => setActividadSeleccionada(null)}
+          showNotification={showNotification}
+          onUpdate={handleEditarActividad}
+          onDelete={handleEliminarActividad}
+        />
+      )}
+
+      {/* Confirmación de eliminación */}
+      {showConfirm && (
+        <ConfirmDialog
+          message={`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}"?`}
+          onConfirm={confirmarEliminacion}
+          onCancel={cancelarEliminacion}
+          visible={showConfirm}
+        />
+      )}
+
+      {/* Modal Ayuda */}
+      {mostrarAyuda && (
+  <div className="horarios-modal-overlay horarios-modal-show">
+    <div className="horarios-modal-content">
+      <div className="horarios-modal-header">
+        <h3 className="horarios-modal-title">
+          <Calendar size={24} />
+          Ayuda - Sistema de Actividades
+        </h3>
+        <button 
+          className="horarios-modal-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      <div className="horarios-modal-body">
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">¿Cómo funciona el sistema de actividades?</h4>
+          <p className="horarios-help-text">
+            El módulo de actividades te permite gestionar eventos, reuniones y actividades programadas, 
+            organizándolas automáticamente por categorías temporales para un mejor control.
+          </p>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+          <ul className="horarios-help-list">
+            <li className="horarios-help-item">
+              <strong>Búsqueda y filtros:</strong> Encuentra actividades por nombre, lugar o descripción
+            </li>
+            <li className="horarios-help-item">
+              <strong>Gestión de eventos:</strong> Crea, edita y programa actividades
+            </li>
+            <li className="horarios-help-item">
+              <strong>Organización temporal:</strong> Las actividades se categorizan automáticamente por fecha
+            </li>
+            <li className="horarios-help-item">
+              <strong>Control de horarios:</strong> Especifica fecha, hora y lugar correctamente
+            </li>
+            <li className="horarios-help-item">
+              <strong>Validación de fechas:</strong> No se permiten actividades con fechas pasadas
+            </li>
+          </ul>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Categorías temporales:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <AlertCircle size={16} className="horarios-icon-danger" />
+              <span>HOY - Actividades programadas para hoy</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Clock size={16} className="horarios-icon-warning" />
+              <span>PRÓXIMOS 7 DÍAS - Actividades de la próxima semana</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Calendar size={16} className="horarios-icon-success" />
+              <span>FUTURAS - Actividades programadas a más de 7 días</span>
+            </div>
+            <div className="horarios-icon-item">
+              <CheckCircle size={16} className="horarios-icon-secondary" />
+              <span>FINALIZADAS - Actividades que ya pasaron</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Iconos y acciones:</h4>
+          <div className="horarios-icons-grid">
+            <div className="horarios-icon-item">
+              <Plus size={16} className="horarios-icon-new" />
+              <span>Crear Actividad - Programar nuevo evento</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Edit size={16} className="horarios-icon-primary" />
+              <span>Editar - Modificar información de actividad</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Eye size={16} className="horarios-icon-info" />
+              <span>Ver detalles - Información completa</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Trash2 size={16} className="horarios-icon-danger" />
+              <span>Eliminar - Cancelar actividad programada</span>
+            </div>
+            <div className="horarios-icon-item">
+              <Search size={16} className="horarios-icon-success" />
+              <span>Buscar - Encontrar actividades específicas</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="horarios-help-section">
+          <h4 className="horarios-help-title">Consejos de uso:</h4>
+          <div className="horarios-tips">
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge"></span>
+              <span>Usa la búsqueda para encontrar actividades rápidamente por nombre, lugar o descripción</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge"></span>
+              <span>Las actividades se categorizan automáticamente según su fecha</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge">⏰</span>
+              <span>No puedes crear actividades con fechas pasadas</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge"></span>
+              <span>Recuerda especificar fecha, hora y lugar correctamente al crear actividades</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge"></span>
+              <span>Haz clic en cualquier actividad para ver y editar sus detalles</span>
+            </div>
+            <div className="horarios-tip">
+              <span className="horarios-tip-badge"></span>
+              <span>Las categorías se actualizan automáticamente según la fecha actual</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="horarios-modal-footer">
+        <button 
+          className="horarios-modal-btn-close"
+          onClick={() => setMostrarAyuda(false)}
+        >
+          Cerrar Ayuda
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  );
+};
+
+export default Actividades;

@@ -24,7 +24,7 @@ exports.createQuestion = async (req, res) => {
 
 exports.addAnswer = async (req, res) => {
     try {
-        // 💡 CAPTURAMOS LA DURACIÓN Y LA UNIDAD
+        //  CAPTURAMOS LA DURACIÓN Y LA UNIDAD
         const { answerContent, userId, deleteDuration, deleteUnit } = req.body;
         const question = await Question.findById(req.params.id);
 
@@ -55,7 +55,7 @@ exports.addAnswer = async (req, res) => {
             answerContent,
             answeredBy: userId,
             answeredAt: new Date(),
-            // 💡 Asignamos el valor calculado
+            //  Asignamos el valor calculado
             deleteAt: deleteAt 
         };
 

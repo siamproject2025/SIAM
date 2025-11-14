@@ -2,8 +2,31 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import '../styles/Landingpage/landing.css';
-import {  Music } from "lucide-react";
-
+import { 
+  Music, 
+  User, 
+  Users, 
+  Calendar, 
+  BookOpen, 
+  ShoppingCart, 
+  Rocket, 
+  BarChart3, 
+  Link as LinkIcon,
+  Clock,
+  Package,
+  MessageCircle,
+  Users2,
+  Phone,
+  Mail,
+  MapPin,
+  Code,
+  CheckCircle,
+  TrendingUp,
+  Shield,
+  Zap,
+  Guitar
+} from "lucide-react";
+import ImgLanding from "../assets/ImgLanding.jpg"
 
 const App = () => {
   const [activeFaq, setActiveFaq] = useState(null);
@@ -80,7 +103,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
       id: 1,
       front: {
         title: "Gestión de Estudiantes",
-        icon: "👨‍🎓",
+        icon: <User size={32} />,
         description: "Matrícula digital y expedientes completos"
       },
       back: {
@@ -98,7 +121,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
       id: 2,
       front: {
         title: "Gestión de Personal",
-        icon: "👨‍🏫",
+        icon: <Users size={32} />,
         description: "Registro completo de empleados y estados"
       },
       back: {
@@ -116,7 +139,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
       id: 3,
       front: {
         title: "Horarios Académicos",
-        icon: "📅",
+        icon: <Calendar size={32} />,
         description: "Programación inteligente sin conflictos"
       },
       back: {
@@ -134,7 +157,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
       id: 4,
       front: {
         title: "Biblioteca Digital",
-        icon: "📚",
+        icon: <BookOpen size={32} />,
         description: "Recursos educativos en formato digital"
       },
       back: {
@@ -152,7 +175,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
       id: 5,
       front: {
         title: "Inventario de Bienes",
-        icon: "🎻",
+        icon: <Guitar size={32} />,
         description: "Control completo de instrumentos y activos"
       },
       back: {
@@ -170,7 +193,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
       id: 6,
       front: {
         title: "Órdenes de Compra",
-        icon: "🛒",
+        icon: <ShoppingCart size={32} />,
         description: "Gestión completa del proceso de compras"
       },
       back: {
@@ -301,11 +324,8 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
         >
-          <div className="floating-elements landing-floating-elements">
-            <div className="floating-element landing-floating-element element-1">🎵</div>
-            <div className="floating-element landing-floating-element element-2">🎼</div>
-            <div className="floating-element landing-floating-element element-3">🎹</div>
-            <div className="floating-element landing-floating-element element-4">🎻</div>
+          <div className='imgLanding'>
+          <img src={ImgLanding}></img>
           </div>
         </motion.div>
       </section>
@@ -341,27 +361,27 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
                 <h3>Problemas que Resuelve:</h3>
                 <div className="problems-list landing-problems-list">
                   <div className="problem-item landing-problem-item">
-                    <span className="problem-icon landing-problem-icon">📝</span>
+                    <span className="problem-icon landing-problem-icon"><User size={20} /></span>
                     <span>Procesos manuales de matrícula y seguimiento estudiantil</span>
                   </div>
                   <div className="problem-item landing-problem-item">
-                    <span className="problem-icon landing-problem-icon">⏰</span>
+                    <span className="problem-icon landing-problem-icon"><Clock size={20} /></span>
                     <span>Desorganización en horarios y asignaciones</span>
                   </div>
                   <div className="problem-item landing-problem-item">
-                    <span className="problem-icon landing-problem-icon">🎻</span>
+                    <span className="problem-icon landing-problem-icon"><Guitar size={20} /></span>
                     <span>Control limitado de inventario de instrumentos y bienes</span>
                   </div>
                   <div className="problem-item landing-problem-item">
-                    <span className="problem-icon landing-problem-icon">📦</span>
+                    <span className="problem-icon landing-problem-icon"><Package size={20} /></span>
                     <span>Falta de trazabilidad en órdenes de compra y proveedores</span>
                   </div>
                   <div className="problem-item landing-problem-item">
-                    <span className="problem-icon landing-problem-icon">💬</span>
+                    <span className="problem-icon landing-problem-icon"><MessageCircle size={20} /></span>
                     <span>Comunicación institucional dispersa</span>
                   </div>
                   <div className="problem-item landing-problem-item">
-                    <span className="problem-icon landing-problem-icon">👥</span>
+                    <span className="problem-icon landing-problem-icon"><Users2 size={20} /></span>
                     <span>Gestión ineficiente de personal y actividades</span>
                   </div>
                 </div>
@@ -370,17 +390,17 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
             
             <div className="purpose-visual landing-purpose-visual">
               <div className="visual-card landing-visual-card">
-                <div className="card-icon landing-card-icon">🚀</div>
+                <div className="card-icon landing-card-icon"><Rocket size={32} /></div>
                 <h4>Automatización</h4>
                 <p>Automatiza procesos repetitivos para ahorrar tiempo y recursos</p>
               </div>
               <div className="visual-card landing-visual-card">
-                <div className="card-icon landing-card-icon">📊</div>
+                <div className="card-icon landing-card-icon"><BarChart3 size={32} /></div>
                 <h4>Organización</h4>
                 <p>Centraliza toda la información institucional en un solo lugar</p>
               </div>
               <div className="visual-card landing-visual-card">
-                <div className="card-icon landing-card-icon">🔗</div>
+                <div className="card-icon landing-card-icon"><LinkIcon size={32} /></div>
                 <h4>Integración</h4>
                 <p>Conecta todos los departamentos para una gestión unificada</p>
               </div>
@@ -493,28 +513,28 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
               viewport={{ once: true }}
             >
               <div className="benefit-item landing-benefit-item">
-                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <span className="benefit-icon landing-benefit-icon"><MessageCircle size={24} /></span>
                 <div className="benefit-text landing-benefit-text">
                   <h4>Comunicación fluida</h4>
                   <p>Entre docentes, estudiantes y padres</p>
                 </div>
               </div>
               <div className="benefit-item landing-benefit-item">
-                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <span className="benefit-icon landing-benefit-icon"><Shield size={24} /></span>
                 <div className="benefit-text landing-benefit-text">
                   <h4>Trazabilidad completa</h4>
                   <p>De bienes y actividades institucionales</p>
                 </div>
               </div>
               <div className="benefit-item landing-benefit-item">
-                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <span className="benefit-icon landing-benefit-icon"><TrendingUp size={24} /></span>
                 <div className="benefit-text landing-benefit-text">
                   <h4>Gestión eficiente</h4>
                   <p>De personal, horarios y recursos</p>
                 </div>
               </div>
               <div className="benefit-item landing-benefit-item">
-                <span className="benefit-icon landing-benefit-icon">✅</span>
+                <span className="benefit-icon landing-benefit-icon"><Zap size={24} /></span>
                 <div className="benefit-text landing-benefit-text">
                   <h4>Automatización</h4>
                   <p>De 15+ procesos administrativos</p>
@@ -602,7 +622,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
               viewport={{ once: true }}
             >
               <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon">📞</div>
+                <div className="contact-icon landing-contact-icon"><Phone size={24} /></div>
                 <div className="contact-details landing-contact-details">
                   <h4>Teléfono</h4>
                   <p>+504 8797-1675</p>
@@ -610,7 +630,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
               </div>
               
               <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon">✉️</div>
+                <div className="contact-icon landing-contact-icon"><Mail size={24} /></div>
                 <div className="contact-details landing-contact-details">
                   <h4>Correo Electrónico</h4>
                   <p>esc.experimentalmusica@gmail.com</p>
@@ -618,7 +638,7 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
               </div>
               
               <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon">📍</div>
+                <div className="contact-icon landing-contact-icon"><MapPin size={24} /></div>
                 <div className="contact-details landing-contact-details">
                   <h4>Ubicación</h4>
                   <p>Colonia Hato de Enmedio, sector 2 Contiguo a la Iglesia de los Santos de los Últimos Días, Tegucigalpa, Honduras</p>
@@ -626,10 +646,10 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
               </div>
               
               <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon">👨‍💻</div>
+                <div className="contact-icon landing-contact-icon"><Code size={24} /></div>
                 <div className="contact-details landing-contact-details">
                   <h4>Desarrollado por</h4>
-                  <p>Estudiantes de Ingeniería en Sistemas, UNAH</p>
+                  <p>Estudiantes de Informática Administrativa, UNAH</p>
                 </div>
               </div>
             </motion.div>

@@ -21,7 +21,7 @@ import {
   FiStar,
   FiCalendar,
   FiBookOpen,
-  FiTrash2, // ✅ Icono de eliminar agregado
+  FiTrash2, 
   FiFile,
   FiArrowUp,
   FiArrowDown,
@@ -69,7 +69,7 @@ export default function BibliotecaTest() {
 
       const res = await axios.get(API_URL, {
         headers: {
-          Authorization: `Bearer ${token}` // ✅ Token agregado
+          Authorization: `Bearer ${token}` //  Token agregado
         }
       });
 
@@ -150,7 +150,7 @@ export default function BibliotecaTest() {
       await axios.post(API_URL, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}` // ✅ Token agregado
+          Authorization: `Bearer ${token}` //  Token agregado
         },
       });
 
@@ -200,14 +200,14 @@ const prepararEliminacion = (libro) => {
       }
     });
     cargarLibros();
-    showNotification(`🗑 Libro "${libroAEliminar.titulo}" eliminado correctamente`, "success");
+    showNotification(` Libro "${libroAEliminar.titulo}" eliminado correctamente`, "success");
     // Aquí puedes actualizar el estado de libros si lo tienes
     setLibroAEliminar(null);
   } catch (error) {
     console.error("Error al eliminar libro:", error);
-    showNotification("❌ No se pudo eliminar el libro.", "error");
+    showNotification(" No se pudo eliminar el libro.", "error");
   }finally {
-      loadingController.stop(); // 👈 detiene el loader
+      loadingController.stop(); //  detiene el loader
     }
 };
 

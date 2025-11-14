@@ -18,7 +18,7 @@ oAuth2Client.setCredentials({
 const drive = google.drive({ version: "v3", auth: oAuth2Client });
 
 /**
- * ✅ SUBIR LIBRO A GOOGLE DRIVE
+ *  SUBIR LIBRO A GOOGLE DRIVE
  */
 exports.crearLibro = async (req, res) => {
   try {
@@ -71,7 +71,7 @@ exports.crearLibro = async (req, res) => {
 };
 
 /**
- * ✅ OBTENER LISTA DE LIBROS
+ *  OBTENER LISTA DE LIBROS
  */
 exports.obtenerLibros = async (req, res) => {
   try {
@@ -84,7 +84,7 @@ exports.obtenerLibros = async (req, res) => {
 };
 
 /**
- * ✅ ELIMINAR LIBRO (Drive + MongoDB)
+ *  ELIMINAR LIBRO (Drive + MongoDB)
  */
 exports.eliminarLibro = async (req, res) => {
   try {

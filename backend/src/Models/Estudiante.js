@@ -10,17 +10,23 @@ const EstudianteSchema = new mongoose.Schema({
     id_documento: { type: String, unique: true, required: true }, // Cédula, DNI, Pasaporte, etc.
     residencia_direccion: { type: String, required: true },
     telefono_alumno: { type: String },
+
     // NUEVOS CAMPOS PARA IMAGEN
-        imagen: {
-            type: String, // Guardará la imagen en Base64
-            default: null
-        },
-        tipo_imagen: {
-            type: String, // Guardará el tipo MIME, ej. image/png
-            default: null
-        },
+    imagen: {
+        type: String, // Guardará la imagen en Base64
+        default: null
+    },
+    tipo_imagen: {
+        type: String, // Guardará el tipo MIME, ej. image/png
+        default: null
+    },
+
     // --- Datos Académicos ---
-    grado_a_matricular: { type: String, required: true },
+    grado_a_matricular: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Grado', // Nombre de la colección a la que hace referencia
+        required: true 
+    },
     escuela_anterior: { type: String },
     notas_grado_anterior: { type: String }, // Podría ser una URL a un documento o una nota simple
 

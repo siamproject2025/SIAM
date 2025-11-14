@@ -4,7 +4,7 @@ import { auth } from "..//components/authentication/Auth";
 
 const API_URL = process.env.REACT_APP_API_URL+'/api'; 
 
-// 📅 Función de utilidad para formatear la fecha a hora local
+//  Función de utilidad para formatear la fecha a hora local
 const formatToLocalTime = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -35,7 +35,7 @@ const calculateDate = (duration, unit) => {
 };
 
 
-// 💡 RECIBIMOS setGlobalNotification como prop
+//  RECIBIMOS setGlobalNotification como prop
 const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotification }) => {
     const [answerContent, setAnswerContent] = useState('');
     const [showAnswerForm, setShowAnswerForm] = useState(false);
@@ -72,7 +72,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
             setError("Usuario no autenticado");
             return;
         }
-        const token = await user.getIdToken(); // 🔹 Obtener token
+        const token = await user.getIdToken(); //  Obtener token
 
         const postUrlCompleto = `${API_URL}/questions/${question._id}/answers`;
         
@@ -82,7 +82,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
             deleteUnit: deleteUnit
         }, {
             headers: {
-                Authorization: `Bearer ${token}` // ✅ Token agregado
+                Authorization: `Bearer ${token}` //  Token agregado
             }
         });
 
@@ -117,14 +117,14 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
 
     return (
         <div className="question-item-card">
-            {/* ✅ CORRECCIÓN 1: Asegura la VISUALIZACIÓN de la pregunta */}
+           
             <h4>{question.title}</h4>
             <p className="question-content"><strong>Pregunta:</strong> {question.content}</p>
             
             <p className="asked-by">
                 <em>
                     Preguntado por: {question.askedBy || 'Anónimo'} 
-                    {/* Asumiendo que la pregunta tiene un campo createdAt */}
+                  
                     {question.createdAt && <span> ({formatToLocalTime(question.createdAt)})</span>}
                 </em>
             </p>
@@ -141,10 +141,10 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
                     <p className="answered-by-info">
                         <em>
                             Contestado por: {ans.answeredBy || 'Admin'}
-                            {/* 🌎 Muestra la fecha de respuesta en hora local */}
+                            {/*  Muestra la fecha de respuesta en hora local */}
                             {ans.answeredAt && <span> el {formatToLocalTime(ans.answeredAt)}</span>}
                             
-                            {/* 🌎 Muestra la fecha de eliminación en hora local */}
+                            {/*  Muestra la fecha de eliminación en hora local */}
                             {ans.deleteAt && 
                                 <span style={{color: '#dc3545', marginLeft: '10px'}}>
                                     (Se autodestruye: {formatToLocalTime(ans.deleteAt)})
@@ -162,7 +162,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
                         {showAnswerForm ? 'Cancelar' : 'Responder'}
                     </button>
                     {showAnswerForm && (
-                        // 🛑 Asegura que el onSubmit apunte correctamente a handleAnswerSubmit
+                        //  Asegura que el onSubmit apunte correctamente a handleAnswerSubmit
                         <form onSubmit={handleAnswerSubmit} className="answer-form">
                             <textarea
                                 placeholder="Escribe tu respuesta aquí..."
@@ -193,7 +193,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
                                 </select>
                             </div>
                             
-                            {/* 🌎 Previsualización de la Fecha de Eliminación Local */}
+                            {/*  Previsualización de la Fecha de Eliminación Local */}
                             {calculatedDeleteDate && (
                                 <p style={{ color: '#007bff', fontSize: '0.9em', marginTop: '5px' }}>
                                     Se eliminará a las: **{formatToLocalTime(calculatedDeleteDate.toISOString())}**
@@ -205,7 +205,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
                     )}
                 </div>
             )}
-            {!isQuestionOpen && <p className="closed-info">Esta pregunta ya ha sido respondida. 👍</p>}
+            {!isQuestionOpen && <p className="closed-info">Esta pregunta ya ha sido respondida. </p>}
         </div>
     );
 };

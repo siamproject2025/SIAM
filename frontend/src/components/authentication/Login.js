@@ -218,12 +218,7 @@ const saveUserToAPI = async (user, name, password) => {
               </div>
 
               <div className="login-center-options">
-                <div className="remember-div">
-                  <input type="checkbox" id="remember-checkbox" />
-                  <label htmlFor="remember-checkbox">
-                    Recuerdame por 30 días
-                  </label>
-                </div>
+                
                 <a className="forgot-pass-link" onClick={() => navigate("/ResetPassword")}>
                   ¿Has olvidado tu contraseña?
                 </a>

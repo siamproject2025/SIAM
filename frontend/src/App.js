@@ -9,31 +9,31 @@ import NavBar from './components/navBar';
 import Login from './components/authentication/Login';
 import { BrowserRouter as  Router,Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Landing from "./screens/Landing";
-import Home from "./screens/Home";
+import Home from "./screens/Models/Dashboard/Home";
 import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
 
 
 //Models
-import OrdenCompra from './screens/Models/ordencompra';
-import Bienes from './screens/Models/Bienes';
-import Personal from './screens/Models/personal';
-import Horarios from './screens/Models/Horarios';
-import Matricula from './screens/Models/Matricula';
-import Directiva from './screens/Models/directiva'; // ← Cambiado a mayúscula
-import Proveedores from './screens/Models/proveedores';
+import OrdenCompra from './screens/Models/OrdenCompra/ordencompra';
+import Bienes from './screens/Models/Bienes/Bienes';
+import Personal from './screens/Models/Personas/personal';
+import Horarios from './screens/Models/Matriculas/Horarios';
+import Matricula from './screens/Models/Matriculas/Matricula';
+import Directiva from './screens/Models/Personas/directiva'; // ← Cambiado a mayúscula
+import Proveedores from './screens/Models/Personas/proveedores';
 import Donaciones from './screens/Models/donaciones';
 import RestrictedPage from './screens/RestrictedPage';
-import Dashboard from './screens/Dashboard';
-import AsignarRol from './screens/AsignarRol';
+import Dashboard from './screens/Models/Dashboard/Dashboard';
+import AsignarRol from './screens/Models/Dashboard/AsignarRol';
 import ResetPassword from './components/authentication/ResetPassword';
 import ResetPasswordSeguro from './components/authentication/ResetPasswordFirebase';
 import SideBar from './components/SideBar';
-import ActividadesPage from './components/ActividadesPage';
-import CalendarioActividades from './components/CalendarioActividades';
+import ActividadesPage from './components/Actividades/ActividadesPage';
+import CalendarioActividades from './components/Actividades/CalendarioActividades';
 import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
-import GradosPage from './screens/Models/grados';
+import GradosPage from './screens/Models/Matriculas/grados';
 
 
 
@@ -180,7 +180,7 @@ return (
             zIndex: 9999,
           }}
         >
-          ⚠️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
+          ️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
         </div>
       )}
     </div>

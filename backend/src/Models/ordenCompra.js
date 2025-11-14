@@ -15,7 +15,7 @@ const ordenCompraSchema = new mongoose.Schema({
   },
   proveedor_id: { 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: "Proveedor", // 👈 Necesario para populate()
+    ref: "Proveedor", //  Necesario para populate()
     required: true 
   },
   estado: { 

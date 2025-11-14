@@ -26,7 +26,7 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
     // Esto se ejecuta al desmontarse, es decir, al cerrar el modal
     if (nuevoBien.foto_preview) {
       URL.revokeObjectURL(nuevoBien.foto_preview);
-      console.log('✅ URL temporal revocada al cerrar modal');
+      
     }
   };
 }, [nuevoBien.foto_preview]);
@@ -82,7 +82,7 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3 className="modal-title">✨ Crear Nuevo Bien</h3>
+        <h3 className="modal-title"> Crear Nuevo Bien</h3>
 
         <div className="modal-form-grid">
           <div className="form-group">
@@ -122,10 +122,10 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
               onChange={(e) => setNuevoBien({ ...nuevoBien, estado: e.target.value })}
             >
               <option value="">Seleccionar estado</option>
-              <option value="ACTIVO">🟢 ACTIVO</option>
-              <option value="INACTIVO">🔴 INACTIVO</option>
-              <option value="MANTENIMIENTO">🟡 MANTENIMIENTO</option>
-              <option value="PRESTAMO">🔵 PRESTAMO</option>
+              <option value="ACTIVO"> ACTIVO</option>
+              <option value="INACTIVO"> INACTIVO</option>
+              <option value="MANTENIMIENTO"> MANTENIMIENTO</option>
+              <option value="PRESTAMO"> PRESTAMO</option>
             </select>
           </div>
 
@@ -201,7 +201,7 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
                   </p>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept=".jpg,.jpeg"
                     onChange={handleFotoChange}
                     style={{ display: 'none' }}
                     id="foto-upload-nueva"
@@ -211,7 +211,7 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
                     Seleccionar imagen
                   </label>
                   <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                    Formatos: JPG, PNG, GIF. Máximo 5MB
+                    Formatos: JPG, JPEG
                   </small>
                 </div>
               )}

@@ -33,7 +33,7 @@ exports.crearUsuario = async (req, res) => {
 
     if (email) userData.email = email;
     if (username) userData.username = username;
-    // 🔹 Hash de la contraseña si existe
+    //  Hash de la contraseña si existe
     if (password_hash) {
       const hashedPassword = await argon2.hash(password_hash);
       userData.password_hash = hashedPassword;
@@ -50,7 +50,7 @@ exports.crearUsuario = async (req, res) => {
   }
 };
 
-// 🔹 Asignar o modificar roles de un usuario (solo ADMIN)
+//  Asignar o modificar roles de un usuario (solo ADMIN)
 exports.asignarRol = async (req, res) => {
   try {
     const { id } = req.params;

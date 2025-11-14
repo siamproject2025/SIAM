@@ -11,12 +11,12 @@ const sharp = require('sharp');
 
 exports.crearMatricula = async (req, res) => {
   try {
-    // 📸 Procesar imagen si existe
+    //  Procesar imagen si existe
     let imagenBase64 = null;
     let tipoImagen = null;
 
     if (req.file) {
-      console.log('🟢 Archivo recibido, procesando con Sharp...');
+      console.log(' Archivo recibido, procesando con Sharp...');
 
       const TARGET_WIDTH = 600;
       const TARGET_HEIGHT = 600;
@@ -38,10 +38,10 @@ exports.crearMatricula = async (req, res) => {
         tipoImagen = 'image/jpeg';
       }
 
-      console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
+      console.log(` Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
     }
 
-    // 🧠 Verificar duplicado antes de crear
+    //  Verificar duplicado antes de crear
     const { id_documento } = req.body;
     const existe = await Estudiante.findOne({ id_documento });
 
@@ -52,7 +52,7 @@ exports.crearMatricula = async (req, res) => {
       });
     }
 
-    // 🧩 Crear el objeto estudiante
+    //  Crear el objeto estudiante
     const estudianteData = {
       ...req.body,
       imagen: imagenBase64,
@@ -68,7 +68,7 @@ exports.crearMatricula = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error en crearMatricula:', error);
+    console.error(' Error en crearMatricula:', error);
 
     // Manejo especial para error de clave duplicada (MongoDB)
     if (error.code === 11000 && error.keyPattern?.id_documento) {

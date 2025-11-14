@@ -25,12 +25,12 @@
 .app-header {
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: white;
-  padding: 2rem 0;
+  padding: 25px;
   box-shadow: var(--box-shadow);
 }
 
 .headerEstudiantes{
-  padding: 30px 30px 0px 30px;
+  padding: 25px 25px 0 25px;
 }
 
 
@@ -38,7 +38,7 @@
 
 .container2 {
   width: 100%;
-  padding: 0 30px;
+  padding: 0 25px;
 }
 
 /* Barra de acciones */
@@ -98,6 +98,11 @@
 
 .btn-secondary:hover:not(:disabled) {
   background-color: #dde1e6;
+}
+
+.download-buttons{
+  display: flex;
+  gap: 15px;
 }
 
 /* Loading */

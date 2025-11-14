@@ -21,4 +21,4 @@ if (!admin.apps.length) {
   });
 }
 
-module.exports = admin; // ✅ Exportar admin para usarlo en los controladores
+module.exports = admin; //Exportar admin para usarlo en los controladores

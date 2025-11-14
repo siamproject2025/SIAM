@@ -6,7 +6,7 @@ import { auth } from "../authentication/Auth"; // Asumiendo que Auth.js tiene la
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/usuarios/role";
 const useUserRole = () => {
-    // 💡 Estado para el rol: Puede ser 'ADMIN', 'DOCENTE', 'PADRE', o null si no está logueado
+    //  Estado para el rol: Puede ser 'ADMIN', 'DOCENTE', 'PADRE', o null si no está logueado
     const [userRole, setUserRole] = useState(null); 
     const [cargando, setCargando] = useState(true);
 

@@ -19,7 +19,7 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3 className="modal-title">📋 Detalle de Actividad</h3>
+        <h3 className="modal-title"> Detalle de Actividad</h3>
 
         <div className="modal-form-grid">
           <div className="form-group full-width">
@@ -70,9 +70,9 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
         </div>
 
         <div className="modal-actions">
-          <button className="btn-guardar" onClick={handleGuardar}>Guardar Cambios</button>
+          <button className="btn btn-guardar-donaciones" onClick={handleGuardar}>Guardar Cambios</button>
           <button className="btn btn-danger" onClick={handleEliminar}>Eliminar</button>
-          <button className="btn-cerrar" onClick={onClose}>Cerrar</button>
+          <button className="btn btn-dark" onClick={onClose}>Cerrar</button>
         </div>
       </div>
     </div>
