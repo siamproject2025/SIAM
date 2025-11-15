@@ -34,7 +34,8 @@ import ActividadesPage from './components/Actividades/ActividadesPage';
 import CalendarioActividades from './components/Actividades/CalendarioActividades';
 import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
 import GradosPage from './screens/Models/Matriculas/grados';
-
+import AccountSettings from './components/authentication/AccountSettings';
+import ChangePasswordLogueado from './components/authentication/ChangePasswordLogueado';
 
 
 const auth = getAuth(appFirebase);
@@ -129,6 +130,9 @@ return (
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/ResetPassword" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
+        <Route path="/account" element={<AccountSettings />} />
+        <Route path="/contrasena" element={<ChangePasswordLogueado />} />
+       
 
         {/* Rutas privadas */}
         <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
