@@ -3,6 +3,7 @@ import { AuthContext } from "./AuthProvider";
 import LogoutButton from "./LogoutButton";
 import { IoMail } from "react-icons/io5";
 import picture from "../../assets/logo.png";
+import { Link } from 'react-router-dom';
 
 const Profile = () => {
   const { user } = useContext(AuthContext);
@@ -17,9 +18,9 @@ const Profile = () => {
     <div>
       <div className="dropdown-header">
         <h6>Mi Cuenta</h6>
-        <p>Gestiona tu perfil</p>
+        <Link to='/account'>Gestiona tu perfil</Link>
       </div>
-      
+    
       <div style={{ padding: '20px' }}>
         <div className="user-info">
           <img
