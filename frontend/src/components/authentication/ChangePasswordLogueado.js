@@ -69,6 +69,7 @@ const handleSubmit = async (e) => {
  <form className="reset-form" onSubmit={handleSubmit}>
  <h2>Cambiar Contraseña</h2>
         {/* Aquí podrías añadir un campo para la Contraseña Actual si lo requiere la lógica */}
+<label >Nueva Contraseña </label>
  <input
  type="password"
  placeholder="Nueva contraseña"
@@ -76,8 +77,11 @@ const handleSubmit = async (e) => {
  onChange={(e) => setPassword(e.target.value)}
  required
  />
+ <label>Confirmar nueva Contraseña</label>
+ 
  <input
  type="password"
+ 
  placeholder="Confirmar nueva contraseña"
  value={confirmPassword}
  onChange={(e) => setConfirmPassword(e.target.value)}

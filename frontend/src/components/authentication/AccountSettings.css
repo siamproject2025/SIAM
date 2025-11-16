@@ -74,12 +74,7 @@
 }
 
 /* Estilos de formulario genéricos para este componente */
-.profile-form label {
-    display: block;
-    margin-bottom: 15px;
-    font-weight: 500;
-    color: var(--dark);
-}
+
 
 .profile-form input {
     width: 100%;
@@ -107,6 +102,7 @@
     flex-direction: column;
     gap: 20px; /* Espacio entre los elementos del formulario */
     padding: 20px 0; /* Un poco de padding arriba y abajo dentro del main content */
+    background-color: var(--bg-light); 
 }
 
 /* Título de los formularios internos */
@@ -125,14 +121,19 @@
     margin-bottom: 5px; /* Espacio entre la etiqueta y el input */
     display: block; /* Para que la etiqueta ocupe su propia línea */
 }
-
+.reset-form label {
+    font-weight: 500;
+    color: var(--dark);
+    margin-bottom: 5px; /* Espacio entre la etiqueta y el input */
+    display: block; /* Para que la etiqueta ocupe su propia línea */
+}
 
 /* Estilos para los campos de entrada (input) */
 .reset-form input,
 .profile-form input {
     width: 100%; /* Ocupa todo el ancho disponible */
     padding: 12px 15px; /* Más padding para que sean más altos */
-    border: 1px solid #e0e0e0; /* Borde más sutil */
+    border: 1px solid #ddd; /* Borde más sutil */
     border-radius: 8px; /* Bordes redondeados como en tu diseño */
     font-size: 1rem;
     color: var(--text-color);
@@ -185,7 +186,7 @@
 .reset-form .success,
 .profile-form .success-message {
     color: var(--success); /* Verde de éxito */
-    background-color: #e6ffe6; /* Fondo verde claro */
+    background-color: #ddd; /* Fondo verde claro */
     border: 1px solid var(--success);
     padding: 10px 15px;
     border-radius: 8px;
@@ -196,7 +197,7 @@
 .reset-form .error,
 .profile-form .error-message {
     color: var(--error); /* Rojo de error */
-    background-color: #ffe6e6; /* Fondo rojo claro */
+    background-color: #ddd; /* Fondo rojo claro */
     border: 1px solid var(--error);
     padding: 10px 15px;
     border-radius: 8px;
