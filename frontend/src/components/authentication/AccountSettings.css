@@ -4,8 +4,7 @@
     padding: 30px;
     background-color: var(--bg-light); /* Fondo claro de tu dashboard */
     border-radius: var(--border-radius);
-    max-width: 1200px;
-    margin: 30px auto; /* Centrar la página en el layout principal */
+    min-height: 70vh;
 }
 
 .page-title {
@@ -101,7 +100,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px; /* Espacio entre los elementos del formulario */
-    padding: 20px 0; /* Un poco de padding arriba y abajo dentro del main content */
+    padding: 20px; /* Un poco de padding arriba y abajo dentro del main content */
     background-color: var(--bg-light); 
 }
 

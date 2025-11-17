@@ -135,27 +135,33 @@ return (
        
 
         {/* Rutas privadas */}
+
+        {/*Rutas a las que todos roles tienen acceso*/}
         <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
           <Route path="/home" element={<Home />} />
-          <Route path="/ordencompra" element={<OrdenCompra />} />
-          <Route path="/Bienes" element={<Bienes />} />
-          <Route path="/personal" element={<Personal />} />
-          <Route path="/proveedores" element={<Proveedores />} />
-          <Route path="/seguridad" element={<AsignarRol />} />
-          <Route path="/donaciones" element={<Donaciones />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/Actividades" element={<ActividadesPage />} />
-          <Route path="/biblioteca" element={<BibliotecaTest />} />
+          <Route path="/biblioteca" element={<BibliotecaTest />} /> 
           <Route path="/horarios" element={<Horarios />} />
-          <Route path="/Calendario" element={<CalendarioActividades />} />
-          <Route path="/directiva" element={<Directiva />} />  
-          <Route path="/admisiones" element={<Matricula />} />
-           <Route path="/grados" element={<GradosPage />} /> 
-                                            
+          <Route path="/Calendario" element={<CalendarioActividades />} />      
         </Route>
 
+        {/*Rutas a las que Admin y docentes tienen acceso*/}
         <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>
-          <Route path="/home" element={<Home />} />
+          <Route path="/home" element={<Home />} />{/*Graficos del dashboard*/}
+          <Route path="/ordencompra" element={<OrdenCompra />} />
+          <Route path="/Bienes" element={<Bienes />} />
+          <Route path="/proveedores" element={<Proveedores />} />
+          <Route path="/donaciones" element={<Donaciones />} />
+          <Route path="/grados" element={<GradosPage />} />
+          <Route path="/admisiones" element={<Matricula />} /> 
+          <Route path="/Actividades" element={<ActividadesPage />} />   
+        </Route>
+
+         {/*Rutas a las que solo admins tienen acceso*/}
+        <Route element={<PrivateRoute allowedRoles={["", "ADMIN", ""]} />}>
+          <Route path="/personal" element={<Personal />} />
+          <Route path="/seguridad" element={<AsignarRol />} />
+          <Route path="/directiva" element={<Directiva />} />  
         </Route>
 
 
