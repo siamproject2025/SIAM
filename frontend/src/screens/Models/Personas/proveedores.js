@@ -332,8 +332,8 @@ const cancelarEliminacionProveedor = () => {
   });
 
   const getEstrellas = (calificacion) => {
-    if (!calificacion) return '';
-    return ''.repeat(calificacion) + ''.repeat(5 - calificacion);
+    if (!calificacion) return '☆☆☆☆☆';
+    return '★'.repeat(calificacion) + '☆'.repeat(5 - calificacion);
   };
 
   const getTipoIcon = (tipo) => {
