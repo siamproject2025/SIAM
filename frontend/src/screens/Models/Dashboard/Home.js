@@ -23,6 +23,7 @@ const COLORS2 = [ "#76b7b2", "#59a14f", "#edc949", "#af7aa1", "#ff9da7"];
 
 export default function Home() {
   const [usuarios, setUsuarios] = useState([]);
+  const [alumnos, setAlumnos] = useState([]);
   const [compras, setCompras] = useState([]);
   const [bienes, setBienes] = useState([]);
   const [libros, setLibros] = useState([]);
@@ -41,13 +42,15 @@ export default function Home() {
           axios.get(`${API_URL}/api/bienes`, { headers: { Authorization: `Bearer ${token}` } }),
           axios.get(`${API_URL}/api/biblioteca`, { headers: { Authorization: `Bearer ${token}` } }), // para libros
           axios.get(`${API_URL}/api/actividades`, { headers: { Authorization: `Bearer ${token}` } }), // nuevas actividades
+          axios.get(`${API_URL}/api/matriculas`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
-
+       
         setUsuarios(results[0].status === "fulfilled" ? results[0].value.data.users : []);
         setCompras(results[1].status === "fulfilled" ? results[1].value.data : []);
         setBienes(results[2].status === "fulfilled" ? results[2].value.data : []);
         setLibros(results[3].status === "fulfilled" ? results[3].value.data : []);
         setActividades(results[4].status === "fulfilled" ? results[4].value.data : []);
+        setAlumnos(results[5].status === "fulfilled" ? results[5].value.data.data : []);
       } catch (error) {
         console.error("Error al obtener datos:", error);
       } finally {
@@ -61,11 +64,7 @@ export default function Home() {
   if (cargando) return <p className="dashboard-loading">Cargando datos...</p>;
 
   // === Datos de Roles ===
-  const rolesDisponibles = ["ADMIN", "DOCENTE", "PADRE"];
-  const dataRoles = rolesDisponibles.map((rol) => ({
-    name: rol,
-    value: usuarios.filter((u) => u.roles.includes(rol)).length,
-  }));
+ 
 
   // === Datos de Bienes por Estado ===
   const estados = [...new Set(bienes.map((b) => b.estado))];
@@ -84,29 +83,27 @@ export default function Home() {
 
       {/* === TOTAL USUARIOS === */}
       <div className="plugins-card total-card blue-card">
-        <div className="card-icon">
+        <div className="card-icon  ">
           <FiUsers size={48} />
         </div>
         <div>
           <h3>Total de Usuarios</h3>
-          <p className="total-number">{usuarios.length}</p>
+          {usuarios.length === 0 ? (
+            <p className="total-numberDocente">Sin permisos</p>
+          ) : (
+            <p className="total-number">{usuarios.length}</p>
+          )}
         </div>
       </div>
       
       {/* === GRÁFICA DE ROLES === */}
-      <div className="plugins-card chart-card">
-        <div className="chart-wrapper">
-          <ResponsiveContainer width="100%" height={195}>
-            <PieChart>
-              <Pie data={dataRoles} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={40} label>
-                {dataRoles.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+      <div className="plugins-card total-card green-card">
+         <div className="card-icon">
+          <FiUsers size={48} />
+        </div>
+        <div>
+          <h3>Total de alumnos</h3>
+          <p className="total-number">{alumnos.length}</p>
         </div>
       </div>
 

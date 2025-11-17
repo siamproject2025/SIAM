@@ -49,6 +49,13 @@
 
 }
 
+.green-card{
+ background: linear-gradient(135deg, #abfef3, #ddf8f8);
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+}
+
 .purple-card{
   background: linear-gradient(135deg, #e3c1fe, #fbdbff);
   justify-content: center;
@@ -64,6 +71,12 @@
   font-size: 3rem;
   font-weight: bold;
   margin-top: 0.5rem;
+}
+
+.total-numberDocente{
+  margin-top: 40px;
+  font-size: 20px;
+  font-weight: 500;
 }
 
 /* === Gráficas === */

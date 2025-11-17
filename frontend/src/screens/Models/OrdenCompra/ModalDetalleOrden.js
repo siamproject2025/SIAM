@@ -63,10 +63,6 @@ const handleGuardar = () => {
     return;
   }
 
-  if (!ordenEditada.proveedor_id) {
-    mostrarNotificacion('Debes seleccionar un proveedor antes de guardar la orden', 'warning');
-    return;
-  }
 
   if (!ordenEditada.items || ordenEditada.items.length === 0) {
     mostrarNotificacion('La orden debe tener al menos un ítem', 'warning');

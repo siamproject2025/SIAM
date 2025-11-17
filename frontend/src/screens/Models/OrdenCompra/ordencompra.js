@@ -297,10 +297,6 @@ const handleEditarOrden = async (ordenActualizada) => {
       showNotification('El número de orden es obligatorio', 'error');
       return;
     }
-    if (!ordenActualizada.proveedor_id) {
-      showNotification('Debes seleccionar un proveedor', 'error');
-      return;
-    }
     if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
       showNotification('La orden debe tener al menos un ítem', 'error');
       return;
@@ -312,9 +308,6 @@ const handleEditarOrden = async (ordenActualizada) => {
 
     const ordenParaEnviar = {
       ...ordenActualizada,
-      proveedor_id: typeof ordenActualizada.proveedor_id === 'object' 
-        ? ordenActualizada.proveedor_id._id 
-        : ordenActualizada.proveedor_id,
       fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
     };
 

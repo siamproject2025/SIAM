@@ -108,6 +108,10 @@ const BusquedaTablaHorarios = ({
     });
   }, [horarios, filtros, aulas, personal]);
 
+  const getNombreGrado = (gradoId) => {
+    const grado = aulas.find(g => g._id === gradoId);
+    return grado ? grado.grado : gradoId; // Si no encuentra, devuelve el ID como fallback
+  };
   // Función para descargar PDF
   const descargarPDF = () => {
     const doc = new jsPDF("p", "mm", "a4");
@@ -144,7 +148,7 @@ const BusquedaTablaHorarios = ({
     if (filtros.grado) infoFiltros += ` | Grado: ${filtros.grado}`;
     if (filtros.aula) {
       const nombreAula = aulas.find(a => normalizarId(a._id) === filtros.aula)?.nombre;
-      infoFiltros += ` | Aula: ${nombreAula || filtros.aula}`;
+      infoFiltros += ` | Grado: ${getNombreGrado(nombreAula) || getNombreGrado(filtros.aula)}`;
     }
     if (filtros.busqueda) infoFiltros += ` | Búsqueda: ${filtros.busqueda}`;
   
