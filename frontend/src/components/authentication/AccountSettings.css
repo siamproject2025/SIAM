@@ -1,0 +1,206 @@
+/* --- Estilos de la Página de Configuración (Account Settings) --- */
+
+.account-settings-page {
+    padding: 30px;
+    background-color: var(--bg-light); /* Fondo claro de tu dashboard */
+    border-radius: var(--border-radius);
+    max-width: 1200px;
+    margin: 30px auto; /* Centrar la página en el layout principal */
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    color: var(--dark); /* Color de texto oscuro */
+}
+
+/* Contenedor Flex para la Navegación y el Contenido */
+.settings-content-wrapper {
+    display: flex;
+    gap: 30px; /* Espacio entre la barra lateral y el contenido */
+}
+
+/* --- Barra Lateral (Settings Sidebar) --- */
+.settings-sidebar {
+    width: 250px; /* Ancho fijo para las pestañas de navegación */
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+}
+
+.setting-tab {
+    background: none;
+    border: none;
+    padding: 12px 15px;
+    margin-bottom: 5px;
+    text-align: left;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--gray); /* Texto gris para inactivos */
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.setting-tab:hover {
+    background-color: var(--bg-light); /* Fondo suave al pasar el ratón */
+    color: var(--primary); /* Texto morado al pasar el ratón */
+}
+
+.setting-tab.active {
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); /* Degradado morado/azul de tu diseño */
+    color: white; /* Texto blanco para la pestaña activa */
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(108, 99, 255, 0.2);
+}
+
+.setting-tab.active svg {
+    color: white; /* Icono blanco para la pestaña activa */
+}
+
+
+/* --- Área de Contenido Principal --- */
+.settings-main-content {
+    flex-grow: 1;
+    background-color: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: var(--shadow); /* Sombra suave para destacar */
+}
+
+/* Estilos de formulario genéricos para este componente */
+
+
+.profile-form input {
+    width: 100%;
+    padding: 10px 15px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.profile-form input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+
+
+
+/* Contenedor del formulario */
+.reset-form, /* Para ChangePasswordLogueado */
+.profile-form /* Para ProfileInfoForm */
+{
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espacio entre los elementos del formulario */
+    padding: 20px 0; /* Un poco de padding arriba y abajo dentro del main content */
+    background-color: var(--bg-light); 
+}
+
+/* Título de los formularios internos */
+.reset-form h2,
+.profile-form h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark); /* Color oscuro para el texto */
+    margin-bottom: 25px; /* Más espacio debajo del título */
+    text-align: left; /* Alineado a la izquierda como en tus otros elementos */
+}
+
+.profile-form label {
+    font-weight: 500;
+    color: var(--dark);
+    margin-bottom: 5px; /* Espacio entre la etiqueta y el input */
+    display: block; /* Para que la etiqueta ocupe su propia línea */
+}
+.reset-form label {
+    font-weight: 500;
+    color: var(--dark);
+    margin-bottom: 5px; /* Espacio entre la etiqueta y el input */
+    display: block; /* Para que la etiqueta ocupe su propia línea */
+}
+
+/* Estilos para los campos de entrada (input) */
+.reset-form input,
+.profile-form input {
+    width: 100%; /* Ocupa todo el ancho disponible */
+    padding: 12px 15px; /* Más padding para que sean más altos */
+    border: 1px solid #ddd; /* Borde más sutil */
+    border-radius: 8px; /* Bordes redondeados como en tu diseño */
+    font-size: 1rem;
+    color: var(--text-color);
+    transition: all 0.2s ease-in-out; /* Transición suave para los estados */
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Sombra interna sutil */
+}
+
+.reset-form input::placeholder,
+.profile-form input::placeholder {
+    color: var(--gray); /* Color gris para el placeholder */
+    opacity: 0.8;
+}
+
+.reset-form input:focus,
+.profile-form input:focus {
+    border-color: var(--primar); /* Borde primario al enfocar */
+    box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2); /* Anillo de enfoque suave */
+    outline: none; /* Quitar el outline por defecto del navegador */
+}
+
+/* Estilos para el botón de submit */
+.reset-form button[type="submit"],
+.profile-form button[type="submit"] {
+    background: linear-gradient(135deg, var(--primary), var(--secondary)); /* Degradado de tu botón de inicio de sesión */
+    color: white;
+    border: none;
+    padding: 12px 25px; /* Padding generoso */
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px; /* Bordes redondeados */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3); /* Sombra para que destaque */
+    margin-top: 15px; /* Espacio arriba del botón */
+}
+
+.reset-form button[type="submit"]:hover,
+.profile-form button[type="submit"]:hover {
+    box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4); /* Sombra más pronunciada al pasar el ratón */
+    transform: translateY(-2px); /* Efecto de "levantamiento" */
+}
+
+.reset-form button[type="submit"]:active,
+.profile-form button[type="submit"]:active {
+    transform: translateY(0); /* Vuelve a su posición original al hacer clic */
+    box-shadow: 0 2px 10px rgba(108, 99, 255, 0.2);
+}
+
+/* Estilos para mensajes de éxito y error */
+.reset-form .success,
+.profile-form .success-message {
+    color: var(--success); /* Verde de éxito */
+    background-color: #ddd; /* Fondo verde claro */
+    border: 1px solid var(--success);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.reset-form .error,
+.profile-form .error-message {
+    color: var(--error); /* Rojo de error */
+    background-color: #ddd; /* Fondo rojo claro */
+    border: 1px solid var(--error);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    text-align: center;
+}
