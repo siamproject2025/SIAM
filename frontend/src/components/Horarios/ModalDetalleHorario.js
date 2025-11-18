@@ -9,7 +9,7 @@ const diasSemana = {
   MAR: "Martes",
   MIE: "Miércoles",
   JUE: "Jueves",
-  VIE: "Viercoles",
+  VIE: "Viernes",
   SAB: "Sábado",
 };
 

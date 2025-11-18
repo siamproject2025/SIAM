@@ -36,5 +36,8 @@ router.post('/usuarios/logout', authenticateUser, async (req, res) => {
     res.status(500).json({ message: "Error al cerrar sesión" });
   }
 });
+router.post("/usuarios/login", usuarioController.loginUsuario);
+router.post("/usuarios/login/fallo", usuarioController.registrarIntentoFallido);
+router.post("/usuarios/login/exito", usuarioController.reiniciarIntentos);
 
 module.exports = router;

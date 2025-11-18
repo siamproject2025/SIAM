@@ -8,8 +8,6 @@ exports.listarUsuario = async (req, res) => {
     // Trae todos los usuarios, excluyendo campos sensibles como contraseña
     const usuarios = await Auth.find({}, { password: 0 }); // exclude password
 
-    
-
     res.json({
       users: usuarios, // Más claro que "Auth"
     });
@@ -108,5 +106,86 @@ exports.eliminarUsuario = async (req, res) => {
   } catch (error) {
     console.error("Error al eliminar usuario:", error);
     res.status(500).json({ message: "Error al eliminar usuario." });
+  }
+};
+
+// =====================
+//  LOGIN CON INTENTOS
+// =====================
+
+// 1️⃣ Verifica si el usuario está bloqueado antes del login
+exports.loginUsuario = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const usuario = await Auth.findOne({ email });
+
+    // Si no existe, respondemos como permitido (por seguridad)
+    if (!usuario) {
+      return res.status(200).json({ permitido: true });
+    }
+
+    // Verificar si está bloqueado
+    if (usuario.bloqueado_hasta && usuario.bloqueado_hasta > Date.now()) {
+      const minutosRestantes = Math.ceil((usuario.bloqueado_hasta - Date.now()) / 60000);
+      return res.status(429).json({
+        permitido: false,
+        message: `Cuenta bloqueada. Intenta en ${minutosRestantes} minutos.`
+      });
+    }
+
+    // Si no está bloqueado
+    return res.status(200).json({ permitido: true });
+
+  } catch (error) {
+    console.error("Error en loginUsuario:", error);
+    res.status(500).json({ message: "Error en el servidor" });
+  }
+};
+
+// 2️⃣ Registrar intento fallido
+exports.registrarIntentoFallido = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const usuario = await Auth.findOne({ email });
+    if (!usuario) return res.sendStatus(200);
+
+    usuario.intentos_fallidos += 1;
+
+    // Si llega al límite → bloquear 10 minutos
+    if (usuario.intentos_fallidos >= 4) {
+      usuario.bloqueado_hasta = new Date(Date.now() + 10 * 60000);
+      await usuario.save();
+      return res.status(429).json({ message: "Usuario bloqueado por 10 minutos." });
+    }
+
+    await usuario.save();
+    res.json({ message: "Intento fallido registrado." });
+
+  } catch (error) {
+    console.error("Error en registrarIntentoFallido:", error);
+    res.status(500).json({ message: "Error en el servidor" });
+  }
+};
+
+// 3️⃣ Reiniciar intentos tras login exitoso
+exports.reiniciarIntentos = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const usuario = await Auth.findOne({ email });
+    if (!usuario) return res.sendStatus(200);
+
+    usuario.intentos_fallidos = 0;
+    usuario.bloqueado_hasta = null;
+
+    await usuario.save();
+
+    res.json({ message: "Intentos reiniciados." });
+
+  } catch (error) {
+    console.error("Error en reiniciarIntentos:", error);
+    res.status(500).json({ message: "Error en el servidor" });
   }
 };

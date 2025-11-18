@@ -66,7 +66,7 @@ const Login = () => {
         await saveUserToAPI(user, name, password);
 
   
-        alert("Usuario registrado exitosamente");
+        
       } catch (error) {
         if (error.code === "auth/email-already-in-use") {
           setError("El correo ingresado ya se encuentra registrado");
@@ -79,6 +79,16 @@ const Login = () => {
     } else {
       // Inicio de sesión
       try {
+          //  Consultar si está bloqueado
+         const bloqueoRes = await axios.post(`${API_URL}/api/usuarios/login`, 
+              { email }, 
+              { validateStatus: (status) => status === 200 || status === 429 } // acepta cualquier status como "normal"
+          );
+          if (!bloqueoRes.data.permitido) {
+              setError(bloqueoRes.data.message || "Cuenta bloqueada temporalmente");
+              return;
+          }
+
          const userCredential = await signInWithEmailAndPassword(auth, email, password);
          const user = userCredential.user;
          if (user) {
@@ -87,26 +97,47 @@ const Login = () => {
           // Obtener el Token de ID
           const token = await user.getIdToken();
          
-        alert("Inicio de sesión exitoso");
+         // Login exitoso → resetear intentos en backend
+           await axios.post(`${API_URL}/api/usuarios/login/exito`, { email });
       } catch (error) {
-        if (error.code === "auth/too-many-requests") {
-          setError("Demasiados intentos de inicio de sesión. Por favor, espera un momento e inténtalo de nuevo.");
-        } else {
-          setError("El correo o contraseña no son válidos");
-        }
-        setTimeout(() => setError(null), 2000);
-        reset();
-        
-      }
+          console.log("AYUDA",error)
+          if (error.response && error.response.status === 429) {
+            setError(error.response.data.message || "Cuenta bloqueada temporalmente");
+            return; // cortamos el login AQUÍ
+          }
+            
+          const code = error.code || "";
+
+          if (code === "auth/invalid-credential" || code === "auth/wrong-password") {
+            await axios.post(`${API_URL}/api/usuarios/login/fallo`, 
+            { email: email.toLowerCase().trim() }, 
+            { validateStatus: (status) => status === 200 || status === 429 } 
+          );
+            setError("Contraseña incorrecta");
+          } else if (code === "auth/user-not-found") {
+            setError("El usuario no existe");
+          } else if (code === "auth/too-many-requests") {
+            setError("Demasiados intentos. Intenta nuevamente más tarde.");
+          } else {
+            setError("Error al iniciar sesión");
+          }
+
+      setTimeout(() => setError(null), 2000);
+      reset();
     }
-    reset();
-  };
+  }
+
+  reset();
+};
 // Función para guardar el usuario en la 
 const saveUserToAPI = async (user, name, password) => {
   try {
-    if (!user) throw new Error("No hay usuario autenticado");
+    if (!user || !user.uid) {
+      throw new Error("Usuario no válido para guardar en API");
+    }
 
     const token = await user.getIdToken();
+    
     const response = await fetch(`${API_URL}/api/usuarios`, {
       method: "POST",
       headers: {
@@ -114,19 +145,24 @@ const saveUserToAPI = async (user, name, password) => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-      authId: user.uid,
-      email: user.email,
-      username: name,
-      password_hash: password              
-    }),
+        authId: user.uid,
+        email: user.email,
+        username: name,
+        password_hash: password              
+      }),
     });
 
-    const data = await response.json();
-   
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Error en la API");
+    }
 
+    const data = await response.json();
+    console.log("Usuario guardado en API:", data);
+    
   } catch (error) {
-    console.error("Error al guardar el usuario en la API:", error);
-    setError("Error al guardar el usuario. Intenta nuevamente más tarde.");
+    console.error("Error detallado al guardar usuario:", error);
+    throw error; // Propagar el error para manejarlo en el flujo principal
   }
 };
 
