@@ -156,42 +156,70 @@ const BusquedaTablaHorarios = ({
       ];
     });
 
-    // Configurar y generar la tabla
-    autoTable(doc, {
-      startY: 40,
-      head: [['Día', 'Horario', 'Asignatura', 'Aula', 'Grado', 'Docente']],
-      body: tableData,
-      theme: 'grid',
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-      },
-      headStyles: {
-        fillColor: [41, 128, 185],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { top: 40 },
-      didDrawPage: function (data) {
-        // Footer
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Página ${doc.internal.getNumberOfPages()}`,
-          doc.internal.pageSize.width / 2,
-          doc.internal.pageSize.height - 10,
-          { align: 'center' }
-        );
-      }
-    });
+  // 🔹 Generar tabla con estilo
+  autoTable(doc, {
+    startY: 55,
+    head: [["Día", "Horario", "Asignatura", "Aula", "Grado", "Docente"]],
+    body: tableData,
+    theme: "striped",
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      textColor: [60, 60, 60],
+    },
+    headStyles: {
+      fillColor: [0, 102, 204],
+      textColor: 255,
+      fontStyle: "bold",
+    },
+    alternateRowStyles: { fillColor: [245, 248, 250] },
+    columnStyles: {
+      0: { cellWidth: 25 },
+      1: { cellWidth: 30 },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 25 },
+      5: { cellWidth: 35 },
+    },
+    didDrawPage: (data) => {
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Guardar el PDF
-    const nombreArchivo = `horarios_${new Date().toISOString().split('T')[0]}.pdf`;
-    doc.save(nombreArchivo);
-  };
+      // 🔸 Encabezado (en cada página)
+      if (doc.internal.getNumberOfPages() > 1) {
+        doc.addImage(logoUrl, "PNG", 15, 10, 20, 20);
+        doc.setFontSize(14);
+        doc.setTextColor(0, 102, 204);
+        doc.text("Escuela Experimental de Niños para la Música", pageWidth / 2, 20, { align: "center" });
+        doc.setFontSize(11);
+        doc.setTextColor(60, 60, 60);
+        doc.text("Reporte General de Horarios", pageWidth / 2, 27, { align: "center" });
+        doc.line(14, 32, pageWidth - 14, 32);
+      }
+
+      // 🔸 Footer institucional
+      doc.setFontSize(9);
+      doc.setTextColor(130, 130, 130);
+      doc.text(
+        "Documento generado automáticamente por la Escuela Experimental de Niños para la Música - S.I.A.M.",
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: "center" }
+      );
+
+      // 🔸 Número de página
+      const pageNum = doc.internal.getNumberOfPages();
+      doc.setFontSize(8);
+      doc.setTextColor(100);
+      doc.text(`Página ${pageNum}`, pageWidth - 20, pageHeight - 10);
+    },
+  });
+
+  // 🔹 Guardar PDF
+  const nombreArchivo = `reporte_horarios_${new Date().toISOString().split("T")[0]}.pdf`;
+  doc.save(nombreArchivo);
+};
+
 
   const handleFiltroChange = (campo, valor) => {
     setFiltros(prev => ({
