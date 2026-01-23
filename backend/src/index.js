@@ -29,7 +29,8 @@ const app = express();
 app.use(express.json());
 const allowedOrigins = [
   "http://localhost:3000", // desarrollo
-  "https://frontend-production-a861.up.railway.app" // producción
+  "https://siam-production-c916.up.railway.app/dashboard", // producción
+  "https://backend-production-4203.up.railway.app/"
 ];
 
 app.use(cors({ origin: true }));
