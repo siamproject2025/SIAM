@@ -1,25 +1,23 @@
 // backend/src/config/firebaseAdmin.js
 const admin = require('firebase-admin');
+require('dotenv').config(); // Asegúrate de llamar a config() aquí
 
-// Opción robusta: Parsear el JSON entero si la variable existe
 let serviceAccount;
+
 if (process.env.GOOGLE_CREDENTIALS) {
-    serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-} else {
-    // Tu método actual
-    serviceAccount = {
-        type: process.env.FIREBASE_TYPE,
-        // ...
-        private_key: process.env.FIREBASE_PRIVATE_KEY 
-            ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') 
-            : undefined,
-        // ...
-    };
+    try {
+        serviceAccount = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+        // Esto es vital: convierte los \n del string en saltos de línea reales
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    } catch (error) {
+        console.error("Error al parsear el JSON de Google Credentials:", error);
+    }
 }
 
-if (!admin.apps.length) {
+if (serviceAccount && !admin.apps.length) {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
 }
+
 module.exports = admin;
