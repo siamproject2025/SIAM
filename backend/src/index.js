@@ -1,4 +1,6 @@
 require("dotenv").config();
+require("./config/firebaseAdmin");
+
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
