@@ -49,9 +49,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// 👇 IMPORTANTE: habilitar preflight
-app.options("*", cors());
-
 
 
 // Conexión MongoDB
