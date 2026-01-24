@@ -12,7 +12,7 @@ router.post('/usuarios', usuarioController.crearUsuario);
 // Listar usuarios (solo ADMIN)
 router.get('/usuarios', authenticateUser, checkRole(['ADMIN']), usuarioController.listarUsuario);
 
-router.get("/usuarios/role",(req, res) => {
+router.get("/usuarios/role", authenticateUser,(req, res) => {
   res.json({ role: req.user.roles[0] }); // devuelve el primer rol
 });
 
