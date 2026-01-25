@@ -30,7 +30,7 @@ app.use(express.json());
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://siam-production-c916.up.railway.app"
+  "siam-production-1c5d.up.railway.app"
 ];
 
 app.use(cors({
