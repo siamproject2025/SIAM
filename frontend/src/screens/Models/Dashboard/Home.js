@@ -102,7 +102,7 @@ export default function Home() {
           <FiUsers size={48} />
         </div>
         <div>
-          <h3>Total de alumnos</h3>
+          <h3>Total de Alumnos</h3>
           <p className="total-number">{alumnos.length}</p>
         </div>
       </div>

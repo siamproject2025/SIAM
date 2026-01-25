@@ -1,4 +1,6 @@
 require("dotenv").config();
+require("./config/firebaseAdmin");
+
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
@@ -25,12 +27,28 @@ const gradosRoutes = require("./Routes/gradosRoutes");
 
 const app = express();
 app.use(express.json());
+
 const allowedOrigins = [
-  "http://localhost:3000", // desarrollo
-  "https://frontend-production-a861.up.railway.app" // producción
+  "http://localhost:3000",
+  "https://siam-production-c916.up.railway.app"
 ];
 
-app.use(cors({ origin: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (Postman, mobile, etc)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("No permitido por CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 
 
 // Conexión MongoDB
