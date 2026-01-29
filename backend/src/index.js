@@ -29,7 +29,8 @@ const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
-  'https://frontend-production-3ec9.up.railway.app', // URL exacta de la imagen
+  'https://frontend-production-3ec9.up.railway.app',
+  'https://frontend-production-53c8.up.railway.app'// URL exacta de la imagen
   'http://localhost:3000',                       // Tu entorno local
 
 ];
