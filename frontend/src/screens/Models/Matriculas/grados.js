@@ -187,16 +187,32 @@ const prepararEliminacionGrado = (grado) => {
 };
 
 const confirmarEliminacionGrado = async () => {
-  setShowConfirm(false);
   if (!gradoAEliminar) return;
 
   try {
     setLoading(true);
+    
+    // 1. Verificar si hay alumnos inscritos en este grado
+    // Ajusta esta URL según tu API de alumnos, ej: /api/alumnos?gradoId=...
+    const alumnosResponse = await fetchWithToken(`${API_BASE}/api/matriculas?grado_a_matricular=${gradoAEliminar._id}&limit=1`);
+    
+    if (alumnosResponse.total > 0) {
+      // Si el backend devuelve un conteo en 'total' o similar
+      alert(`No se puede eliminar el grado "${gradoAEliminar.grado}" porque tiene ${alumnosResponse.total} alumno(s) asignado(s). Primero debes mover o eliminar a los alumnos.`);
+      setShowConfirm(false);
+      setGradoAEliminar(null);
+      return; // Detenemos la ejecución aquí
+    }
+
+    // 2. Si no hay alumnos, procedemos a eliminar
     await fetchWithToken(`${API}/${gradoAEliminar._id}`, { method: "DELETE" });
+    
+    setShowConfirm(false);
     fetchList(page);
+    // Opcional: Agregar un mensaje de éxito con un toast o alert
   } catch (err) {
     console.error(err);
-    alert(err.message || "No se pudo eliminar permanentemente.");
+    alert(err.message || "No se pudo procesar la solicitud.");
   } finally {
     setLoading(false);
     setGradoAEliminar(null);
