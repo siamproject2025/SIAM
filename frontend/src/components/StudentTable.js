@@ -6,6 +6,8 @@ import '../styles/StudentTable.css';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 import { auth } from "../components/authentication/Auth";
+import useUserRole from '../components/hooks/useUserRole';
+import Swal from 'sweetalert2';
 
 const API_HOST = process.env.REACT_APP_API_URL;
 const API_GRADOS = `${API_HOST}/api/grados`;
@@ -18,8 +20,27 @@ const StudentTable = ({ students, loading, selectedStudents, onSelectionChange, 
   const [selectedYear, setSelectedYear] = useState("");
   const [grados, setGrados] = useState([]);
   const itemsPerPage = 10;
-
+const { userRole, cargando } = useUserRole();
   const studentsArray = students || [];
+  const canManage = userRole === "ADMIN"; 
+  const canDownload = userRole === "ADMIN" || userRole === "DOCENTE";
+
+  const handleDeleteClick = (id) => {
+  Swal.fire({
+    title: '¿Confirmar eliminación?',
+    text: "No podrás revertir esto",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      onDelete(id);
+    }
+  });
+};
 
   const obtenerGrados = async () => {
     try {
@@ -637,98 +658,106 @@ const StudentTable = ({ students, loading, selectedStudents, onSelectionChange, 
 
       {/* Tabla */}
       <div className="table-wrapper">
-        <table className="student-table">
-          <thead>
-            <tr>
-              <th className="checkbox-column">
-                <input
-                  type="checkbox"
-                  checked={currentItems.length > 0 && selectedStudents.length === currentItems.length}
-                  onChange={toggleAllSelection}
-                  className="checkbox"
-                />
-              </th>
-              <th>Nombre Completo</th>
-              <th>Documento</th>
-              <th>Grado</th>
-              <th>Encargado</th>
-              <th>Teléfono</th>
-              <th>Fecha Matrícula</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.length === 0 ? (
-              <tr>
-                <td colSpan="8" className="no-results">
-                  <div className="no-results-content">
-                    <i className="fas fa-search fa-2x"></i>
-                    <h4>No se encontraron estudiantes</h4>
-                    <p>No hay resultados que coincidan con los criterios de búsqueda</p>
-                    {(searchTerm || selectedGrades.length > 0 || selectedYear) && (
-                      <button onClick={clearAllFilters} className="clear-filters-suggestion">
-                        Limpiar filtros
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              currentItems.map((student) => (
-                <tr key={student._id} className={selectedStudents.includes(student._id) ? 'selected' : ''}>
-                  <td className="checkbox-column">
-                    <input
-                      type="checkbox"
-                      checked={selectedStudents.includes(student._id)}
-                      onChange={() => toggleStudentSelection(student._id)}
-                      className="checkbox"
-                    />
-                  </td>
-                  <td className="student-name">
-                    <div className="name">{student.nombre_completo}</div>
-                    <div className="details">{student.edad} años • {student.genero}</div>
-                  </td>
-                  <td>{student.id_documento}</td>
-                  <td>
-                    <span className="grade-badge">{getNombreGrado(student.grado_a_matricular)}</span>
-                  </td>
-                  <td>
-                    <div className="encargado-info">
-                      <div className="name">{student.nombre_encargado}</div>
-                      <div className="relationship">{student.parentesco_encargado}</div>
-                    </div>
-                  </td>
-                  <td>{student.telefono_encargado}</td>
-                  <td>
-                    {student.fecha_matricula ? 
-                      new Date(student.fecha_matricula).toLocaleDateString('es-ES') : 
-                      'N/A'
-                    }
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        className="btn-icon btn-edit"
-                        onClick={() => onEdit(student)}
-                        title="Editar"
-                      >
-                        <Edit size={16}/>
-                      </button>
-                      <button
-                        className="btn-icon btn-delete"
-                        onClick={() => onDelete(student._id)}
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16}/>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+  <table className="student-table">
+    <thead>
+      <tr>
+        <th className="checkbox-column">
+          <input
+            type="checkbox"
+            checked={currentItems.length > 0 && selectedStudents.length === currentItems.length}
+            onChange={toggleAllSelection}
+            className="checkbox"
+          />
+        </th>
+        <th>Nombre Completo</th>
+        <th>Documento</th>
+        <th>Grado</th>
+        <th>Encargado</th>
+        <th>Teléfono</th>
+        <th>Fecha Matrícula</th>
+        
+        {/* COLUMNA ACCIONES: Solo aparece si es Admin */}
+        {canManage && <th>Acciones</th>}
+      </tr>
+    </thead>
+    <tbody>
+      {currentItems.length === 0 ? (
+        <tr>
+          {/* Ajuste de colSpan: 7 si es Docente, 8 si es Admin */}
+          <td colSpan={canManage ? "8" : "7"} className="no-results">
+            <div className="no-results-content">
+              <i className="fas fa-search fa-2x"></i>
+              <h4>No se encontraron estudiantes</h4>
+              <p>No hay resultados que coincidan con los criterios de búsqueda</p>
+              {(searchTerm || selectedGrades.length > 0 || selectedYear) && (
+                <button onClick={clearAllFilters} className="clear-filters-suggestion">
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
+      ) : (
+        currentItems.map((student) => (
+          <tr key={student._id} className={selectedStudents.includes(student._id) ? 'selected' : ''}>
+            <td className="checkbox-column">
+              <input
+                type="checkbox"
+                checked={selectedStudents.includes(student._id)}
+                onChange={() => toggleStudentSelection(student._id)}
+                className="checkbox"
+              />
+            </td>
+            <td className="student-name">
+              <div className="name">{student.nombre_completo}</div>
+              <div className="details">{student.edad} años • {student.genero}</div>
+            </td>
+            <td>{student.id_documento}</td>
+            <td>
+              <span className="grade-badge">{getNombreGrado(student.grado_a_matricular)}</span>
+            </td>
+            <td>
+              <div className="encargado-info">
+                <div className="name">{student.nombre_encargado}</div>
+                <div className="relationship">{student.parentesco_encargado}</div>
+              </div>
+            </td>
+            <td>{student.telefono_encargado}</td>
+            <td>
+              {student.fecha_matricula ? 
+                new Date(student.fecha_matricula).toLocaleDateString('es-ES') : 
+                'N/A'
+              }
+            </td>
+
+            {/* CELDA DE BOTONES: Solo se renderiza si es Admin */}
+           {canManage && (
+  <td>
+    <div className="action-buttons">
+      <button
+        className="btn-icon btn-edit"
+        onClick={() => onEdit(student)}
+        title="Editar"
+      >
+        <Edit size={16}/>
+      </button>
+      
+     <button
+  className="btn-icon btn-delete"
+  onClick={() => handleDeleteClick(student._id)}
+  title="Eliminar"
+>
+  <Trash2 size={16}/>
+</button>
+    </div>
+  </td>
+)}
+          </tr>
+        ))
+      )}
+    </tbody>
+  </table>
+</div>
 
       {/* Paginación */}
       {totalPages > 1 && (
