@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { auth } from "../../../components/authentication/Auth";
-import "../../../styles/grados.css"
+import "../../../styles/grados.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { Apple, Book, Calendar, X, Trash2, Users, User, Search } from "lucide-react";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
@@ -8,7 +8,6 @@ import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API = `${API_BASE}/api/grados`;
 
-// Formulario inicial con los campos que tu backend exige (timestamp)
 const initialForm = () => ({
   _id: null,
   grado: "",
@@ -22,14 +21,13 @@ const initialForm = () => ({
 
 export default function GradosPage() {
   const [items, setItems] = useState([]);
-  const [gradosUnicos, setGradosUnicos] = useState([]); // Para tu filtro de nombres
+  const [gradosUnicos, setGradosUnicos] = useState([]); 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Estados para el Modal de Alumnos
   const [showAlumnosModal, setShowAlumnosModal] = useState(false);
   const [alumnosList, setAlumnosList] = useState([]);
   const [gradoNombreSeleccionado, setGradoNombreSeleccionado] = useState("");
@@ -42,7 +40,6 @@ export default function GradosPage() {
   const [gradoAEliminar, setGradoAEliminar] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Generar query params
   const params = useMemo(() => {
     const p = new URLSearchParams();
     p.set("page", String(page));
@@ -56,7 +53,6 @@ export default function GradosPage() {
     const user = auth.currentUser;
     if (!user) throw new Error("Usuario no autenticado");
     const token = await user.getIdToken();
-
     const res = await fetch(url, {
       ...options,
       headers: {
@@ -65,7 +61,6 @@ export default function GradosPage() {
         ...(options.headers || {}),
       },
     });
-
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || "Error en la petición");
     return data;
@@ -77,7 +72,6 @@ export default function GradosPage() {
       setPage(p);
       const data = await fetchWithToken(`${API}?${params}`);
       
-      // Inyectamos el conteo y la lista de alumnos para cada grado
       const itemsConAlumnos = await Promise.all(
         (data.items || []).map(async (grado) => {
           try {
@@ -97,7 +91,6 @@ export default function GradosPage() {
       setTotal(data.total || 0);
       setPages(data.pages || 1);
 
-      // Cargar filtro de grados únicos si está vacío
       if (gradosUnicos.length === 0 && data.items) {
         const nombres = [...new Set(data.items.map(i => i.grado))].sort();
         setGradosUnicos(nombres);
@@ -153,7 +146,7 @@ export default function GradosPage() {
         body: JSON.stringify({
           ...form,
           anio_academico: Number(form.anio_academico),
-          timestamp: new Date().toISOString() // Aseguramos que el backend reciba lo que pide
+          timestamp: new Date().toISOString() 
         }),
       });
 
@@ -168,46 +161,43 @@ export default function GradosPage() {
 
   return (
     <div className="grados-container">
-      {/* HEADER (Manteniendo tu estilo con framer-motion) */}
-      <header className="grados-header-custom">
-        <div className="header-content p-5 text-white bg-primary rounded-bottom-4 shadow">
-          <div className="d-flex align-items-center gap-3">
-            <Calendar size={40} />
-            <div>
-              <h1 className="h2 fw-bold mb-0">Gestión de Grados</h1>
-              <p className="opacity-75">Administra secciones y consulta alumnos matriculados.</p>
-            </div>
-          </div>
+      {/* HEADER con tu clase CSS específica */}
+      <header className="grados-header">
+        <div className="container-fluid">
+           <div className="row g-3">
+              <Calendar size={40} className="me-3" />
+              <div>
+                <h1 className="grados-title">Gestión de Grados</h1>
+                <p className="mb-0 opacity-75">Administra secciones y consulta alumnos matriculados.</p>
+              </div>
+           </div>
         </div>
       </header>
 
-      <div className="container-fluid px-5 mt-4">
-        <button className="btn btn-primary mb-4 shadow-sm" onClick={openCreate}>
-          + Nuevo Grado
-        </button>
+      <div className="container-fluid mt-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <button className="grados-btn-primary" onClick={openCreate}>
+            + Nuevo Grado
+          </button>
 
-        {/* FILTRO POR GRADOS REGISTRADOS (Como pediste en tus instrucciones) */}
-        <div className="grados-filters-card mb-4 p-3 bg-white shadow-sm rounded">
-          <div className="row g-3 align-items-end">
-            <div className="col-md-9">
-              <label className="form-label fw-bold">Filtrar por Grado:</label>
-              <select className="form-select" value={q} onChange={(e) => setQ(e.target.value)}>
+          {/* FILTRO POR GRADOS REGISTRADOS */}
+          <div className="grados-filters-card" style={{minWidth: '400px'}}>
+            <div className="grados-filters-body d-flex gap-2">
+              <select className="grados-form-select w-100" value={q} onChange={(e) => setQ(e.target.value)}>
                 <option value="">Todos los grados registrados</option>
                 {gradosUnicos.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
-            </div>
-            <div className="col-md-3">
-              <button className="btn btn-outline-primary w-100" onClick={() => fetchList(1)}>
-                <Search size={18} className="me-2" /> Actualizar
+              <button className="grados-btn-search" style={{width: 'auto', padding: '0 15px'}} onClick={() => fetchList(1)}>
+                <Search size={18} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* TABLA */}
-        <div className="grados-table-card shadow-sm bg-white rounded">
-          <table className="table table-hover mb-0">
-            <thead className="table-light">
+        {/* TABLA CON TUS ESTILOS */}
+        <div className="grados-table-card">
+          <table className="grados-table">
+            <thead>
               <tr>
                 <th>Grado</th>
                 <th>Año</th>
@@ -224,23 +214,20 @@ export default function GradosPage() {
                   <td>{g.anio_academico}</td>
                   <td>{g.aula}</td>
                   <td>
-                    <button 
-                      className="btn btn-sm btn-light border d-flex align-items-center gap-2"
-                      onClick={() => verAlumnos(g)}
-                    >
+                    <button className="btn btn-sm btn-light border d-flex align-items-center gap-2" onClick={() => verAlumnos(g)}>
                       <Users size={14} className="text-primary" />
                       {g.totalAlumnos} Alumnos
                     </button>
                   </td>
                   <td>
-                    <span className={`badge ${g.estado === 'Activo' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
+                    <span className={g.estado === 'Activo' ? 'grados-badge-active' : 'grados-badge-inactive'}>
                       {g.estado}
                     </span>
                   </td>
                   <td className="text-end">
-                    <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => openEdit(g)}>Editar</button>
+                    <button className="grados-btn-edit" onClick={() => openEdit(g)}>Editar</button>
                     {g.totalAlumnos === 0 && (
-                       <button className="btn btn-sm btn-outline-danger" onClick={() => { setGradoAEliminar(g); setShowConfirm(true); }}>
+                       <button className="grados-btn-deactivate" onClick={() => { setGradoAEliminar(g); setShowConfirm(true); }}>
                          <Trash2 size={14} />
                        </button>
                     )}
@@ -249,23 +236,33 @@ export default function GradosPage() {
               ))}
             </tbody>
           </table>
+
+          {/* PAGINACIÓN CON TUS ESTILOS */}
+          <div className="grados-pagination d-flex justify-content-between align-items-center">
+            <span className="grados-pagination-info">Total: {total} registros</span>
+            <div>
+              <button className="grados-pagination-btn" disabled={page <= 1} onClick={() => setPage(page - 1)}>«</button>
+              <button className="grados-pagination-btn grados-pagination-btn-active">{page}</button>
+              <button className="grados-pagination-btn" disabled={page >= pages} onClick={() => setPage(page + 1)}>»</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* MODAL LISTA DE ALUMNOS */}
+      {/* MODAL LISTA DE ALUMNOS (Usando tus clases de modal) */}
       <AnimatePresence>
         {showAlumnosModal && (
           <div className="grados-modal-overlay">
             <motion.div className="grados-modal-content" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-              <div className="grados-modal-header d-flex justify-content-between">
-                <h5 className="mb-0">Alumnos en {gradoNombreSeleccionado}</h5>
-                <button className="btn-close" onClick={() => setShowAlumnosModal(false)}></button>
+              <div className="grados-modal-header d-flex justify-content-between align-items-center">
+                <h2 className="grados-modal-title">Alumnos en {gradoNombreSeleccionado}</h2>
+                <button className="grados-modal-close" onClick={() => setShowAlumnosModal(false)}><X size={20} /></button>
               </div>
-              <div className="grados-modal-body" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <div className="grados-modal-body">
                 {alumnosList.length > 0 ? (
                   <div className="list-group list-group-flush">
                     {alumnosList.map((al, idx) => (
-                      <div key={idx} className="list-group-item d-flex align-items-center gap-3">
+                      <div key={idx} className="list-group-item d-flex align-items-center gap-3 border-0 border-bottom">
                         <div className="p-2 bg-light rounded-circle"><User size={20} /></div>
                         <div>
                           <p className="mb-0 fw-bold">{al.nombre_completo}</p>
@@ -276,52 +273,56 @@ export default function GradosPage() {
                   </div>
                 ) : <p className="text-center py-4 text-muted">No hay alumnos en este grado.</p>}
               </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary w-100" onClick={() => setShowAlumnosModal(false)}>Cerrar</button>
+              <div className="grados-modal-footer">
+                <button className="grados-modal-btn-cancel w-100" onClick={() => setShowAlumnosModal(false)}>Cerrar</button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* MODAL CREAR/EDITAR (Mantiene tus campos de registro exitoso) */}
-      {showModal && (
-        <div className="grados-modal-overlay">
-          <div className="grados-modal-content">
-            <div className="grados-modal-header">
-              <h5 className="mb-0">{editing ? "Editar" : "Nuevo"} Grado</h5>
-              <X className="cursor-pointer" onClick={() => setShowModal(false)} />
-            </div>
-            <div className="grados-modal-body">
-              <div className="row g-3">
-                <div className="col-md-12">
-                  <label className="form-label">Nombre del Grado *</label>
-                  <input className="form-control" value={form.grado} onChange={e => setForm({...form, grado: e.target.value})} />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Año *</label>
-                  <input type="number" className="form-control" value={form.anio_academico} onChange={e => setForm({...form, anio_academico: e.target.value})} />
-                </div>
-                <div className="col-md-6">
-                  <label className="form-label">Aula *</label>
-                  <input className="form-control" value={form.aula} onChange={e => setForm({...form, aula: e.target.value})} />
-                </div>
-                <div className="col-md-12">
-                  <label className="form-label">Estado</label>
-                  <select className="form-select" value={form.estado} onChange={e => setForm({...form, estado: e.target.value})}>
-                    <option value="Activo">Activo</option>
-                    <option value="Inactivo">Inactivo</option>
-                  </select>
+      {/* MODAL CREAR/EDITAR (Usando tus clases de modal) */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="grados-modal-overlay">
+            <motion.div className="grados-modal-content" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="grados-modal-header d-flex justify-content-between align-items-center">
+                <h2 className="grados-modal-title">{editing ? "Editar" : "Nuevo"} Grado</h2>
+                <button className="grados-modal-close" onClick={() => setShowModal(false)}><X size={20}/></button>
+              </div>
+              <div className="grados-modal-body">
+                <div className="row g-3">
+                  <div className="col-md-12">
+                    <label className="grados-form-label">Nombre del Grado *</label>
+                    <input className={`grados-modal-input ${errors.grado ? 'is-invalid' : ''}`} value={form.grado} onChange={e => setForm({...form, grado: e.target.value})} />
+                    {errors.grado && <small className="text-danger">{errors.grado}</small>}
+                  </div>
+                  <div className="col-md-6">
+                    <label className="grados-form-label">Año *</label>
+                    <input type="number" className="grados-modal-input" value={form.anio_academico} onChange={e => setForm({...form, anio_academico: e.target.value})} />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="grados-form-label">Aula *</label>
+                    <input className="grados-modal-input" value={form.aula} onChange={e => setForm({...form, aula: e.target.value})} />
+                    {errors.aula && <small className="text-danger">{errors.aula}</small>}
+                  </div>
+                  <div className="col-md-12">
+                    <label className="grados-form-label">Estado</label>
+                    <select className="grados-modal-input" value={form.estado} onChange={e => setForm({...form, estado: e.target.value})}>
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="modal-footer d-flex gap-2">
-              <button className="btn btn-light border" onClick={() => setShowModal(false)}>Cancelar</button>
-              <button className="btn btn-primary" onClick={save}>{loading ? "Guardando..." : "Confirmar Registro"}</button>
-            </div>
+              <div className="grados-modal-footer d-flex gap-2 justify-content-end">
+                <button className="grados-modal-btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button className="grados-modal-btn-save" onClick={save}>{loading ? "Guardando..." : "Confirmar Registro"}</button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       <ConfirmDialog
         visible={showConfirm}
