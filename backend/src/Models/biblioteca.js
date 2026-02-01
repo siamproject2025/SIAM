@@ -3,6 +3,16 @@ const mongoose = require("mongoose");
 const LibroSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   autor: { type: String, required: true },
+  grado: { type: String, required: true },
+  clase: {
+  type: String,
+  required: true,
+  trim: true
+},
+observacion: {
+  type: String,
+  trim: true
+},
   categoria: { type: String },
   disponible: { type: Boolean, default: true },
   archivoUrl: { type: String, required: true }, // URL en Google Drive
