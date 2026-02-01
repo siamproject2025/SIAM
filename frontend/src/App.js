@@ -11,7 +11,7 @@ import Login from './components/authentication/Login';
 import { BrowserRouter as  Router,Route, Routes, Navigate, useLocation } from "react-router-dom";
 import Landing from "./screens/Landing";
 import Home from "./screens/Models/Dashboard/Home";
-import Footer from './components/Footer';
+//import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
 
@@ -174,7 +174,7 @@ return (
           </main>
         </div>
 
-        <Footer />
+        {/*<Footer />*/}
       {/* Advertencia de inactividad */}
       {warningVisible && (
         <div

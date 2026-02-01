@@ -92,13 +92,20 @@ const personalSchema = new mongoose.Schema({
     match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Por favor ingrese un correo válido']
   },
   cargo_asignacion: {
-    cargo: {
-      type: String,
-      required: [true, 'El cargo es obligatorio'],
-      trim: true,
-      minlength: [2, 'El cargo debe tener al menos 2 caracteres'],
-      maxlength: [100, 'El cargo no puede exceder 100 caracteres']
-    },
+   cargo: {
+  type: String,
+  required: [true, 'El cargo es obligatorio'],
+  enum: {
+    values: [
+      'DOCENTE',
+      'DIRECTOR',
+      'LIMPIEZA',
+      'GUARDIA',
+      'SERVICIO_SOCIAL'
+    ],
+    message: 'Cargo no válido'
+  }
+},
     horario_preferido: {
       type: String,
       enum: ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE']
