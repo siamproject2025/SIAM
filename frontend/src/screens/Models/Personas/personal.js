@@ -230,7 +230,7 @@ const handleFotoChange = (e) => {
 
       // Cargo y fecha de asignación
       if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
-        showNotification('El cargo debe tener entre 2 y 100 caracteres', 'error');
+        showNotification('Cargo del empleado - obligatorio', 'error');
         return;
       }
 
@@ -378,7 +378,7 @@ const handleFotoChange = (e) => {
     }
 
     if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
-      showNotification('El cargo debe tener entre 2 y 100 caracteres', 'error');
+      showNotification('Cargo del empleado - obligatorio', 'error');
       return;
     }
 
@@ -1288,13 +1288,21 @@ const handleOpenEditModal = (empleado) => {
                   </div>
                   <div className="form-group">
                     <label>Cargo *</label>
-                    <input
-                      type="text"
-                      value={formData.cargo}
-                      onChange={(e) => setFormData({...formData, cargo: e.target.value})}
-                      placeholder="Desarrollador Senior"
-                      required
-                    />
+                    <select
+  value={formData.cargo}
+  onChange={(e) =>
+    setFormData({ ...formData, cargo: e.target.value })
+  }
+  required
+>
+  <option value="">Seleccione un cargo</option>
+  <option value="DOCENTE">Docente</option>
+  <option value="DIRECTOR">Director(a)</option>
+  <option value="LIMPIEZA">Limpieza</option>
+  <option value="GUARDIA">Guardia</option>
+  <option value="SERVICIO_SOCIAL">Servicio Social</option>
+</select>
+
                   </div>
                   <div className="form-group">
                     <label>Área de Trabajo</label>
@@ -1540,14 +1548,23 @@ const handleOpenEditModal = (empleado) => {
                       required
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Cargo *</label>
-                    <input
-                      type="text"
-                      value={formData.cargo}
-                      onChange={(e) => setFormData({...formData, cargo: e.target.value})}
-                      required
-                    />
+                 <div className="form-group">
+                  <label>Cargo *</label>
+                    <select
+  value={formData.cargo}
+  onChange={(e) =>
+    setFormData({ ...formData, cargo: e.target.value })
+  }
+  required
+>
+  <option value="">Seleccione un cargo</option>
+  <option value="DOCENTE">Docente</option>
+  <option value="DIRECTOR">Director(a)</option>
+  <option value="LIMPIEZA">Limpieza</option>
+  <option value="GUARDIA">Guardia</option>
+  <option value="SERVICIO_SOCIAL">Servicio Social</option>
+</select>
+
                   </div>
                   <div className="form-group">
                     <label>Área de Trabajo</label>

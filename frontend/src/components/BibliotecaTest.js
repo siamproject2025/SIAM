@@ -43,6 +43,9 @@ export default function BibliotecaTest() {
   const [libros, setLibros] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
+  const [grado, setGrado] = useState("");
+  const [clase, setClase] = useState("");
+  const [observacion, setObservacion] = useState("");
   const [archivo, setArchivo] = useState(null);
   const [filterValue, setFilterValue] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("todos");
@@ -125,6 +128,17 @@ export default function BibliotecaTest() {
       return;
     }
     
+     if (!grado.trim()) {
+      showNotification("El grado es obligatorio", "error");
+      return;
+    }
+
+    if (!clase.trim()) {
+    showNotification("La clase es obligatoria", "error");
+    return;
+    }
+
+
     if (!archivo) {
       showNotification("Debes seleccionar un archivo", "error");
       return;
@@ -145,6 +159,9 @@ export default function BibliotecaTest() {
       const formData = new FormData();
       formData.append("titulo", titulo);
       formData.append("autor", autor);
+      formData.append("grado", grado);
+      formData.append("clase", clase);
+      formData.append("observacion", observacion);
       formData.append("archivo", archivo);
 
       await axios.post(API_URL, formData, {
@@ -156,6 +173,9 @@ export default function BibliotecaTest() {
 
       setTitulo("");
       setAutor("");
+      setGrado("");
+      setClase("");
+      setObservacion("");
       setArchivo(null);
       setMostrarModal(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -219,7 +239,9 @@ const prepararEliminacion = (libro) => {
     if (filterValue) {
       filtered = filtered.filter(libro =>
         libro.titulo?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        libro.autor?.toLowerCase().includes(filterValue.toLowerCase())
+        libro.autor?.toLowerCase().includes(filterValue.toLowerCase())  ||
+        libro.grado?.toLowerCase().includes(filterValue.toLowerCase())  ||
+        libro.clase?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -289,6 +311,9 @@ const prepararEliminacion = (libro) => {
   const resetForm = () => {
     setTitulo("");
     setAutor("");
+    setGrado("");
+    setClase("");
+    setObservacion("");
     setArchivo(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -487,7 +512,7 @@ const prepararEliminacion = (libro) => {
               </motion.div>
               <input
                 type="text"
-                placeholder="Buscar por título o autor..."
+                placeholder="Buscar por título, grado, clase y autor..."
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
                 className="search-input"
@@ -585,18 +610,36 @@ const prepararEliminacion = (libro) => {
                       {getSortIcon("titulo")}
                     </div>
                   </th>
-                  <th onClick={() => handleSort("autor")} className="sortable th-autor">
+                  {/*<th onClick={() => handleSort("autor")} className="sortable th-autor">
                     <div className="th-content">
                       AUTOR
                       {getSortIcon("autor")}
                     </div>
+                  </th>*/}
+                  <th onClick={() => handleSort("grado")} className="sortable th-grado">
+                    <div className="th-content">
+                      Grado
+                      {getSortIcon("grado")}
+                    </div>
                   </th>
-                  <th onClick={() => handleSort("fecha")} className="sortable th-fecha">
+                  <th onClick={() => handleSort("clase")} className="sortable th-clase">
+                    <div className="th-content">
+                      clase
+                      {getSortIcon("clase")}
+                    </div>
+                  </th>
+                  <th onClick={() => handleSort("observacion")} className="sortable th-observacion">
+                    <div className="th-content">
+                      observacion
+                      {getSortIcon("observacion")}
+                    </div>
+                  </th>
+                { /* <th onClick={() => handleSort("fecha")} className="sortable th-fecha">
                     <div className="th-content">
                       FECHA
                       {getSortIcon("fecha")}
                     </div>
-                  </th>
+                  </th>*/}
                   <th className="th-formato">
                     <div className="th-content">
                       <FiFileText size={14} />
@@ -640,6 +683,13 @@ const prepararEliminacion = (libro) => {
                           year: 'numeric'
                         })}
                       </td>
+
+                      <th onClick={() => handleSort("clase")}>Clase</th>
+<th>Observación</th>
+
+<td>{libro.clase}</td>
+<td>{libro.observacion}</td>
+
                       <td className="cell-formato">
                         {libro.archivoUrl ? (
                           <span className={`formato-badge ${libro.extension.split('.').pop().toLowerCase()}`}>
@@ -835,6 +885,42 @@ const prepararEliminacion = (libro) => {
                     required
                   />
                 </div>
+                 <div className="form-group">
+                  <label>
+                    <FiUsers size={14} />
+                    Grado *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: John Doe"
+                    value={grado}
+                    onChange={(e) => setGrado(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+              <div className="form-group">
+               <label>Clase *</label>
+                 <input
+                  type="text"
+                   value={clase}
+                     onChange={(e) => setClase(e.target.value)}
+                      placeholder="Ej: Matemática"
+                       required
+                 />
+</div>
+
+<div className="form-group">
+  <label>Observación</label>
+  <textarea
+    value={observacion}
+    onChange={(e) => setObservacion(e.target.value)}
+    placeholder="Observaciones adicionales"
+  />
+</div>
+
+
 
                 <div className="form-group">
                   <label>
