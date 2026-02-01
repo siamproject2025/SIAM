@@ -1,560 +1,235 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth } from "../../../components/authentication/Auth";
-import "../../../styles/grados.css"
+import "../../../styles/grados.css"; 
 import { motion, AnimatePresence } from "framer-motion";
-import { Apple, Book, Calendar, Table2, X, FileText, Image, Trash2 } from "lucide-react";
+import { Calendar, Trash2, Users, Search, AlignLeft, X } from "lucide-react";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
+
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API = `${API_BASE}/api/grados`;
 
-const initialForm = () => ({
-  _id: null,
-  grado: "",
-  descripcion: "",
-  anio_academico: new Date().getFullYear(),
-  aula: "",
-  estado: "Activo",
-  fecha_actualizacion: new Date().toISOString(),
-  timestamp: new Date().toISOString(),
-});
-
 export default function GradosPage() {
   const [items, setItems] = useState([]);
+  const [gradosUnicos, setGradosUnicos] = useState([]); // Para el nuevo filtro de nombres
   const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [q, setQ] = useState("");
-  const [estadoFilter, setEstadoFilter] = useState("");
-  const [anioFilter, setAnioFilter] = useState("");
+  const [q, setQ] = useState(""); 
   const [loading, setLoading] = useState(false);
-
+  
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState(initialForm());
-  const [errors, setErrors] = useState({});
+  const [form, setForm] = useState({
+    grado: "", descripcion: "", anio_academico: 2026, aula: "", estado: "Activo"
+  });
 
-  // Generar query params
-  const params = useMemo(() => {
-    const p = new URLSearchParams();
-    p.set("page", String(page));
-    p.set("limit", "10");
-    if (q) p.set("q", q);
-    if (estadoFilter) p.set("estado", estadoFilter);
-    if (anioFilter) p.set("anio_academico", anioFilter);
-    p.set("sort", "grado:asc");
-    return p.toString();
-  }, [page, q, estadoFilter, anioFilter]);
+  const [gradoAEliminar, setGradoAEliminar] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  // ------ Función genérica para peticiones con token ------
-  const fetchWithToken = async (url, options = {}) => {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuario no autenticado");
-    const token = await user.getIdToken();
-
+  const fetchWithToken = async (url) => {
+    const token = await auth.currentUser.getIdToken();
     const res = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {}),
-      },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
     });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || "Error en la petición");
-    return data;
+    return res.json();
   };
 
-  // ------ Cargar lista de grados ------
-  const fetchList = async (p = 1) => {
+  const fetchList = async () => {
     try {
       setLoading(true);
-      setPage(p);
-      const data = await fetchWithToken(`${API}?${params}`);
-      setItems(data.items || []);
-      setTotal(data.total || 0);
-      setPages(data.pages || 1);
+      const queryParams = new URLSearchParams({ page, limit: 10, q });
+      const data = await fetchWithToken(`${API}?${queryParams}`);
+      
+      const itemsConConteo = await Promise.all(
+        (data.items || []).map(async (grado) => {
+          try {
+            const resMat = await fetchWithToken(`${API_BASE}/api/matriculas?grado_a_matricular=${grado._id}`);
+            return { ...grado, totalAlumnos: resMat.count || 0 };
+          } catch {
+            return { ...grado, totalAlumnos: 0 };
+          }
+        })
+      );
+      setItems(itemsConConteo);
+
+      // Cargar la lista para el filtro de nombres (solo si está vacía)
+      if (gradosUnicos.length === 0) {
+        const all = await fetchWithToken(`${API}?limit=100`);
+        const nombres = [...new Set(all.items.map(i => i.grado))].sort();
+        setGradosUnicos(nombres);
+      }
+
     } catch (err) {
       console.error(err);
-      alert(err.message || "No se pudo cargar la lista de grados.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchList(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params]);
+  useEffect(() => { fetchList(); }, [page, q]);
 
-  // ------ Validación de formulario ------
-  const validate = (current) => {
-    const e = {};
-    if (!current.grado?.trim()) e.grado = "El nombre del grado es requerido.";
-    if (!String(current.anio_academico).trim()) e.anio_academico = "El año académico es requerido.";
-    if (Number.isNaN(Number(current.anio_academico)) || Number(current.anio_academico) < 1900 || Number(current.anio_academico) > 2100) {
-      e.anio_academico = "El año debe estar entre 1900 y 2100.";
-    }
-    if (!current.aula?.trim()) e.aula = "El aula es requerida.";
-    if (!["Activo", "Inactivo"].includes(current.estado)) e.estado = "Estado inválido.";
-    return e;
-  };
-
-  // ------ Abrir Modal ------
-  const openCreate = () => {
-    setForm(initialForm());
-    setErrors({});
-    setEditing(false);
-    setShowModal(true);
-  };
-
-  const openEdit = (item) => {
-    setForm({ ...item, fecha_actualizacion: new Date().toISOString(), timestamp: new Date().toISOString() });
-    setErrors({});
-    setEditing(true);
-    setShowModal(true);
-  };
-
-  // ------ Guardar ------
-  const save = async () => {
-    const e = validate(form);
-    setErrors(e);
-    if (Object.keys(e).length > 0) return;
-
+  const handleSave = async () => {
     try {
-      setLoading(true);
+      const token = await auth.currentUser.getIdToken();
       const method = editing ? "PUT" : "POST";
       const url = editing ? `${API}/${form._id}` : API;
-
-      await fetchWithToken(url, {
+      await fetch(url, {
         method,
-        body: JSON.stringify({
-          grado: form.grado,
-          descripcion: form.descripcion,
-          anio_academico: Number(form.anio_academico),
-          aula: form.aula,
-          estado: form.estado,
-          fecha_actualizacion: form.fecha_actualizacion,
-          timestamp: form.timestamp,
-        }),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(form)
       });
-
       setShowModal(false);
-      fetchList(page);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "No se pudo guardar el registro.");
-    } finally {
-      setLoading(false);
-    }
+      fetchList();
+    } catch (err) { alert(err.message); }
   };
 
-  // ------ Eliminar ------
-  const eliminarGrado = async (id) => {
-   
-    try {
-      setLoading(true);
-      await fetchWithToken(`${API}/${id}`, { method: "DELETE" });
-      fetchList(page);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "No se pudo desactivar.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const restore = async (id) => {
-    try {
-      setLoading(true);
-      await fetchWithToken(`${API}/${id}/restaurar`, { method: "PATCH" });
-      fetchList(page);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "No se pudo restaurar.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ------ Eliminar permanentemente ------
-
-const [gradoAEliminar, setGradoAEliminar] = useState(null);
-const [showConfirm, setShowConfirm] = useState(false);
-const prepararEliminacionGrado = (grado) => {
-  setGradoAEliminar(grado);
-  setShowConfirm(true);
-};
-
-const confirmarEliminacionGrado = async () => {
-  if (!gradoAEliminar) return;
-
-  try {
-    setLoading(true);
-    
-    // 1. Verificar si hay alumnos inscritos en este grado
-    // Ajusta esta URL según tu API de alumnos, ej: /api/alumnos?gradoId=...
-    const alumnosResponse = await fetchWithToken(`${API_BASE}/api/matriculas?grado_a_matricular=${gradoAEliminar._id}&limit=1`);
-    
-    if (alumnosResponse.total > 0) {
-      // Si el backend devuelve un conteo en 'total' o similar
-      alert(`No se puede eliminar el grado "${gradoAEliminar.grado}" porque tiene ${alumnosResponse.total} alumno(s) asignado(s). Primero debes mover o eliminar a los alumnos.`);
-      setShowConfirm(false);
-      setGradoAEliminar(null);
-      return; // Detenemos la ejecución aquí
-    }
-
-    // 2. Si no hay alumnos, procedemos a eliminar
-    await fetchWithToken(`${API}/${gradoAEliminar._id}`, { method: "DELETE" });
-    
-    setShowConfirm(false);
-    fetchList(page);
-    // Opcional: Agregar un mensaje de éxito con un toast o alert
-  } catch (err) {
-    console.error(err);
-    alert(err.message || "No se pudo procesar la solicitud.");
-  } finally {
-    setLoading(false);
-    setGradoAEliminar(null);
-  }
-};
-
-const cancelarEliminacionGrado = () => {
-  setShowConfirm(false);
-  setGradoAEliminar(null);
-};
-
-
-
-  const hardDelete = async (id) => {
-    if (!window.confirm("¿Estás seguro de que quieres eliminar permanentemente este grado? Esta acción no se puede deshacer.")) return;
-    try {
-      setLoading(true);
-      await fetchWithToken(`${API}/${id}`, { method: "DELETE" });
-      fetchList(page);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "No se pudo eliminar permanentemente.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ------ Render ------
   return (
     <div className="grados-container">
-      <motion.div
-        className="donacion-header"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-      >
-        <motion.div
-          className="header-gradient"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-        >
-          <div className="header-content">
-            <motion.h2
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 15,
-                  delay: 0.3,
-                }}
-              >
-                <Calendar size={36} fill="white" color="white" />
-              </motion.div>
-              Creación y gestión de grados.
-              <motion.div
-                animate={{
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                style={{ marginLeft: "auto" }}
-              >
-                <Calendar size={32} color="white" />
-              </motion.div>
-            </motion.h2>
+      {/* HEADER */}
+      <header className="grados-header">
+        <div className="container-fluid px-5">
+            <div className="d-flex align-items-center gap-3">
+                <Calendar size={40} />
+                <div>
+                    <h1 className="grados-title">Creación y gestión de grados.</h1>
+                    <p className="mb-0 opacity-75">Crea tus grados y gestiona tus espacios físicos.</p>
+                </div>
+            </div>
+        </div>
+      </header>
 
-            <motion.p
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              Crea tus grados y gestiona tus espacios físicos.
-            </motion.p>
+      <div className="container-fluid px-5">
+        <button className="grados-btn-primary mb-4" onClick={() => { 
+          setForm({grado:"", descripcion:"", anio_academico:2026, aula:"", estado:"Activo"}); 
+          setEditing(false); setShowModal(true); 
+        }}>
+          + Nuevo Grado
+        </button>
 
-            <motion.div
-              className="floating-icons"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <motion.div
-                className="floating-icon"
-                animate={{
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Calendar size={20} color="white" />
-              </motion.div>
-              <motion.div
-                className="floating-icon"
-                animate={{
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0],
-                }}
-                transition={{
-                  duration: 3.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5,
-                }}
-              >
-                <Apple size={20} color="white" />
-              </motion.div>
-              <motion.div
-                className="floating-icon"
-                animate={{
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0],
-                }}
-                transition={{
-                  duration: 4.2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1,
-                }}
-              >
-                <Book size={20} color="white" />
-              </motion.div>
-            </motion.div>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      <button className="btn btn-ayuda" style={{color:"white",marginLeft:"15px", marginBottom:"10px"}} onClick={openCreate}>
-        Nuevo Grado
-      </button>
-
-      <section className="content">
-        <div className="container-fluid">
-          {/* Filtros */}
-          <div className="grados-filters-card">
-            <div className="grados-filters-body row g-2">
-              <div className="col-md-4">
-                <input
-                  className="grados-form-control"
-                  placeholder="Buscar por nombre, descripción o materia…"
-                  value={q}
+        {/* FILTROS ACTUALIZADOS: Filtro de Nombres en lugar de Estado */}
+        <div className="grados-filters-card">
+          <div className="grados-filters-body">
+            <div className="row g-3">
+              <div className="col-md-9">
+                <label className="grados-form-label">Filtrar por Nombre de Grado:</label>
+                <select 
+                  className="grados-form-select w-100" 
+                  value={q} 
                   onChange={(e) => setQ(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && fetchList(1)}
-                />
-              </div>
-              <div className="col-md-3">
-                <select className="grados-form-select" value={estadoFilter} onChange={(e) => setEstadoFilter(e.target.value)}>
-                  <option value="">Estado (todos)</option>
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
+                >
+                  <option value="">Todos los grados registrados</option>
+                  {gradosUnicos.map(nombre => (
+                    <option key={nombre} value={nombre}>{nombre}</option>
+                  ))}
                 </select>
               </div>
-              <div className="col-md-3">
-                <input
-                  type="number"
-                  className="grados-form-control"
-                  placeholder="Año académico"
-                  value={anioFilter}
-                  onChange={(e) => setAnioFilter(e.target.value)}
-                />
-              </div>
-              <div className="col-md-2 d-grid">
-                <button className="btn btn-ayuda" onClick={() => fetchList(1)}>
-                  <i className="fas fa-search me-1" /> Buscar
+              <div className="col-md-3 d-flex align-items-end">
+                <button className="grados-btn-search" onClick={fetchList}>
+                   <Search size={18} className="me-2" /> Actualizar Lista
                 </button>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Tabla de grados */}
-          <div className="grados-table-card">
-            <div className="card-body table-responsive p-0">
-              <table className="grados-table">
-                <thead>
-                  <tr>
-                    <th>Grado</th>
-                    <th>Año</th>
-                    <th>Aula</th>
-                    <th>Estado</th>
-                    <th className="text-end" style={{ width: 200 }}>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.length > 0 ? items.map((g) => (
-                    <tr key={g._id}>
-                      <td className="align-middle">{g.grado}</td>
-                      <td className="align-middle">{g.anio_academico}</td>
-                      <td className="align-middle">{g.aula}</td>
-                      <td className="align-middle">
-                        <span className={`grados-badge-${g.estado === "Activo" ? "active" : "inactive"}`}>
-                          {g.estado}
-                        </span>
-                      </td>
-                      <td className="text-end">
-                        <div className="d-flex justify-content-end gap-2">
-                          <button className="btn btn-ayuda" onClick={() => openEdit(g)}>
-                            <i className="fas fa-edit me-1" /> Editar
-                          </button>
-                          <button 
-                        className="grados btn btn-danger" 
-                        onClick={() => prepararEliminacionGrado(g)}
-                        title="Eliminar permanentemente"
-                      >
-                        <Trash2 size={14} />
+        {/* TABLA */}
+        <div className="grados-table-card">
+          <table className="grados-table">
+            <thead>
+              <tr>
+                <th>Grado</th>
+                <th>Año</th>
+                <th>Aula</th>
+                <th>Matriculados</th>
+                <th>Estado</th>
+                <th className="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((g) => (
+                <tr key={g._id}>
+                  <td className="fw-bold">{g.grado}</td>
+                  <td>{g.anio_academico}</td>
+                  <td>{g.aula}</td>
+                  <td>
+                    <span className="grados-badge-active bg-primary text-white d-inline-flex align-items-center gap-2">
+                       <Users size={14} /> {g.totalAlumnos} Alumnos
+                    </span>
+                  </td>
+                  <td>
+                    <span className={g.estado === 'Activo' ? 'grados-badge-active' : 'grados-badge-inactive'}>
+                      {g.estado}
+                    </span>
+                  </td>
+                  <td className="text-center">
+                    <button className="grados-btn-edit" onClick={() => { setForm(g); setEditing(true); setShowModal(true); }}>
+                      Editar
+                    </button>
+                    {g.totalAlumnos === 0 && (
+                      <button className="grados-btn-deactivate" onClick={() => { setGradoAEliminar(g); setShowConfirm(true); }}>
+                        <Trash2 size={16} />
                       </button>
-
-
-                        </div>
-                        
-                      </td>
-                    </tr>
-                  )) : !loading && (
-                    <tr>
-                      <td colSpan={5} className="text-center text-muted p-4">Sin registros.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Paginación */}
-            <div className="grados-pagination d-flex justify-content-between align-items-center">
-              <small className="grados-pagination-info">Total: {total}</small>
-              <div className="btn-group">
-                <button 
-                  className="grados-pagination-btn" 
-                  disabled={page <= 1} 
-                  onClick={() => fetchList(page - 1)}
-                >
-                  «
-                </button>
-                <span className="grados-pagination-btn grados-pagination-btn-active">
-                  Página {page} de {pages}
-                </span>
-                <button 
-                  className="grados-pagination-btn" 
-                  disabled={page >= pages} 
-                  onClick={() => fetchList(page + 1)}
-                >
-                  »
-                </button>
-              </div>
-            </div>
-          </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </section>
+      </div>
 
-      {/* Modal Crear/Editar */}
-      {showModal && (
-        <div className="grados-modal-overlay">
-          <div className="grados-modal-content">
-            <div className="grados-modal-header">
-              <h5 className="grados-modal-title">{editing ? "Editar grado" : "Nuevo grado"}</h5>
-              <button className="grados-modal-close" onClick={() => setShowModal(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="grados-modal-body">
-              <div className="row g-3">
-                <div className="col-md-6">
-                  <label className="grados-form-label">Grado *</label>
-                  <input
-                    className={`grados-modal-input ${errors.grado ? "is-invalid" : ""}`}
-                    value={form.grado}
-                    onChange={(e) => setForm({ ...form, grado: e.target.value })}
-                  />
-                  {errors.grado && <div className="grados-invalid-feedback">{errors.grado}</div>}
-                </div>
-                <div className="col-md-6">
-                  <label className="grados-form-label">Año académico *</label>
-                  <input
-                    type="number"
-                    className={`grados-modal-input ${errors.anio_academico ? "is-invalid" : ""}`}
-                    value={form.anio_academico}
-                    onChange={(e) => setForm({ ...form, anio_academico: e.target.value })}
-                  />
-                  {errors.anio_academico && <div className="grados-invalid-feedback">{errors.anio_academico}</div>}
-                </div>
-
-                <div className="col-12">
-                  <label className="grados-form-label">Descripción</label>
-                  <input
-                    className="grados-modal-input"
-                    value={form.descripcion}
-                    onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
-                  />
-                </div>
-
-                <div className="col-12">
-                  <label className="grados-form-label">Aula *</label>
-                  <input
-                    className={`grados-modal-input ${errors.aula ? "is-invalid" : ""}`}
-                    value={form.aula}
-                    onChange={(e) => setForm({ ...form, aula: e.target.value })}
-                    placeholder="Ej: Aula 101, Laboratorio de Ciencias, etc."
-                  />
-                  {errors.aula && <div className="grados-invalid-feedback">{errors.aula}</div>}
-                </div>
-
-                <div className="col-12">
-                  <label className="grados-form-label">Estado</label><br/>
-                  <select
-                    className={`grados-modal-input ${errors.estado ? "is-invalid" : ""}`}
-                    value={form.estado}
-                    onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                  >
-                    <option>Activo</option>
-                    <option>Inactivo</option>
-                  </select>
-                  {errors.estado && <div className="grados-invalid-feedback">{errors.estado}</div>}
+      {/* MODAL */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="grados-modal-overlay">
+            <motion.div className="grados-modal-content" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+              <div className="grados-modal-header d-flex justify-content-between align-items-center">
+                <h2 className="grados-modal-title">{editing ? "Editar" : "Nuevo"} Grado</h2>
+                <button className="grados-modal-close" onClick={() => setShowModal(false)}><X size={20}/></button>
+              </div>
+              <div className="grados-modal-body">
+                <div className="row g-3">
+                  <div className="col-md-8">
+                    <label className="grados-form-label">Nombre del Grado</label>
+                    <input className="grados-modal-input" value={form.grado} onChange={e => setForm({...form, grado: e.target.value})} />
+                  </div>
+                  <div className="col-md-4">
+                    <label className="grados-form-label">Año</label>
+                    <input type="number" className="grados-modal-input" value={form.anio_academico} onChange={e => setForm({...form, anio_academico: e.target.value})} />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="grados-form-label">Aula</label>
+                    <input className="grados-modal-input" value={form.aula} onChange={e => setForm({...form, aula: e.target.value})} />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="grados-form-label">Estado</label>
+                    <select className="grados-modal-input" value={form.estado} onChange={e => setForm({...form, estado: e.target.value})}>
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                    </select>
+                  </div>
+                  <div className="col-12">
+                    <label className="grados-form-label">Descripción</label>
+                    <textarea className="grados-modal-input" rows="3" value={form.descripcion} onChange={e => setForm({...form, descripcion: e.target.value})}></textarea>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="grados-modal-footer">
-              <button className="btn btn-dark" onClick={() => setShowModal(false)}>
-                Cancelar
-              </button>
-              <button className="btn btn-guardar-donaciones" onClick={save} disabled={loading}>
-                {loading ? "Guardando..." : (editing ? "Guardar cambios" : "Crear")}
-              </button>
-            </div>
+              <div className="grados-modal-footer d-flex justify-content-end">
+                <button className="grados-modal-btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button className="grados-modal-btn-save" onClick={handleSave}>Guardar Registro</button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
-      {showConfirm && (
-  <ConfirmDialog
-    message={`¿Estás seguro de que quieres eliminar permanentemente el grado "${gradoAEliminar?.nombre}"? Esta acción no se puede deshacer.`}
-    onConfirm={confirmarEliminacionGrado}
-    onCancel={cancelarEliminacionGrado}
-    visible={showConfirm}
-  />
-)}
+        )}
+      </AnimatePresence>
+
+      <ConfirmDialog
+        visible={showConfirm}
+        onConfirm={async () => {
+          const token = await auth.currentUser.getIdToken();
+          await fetch(`${API}/${gradoAEliminar._id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+          setShowConfirm(false); fetchList();
+        }}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
-    
   );
 }
