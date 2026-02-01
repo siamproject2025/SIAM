@@ -1016,7 +1016,7 @@ const handleOpenEditModal = (empleado) => {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <Briefcase size={14} />
-                  CARGO
+                  AREA
                 </div>
                 <div style={{ textAlign: 'center' }}>TIPO</div>
                 <div style={{ textAlign: 'center' }}>SALARIO</div>
