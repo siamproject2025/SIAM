@@ -1030,16 +1030,6 @@ const Directiva = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Empresa</label>
-                    <input
-                      type="text"
-                      value={formData.empresa}
-                      onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
-                      placeholder="Empresa que representa"
-                    />
-                  </div>
-
-                  <div className="form-group">
                     <label>Estado</label>
                     <select
                       value={formData.estado}
