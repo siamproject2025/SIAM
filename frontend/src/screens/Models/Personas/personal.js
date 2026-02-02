@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//../styles/Personal.css"
 import { auth } from "../../../components/authentication/Auth";
-import { 
-Sun,           // Para Vacaciones
+import {
+  Sun,           // Para Vacaciones
   UserX,         // Para Temporal
   GraduationCap, // Para Practicante
-  Eye , UserCheck,
+  Eye, UserCheck,
   Mail,
   Phone,
   Upload,
@@ -33,13 +33,13 @@ Sun,           // Para Vacaciones
   DollarSign,
   FileText,
   Award,
- 
+
   Shield
 } from 'lucide-react';
 
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/personal";
+const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
 
 const Personal = () => {
   const [personal, setPersonal] = useState([]);
@@ -72,9 +72,9 @@ const Personal = () => {
     foto_preview: null
   });
 
-useEffect(() => {
-  cargarPersonal();
-}, []); 
+  useEffect(() => {
+    cargarPersonal();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -83,32 +83,32 @@ useEffect(() => {
   }, [formData.foto_preview]);
 
   const cargarPersonal = async () => {
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    //  Obtener el token del usuario autenticado (Firebase o Auth0)
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
+      //  Obtener el token del usuario autenticado (Firebase o Auth0)
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
 
-    //  Petición con token incluido
-    const res = await fetch(API_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`, //  Token JWT
-      },
-    });
+      //  Petición con token incluido
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`, //  Token JWT
+        },
+      });
 
-    if (!res.ok) throw new Error("Error al cargar personal");
+      if (!res.ok) throw new Error("Error al cargar personal");
 
-    const data = await res.json();
-    setPersonal(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error("Error al obtener el personal:", err);
-    showNotification("Error al cargar el personal", "error");
-    setPersonal([]);
-  } finally {
-    setLoading(false);
-  }
-};
+      const data = await res.json();
+      setPersonal(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error al obtener el personal:", err);
+      showNotification("Error al cargar el personal", "error");
+      setPersonal([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   // Calcular estadísticas
@@ -142,7 +142,7 @@ useEffect(() => {
       fecha_ingreso: new Date().toISOString().split('T')[0]
     });
   };
-const handleFotoChange = (e) => {
+  const handleFotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validar tamaño (5MB máximo)
@@ -177,10 +177,10 @@ const handleFotoChange = (e) => {
   };
 
   const handleCrearPersonal = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    // Validaciones antes de enviar
+    try {
+      // Validaciones antes de enviar
       if (!formData.codigo.trim()) {
         showNotification('El código es obligatorio', 'error');
         return;
@@ -259,300 +259,300 @@ const handleFotoChange = (e) => {
       }
 
 
-    //  Crear objeto FormData
-    const formDataSend = new FormData();
-    formDataSend.append('codigo', formData.codigo.trim());
-    formDataSend.append('nombres', formData.nombres.trim());
-    formDataSend.append('apellidos', formData.apellidos.trim());
-    formDataSend.append('numero_identidad', formData.numero_identidad.trim());
-    formDataSend.append('tipo_contrato', formData.tipo_contrato);
-    formDataSend.append('estado', formData.estado);
-    formDataSend.append('telefono', formData.telefono.trim());
-    formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
-    const cargoAsignacion = {
-    cargo: formData.cargo,
-    horario_preferido: formData.horario_preferido,
-    fecha_asignacion: formData.fecha_asignacion
-    };
-    // Solo adjuntar foto si existe
-    if (formData.imagen) {
-      formDataSend.append('imagen', formData.imagen);
-    }
-    formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
+      //  Crear objeto FormData
+      const formDataSend = new FormData();
+      formDataSend.append('codigo', formData.codigo.trim());
+      formDataSend.append('nombres', formData.nombres.trim());
+      formDataSend.append('apellidos', formData.apellidos.trim());
+      formDataSend.append('numero_identidad', formData.numero_identidad.trim());
+      formDataSend.append('tipo_contrato', formData.tipo_contrato);
+      formDataSend.append('estado', formData.estado);
+      formDataSend.append('telefono', formData.telefono.trim());
+      formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
+      const cargoAsignacion = {
+        cargo: formData.cargo,
+        horario_preferido: formData.horario_preferido,
+        fecha_asignacion: formData.fecha_asignacion
+      };
+      // Solo adjuntar foto si existe
+      if (formData.imagen) {
+        formDataSend.append('imagen', formData.imagen);
+      }
+      formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
 
-    formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
-    formDataSend.append(
-      'especialidades',
-      formData.especialidades
-        ? formData.especialidades
+      formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
+      formDataSend.append(
+        'especialidades',
+        formData.especialidades
+          ? formData.especialidades
             .split(',')
             .map(e => e.trim())
             .filter(e => e)
             .join(',')
-        : ''
-    );
+          : ''
+      );
 
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-    if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
-    if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
+      if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
+      if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
 
-    //  Enviar al backend
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`, //  se agrega aquí
-        //  No agregar 'Content-Type'
-      },
-      body: formDataSend,
-    });
+      //  Enviar al backend
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`, //  se agrega aquí
+          //  No agregar 'Content-Type'
+        },
+        body: formDataSend,
+      });
 
-    const responseData = await response.json();
+      const responseData = await response.json();
 
-    if (!response.ok) {
-      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      //  Si se guarda correctamente
+      await cargarPersonal();
+      setMostrarModalCrear(false);
+      resetForm();
+      showNotification(
+        `Empleado "${formData.nombres} ${formData.apellidos}" creado exitosamente`,
+        'success'
+      );
+
+    } catch (error) {
+      console.error('Error al crear el empleado:', error);
+      showNotification(error.message || 'Error al crear el empleado', 'error');
     }
-
-    //  Si se guarda correctamente
-    await cargarPersonal();
-    setMostrarModalCrear(false);
-    resetForm();
-    showNotification(
-      `Empleado "${formData.nombres} ${formData.apellidos}" creado exitosamente`,
-      'success'
-    );
-
-  } catch (error) {
-    console.error('Error al crear el empleado:', error);
-    showNotification(error.message || 'Error al crear el empleado', 'error');
-  }
-};
+  };
 
 
- const handleEditarPersonal = async (e) => {
-  e.preventDefault();
+  const handleEditarPersonal = async (e) => {
+    e.preventDefault();
 
-  try {
-    //  Validaciones (mismas que handleCrearPersonal)
-    if (!formData.codigo.trim()) {
-      showNotification('El código es obligatorio', 'error');
-      return;
+    try {
+      //  Validaciones (mismas que handleCrearPersonal)
+      if (!formData.codigo.trim()) {
+        showNotification('El código es obligatorio', 'error');
+        return;
+      }
+
+      if (!formData.nombres.trim() || formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
+        showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
+        return;
+      }
+
+      if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2 || formData.apellidos.trim().length > 100) {
+        showNotification('Los apellidos deben tener entre 2 y 100 caracteres', 'error');
+        return;
+      }
+
+      if (!formData.numero_identidad.trim() || formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
+        showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
+        return;
+      }
+
+      const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
+      if (!tiposContrato.includes(formData.tipo_contrato)) {
+        showNotification('Tipo de contrato inválido', 'error');
+        return;
+      }
+
+      const estados = ['ACTIVO', 'VACACIONES', 'LICENCIA', 'INACTIVO'];
+      if (!estados.includes(formData.estado)) {
+        showNotification('Estado inválido', 'error');
+        return;
+      }
+
+      if (!formData.telefono.trim() || formData.telefono.trim().length < 8 || formData.telefono.trim().length > 20) {
+        showNotification('El teléfono debe tener entre 8 y 20 caracteres', 'error');
+        return;
+      }
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!formData.direccion_correo.trim() || !emailRegex.test(formData.direccion_correo.trim())) {
+        showNotification('Correo electrónico inválido', 'error');
+        return;
+      }
+
+      if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
+        showNotification('Cargo del empleado - obligatorio', 'error');
+        return;
+      }
+
+      if (!formData.fecha_asignacion) {
+        showNotification('La fecha de asignación es obligatoria', 'error');
+        return;
+      }
+
+      const horarios = ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE'];
+      if (formData.horario_preferido && !horarios.includes(formData.horario_preferido)) {
+        showNotification('Horario preferido inválido', 'error');
+        return;
+      }
+
+      if (formData.area_trabajo && formData.area_trabajo.trim().length > 100) {
+        showNotification('El área de trabajo no puede exceder 100 caracteres', 'error');
+        return;
+      }
+
+      if (formData.salario && parseFloat(formData.salario) < 0) {
+        showNotification('El salario no puede ser negativo', 'error');
+        return;
+      }
+
+      //  Crear FormData igual que handleCrearPersonal
+      const formDataSend = new FormData();
+      formDataSend.append('codigo', formData.codigo.trim());
+      formDataSend.append('nombres', formData.nombres.trim());
+      formDataSend.append('apellidos', formData.apellidos.trim());
+      formDataSend.append('numero_identidad', formData.numero_identidad.trim());
+      formDataSend.append('tipo_contrato', formData.tipo_contrato);
+      formDataSend.append('estado', formData.estado);
+      formDataSend.append('telefono', formData.telefono.trim());
+      formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
+
+      const cargoAsignacion = {
+        cargo: formData.cargo.trim(),
+        horario_preferido: formData.horario_preferido,
+        fecha_asignacion: formData.fecha_asignacion
+      };
+      formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
+
+      formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
+      formDataSend.append(
+        'especialidades',
+        formData.especialidades
+          ? formData.especialidades.split(',').map(e => e.trim()).filter(e => e).join(',')
+          : ''
+      );
+
+      if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
+      if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
+
+      // Solo adjuntar imagen si se modificó
+      if (formData.imagen) {
+        formDataSend.append('imagen', formData.imagen);
+      }
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
+      //  Enviar al backend
+      const response = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`, //  se agrega aquí
+
+        },
+        body: formDataSend,
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      //  Si se guarda correctamente
+      await cargarPersonal();
+      setPersonalSeleccionado(null);
+      resetForm();
+      showNotification(`Empleado "${formData.nombres} ${formData.apellidos}" actualizado exitosamente`, 'success');
+
+    } catch (error) {
+      console.error('Error al editar el empleado:', error);
+      showNotification(error.message || 'Error al editar el empleado', 'error');
     }
+  };
 
-    if (!formData.nombres.trim() || formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
-      showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
-      return;
+
+  //Eliminar personal
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [personalAEliminar, setPersonalAEliminar] = useState(null);
+
+  const prepararEliminacionPersonal = () => {
+    if (!personalSeleccionado) return;
+    setPersonalAEliminar(personalSeleccionado);
+    setShowConfirm(true);
+  };
+
+  const confirmarEliminacionPersonal = async () => {
+    setShowConfirm(false);
+    if (!personalAEliminar) return;
+
+    try {
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${API_URL}/${personalAEliminar._id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Error al eliminar el empleado");
+      }
+
+      await cargarPersonal();
+      setPersonalSeleccionado(null);
+      resetForm();
+
+      showNotification(
+        `Empleado "${personalAEliminar.nombres} ${personalAEliminar.apellidos}" eliminado exitosamente`,
+        "success"
+      );
+      setPersonalAEliminar(null);
+    } catch (err) {
+      console.error(" Error eliminando personal:", err);
+      showNotification(err.message || "Error al eliminar el empleado", "error");
     }
+  };
 
-    if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2 || formData.apellidos.trim().length > 100) {
-      showNotification('Los apellidos deben tener entre 2 y 100 caracteres', 'error');
-      return;
-    }
-
-    if (!formData.numero_identidad.trim() || formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
-      showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
-      return;
-    }
-
-    const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
-    if (!tiposContrato.includes(formData.tipo_contrato)) {
-      showNotification('Tipo de contrato inválido', 'error');
-      return;
-    }
-
-    const estados = ['ACTIVO', 'VACACIONES', 'LICENCIA', 'INACTIVO'];
-    if (!estados.includes(formData.estado)) {
-      showNotification('Estado inválido', 'error');
-      return;
-    }
-
-    if (!formData.telefono.trim() || formData.telefono.trim().length < 8 || formData.telefono.trim().length > 20) {
-      showNotification('El teléfono debe tener entre 8 y 20 caracteres', 'error');
-      return;
-    }
-
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!formData.direccion_correo.trim() || !emailRegex.test(formData.direccion_correo.trim())) {
-      showNotification('Correo electrónico inválido', 'error');
-      return;
-    }
-
-    if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
-      showNotification('Cargo del empleado - obligatorio', 'error');
-      return;
-    }
-
-    if (!formData.fecha_asignacion) {
-      showNotification('La fecha de asignación es obligatoria', 'error');
-      return;
-    }
-
-    const horarios = ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE'];
-    if (formData.horario_preferido && !horarios.includes(formData.horario_preferido)) {
-      showNotification('Horario preferido inválido', 'error');
-      return;
-    }
-
-    if (formData.area_trabajo && formData.area_trabajo.trim().length > 100) {
-      showNotification('El área de trabajo no puede exceder 100 caracteres', 'error');
-      return;
-    }
-
-    if (formData.salario && parseFloat(formData.salario) < 0) {
-      showNotification('El salario no puede ser negativo', 'error');
-      return;
-    }
-
-    //  Crear FormData igual que handleCrearPersonal
-    const formDataSend = new FormData();
-    formDataSend.append('codigo', formData.codigo.trim());
-    formDataSend.append('nombres', formData.nombres.trim());
-    formDataSend.append('apellidos', formData.apellidos.trim());
-    formDataSend.append('numero_identidad', formData.numero_identidad.trim());
-    formDataSend.append('tipo_contrato', formData.tipo_contrato);
-    formDataSend.append('estado', formData.estado);
-    formDataSend.append('telefono', formData.telefono.trim());
-    formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
-
-    const cargoAsignacion = {
-      cargo: formData.cargo.trim(),
-      horario_preferido: formData.horario_preferido,
-      fecha_asignacion: formData.fecha_asignacion
-    };
-    formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
-
-    formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
-    formDataSend.append(
-      'especialidades',
-      formData.especialidades
-        ? formData.especialidades.split(',').map(e => e.trim()).filter(e => e).join(',')
-        : ''
-    );
-
-    if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
-    if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
-
-    // Solo adjuntar imagen si se modificó
-    if (formData.imagen) {
-      formDataSend.append('imagen', formData.imagen);
-    }
-     const user = auth.currentUser;
-    const token = await user.getIdToken();
-    //  Enviar al backend
-    const response = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
-      method: 'PUT',
-       headers: {
-        Authorization: `Bearer ${token}`, //  se agrega aquí
-        
-      },
-      body: formDataSend,
-    });
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-
-    //  Si se guarda correctamente
-    await cargarPersonal();
-    setPersonalSeleccionado(null);
-    resetForm();
-    showNotification(`Empleado "${formData.nombres} ${formData.apellidos}" actualizado exitosamente`, 'success');
-
-  } catch (error) {
-    console.error('Error al editar el empleado:', error);
-    showNotification(error.message || 'Error al editar el empleado', 'error');
-  }
-};
-
-
-//Eliminar personal
-const [showConfirm, setShowConfirm] = useState(false);
-const [personalAEliminar, setPersonalAEliminar] = useState(null);
-
-const prepararEliminacionPersonal = () => {
-  if (!personalSeleccionado) return;
-  setPersonalAEliminar(personalSeleccionado);
-  setShowConfirm(true);
-};
-
-const confirmarEliminacionPersonal = async () => {
-  setShowConfirm(false);
-  if (!personalAEliminar) return;
-
-  try {
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    const res = await fetch(`${API_URL}/${personalAEliminar._id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Error al eliminar el empleado");
-    }
-
-    await cargarPersonal();
-    setPersonalSeleccionado(null);
-    resetForm();
-
-    showNotification(
-      `Empleado "${personalAEliminar.nombres} ${personalAEliminar.apellidos}" eliminado exitosamente`,
-      "success"
-    );
+  const cancelarEliminacionPersonal = () => {
+    setShowConfirm(false);
     setPersonalAEliminar(null);
-  } catch (err) {
-    console.error(" Error eliminando personal:", err);
-    showNotification(err.message || "Error al eliminar el empleado", "error");
-  }
-};
-
-const cancelarEliminacionPersonal = () => {
-  setShowConfirm(false);
-  setPersonalAEliminar(null);
-};
+  };
 
 
   const handleEliminarPersonal = async () => {
-  const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
-  
-  try {
-    //  Obtener token del usuario autenticado (Firebase o Auth0)
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
+    const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
 
-    // ️ Petición DELETE con token
-    const res = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`, //  se agrega el token
-      },
-    });
+    try {
+      //  Obtener token del usuario autenticado (Firebase o Auth0)
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Error al eliminar el empleado");
+      // ️ Petición DELETE con token
+      const res = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`, //  se agrega el token
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Error al eliminar el empleado");
+      }
+
+      //  Actualizar lista tras eliminación
+      await cargarPersonal();
+      setPersonalSeleccionado(null);
+      resetForm();
+
+      showNotification(
+        `Empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}" eliminado exitosamente`,
+        "success"
+      );
+    } catch (err) {
+      console.error(" Error eliminando personal:", err);
+      showNotification(err.message || "Error al eliminar el empleado", "error");
     }
-
-    //  Actualizar lista tras eliminación
-    await cargarPersonal();
-    setPersonalSeleccionado(null);
-    resetForm();
-
-    showNotification(
-      `Empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}" eliminado exitosamente`,
-      "success"
-    );
-  } catch (err) {
-    console.error(" Error eliminando personal:", err);
-    showNotification(err.message || "Error al eliminar el empleado", "error");
-  }
-};
+  };
 
 
   const personalFiltrado = personal.filter(p => {
@@ -569,7 +569,7 @@ const cancelarEliminacionPersonal = () => {
   });
 
   const personalOrdenado = [...personalFiltrado].sort((a, b) => {
-    switch(filtroOrden) {
+    switch (filtroOrden) {
       case 'nombre-asc':
         return (a.nombres || '').localeCompare(b.nombres || '');
       case 'nombre-desc':
@@ -600,40 +600,40 @@ const cancelarEliminacionPersonal = () => {
     return icons[tipo] || <Briefcase size={18} />;
   };
 
-const handleOpenEditModal = (empleado) => {
-  setPersonalSeleccionado(empleado);
+  const handleOpenEditModal = (empleado) => {
+    setPersonalSeleccionado(empleado);
 
-  //  Preparar los datos del empleado para edición
-  const formDataSend = {
-    codigo: empleado.codigo || '',
-    nombres: empleado.nombres || '',
-    apellidos: empleado.apellidos || '',
-    numero_identidad: empleado.numero_identidad || '',
-    tipo_contrato: empleado.tipo_contrato || 'TIEMPO_COMPLETO',
-    estado: empleado.estado || 'ACTIVO',
-    telefono: empleado.telefono || '',
-    direccion_correo: empleado.direccion_correo || '',
-    cargo: empleado.cargo_asignacion?.cargo || '',
-    horario_preferido: empleado.cargo_asignacion?.horario_preferido || 'MATUTINO',
-    fecha_asignacion: empleado.cargo_asignacion?.fecha_asignacion
-      ? new Date(empleado.cargo_asignacion.fecha_asignacion).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    area_trabajo: empleado.area_trabajo || '',
-    especialidades: empleado.especialidades?.join(', ') || '',
-    salario: empleado.salario || '',
-    fecha_ingreso: empleado.fecha_ingreso
-      ? new Date(empleado.fecha_ingreso).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    foto_preview: empleado.imagen
-      ? `data:image/png;base64,${empleado.imagen}`
-      : null,
-    imagen: null // 
+    //  Preparar los datos del empleado para edición
+    const formDataSend = {
+      codigo: empleado.codigo || '',
+      nombres: empleado.nombres || '',
+      apellidos: empleado.apellidos || '',
+      numero_identidad: empleado.numero_identidad || '',
+      tipo_contrato: empleado.tipo_contrato || 'TIEMPO_COMPLETO',
+      estado: empleado.estado || 'ACTIVO',
+      telefono: empleado.telefono || '',
+      direccion_correo: empleado.direccion_correo || '',
+      cargo: empleado.cargo_asignacion?.cargo || '',
+      horario_preferido: empleado.cargo_asignacion?.horario_preferido || 'MATUTINO',
+      fecha_asignacion: empleado.cargo_asignacion?.fecha_asignacion
+        ? new Date(empleado.cargo_asignacion.fecha_asignacion).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+      area_trabajo: empleado.area_trabajo || '',
+      especialidades: empleado.especialidades?.join(', ') || '',
+      salario: empleado.salario || '',
+      fecha_ingreso: empleado.fecha_ingreso
+        ? new Date(empleado.fecha_ingreso).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
+      foto_preview: empleado.imagen
+        ? `data:image/png;base64,${empleado.imagen}`
+        : null,
+      imagen: null // 
+    };
+
+
+    setFormData(formDataSend);
   };
-
-
-  setFormData(formDataSend);
-};
-;
+  ;
 
   const handleCloseModals = () => {
     setMostrarModalCrear(false);
@@ -657,9 +657,9 @@ const handleOpenEditModal = (empleado) => {
     <>
       <div className="personal-container">
         {/* Header con estadísticas */}
-         <motion.div 
+        <motion.div
           className="donacion-header"
-          style={{marginBottom:'0'}}
+          style={{ marginBottom: '0' }}
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
@@ -685,7 +685,7 @@ const handleOpenEditModal = (empleado) => {
                 </motion.div>
                 Sistema de Gestión de Personal
                 <motion.div
-                  animate={{ 
+                  animate={{
                     rotate: [0, 10, -10, 0],
                     scale: [1, 1.1, 1]
                   }}
@@ -695,7 +695,7 @@ const handleOpenEditModal = (empleado) => {
                   <Gift size={32} color="white" />
                 </motion.div>
               </motion.h2>
-              
+
               <motion.p
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -704,44 +704,44 @@ const handleOpenEditModal = (empleado) => {
                 Administra tu equipo de trabajo de manera eficiente
               </motion.p>
 
-              <motion.div 
+              <motion.div
                 className="header-stats"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.5 }}
               >
-            
-                
+
+
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 className="floating-icons"
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6, duration: 0.5 }}
               >
-                <motion.div 
+                <motion.div
                   className="floating-icon"
-                  animate={{ 
+                  animate={{
                     y: [0, -10, 0],
                     rotate: [0, 5, -5, 0]
                   }}
-                  transition={{ 
-                    duration: 4, 
+                  transition={{
+                    duration: 4,
                     repeat: Infinity,
                     ease: "easeInOut"
                   }}
                 >
                   <Shirt size={20} color="white" />
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="floating-icon"
-                  animate={{ 
+                  animate={{
                     y: [0, -15, 0],
                     rotate: [0, -8, 8, 0]
                   }}
-                  transition={{ 
-                    duration: 3.5, 
+                  transition={{
+                    duration: 3.5,
                     repeat: Infinity,
                     ease: "easeInOut",
                     delay: 0.5
@@ -749,14 +749,14 @@ const handleOpenEditModal = (empleado) => {
                 >
                   <Apple size={20} color="white" />
                 </motion.div>
-                <motion.div 
+                <motion.div
                   className="floating-icon"
-                  animate={{ 
+                  animate={{
                     y: [0, -12, 0],
                     rotate: [0, 10, -10, 0]
                   }}
-                  transition={{ 
-                    duration: 4.2, 
+                  transition={{
+                    duration: 4.2,
                     repeat: Infinity,
                     ease: "easeInOut",
                     delay: 1
@@ -768,28 +768,28 @@ const handleOpenEditModal = (empleado) => {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="donacion-busqueda-bar"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.5 }}
             style={{ marginTop: '2rem' }}
           >
-           
-           
-            
-          </motion.div> 
+
+
+
+          </motion.div>
         </motion.div>
-        <motion.div 
+        <motion.div
           className="personal-header"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          
+
           {/* Tarjetas de estadísticas */}
           <div className="personal-stats">
-            <motion.div 
+            <motion.div
               className="stat-card-personal"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -800,7 +800,7 @@ const handleOpenEditModal = (empleado) => {
                 <span className="stat-label">Total</span>
               </div>
             </motion.div>
-            <motion.div 
+            <motion.div
               className="stat-card-personal active"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -811,7 +811,7 @@ const handleOpenEditModal = (empleado) => {
                 <span className="stat-label">Activos</span>
               </div>
             </motion.div>
-            <motion.div 
+            <motion.div
               className="stat-card-personal vacaciones"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -822,7 +822,7 @@ const handleOpenEditModal = (empleado) => {
                 <span className="stat-label">Vacaciones</span>
               </div>
             </motion.div>
-            <motion.div 
+            <motion.div
               className="stat-card-personal licencia"
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -837,15 +837,15 @@ const handleOpenEditModal = (empleado) => {
 
           <div className="personal-busqueda-bar">
             <div style={{ position: 'relative', flex: 1 }}>
-              <Search 
-                size={20} 
-                style={{ 
-                  position: 'absolute', 
-                  left: '12px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  color: '#999' 
-                }} 
+              <Search
+                size={20}
+                style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#999'
+                }}
               />
               <input
                 type="text"
@@ -856,10 +856,10 @@ const handleOpenEditModal = (empleado) => {
                 style={{ paddingLeft: '45px' }}
               />
             </div>
-            
+
             <div style={{ position: 'relative' }}>
-              <motion.button 
-                className="btn-ayuda" 
+              <motion.button
+                className="btn-ayuda"
                 onClick={() => setMostrarMenuFiltros(!mostrarMenuFiltros)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -867,55 +867,55 @@ const handleOpenEditModal = (empleado) => {
                 <Shield size={16} />
                 Ordenar
               </motion.button>
-              
+
               <AnimatePresence>
                 {mostrarMenuFiltros && (
-                  <motion.div 
+                  <motion.div
                     className="filtros-menu"
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                   >
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'ninguno' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('ninguno'); setMostrarMenuFiltros(false); }}
                     >
                       Sin orden
                     </div>
                     <div className="filtro-separador"></div>
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'nombre-asc' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('nombre-asc'); setMostrarMenuFiltros(false); }}
                     >
                       Nombre A-Z
                     </div>
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'nombre-desc' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('nombre-desc'); setMostrarMenuFiltros(false); }}
                     >
                       Nombre Z-A
                     </div>
                     <div className="filtro-separador"></div>
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'salario-asc' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('salario-asc'); setMostrarMenuFiltros(false); }}
                     >
                       Salario menor-mayor
                     </div>
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'salario-desc' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('salario-desc'); setMostrarMenuFiltros(false); }}
                     >
                       Salario mayor-menor
                     </div>
                     <div className="filtro-separador"></div>
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'estado-activo' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('estado-activo'); setMostrarMenuFiltros(false); }}
                     >
                       Estado: Activo primero
                     </div>
-                    <div 
+                    <div
                       className={`filtro-opcion ${filtroOrden === 'estado-inactivo' ? 'active' : ''}`}
                       onClick={() => { setFiltroOrden('estado-inactivo'); setMostrarMenuFiltros(false); }}
                     >
@@ -926,8 +926,8 @@ const handleOpenEditModal = (empleado) => {
               </AnimatePresence>
             </div>
 
-            <motion.button 
-              className="btn-ayuda" 
+            <motion.button
+              className="btn-ayuda"
               onClick={() => setMostrarAyuda(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -935,8 +935,8 @@ const handleOpenEditModal = (empleado) => {
               <HelpCircle size={16} />
               Ayuda
             </motion.button>
-            <motion.button 
-              className="btn-ayuda" 
+            <motion.button
+              className="btn-ayuda"
               onClick={() => {
                 resetForm();
                 setMostrarModalCrear(true);
@@ -952,23 +952,23 @@ const handleOpenEditModal = (empleado) => {
         </motion.div>
 
         {/* UNA SOLA TABLA con TODO el personal */}
-        <motion.div 
+        <motion.div
           className="personal-categoria-section"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          <motion.div 
+          <motion.div
             className="personal-categoria-header"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            
+
           </motion.div>
 
           {personalOrdenado.length === 0 ? (
-            <motion.p 
+            <motion.p
               className="personal-vacio"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -977,13 +977,13 @@ const handleOpenEditModal = (empleado) => {
               No hay empleados registrados.
             </motion.p>
           ) : (
-            <motion.div 
+            <motion.div
               className="tabla-personal"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
-              <motion.div 
+              <motion.div
                 className="tabla-header-personal"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1031,13 +1031,13 @@ const handleOpenEditModal = (empleado) => {
                     className="tabla-fila-personal"
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ 
+                    transition={{
                       delay: Math.min(index * 0.05, 1),
                       duration: 0.4,
                       type: "spring",
                       stiffness: 100
                     }}
-                    whileHover={{ 
+                    whileHover={{
                       scale: 1.01,
                       transition: { duration: 0.2 }
                     }}
@@ -1053,9 +1053,9 @@ const handleOpenEditModal = (empleado) => {
                       cursor: 'pointer'
                     }}
                   >
-                    <motion.div 
-                      style={{ 
-                        fontWeight: 'bold', 
+                    <motion.div
+                      style={{
+                        fontWeight: 'bold',
                         color: '#667eea',
                         fontSize: '0.95rem'
                       }}
@@ -1066,8 +1066,8 @@ const handleOpenEditModal = (empleado) => {
                     </motion.div>
 
                     <div>
-                      <motion.div 
-                        style={{ 
+                      <motion.div
+                        style={{
                           fontWeight: '600',
                           fontSize: '1rem',
                           color: '#333',
@@ -1080,12 +1080,12 @@ const handleOpenEditModal = (empleado) => {
                       >
                         {empleado.nombres} {empleado.apellidos}
                       </motion.div>
-                      
+
                     </div>
 
                     <div>
-                      <motion.div 
-                        style={{ 
+                      <motion.div
+                        style={{
                           fontSize: '0.85rem',
                           color: '#555',
                           marginBottom: '3px',
@@ -1098,8 +1098,8 @@ const handleOpenEditModal = (empleado) => {
                         <Mail size={14} />
                         {empleado.direccion_correo}
                       </motion.div>
-                      <motion.div 
-                        style={{ 
+                      <motion.div
+                        style={{
                           fontSize: '0.85rem',
                           color: '#555',
                           display: 'flex',
@@ -1113,18 +1113,18 @@ const handleOpenEditModal = (empleado) => {
                       </motion.div>
                     </div>
 
-                    <motion.div 
-                      style={{ fontSize: '0.9rem', color: '#555', textAlign:'left' }}
+                    <motion.div
+                      style={{ fontSize: '0.9rem', color: '#555', textAlign: 'left' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: index * 0.05 + 0.25 }}
                     >
-                     
+
                       {empleado.area_trabajo}
                     </motion.div>
 
-                    <motion.div 
-                      style={{ 
+                    <motion.div
+                      style={{
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
@@ -1139,8 +1139,8 @@ const handleOpenEditModal = (empleado) => {
                       </span>
                     </motion.div>
 
-                    <motion.div 
-                      style={{ 
+                    <motion.div
+                      style={{
                         textAlign: 'center',
                         fontWeight: 'bold',
                         fontSize: '0.95rem',
@@ -1151,7 +1151,7 @@ const handleOpenEditModal = (empleado) => {
                       {formatearSalario(empleado.salario)}
                     </motion.div>
 
-                    <motion.div 
+                    <motion.div
                       style={{ textAlign: 'center' }}
                       whileHover={{ scale: 1.05 }}
                     >
@@ -1160,11 +1160,11 @@ const handleOpenEditModal = (empleado) => {
                       </span>
                     </motion.div>
 
-                    <motion.div 
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        gap: '8px' 
+                    <motion.div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: '8px'
                       }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -1204,15 +1204,15 @@ const handleOpenEditModal = (empleado) => {
       {/* Modal Crear Empleado */}
       <AnimatePresence>
         {mostrarModalCrear && (
-          <motion.div 
-            className="modal-overlay" 
+          <motion.div
+            className="modal-overlay"
             onClick={handleCloseModals}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div 
-              className="modal-content" 
+            <motion.div
+              className="modal-content"
               style={{ maxWidth: '900px', maxHeight: '85vh', overflow: 'auto' }}
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 50 }}
@@ -1231,7 +1231,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.codigo}
-                      onChange={(e) => setFormData({...formData, codigo: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                       placeholder="EMP-001"
                       required
                     />
@@ -1241,7 +1241,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.numero_identidad}
-                      onChange={(e) => setFormData({...formData, numero_identidad: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, numero_identidad: e.target.value })}
                       placeholder="0801-1990-12345"
                       required
                     />
@@ -1251,7 +1251,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.nombres}
-                      onChange={(e) => setFormData({...formData, nombres: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, nombres: e.target.value })}
                       placeholder="Juan Carlos"
                       required
                     />
@@ -1261,7 +1261,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.apellidos}
-                      onChange={(e) => setFormData({...formData, apellidos: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
                       placeholder="Pérez López"
                       required
                     />
@@ -1271,7 +1271,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="tel"
                       value={formData.telefono}
-                      onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                       placeholder="9876-5432"
                       required
                     />
@@ -1281,7 +1281,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="email"
                       value={formData.direccion_correo}
-                      onChange={(e) => setFormData({...formData, direccion_correo: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, direccion_correo: e.target.value })}
                       placeholder="empleado@empresa.com"
                       required
                     />
@@ -1289,19 +1289,19 @@ const handleOpenEditModal = (empleado) => {
                   <div className="form-group">
                     <label>Cargo *</label>
                     <select
-  value={formData.cargo}
-  onChange={(e) =>
-    setFormData({ ...formData, cargo: e.target.value })
-  }
-  required
->
-  <option value="">Seleccione un cargo</option>
-  <option value="DOCENTE">Docente</option>
-  <option value="DIRECTOR">Director(a)</option>
-  <option value="LIMPIEZA">Limpieza</option>
-  <option value="GUARDIA">Guardia</option>
-  <option value="SERVICIO_SOCIAL">Servicio Social</option>
-</select>
+                      value={formData.cargo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, cargo: e.target.value })
+                      }
+                      required
+                    >
+                      <option value="">Seleccione un cargo</option>
+                      <option value="DOCENTE">Docente</option>
+                      <option value="DIRECTOR">Director(a)</option>
+                      <option value="LIMPIEZA">Limpieza</option>
+                      <option value="GUARDIA">Guardia</option>
+                      <option value="SERVICIO_SOCIAL">Servicio Social</option>
+                    </select>
 
                   </div>
                   <div className="form-group">
@@ -1309,7 +1309,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.area_trabajo}
-                      onChange={(e) => setFormData({...formData, area_trabajo: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, area_trabajo: e.target.value })}
                       placeholder="Tecnología"
                     />
                   </div>
@@ -1317,7 +1317,7 @@ const handleOpenEditModal = (empleado) => {
                     <label>Tipo de Contrato *</label>
                     <select
                       value={formData.tipo_contrato}
-                      onChange={(e) => setFormData({...formData, tipo_contrato: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, tipo_contrato: e.target.value })}
                       required
                     >
                       <option value="TIEMPO_COMPLETO">Tiempo Completo</option>
@@ -1331,7 +1331,7 @@ const handleOpenEditModal = (empleado) => {
                     <label>Horario Preferido</label>
                     <select
                       value={formData.horario_preferido}
-                      onChange={(e) => setFormData({...formData, horario_preferido: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, horario_preferido: e.target.value })}
                     >
                       <option value="MATUTINO">Matutino</option>
                       <option value="VESPERTINO">Vespertino</option>
@@ -1344,7 +1344,7 @@ const handleOpenEditModal = (empleado) => {
                     <label>Estado *</label>
                     <select
                       value={formData.estado}
-                      onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
                       required
                     >
                       <option value="ACTIVO">Activo</option>
@@ -1358,7 +1358,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="number"
                       value={formData.salario}
-                      onChange={(e) => setFormData({...formData, salario: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, salario: e.target.value })}
                       placeholder="15000"
                       min="0"
                       step="0.01"
@@ -1369,7 +1369,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="date"
                       value={formData.fecha_ingreso}
-                      onChange={(e) => setFormData({...formData, fecha_ingreso: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, fecha_ingreso: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
@@ -1377,7 +1377,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="date"
                       value={formData.fecha_asignacion}
-                      onChange={(e) => setFormData({...formData, fecha_asignacion: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, fecha_asignacion: e.target.value })}
                       required
                     />
                   </div>
@@ -1386,66 +1386,66 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.especialidades}
-                      onChange={(e) => setFormData({...formData, especialidades: e.target.value})}
-                      placeholder="React, Node.js, MongoDB"
+                      onChange={(e) => setFormData({ ...formData, especialidades: e.target.value })}
+                      placeholder="Escribe las especialidades..."
                     />
                   </div>
-                <div className="form-group form-grid-full">
-                      <label>
-                        <ImagePlus size={16} />
-                        Foto del empleado
-                      </label>
-                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
-                        {formData.foto_preview ? (
-                          <div>
-                            <img 
-                              src={formData.foto_preview} 
-                              alt="Preview" 
-                              className="foto-preview"
-                            />
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                              <motion.button
-                                type="button"
-                                onClick={eliminarFoto}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
-                              >
-                                <Trash2 size={16} />
-                                Eliminar foto
-                              </motion.button>
-                            </div>
+                  <div className="form-group form-grid-full">
+                    <label>
+                      <ImagePlus size={16} />
+                      Foto del empleado
+                    </label>
+                    <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
+                      {formData.foto_preview ? (
+                        <div>
+                          <img
+                            src={formData.foto_preview}
+                            alt="Preview"
+                            className="foto-preview"
+                          />
+                          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <motion.button
+                              type="button"
+                              onClick={eliminarFoto}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="btn btn-danger"
+                            >
+                              <Trash2 size={16} />
+                              Eliminar foto
+                            </motion.button>
                           </div>
-                        ) : (
-                          <div>
-                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
-                            <p style={{ color: '#666', marginBottom: '1rem', fontSize: '1rem' }}>
-                              Arrastra una imagen o haz clic para seleccionar
-                            </p>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFotoChange}
-                              style={{ display: 'none' }}
-                              id="foto-upload-nueva"
-                            />
-                            <label htmlFor="foto-upload-nueva" className="btn-upload-label">
-                              <ImagePlus size={18} />
-                              Seleccionar imagen
-                            </label>
-                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                              Formatos: JPG, JPEG
-                            </small>
-                          </div>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                          <p style={{ color: '#666', marginBottom: '1rem', fontSize: '1rem' }}>
+                            Arrastra una imagen o haz clic para seleccionar
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFotoChange}
+                            style={{ display: 'none' }}
+                            id="foto-upload-nueva"
+                          />
+                          <label htmlFor="foto-upload-nueva" className="btn-upload-label">
+                            <ImagePlus size={18} />
+                            Seleccionar imagen
+                          </label>
+                          <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
+                            Formatos: JPG, JPEG
+                          </small>
+                        </div>
+                      )}
                     </div>
+                  </div>
                 </div>
 
                 <div className="modal-actions">
-                  <motion.button 
-                    type="button" 
-                    className="btn-cancelar" 
+                  <motion.button
+                    type="button"
+                    className="btn-cancelar"
                     onClick={handleCloseModals}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -1453,8 +1453,8 @@ const handleOpenEditModal = (empleado) => {
                     <X size={16} />
                     Cancelar
                   </motion.button>
-                  <motion.button 
-                    type="submit" 
+                  <motion.button
+                    type="submit"
                     className="btn-guardar"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -1472,15 +1472,15 @@ const handleOpenEditModal = (empleado) => {
       {/* Modal Editar Empleado */}
       <AnimatePresence>
         {personalSeleccionado && (
-          <motion.div 
-            className="modal-overlay" 
+          <motion.div
+            className="modal-overlay"
             onClick={handleCloseModals}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <motion.div 
-              className="modal-content" 
+            <motion.div
+              className="modal-content"
               style={{ maxWidth: '900px', maxHeight: '85vh', overflow: 'auto' }}
               onClick={(e) => e.stopPropagation()}
               initial={{ scale: 0.9, y: 50 }}
@@ -1499,7 +1499,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.codigo}
-                      onChange={(e) => setFormData({...formData, codigo: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                       required
                     />
                   </div>
@@ -1508,7 +1508,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.numero_identidad}
-                      onChange={(e) => setFormData({...formData, numero_identidad: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, numero_identidad: e.target.value })}
                       required
                     />
                   </div>
@@ -1517,7 +1517,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.nombres}
-                      onChange={(e) => setFormData({...formData, nombres: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, nombres: e.target.value })}
                       required
                     />
                   </div>
@@ -1526,7 +1526,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.apellidos}
-                      onChange={(e) => setFormData({...formData, apellidos: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
                       required
                     />
                   </div>
@@ -1535,7 +1535,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="tel"
                       value={formData.telefono}
-                      onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                       required
                     />
                   </div>
@@ -1544,26 +1544,26 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="email"
                       value={formData.direccion_correo}
-                      onChange={(e) => setFormData({...formData, direccion_correo: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, direccion_correo: e.target.value })}
                       required
                     />
                   </div>
-                 <div className="form-group">
-                  <label>Cargo *</label>
+                  <div className="form-group">
+                    <label>Cargo *</label>
                     <select
-  value={formData.cargo}
-  onChange={(e) =>
-    setFormData({ ...formData, cargo: e.target.value })
-  }
-  required
->
-  <option value="">Seleccione un cargo</option>
-  <option value="DOCENTE">Docente</option>
-  <option value="DIRECTOR">Director(a)</option>
-  <option value="LIMPIEZA">Limpieza</option>
-  <option value="GUARDIA">Guardia</option>
-  <option value="SERVICIO_SOCIAL">Servicio Social</option>
-</select>
+                      value={formData.cargo}
+                      onChange={(e) =>
+                        setFormData({ ...formData, cargo: e.target.value })
+                      }
+                      required
+                    >
+                      <option value="">Seleccione un cargo</option>
+                      <option value="DOCENTE">Docente</option>
+                      <option value="DIRECTOR">Director(a)</option>
+                      <option value="LIMPIEZA">Limpieza</option>
+                      <option value="GUARDIA">Guardia</option>
+                      <option value="SERVICIO_SOCIAL">Servicio Social</option>
+                    </select>
 
                   </div>
                   <div className="form-group">
@@ -1571,14 +1571,14 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.area_trabajo}
-                      onChange={(e) => setFormData({...formData, area_trabajo: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, area_trabajo: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
                     <label>Tipo de Contrato *</label>
                     <select
                       value={formData.tipo_contrato}
-                      onChange={(e) => setFormData({...formData, tipo_contrato: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, tipo_contrato: e.target.value })}
                       required
                     >
                       <option value="TIEMPO_COMPLETO">Tiempo Completo</option>
@@ -1592,7 +1592,7 @@ const handleOpenEditModal = (empleado) => {
                     <label>Horario Preferido</label>
                     <select
                       value={formData.horario_preferido}
-                      onChange={(e) => setFormData({...formData, horario_preferido: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, horario_preferido: e.target.value })}
                     >
                       <option value="MATUTINO">Matutino</option>
                       <option value="VESPERTINO">Vespertino</option>
@@ -1605,7 +1605,7 @@ const handleOpenEditModal = (empleado) => {
                     <label>Estado *</label>
                     <select
                       value={formData.estado}
-                      onChange={(e) => setFormData({...formData, estado: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
                       required
                     >
                       <option value="ACTIVO">Activo</option>
@@ -1619,7 +1619,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="number"
                       value={formData.salario}
-                      onChange={(e) => setFormData({...formData, salario: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, salario: e.target.value })}
                       min="0"
                       step="0.01"
                     />
@@ -1629,7 +1629,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="date"
                       value={formData.fecha_ingreso}
-                      onChange={(e) => setFormData({...formData, fecha_ingreso: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, fecha_ingreso: e.target.value })}
                     />
                   </div>
                   <div className="form-group">
@@ -1637,7 +1637,7 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="date"
                       value={formData.fecha_asignacion}
-                      onChange={(e) => setFormData({...formData, fecha_asignacion: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, fecha_asignacion: e.target.value })}
                       required
                     />
                   </div>
@@ -1646,83 +1646,83 @@ const handleOpenEditModal = (empleado) => {
                     <input
                       type="text"
                       value={formData.especialidades}
-                      onChange={(e) => setFormData({...formData, especialidades: e.target.value})}
-                      placeholder="React, Node.js, MongoDB"
+                      onChange={(e) => setFormData({ ...formData, especialidades: e.target.value })}
+                      placeholder="Matematicas, Español, Historia, etc."
                     />
                   </div>
-<div className="form-group form-grid-full">
-                      <label>
-                        <ImagePlus size={16} />
-                        Foto del personal
-                      </label>
-                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
-                        {formData.foto_preview ? (
-                          <div>
-                            <img 
-                              src={formData.foto_preview} 
-                              alt="Preview" 
-                              className="foto-preview"
-                            />
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                              <motion.button
-                                type="button"
-                                onClick={eliminarFoto}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
-                              >
-                                <Trash2 size={16} />
-                                Eliminar foto
-                              </motion.button>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFotoChange}
-                                style={{ display: 'none' }}
-                                id="foto-upload-editar-replace"
-                              />
-                              <label 
-                                htmlFor="foto-upload-editar-replace"
-                                className="btn-upload-label"
-                              >
-                                <Upload size={16} />
-                                Cambiar foto
-                              </label>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
-                            <p style={{ color: '#666', marginBottom: '1rem' }}>
-                              Arrastra una imagen o haz clic para seleccionar
-                            </p>
+                  <div className="form-group form-grid-full">
+                    <label>
+                      <ImagePlus size={16} />
+                      Foto del personal
+                    </label>
+                    <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
+                      {formData.foto_preview ? (
+                        <div>
+                          <img
+                            src={formData.foto_preview}
+                            alt="Preview"
+                            className="foto-preview"
+                          />
+                          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <motion.button
+                              type="button"
+                              onClick={eliminarFoto}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="btn btn-danger"
+                            >
+                              <Trash2 size={16} />
+                              Eliminar foto
+                            </motion.button>
                             <input
                               type="file"
                               accept="image/*"
                               onChange={handleFotoChange}
                               style={{ display: 'none' }}
-                              id="foto-upload-editar"
+                              id="foto-upload-editar-replace"
                             />
-                            <label 
-                              htmlFor="foto-upload-editar"
+                            <label
+                              htmlFor="foto-upload-editar-replace"
                               className="btn-upload-label"
                             >
-                              <ImagePlus size={18} />
-                              Seleccionar imagen
+                              <Upload size={16} />
+                              Cambiar foto
                             </label>
-                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                              Formatos: JPG, JPEG
-                            </small>
                           </div>
-                        )}
-                      </div>
-                    </div>                  
+                        </div>
+                      ) : (
+                        <div>
+                          <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
+                          <p style={{ color: '#666', marginBottom: '1rem' }}>
+                            Arrastra una imagen o haz clic para seleccionar
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFotoChange}
+                            style={{ display: 'none' }}
+                            id="foto-upload-editar"
+                          />
+                          <label
+                            htmlFor="foto-upload-editar"
+                            className="btn-upload-label"
+                          >
+                            <ImagePlus size={18} />
+                            Seleccionar imagen
+                          </label>
+                          <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
+                            Formatos: JPG, JPEG
+                          </small>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="modal-actions">
-                  <motion.button 
-                    type="button" 
-                    className="btn btn-danger" 
+                  <motion.button
+                    type="button"
+                    className="btn btn-danger"
                     onClick={prepararEliminacionPersonal}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -1739,9 +1739,9 @@ const handleOpenEditModal = (empleado) => {
                     />
                   )}
 
-                  <motion.button 
-                    type="button" 
-                    className="btn btn-dark" 
+                  <motion.button
+                    type="button"
+                    className="btn btn-dark"
                     onClick={handleCloseModals}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -1749,8 +1749,8 @@ const handleOpenEditModal = (empleado) => {
                     <X size={16} />
                     Cancelar
                   </motion.button>
-                  <motion.button 
-                    type="submit" 
+                  <motion.button
+                    type="submit"
                     className="btn btn-guardar-donaciones"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -1809,167 +1809,167 @@ const handleOpenEditModal = (empleado) => {
       {/* Modal Ayuda */}
       <AnimatePresence>
         {mostrarAyuda && (
-  <div className="horarios-modal-overlay horarios-modal-show">
-    <div className="horarios-modal-content">
-      <div className="horarios-modal-header">
-        <h3 className="horarios-modal-title">
-          <Users size={24} />
-          Ayuda - Sistema de Personal
-        </h3>
-        <button 
-          className="horarios-modal-close"
-          onClick={() => setMostrarAyuda(false)}
-        >
-          <X size={20} />
-        </button>
-      </div>
+          <div className="horarios-modal-overlay horarios-modal-show">
+            <div className="horarios-modal-content">
+              <div className="horarios-modal-header">
+                <h3 className="horarios-modal-title">
+                  <Users size={24} />
+                  Ayuda - Sistema de Personal
+                </h3>
+                <button
+                  className="horarios-modal-close"
+                  onClick={() => setMostrarAyuda(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
-      <div className="horarios-modal-body">
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">¿Cómo funciona el sistema de personal?</h4>
-          <p className="horarios-help-text">
-            El módulo de personal te permite gestionar toda la información del personal académico y administrativo, 
-            incluyendo datos personales, contratos, estados laborales y documentación relevante.
-          </p>
-        </div>
+              <div className="horarios-modal-body">
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">¿Cómo funciona el sistema de personal?</h4>
+                  <p className="horarios-help-text">
+                    El módulo de personal te permite gestionar toda la información del personal académico y administrativo,
+                    incluyendo datos personales, contratos, estados laborales y documentación relevante.
+                  </p>
+                </div>
 
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
-          <ul className="horarios-help-list">
-            <li className="horarios-help-item">
-              <strong>Búsqueda y filtros:</strong> Encuentra personal por código, nombre, identidad, cargo, área o email
-            </li>
-            <li className="horarios-help-item">
-              <strong>Gestión de personal:</strong> Crea, edita y actualiza información del personal
-            </li>
-            <li className="horarios-help-item">
-              <strong>Estados laborales:</strong> Controla el estado (Activo, Vacaciones, Licencia, Inactivo) de cada empleado
-            </li>
-            <li className="horarios-help-item">
-              <strong>Tipos de contrato:</strong> Gestiona diferentes modalidades contractuales
-            </li>
-            <li className="horarios-help-item">
-              <strong>Documentación:</strong> Adjunta documentos importantes como contratos, identificaciones, etc.
-            </li>
-          </ul>
-        </div>
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Funcionalidades principales:</h4>
+                  <ul className="horarios-help-list">
+                    <li className="horarios-help-item">
+                      <strong>Búsqueda y filtros:</strong> Encuentra personal por código, nombre, identidad, cargo, área o email
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Gestión de personal:</strong> Crea, edita y actualiza información del personal
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Estados laborales:</strong> Controla el estado (Activo, Vacaciones, Licencia, Inactivo) de cada empleado
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Tipos de contrato:</strong> Gestiona diferentes modalidades contractuales
+                    </li>
+                    <li className="horarios-help-item">
+                      <strong>Documentación:</strong> Adjunta documentos importantes como contratos, identificaciones, etc.
+                    </li>
+                  </ul>
+                </div>
 
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Estados laborales:</h4>
-          <div className="horarios-icons-grid">
-            <div className="horarios-icon-item">
-              <UserCheck size={16} className="horarios-icon-success" />
-              <span>ACTIVO - Personal trabajando normalmente</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Sun size={16} className="horarios-icon-warning" />
-              <span>VACACIONES - Personal en vacaciones</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Clock size={16} className="horarios-icon-orange" />
-              <span>LICENCIA - Personal con licencia</span>
-            </div>
-            <div className="horarios-icon-item">
-              <UserX size={16} className="horarios-icon-danger" />
-              <span>INACTIVO - Personal retirado</span>
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Estados laborales:</h4>
+                  <div className="horarios-icons-grid">
+                    <div className="horarios-icon-item">
+                      <UserCheck size={16} className="horarios-icon-success" />
+                      <span>ACTIVO - Personal trabajando normalmente</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Sun size={16} className="horarios-icon-warning" />
+                      <span>VACACIONES - Personal en vacaciones</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Clock size={16} className="horarios-icon-orange" />
+                      <span>LICENCIA - Personal con licencia</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <UserX size={16} className="horarios-icon-danger" />
+                      <span>INACTIVO - Personal retirado</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Tipos de contrato:</h4>
+                  <div className="horarios-icons-grid">
+                    <div className="horarios-icon-item">
+                      <Briefcase size={16} className="horarios-icon-primary" />
+                      <span>TIEMPO COMPLETO - 40 horas semanales</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Briefcase size={16} className="horarios-icon-info" />
+                      <span>MEDIO TIEMPO - 20 horas semanales</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Calendar size={16} className="horarios-icon-warning" />
+                      <span>TEMPORAL - Tiempo definido</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-success" />
+                      <span>HONORARIOS - Servicios profesionales</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <GraduationCap size={16} className="horarios-icon-new" />
+                      <span>PRACTICANTE - En formación</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Iconos y acciones:</h4>
+                  <div className="horarios-icons-grid">
+                    <div className="horarios-icon-item">
+                      <Edit size={16} className="horarios-icon-primary" />
+                      <span>Editar información del personal</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <FileText size={16} className="horarios-icon-success" />
+                      <span>Gestionar documentos del empleado</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Trash2 size={16} className="horarios-icon-danger" />
+                      <span>Eliminar registro de personal</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Eye size={16} className="horarios-icon-info" />
+                      <span>Ver detalles completos</span>
+                    </div>
+                    <div className="horarios-icon-item">
+                      <Plus size={16} className="horarios-icon-new" />
+                      <span>Nuevo empleado</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="horarios-help-section">
+                  <h4 className="horarios-help-title">Consejos de uso:</h4>
+                  <div className="horarios-tips">
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge"></span>
+                      <span>Usa la búsqueda para encontrar personal rápidamente por cualquier campo</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge"></span>
+                      <span>Clic en cualquier fila para ver y editar los detalles del personal</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge"></span>
+                      <span>Actualiza regularmente los estados laborales según la situación actual</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge"></span>
+                      <span>Utiliza los filtros para organizar la vista por estado o tipo de contrato</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge"></span>
+                      <span>Mantén actualizada la documentación de cada empleado</span>
+                    </div>
+                    <div className="horarios-tip">
+                      <span className="horarios-tip-badge"></span>
+                      <span>Ordena por nombre o salario para análisis rápidos</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="horarios-modal-footer">
+                <button
+                  className="horarios-modal-btn-close"
+                  onClick={() => setMostrarAyuda(false)}
+                >
+                  Cerrar Ayuda
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Tipos de contrato:</h4>
-          <div className="horarios-icons-grid">
-            <div className="horarios-icon-item">
-              <Briefcase size={16} className="horarios-icon-primary" />
-              <span>TIEMPO COMPLETO - 40 horas semanales</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Briefcase size={16} className="horarios-icon-info" />
-              <span>MEDIO TIEMPO - 20 horas semanales</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Calendar size={16} className="horarios-icon-warning" />
-              <span>TEMPORAL - Tiempo definido</span>
-            </div>
-            <div className="horarios-icon-item">
-              <FileText size={16} className="horarios-icon-success" />
-              <span>HONORARIOS - Servicios profesionales</span>
-            </div>
-            <div className="horarios-icon-item">
-              <GraduationCap size={16} className="horarios-icon-new" />
-              <span>PRACTICANTE - En formación</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Iconos y acciones:</h4>
-          <div className="horarios-icons-grid">
-            <div className="horarios-icon-item">
-              <Edit size={16} className="horarios-icon-primary" />
-              <span>Editar información del personal</span>
-            </div>
-            <div className="horarios-icon-item">
-              <FileText size={16} className="horarios-icon-success" />
-              <span>Gestionar documentos del empleado</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Trash2 size={16} className="horarios-icon-danger" />
-              <span>Eliminar registro de personal</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Eye size={16} className="horarios-icon-info" />
-              <span>Ver detalles completos</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Plus size={16} className="horarios-icon-new" />
-              <span>Nuevo empleado</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Consejos de uso:</h4>
-          <div className="horarios-tips">
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Usa la búsqueda para encontrar personal rápidamente por cualquier campo</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Clic en cualquier fila para ver y editar los detalles del personal</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Actualiza regularmente los estados laborales según la situación actual</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Utiliza los filtros para organizar la vista por estado o tipo de contrato</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Mantén actualizada la documentación de cada empleado</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Ordena por nombre o salario para análisis rápidos</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="horarios-modal-footer">
-        <button 
-          className="horarios-modal-btn-close"
-          onClick={() => setMostrarAyuda(false)}
-        >
-          Cerrar Ayuda
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        )}
       </AnimatePresence>
     </>
   );
