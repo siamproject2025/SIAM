@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { auth } from "../../../components/authentication/Auth";
 import "../../../styles/grados.css";
 import { motion, AnimatePresence } from "framer-motion";
-import { Apple, Book, Calendar, X, Trash2, Users, User, Search } from "lucide-react";
+import { Apple, Book, Calendar, X, Trash2, Users, User, Search,Heart, Gift, Shirt } from "lucide-react";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -162,18 +162,79 @@ export default function GradosPage() {
   return (
     <div className="grados-container">
       {/* HEADER con tu clase CSS específica */}
-      <header className="grados-header">
-        <div className="container-fluid">
-           <div className="row g-3">
-              <Calendar size={40} className="me-3" />
-              <div>
-                <h1 className="grados-title">Gestión de Grados</h1>
-                <p className="mb-0 opacity-75">Administra secciones y consulta alumnos matriculados.</p>
-              </div>
-           </div>
-        </div>
-      </header>
+      <motion.div 
+          className="donacion-header"
+          style={{marginBottom:'0'}}
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+        >
+          <motion.div
+            className="header-gradient"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+          >
+            <div className="header-content">
+              <motion.h2
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+              >
+                <motion.div
+                  initial={{ rotate: -180, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                >
+                  <Book size={36} fill="white" color="white" />
+                </motion.div>
+                Sistema de Creación de Grados
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 10, -10, 0],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
+                  style={{ marginLeft: 'auto' }}
+                >
+                  <Gift size={32} color="white" />
+                </motion.div>
+              </motion.h2>
+              
+              <motion.p
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                Administra y crea tus espacios físicos.
+              </motion.p>
 
+              <motion.div 
+                className="header-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+              >
+            
+                
+              </motion.div>
+
+              
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="donacion-busqueda-bar"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            style={{ marginTop: '0rem' }}
+          >
+           
+           
+            
+          </motion.div> 
+        </motion.div>
       <div className="container-fluid mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
           <button className="grados-btn-primary" onClick={openCreate}>
@@ -187,7 +248,7 @@ export default function GradosPage() {
                 <option value="">Todos los grados registrados</option>
                 {gradosUnicos.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
-              <button className="grados-btn-search" style={{width: 'auto', padding: '0 15px'}} onClick={() => fetchList(1)}>
+              <button className="grados-btn-search" style={{width: 'auto', padding: '10px 10px'}} onClick={() => fetchList(1)}>
                 <Search size={18} />
               </button>
             </div>
