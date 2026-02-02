@@ -35,6 +35,8 @@ import {
   Building, 
 } from "lucide-react";
 
+
+
 // Iconos svg
 const SearchIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -89,6 +91,25 @@ const Bienes = () => {
   const estadoMenuRef = useRef(null);
   const categoriaMenuRef = useRef(null);
 
+  const CATEGORIAS_BIENES = [
+  // Generales
+  'MOBILIARIO',
+  'EQUIPO_COMPUTO',
+  'ELECTRONICO',
+  'HERRAMIENTA',
+  'OTRO',
+
+  // Instrumentos musicales
+  'CUERDA',
+  'VIENTO_MADERA',
+  'VIENTO_METAL',
+  'PERCUSION',
+  'TECLADO',
+  'INSTRUMENTO_ELECTRONICO',
+  'ACCESORIO_MUSICAL'
+];
+
+
   // Columnas de la tabla
   const columns = [
     { name: "CÓDIGO", uid: "codigo", sortable: true },
@@ -107,6 +128,27 @@ const Bienes = () => {
     { name: "Inactivo", uid: "INACTIVO" },
     { name: "Préstamo", uid: "PRESTAMO" }
   ];
+
+  const categoriasOptions = [
+  { name: "Todas", uid: "all" },
+
+  // Generales
+  { name: "Mobiliario", uid: "MOBILIARIO" },
+  { name: "Equipo de Cómputo", uid: "EQUIPO_COMPUTO" },
+  { name: "Electrónico", uid: "ELECTRONICO" },
+  { name: "Herramienta", uid: "HERRAMIENTA" },
+  { name: "Otro", uid: "OTRO" },
+
+  // Instrumentos musicales
+  { name: "Cuerda", uid: "CUERDA" },
+  { name: "Viento Madera", uid: "VIENTO_MADERA" },
+  { name: "Viento Metal", uid: "VIENTO_METAL" },
+  { name: "Percusión", uid: "PERCUSION" },
+  { name: "Teclado", uid: "TECLADO" },
+  { name: "Instrumento Electrónico", uid: "INSTRUMENTO_ELECTRONICO" },
+  { name: "Accesorio Musical", uid: "ACCESORIO_MUSICAL" }
+];
+
 
 useEffect(() => {
   const cargarBienes = async () => {
@@ -216,6 +258,12 @@ const { filteredItems, metrics, categorias } = useMemo(() => {
       showNotification('El nombre del bien es obligatorio', 'error');
       return;
     }
+
+    if (!nuevoBien.categoria) {
+      showNotification('Debe seleccionar una categoría', 'error');
+      return;
+    }
+
     if (!nuevoBien.estado) {
       showNotification('Debe seleccionar un estado inicial', 'error');
       return;
@@ -396,6 +444,12 @@ const handleEditarBien = async (bienActualizado) => {
       showNotification('El nombre del bien es obligatorio', 'error');
       return;
     }
+
+    if (!bienActualizado.categoria) {
+      showNotification('Debe seleccionar una categoría', 'error');
+      return;
+    }
+
     if (!bienActualizado.estado) {
       showNotification('Debe seleccionar un estado', 'error');
       return;
@@ -1091,6 +1145,69 @@ const handleEliminarBien = async (id) => {
                     {estadoFiltro === estado.uid ? '' : ''}
                   </span>
                   {estado.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/*Filtro categoria*/}
+        <div className="dropdown-wrapper" ref={categoriaMenuRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowCategoriaMenu(!showCategoriaMenu)}
+            className="filter-button"
+            style={{
+              padding: '0.75rem 1.5rem',
+              border: '2px solid #667eea',
+              borderRadius: '10px',
+              background: 'white',
+              color: '#667eea',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            Categoría <ChevronDownIcon />
+          </button>
+          {showCategoriaMenu && (
+            <div className="dropdown-menu2" style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: '0.5rem',
+              background: 'white',
+              border: '1px solid #e0e0e0',
+              borderRadius: '10px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              minWidth: '200px',
+              zIndex: 1000,
+            }}>
+              {categoriasOptions.map(categorias => (
+                <div
+                  key={categorias.uid}
+                  onClick={() => {
+                    setCategoriaFiltro(categorias.uid);
+                    setShowCategoriaMenu(false);
+                    setPage(1);
+                  }}
+                  className={`dropdown-item ${categoriaFiltro === categorias.uid ? 'active' : ''}`}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: categoriaFiltro === categorias.uid ? '#f0f0f0' : 'transparent',
+                    transition: 'background 0.2s ease'
+                  }}
+                >
+                  <span className="checkbox" style={{ width: '20px' }}>
+                    {categoriaFiltro === categorias.uid ? '' : ''}
+                  </span>
+                  {categorias.name}
                 </div>
               ))}
             </div>
