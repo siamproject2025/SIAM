@@ -1,6 +1,6 @@
 // controllers/matriculaController.js
 const Estudiante = require('../Models/Estudiante');
-
+const mongoose = require('mongoose');
 const sharp = require('sharp');
 
 // Configuración de multer para guardar archivos en memoria
@@ -92,21 +92,34 @@ exports.crearMatricula = async (req, res) => {
 // -------------------
 exports.getAllMatriculas = async (req, res) => {
   try {
-    const estudiantes = await Estudiante.find().sort({ fecha_creacion: -1 });
+    // 1. Extraemos el ID del grado desde la URL (?grado_a_matricular=XXX)
+    const { grado_a_matricular } = req.query;
+    
+    let filtro = {};
+
+    // 2. Si el parámetro existe, convertimos el String a ObjectId real
+    if (grado_a_matricular && grado_a_matricular !== 'undefined' && grado_a_matricular !== "") {
+      try {
+        filtro.grado_a_matricular = new mongoose.Types.ObjectId(grado_a_matricular);
+        console.log("Filtrando estudiantes por el Grado ID:", filtro.grado_a_matricular);
+      } catch (err) {
+        return res.status(400).json({ success: false, message: "ID de grado no válido" });
+      }
+    }
+
+    // 3. Ejecutamos la consulta con el filtro (si está vacío, traerá todos)
+    const estudiantes = await Estudiante.find(filtro).sort({ fecha_creacion: -1 });
+
     res.status(200).json({
       success: true,
-      count: estudiantes.length,
+      count: estudiantes.length, // Este número es el que separa los conteos en el frontend
       data: estudiantes
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener las matrículas',
-      error: error.message
-    });
+    console.error("Error en el filtro:", error);
+    res.status(500).json({ success: false, message: 'Error interno', error: error.message });
   }
 };
-
 // -------------------
 // Obtener matrícula por ID
 // -------------------

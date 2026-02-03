@@ -155,94 +155,77 @@ exports.actualizarPersonal = async (req, res) => {
   try {
     const { id } = req.params;
 
-    //  Obtener los datos del body
-    const {
-      codigo,
-      nombres,
-      apellidos,
-      numero_identidad,
-      tipo_contrato,
-      estado,
-      imagen,
-      cv,
-      especialidades,
-      area_trabajo,
-      telefono,
-      direccion_correo,
-      cargo_asignacion,
-      documentacion,
-      salario,
-      fecha_ingreso
-    } = req.body;
+    // 1. Validar que el ID sea válido
+    if (!id) return res.status(400).json({ message: 'ID no proporcionado' });
 
-    //  Validar duplicados (excluyendo el propio registro)
-    const [codigoExiste, identidadExiste] = await Promise.all([
-      codigo ? Personal.findOne({ codigo, _id: { $ne: id } }) : null,
-      numero_identidad ? Personal.findOne({ numero_identidad, _id: { $ne: id } }) : null
-    ]);
+    // 2. Extraer datos (asegurarnos de que no vengan como strings "undefined" o "null")
+    const body = req.body;
 
-    if (codigoExiste) {
-      return res.status(400).json({ message: 'Ya existe un empleado con este código' });
-    }
-    if (identidadExiste) {
-      return res.status(400).json({ message: 'Ya existe un empleado con este número de identidad' });
+    // 3. Validar duplicados (excluyendo el actual)
+    if (body.codigo || body.numero_identidad) {
+      const [codigoExiste, identidadExiste] = await Promise.all([
+        body.codigo ? Personal.findOne({ codigo: body.codigo, _id: { $ne: id } }) : null,
+        body.numero_identidad ? Personal.findOne({ numero_identidad: body.numero_identidad, _id: { $ne: id } }) : null
+      ]);
+
+      if (codigoExiste) return res.status(400).json({ message: 'El código ya está en uso' });
+      if (identidadExiste) return res.status(400).json({ message: 'La identidad ya está en uso' });
     }
 
-    // ️ Procesamiento de imagen (si se envía una nueva)
-    let imagenBase64 = null;
-    let tipoImagen = null;
-
+    // 4. Procesar Imagen nueva si existe
+    let imagenData = {};
     if (req.file) {
-      console.log(' Archivo de imagen recibido, procesando...');
-      const TARGET_WIDTH = 600;
-      const TARGET_HEIGHT = 600;
-      const QUALITY = 60;
-
       const processedBuffer = await sharp(req.file.buffer)
-        .resize(TARGET_WIDTH, TARGET_HEIGHT, { fit: 'inside' })
-        .jpeg({ quality: QUALITY })
+        .resize(600, 600, { fit: 'inside' })
+        .jpeg({ quality: 60 })
         .toBuffer();
-
-      imagenBase64 = processedBuffer.toString('base64');
-      tipoImagen = 'image/jpeg';
-
-      console.log(` Imagen procesada (${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB)`);
+      
+      imagenData = {
+        imagen: processedBuffer.toString('base64'),
+        tipo_imagen: 'image/jpeg'
+      };
     }
 
-    //  Parsear cargo_asignacion si viene como string
-    let cargoAsignacionObj = null;
-    if (cargo_asignacion) {
+    // 5. Parsear cargo_asignacion (Multer lo recibe como string)
+    let cargoObj = {};
+    if (body.cargo_asignacion) {
       try {
-        cargoAsignacionObj = JSON.parse(cargo_asignacion);
+        cargoObj = typeof body.cargo_asignacion === 'string' 
+          ? JSON.parse(body.cargo_asignacion) 
+          : body.cargo_asignacion;
       } catch (err) {
-        return res.status(400).json({ message: 'Formato de cargo_asignacion inválido' });
+        return res.status(400).json({ message: 'Formato de cargo inválido' });
       }
     }
 
-    //  Construir objeto de actualización
-    const updateData = {
-      codigo,
-      nombres,
-      apellidos,
-      numero_identidad,
-      tipo_contrato,
-      estado,
-      cv,
-      especialidades,
-      area_trabajo,
-      telefono,
-      direccion_correo,
-      cargo_asignacion: cargoAsignacionObj,
-      salario,
-      fecha_ingreso,
-      ...(imagenBase64 && { imagen: imagenBase64, tipo_imagen: tipoImagen })
-    };
+    // 6. Construir objeto de actualización LIMPIO (solo campos con valor)
+    const updateData = {};
+    const camposDisponibles = [
+      'codigo', 'nombres', 'apellidos', 'numero_identidad', 
+      'tipo_contrato', 'estado', 'cv', 'especialidades', 
+      'area_trabajo', 'telefono', 'direccion_correo', 
+      'salario', 'fecha_ingreso'
+    ];
 
-    // ️ Actualizar en la base de datos
-    const empleadoActualizado = await Personal.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true
+    camposDisponibles.forEach(campo => {
+      if (body[campo] !== undefined && body[campo] !== 'null') {
+        updateData[campo] = body[campo];
+      }
     });
+
+    // Añadir objetos procesados
+    if (Object.keys(cargoObj).length > 0) updateData.cargo_asignacion = cargoObj;
+    if (imagenData.imagen) {
+      updateData.imagen = imagenData.imagen;
+      updateData.tipo_imagen = imagenData.tipo_imagen;
+    }
+
+    // 7. EJECUTAR ACTUALIZACIÓN con $set para mayor seguridad
+    const empleadoActualizado = await Personal.findByIdAndUpdate(
+      id, 
+      { $set: updateData }, 
+      { new: true, runValidators: true }
+    );
 
     if (!empleadoActualizado) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
@@ -250,17 +233,13 @@ exports.actualizarPersonal = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Empleado actualizado exitosamente',
+      message: 'Empleado actualizado correctamente',
       data: empleadoActualizado
     });
 
   } catch (error) {
-    console.error(' Error al actualizar empleado:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al actualizar el empleado',
-      error: error.message
-    });
+    console.error('Error en actualizarPersonal:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 

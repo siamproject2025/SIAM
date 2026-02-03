@@ -143,14 +143,35 @@ const confirmarEliminacion = () => {
           </div>
 
           <div className="form-group">
-            <label>Categoría</label>
-            <input
-              type="text"
-              value={bienEditado.categoria}
-              onChange={(e) => setBienEditado({ ...bienEditado, categoria: e.target.value })}
-              placeholder="Ej: Tecnología"
-            />
-          </div>
+ <label>Categoría </label>
+        <select
+        className='form-select'
+  value={bienEditado.categoria}
+  onChange={(e) =>
+    setBienEditado({ ...bienEditado, categoria: e.target.value })
+  }
+>
+  <option value="">Seleccione una categoría</option>
+
+  <optgroup label="Generales">
+    <option value="MOBILIARIO">Mobiliario</option>
+    <option value="EQUIPO_COMPUTO">Equipo de Cómputo</option>
+    <option value="ELECTRONICO">Electrónico</option>
+    <option value="HERRAMIENTA">Herramienta</option>
+    <option value="OTRO">Otro</option>
+  </optgroup>
+
+  <optgroup label="Instrumentos Musicales">
+    <option value="CUERDA">Cuerda</option>
+    <option value="VIENTO_MADERA">Viento Madera</option>
+    <option value="VIENTO_METAL">Viento Metal</option>
+    <option value="PERCUSION">Percusión</option>
+    <option value="TECLADO">Teclado</option>
+    <option value="INSTRUMENTO_ELECTRONICO">Instrumento Electrónico</option>
+    <option value="ACCESORIO_MUSICAL">Accesorio Musical</option>
+  </optgroup>
+</select>
+</div>
 
           <div className="form-group">
             <label>Estado Actual</label>
