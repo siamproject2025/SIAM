@@ -32,8 +32,9 @@ const allowedOrigins = [
   "http://localhost:3000",
   "https://siam-production-c916.up.railway.app"
 ];
+app.use(cors());
 
-app.use(cors({
+/*app.use(cors({
   origin: function (origin, callback) {
     // Permitir requests sin origin (Postman, mobile, etc)
     if (!origin) return callback(null, true);
@@ -48,7 +49,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
+*/
 
 
 // Conexión MongoDB
