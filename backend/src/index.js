@@ -29,28 +29,26 @@ const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
-   "https://siam-production-c916.up.railway.app", // URL exacta de la imagen
-  'http://localhost:3000',                       // Tu entorno local
-
+  "http://localhost:3000",
+  "https://siam-production-c916.up.railway.app"
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Permitir requests sin origin (como Postman o apps móviles)
+    // Permitir requests sin origin (Postman, mobile, etc)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
+      return callback(null, true);
     } else {
-      // Aquí está el detalle: si el origen no coincide, lanza el error que ves
-      console.log("Origen bloqueado por CORS:", origin); // Agrega esto para debuguear
-      callback(new Error("No permitido por CORS"));
+      return callback(new Error("No permitido por CORS"));
     }
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 
 
 // Conexión MongoDB
