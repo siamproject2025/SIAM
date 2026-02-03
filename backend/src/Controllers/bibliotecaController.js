@@ -25,7 +25,7 @@ exports.crearLibro = async (req, res) => {
     // Import dinámico compatible con CommonJS (soluciona el error de uuid)
     const { v4: uuidv4 } = await import("uuid");
 
-    const { titulo, autor } = req.body;
+    const { titulo, autor, grado, clase, observacion } = req.body;
     if (!req.file)
       return res.status(400).json({ error: "No se subió ningún archivo" });
 
@@ -57,6 +57,9 @@ exports.crearLibro = async (req, res) => {
     const libro = new Libro({
       titulo,
       autor,
+      grado,
+      clase,
+      observacion,
       extension,
       archivoUrl: response.data.webViewLink,
       nombreArchivo: fileMetadata.name,

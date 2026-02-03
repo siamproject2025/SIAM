@@ -8,6 +8,7 @@ import Modal from '../../../components/Modal';
 import Notification from '../../../components/Notification';
 import { auth } from "../../../components/authentication/Auth";
 import { loadingController } from "../../../api/loadingController";
+import useUserRole from '../../../components/hooks/useUserRole';
 const API_URL = process.env.REACT_APP_API_URL+'/api/matriculas';
 
 function App() {
@@ -20,6 +21,13 @@ function App() {
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
   // Obtener estudiantes
+const { userRole, cargando } = useUserRole();
+
+  // --- CONFIGURACIÓN DE PERMISOS ---
+  // El Admin hace todo, el Docente solo mira y descarga.
+  const canManage = userRole === "ADMIN"; 
+  const canDownload = userRole === "ADMIN" || userRole === "DOCENTE";
+  
   const fetchStudents = async () => {
     setLoading(true);
     setError(null);
@@ -118,8 +126,9 @@ const createStudent = async (studentData) => {
     }
 };
 
-// Actualizar estudiante
+// Actualizar estudiante---------------------------------------------------
 const updateStudent = async (studentData) => {
+if (!canManage) return;
   try {
     loadingController.start();
     const user = auth.currentUser;
@@ -171,7 +180,7 @@ const updateStudent = async (studentData) => {
 
 // Eliminar estudiante
 const deleteStudent = async (id) => {
- 
+ if (!canManage) return;
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
@@ -207,6 +216,7 @@ const deleteStudent = async (id) => {
 
 // Eliminar estudiantes seleccionados
 const deleteSelectedStudents = async () => {
+if (!canManage) return;
   if (selectedStudents.length === 0) {
     setNotification({
       message: 'Seleccione al menos un estudiante para eliminar',
@@ -420,21 +430,16 @@ const deleteSelectedStudents = async () => {
 
           {/* Barra de acciones */}
           <div className="action-bar">
-            <button 
-              className="btn btn-ayuda"
-              onClick={() => setShowCreateModal(true)}
-            >
-              <i className="fas fa-plus"></i>
-              Nueva Matrícula
-            </button>
-            
-            {selectedStudents.length > 0 && (
-              <button 
-                className="btn btn-danger"
-                onClick={deleteSelectedStudents}
-              >
-                <i className="fas fa-trash"></i>
-                Eliminar Seleccionados ({selectedStudents.length})
+             {canManage && (
+              <button className="btn btn-ayuda" onClick={() => setShowCreateModal(true)}>
+                <i className="fas fa-plus"></i> Nueva Matrícula
+              </button>
+            )}
+
+           
+            {canManage && selectedStudents.length > 0 && (
+              <button className="btn btn-danger" onClick={deleteSelectedStudents}>
+                <i className="fas fa-trash"></i> Eliminar Seleccionados ({selectedStudents.length})
               </button>
             )}
           </div>
@@ -445,50 +450,45 @@ const deleteSelectedStudents = async () => {
             loading={loading}
             selectedStudents={selectedStudents}
             onSelectionChange={setSelectedStudents}
-            onEdit={openEditModal}
-            onDelete={deleteStudent}
+            onEdit={canManage ? openEditModal : null}
+            onDelete={canManage ? deleteStudent : null}
+            canManage={canManage}
           />
         </div>
       </main>
 
-      {/* Modal para crear estudiante */}
-      <Modal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        title="Nueva Matrícula"
-      >
-        <StudentForm
-          onSubmit={createStudent}
-          onCancel={() => setShowCreateModal(false)}
-        />
-      </Modal>
-
+     
       {/* Modal para editar estudiante */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setEditingStudent(null);
-        }}
-        title="Editar Matrícula"
-      >
-        <StudentForm
-          student={editingStudent}
-          onSubmit={updateStudent}
-          onCancel={() => {
-            setShowEditModal(false);
-            setEditingStudent(null);
-          }}
-          onDelete={() => deleteStudent(editingStudent?._id)}
-          isEdit={true}
-        />
-      </Modal>
+      <AnimatePresence>
+        {showCreateModal && canManage && (
+          <Modal key="modal-crear"
+           isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Nueva Matrícula">
+            <StudentForm onSubmit={createStudent} onCancel={() => setShowCreateModal(false)} />
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showEditModal && canManage && (
+          <Modal key="modal-crear" 
+          isOpen={showEditModal} onClose={() => { setShowEditModal(false); setEditingStudent(null); }} title="Editar Matrícula">
+            <StudentForm 
+              student={editingStudent} 
+              onSubmit={updateStudent} 
+              onCancel={() => { setShowEditModal(false); setEditingStudent(null); }}
+              onDelete={() => deleteStudent(editingStudent?._id)}
+              isEdit={true}
+            />
+          </Modal>
+        )}
+      </AnimatePresence>
+
       {notification && (
         <Notification
           message={notification.message}
           type={notification.type}
           onClose={() => setNotification(null)}
-          duration={4000} // Se cierra automáticamente a los 4 segundos
+          duration={4000}
         />
       )}
     </div>

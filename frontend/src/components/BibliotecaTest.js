@@ -43,6 +43,9 @@ export default function BibliotecaTest() {
   const [libros, setLibros] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [autor, setAutor] = useState("");
+  const [grado, setGrado] = useState("");
+  const [clase, setClase] = useState("");
+  const [observacion, setObservacion] = useState("");
   const [archivo, setArchivo] = useState(null);
   const [filterValue, setFilterValue] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("todos");
@@ -83,7 +86,6 @@ export default function BibliotecaTest() {
     }
   };
 
-
   useEffect(() => {
     if (!cargando) { 
       cargarLibros();
@@ -106,7 +108,7 @@ export default function BibliotecaTest() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-    const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!canUpload) {
@@ -125,6 +127,16 @@ export default function BibliotecaTest() {
       return;
     }
     
+    if (!grado.trim()) {
+      showNotification("El grado es obligatorio", "error");
+      return;
+    }
+
+    if (!clase.trim()) {
+      showNotification("La clase es obligatoria", "error");
+      return;
+    }
+
     if (!archivo) {
       showNotification("Debes seleccionar un archivo", "error");
       return;
@@ -145,6 +157,9 @@ export default function BibliotecaTest() {
       const formData = new FormData();
       formData.append("titulo", titulo);
       formData.append("autor", autor);
+      formData.append("grado", grado);
+      formData.append("clase", clase);
+      formData.append("observacion", observacion);
       formData.append("archivo", archivo);
 
       await axios.post(API_URL, formData, {
@@ -156,6 +171,9 @@ export default function BibliotecaTest() {
 
       setTitulo("");
       setAutor("");
+      setGrado("");
+      setClase("");
+      setObservacion("");
       setArchivo(null);
       setMostrarModal(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -168,49 +186,45 @@ export default function BibliotecaTest() {
     }
   };
 
-
-
   //Borrar
   const [showConfirm, setShowConfirm] = useState(false);
-const [libroAEliminar, setLibroAEliminar] = useState(null);
-const prepararEliminacion = (libro) => {
-  if (!canDelete) {
-    showNotification("No tienes permiso para eliminar libros", "error");
-    return;
-  }
+  const [libroAEliminar, setLibroAEliminar] = useState(null);
+  const prepararEliminacion = (libro) => {
+    if (!canDelete) {
+      showNotification("No tienes permiso para eliminar libros", "error");
+      return;
+    }
 
-  setLibroAEliminar(libro);
-  setShowConfirm(true);
-};
-
+    setLibroAEliminar(libro);
+    setShowConfirm(true);
+  };
 
   const confirmarEliminacion = async () => {
-  setShowConfirm(false);
-  if (!libroAEliminar) return;
+    setShowConfirm(false);
+    if (!libroAEliminar) return;
 
-  try {
-    loadingController.start();
-    const user = auth.currentUser;
-    if (!user) throw new Error("Usuario no autenticado");
-    const token = await user.getIdToken();
+    try {
+      loadingController.start();
+      const user = auth.currentUser;
+      if (!user) throw new Error("Usuario no autenticado");
+      const token = await user.getIdToken();
 
-    await axios.delete(`${API_URL}/${libroAEliminar._id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-    cargarLibros();
-    showNotification(` Libro "${libroAEliminar.titulo}" eliminado correctamente`, "success");
-    // Aquí puedes actualizar el estado de libros si lo tienes
-    setLibroAEliminar(null);
-  } catch (error) {
-    console.error("Error al eliminar libro:", error);
-    showNotification(" No se pudo eliminar el libro.", "error");
-  }finally {
+      await axios.delete(`${API_URL}/${libroAEliminar._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      cargarLibros();
+      showNotification(` Libro "${libroAEliminar.titulo}" eliminado correctamente`, "success");
+      // Aquí puedes actualizar el estado de libros si lo tienes
+      setLibroAEliminar(null);
+    } catch (error) {
+      console.error("Error al eliminar libro:", error);
+      showNotification(" No se pudo eliminar el libro.", "error");
+    } finally {
       loadingController.stop(); //  detiene el loader
     }
-};
-
+  };
 
   // Filtrado
   const filteredItems = useMemo(() => {
@@ -219,7 +233,9 @@ const prepararEliminacion = (libro) => {
     if (filterValue) {
       filtered = filtered.filter(libro =>
         libro.titulo?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        libro.autor?.toLowerCase().includes(filterValue.toLowerCase())
+        libro.autor?.toLowerCase().includes(filterValue.toLowerCase())  ||
+        libro.grado?.toLowerCase().includes(filterValue.toLowerCase())  ||
+        libro.clase?.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -289,6 +305,9 @@ const prepararEliminacion = (libro) => {
   const resetForm = () => {
     setTitulo("");
     setAutor("");
+    setGrado("");
+    setClase("");
+    setObservacion("");
     setArchivo(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -302,7 +321,6 @@ const prepararEliminacion = (libro) => {
     return (
       <div className="biblioteca-loading">
         <motion.div
-         
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
           <FiBook size={40} />
@@ -334,7 +352,6 @@ const prepararEliminacion = (libro) => {
               transition={{ delay: 0.2, duration: 0.5 }}
             >
               <motion.div
-                
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
               >
@@ -487,7 +504,7 @@ const prepararEliminacion = (libro) => {
               </motion.div>
               <input
                 type="text"
-                placeholder="Buscar por título o autor..."
+                placeholder="Buscar por título, grado, clase y autor..."
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
                 className="search-input"
@@ -562,13 +579,12 @@ const prepararEliminacion = (libro) => {
         </motion.div>
       </motion.div>
 
-      {/* TABLA PRINCIPAL */}
+      {/* TABLA PRINCIPAL - COLUMNAS CORREGIDAS */}
       <div className="table-container">
         <div className="table-wrapper">
           {loading ? (
             <div className="loading-state">
               <motion.div
-               
                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
               >
                 <FiBook size={40} className="loading-spinner" />
@@ -585,24 +601,35 @@ const prepararEliminacion = (libro) => {
                       {getSortIcon("titulo")}
                     </div>
                   </th>
-                  <th onClick={() => handleSort("autor")} className="sortable th-autor">
+                  
+                  <th onClick={() => handleSort("grado")} className="sortable th-grado">
                     <div className="th-content">
-                      AUTOR
-                      {getSortIcon("autor")}
+                      GRADO
+                      {getSortIcon("grado")}
                     </div>
                   </th>
-                  <th onClick={() => handleSort("fecha")} className="sortable th-fecha">
+                  
+                  <th onClick={() => handleSort("clase")} className="sortable th-clase">
                     <div className="th-content">
-                      FECHA
-                      {getSortIcon("fecha")}
+                      CLASE
+                      {getSortIcon("clase")}
                     </div>
                   </th>
+                  
+                  <th onClick={() => handleSort("observacion")} className="sortable th-observacion">
+                    <div className="th-content">
+                      OBSERVACIÓN
+                      {getSortIcon("observacion")}
+                    </div>
+                  </th>
+                  
                   <th className="th-formato">
                     <div className="th-content">
                       <FiFileText size={14} />
                       FORMATO
                     </div>
                   </th>
+                  
                   <th className="th-acciones">
                     <div className="th-content">
                       <FiUsers size={14} />
@@ -614,7 +641,7 @@ const prepararEliminacion = (libro) => {
               <tbody>
                 {items.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="empty-state">
+                    <td colSpan="6" className="empty-state">
                       <div className="empty-content">
                         <FiBook size={40} className="empty-icon" />
                         <p>No se encontraron libros</p>
@@ -631,27 +658,28 @@ const prepararEliminacion = (libro) => {
                           <span className="titulo-text">{libro.titulo}</span>
                         </div>
                       </td>
-                      <td className="cell-autor">{libro.autor}</td>
-                      <td className="cell-fecha">
-                        <FiCalendar size={12} className="fecha-icon" />
-                        {new Date(libro.fechaCreacion).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
+                      
+                      <td className="cell-grado">{libro.grado}</td>
+                      
+                      <td className="cell-clase">{libro.clase}</td>
+                      
+                      <td className="cell-observacion">
+                        {libro.observacion || <span className="sin-observacion">Sin observación</span>}
                       </td>
+                      
                       <td className="cell-formato">
-                        {libro.archivoUrl ? (
-                          <span className={`formato-badge ${libro.extension.split('.').pop().toLowerCase()}`}>
-                            {libro.extension.split('.').pop().toUpperCase()}
-                          </span>
-                        ) : (
-                          <span className="formato-badge sin-archivo">
-                            <FiAlertCircle size={10} />
-                            N/A
-                          </span>
-                        )}
-                      </td>
+  {libro.archivoUrl ? (
+    <span className="formato-badge pdf">
+      PDF
+    </span>
+  ) : (
+    <span className="formato-badge sin-archivo">
+      <FiAlertCircle size={10} />
+      N/A
+    </span>
+  )}
+</td>
+                      
                       <td className="cell-acciones">
                         <div className="action-buttons">
                           {libro.archivoUrl ? (
@@ -676,36 +704,24 @@ const prepararEliminacion = (libro) => {
                           )}
                     
                           {canDelete && (
-                           <motion.button
-  onClick={() => prepararEliminacion(libro)}
-  className="btn btn-danger"
-  title="Eliminar libro"
-  whileHover={{ scale: 1.1 }}
-  whileTap={{ scale: 0.9 }}
-  style={{
-    border: '2px solid red',
-    color: 'white',
-    padding: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px'
-  }}
->
-  <FiTrash2 size={16} />
-</motion.button>
-
-
-
+                            <motion.button
+                              onClick={() => prepararEliminacion(libro)}
+                              className="btn btn-danger"
+                              title="Eliminar libro"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              style={{
+                                border: '2px solid red',
+                                color: 'white',
+                                padding: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <FiTrash2 size={16} />
+                            </motion.button>
                           )}
-                          
- {showConfirm && (
-  <ConfirmDialog
-    message={`¿Seguro que deseas eliminar "${libroAEliminar?.titulo}"?`}
-    onConfirm={confirmarEliminacion}
-    onCancel={() => setShowConfirm(false)}
-    visible={showConfirm}
-  />
-)}
                         </div>
                       </td>
                     </tr>
@@ -835,6 +851,49 @@ const prepararEliminacion = (libro) => {
                     required
                   />
                 </div>
+                
+                <div className="form-group">
+                  <label>
+                    <FiUsers size={14} />
+                    Grado *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Primero, Segundo, etc."
+                    value={grado}
+                    onChange={(e) => setGrado(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <FiBookOpen size={14} />
+                    Clase *
+                  </label>
+                  <input
+                    type="text"
+                    value={clase}
+                    onChange={(e) => setClase(e.target.value)}
+                    placeholder="Ej: Matemática, Ciencias, etc."
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <FiInfo size={14} />
+                    Observación
+                  </label>
+                  <textarea
+                    value={observacion}
+                    onChange={(e) => setObservacion(e.target.value)}
+                    placeholder="Observaciones adicionales sobre el libro"
+                    className="form-textarea"
+                  />
+                </div>
 
                 <div className="form-group">
                   <label>
@@ -917,8 +976,16 @@ const prepararEliminacion = (libro) => {
           </motion.div>
         )}
       </AnimatePresence>
-     
+
+      {/* CONFIRM DIALOG */}
+      {showConfirm && (
+        <ConfirmDialog
+          message={`¿Seguro que deseas eliminar "${libroAEliminar?.titulo}"?`}
+          onConfirm={confirmarEliminacion}
+          onCancel={() => setShowConfirm(false)}
+          visible={showConfirm}
+        />
+      )}
     </div>
-    
   );
 }

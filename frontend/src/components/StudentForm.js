@@ -499,7 +499,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               </div>
 
               <div className="form-group">
-                <label htmlFor="id_documento_encargado">Documento del Encargado *</label>
+                <label htmlFor="id_documento_encargado">Documento de Identificacion del Encargado *</label>
                 <input
                   type="text"
                   id="id_documento_encargado"
