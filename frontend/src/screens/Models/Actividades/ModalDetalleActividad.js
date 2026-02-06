@@ -1,11 +1,22 @@
 import React, { useState } from 'react';
 
 const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
+  // CORRECCIÓN: Función para convertir fecha de DB a formato local para el input
+  const formatForInput = (dateString) => {
+    const d = new Date(dateString);
+    // Esto obtiene los componentes locales y los une en el formato YYYY-MM-DDTHH:mm
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const [actividadEditada, setActividadEditada] = useState({
     ...actividad,
-    fecha: new Date(actividad.fecha).toISOString().slice(0, 16)
+    fecha: formatForInput(actividad.fecha) // Usamos la nueva función local
   });
-
   const handleGuardar = () => {
     onUpdate(actividadEditada);
   };
