@@ -18,10 +18,24 @@ const bienSchema = new mongoose.Schema({
     required: false,
     trim: true
   },
-  categoria: {
-    type: String,
-    trim: true
-  },
+ categoria: {
+  type: String,
+  enum: [
+    'MOBILIARIO',
+    'EQUIPO_COMPUTO',
+    'ELECTRONICO',
+    'HERRAMIENTA',
+    'OTRO',
+    'CUERDA',
+    'VIENTO_MADERA',
+    'VIENTO_METAL',
+    'PERCUSION',
+    'TECLADO',
+    'INSTRUMENTO_ELECTRONICO',
+    'ACCESORIO_MUSICAL'
+  ],
+  required: true
+},
   estado: {
     type: String,
     required: true,
