@@ -8,9 +8,13 @@ const ModalCrearActividad = ({ onClose, onCreate }) => {
     descripcion: ''
   });
 
-  // Fecha mínima (ahora)
-  const fechaMinima = new Date().toISOString().slice(0, 16);
+  const getLocalISOTime = () => {
+  const now = new Date();
+  const off = now.getTimezoneOffset() * 60000;
+  return new Date(now - off).toISOString().slice(0, 16);
+};
 
+const fechaMinima = getLocalISOTime();
   const handleCrear = () => {
     onCreate(nuevaActividad);
   };
