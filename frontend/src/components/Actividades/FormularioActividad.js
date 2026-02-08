@@ -244,16 +244,21 @@ const confirmarEliminacion = async () => {
 
   // Categorizar actividades según la fecha
 function categorizarActividad(fechaActividad) {
+  if (!fechaActividad) return 'DESCONOCIDA';
+  
   const fecha = new Date(fechaActividad);
   const hoy = new Date();
 
-  hoy.setHours(0, 0, 0, 0);
-  fecha.setHours(0, 0, 0, 0);
+  // Resetear horas para comparar solo días
+  const fSoloFecha = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()).getTime();
+  const hoySoloFecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
 
-  if (fecha.getTime() === hoy.getTime()) return 'HOY';
-  if (fecha > hoy && (fecha - hoy) <= 7 * 24 * 60 * 60 * 1000) return 'PROXIMA';
-  if (fecha > hoy) return 'FUTURA';
-  if (fecha < hoy) return 'FINALIZADA';
+  const diferenciaDias = (fSoloFecha - hoySoloFecha) / (1000 * 60 * 60 * 24);
+
+  if (fSoloFecha === hoySoloFecha) return 'HOY';
+  if (diferenciaDias > 0 && diferenciaDias <= 7) return 'PROXIMA';
+  if (diferenciaDias > 7) return 'FUTURA';
+  if (diferenciaDias < 0) return 'FINALIZADA';
   
   return 'DESCONOCIDA';
 }
@@ -273,14 +278,19 @@ function categorizarActividad(fechaActividad) {
   const actividadesFinalizadas = actividadesFiltradas.filter(a => categorizarActividad(a.fecha) === 'FINALIZADA');
 
   const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleString('es-ES', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  if (!fecha) return "";
+  const d = new Date(fecha);
+  
+  // Usamos Intl.DateTimeFormat para mayor control y evitar desfases por interpretación de strings
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Cambia a true si prefieres formato AM/PM
+  }).format(d);
+};
 
   const renderGrupoActividades = (titulo, lista, color) => (
     <motion.div 
