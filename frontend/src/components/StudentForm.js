@@ -40,6 +40,22 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
  const [grados, setGrados] = useState([]);
   const [loadingGrados, setLoadingGrados] = useState(false);
 
+  // ✅ Calcular edad automáticamente
+const calcularEdad = (fechaNacimiento) => {
+  const hoy = new Date();
+  const nacimiento = new Date(fechaNacimiento);
+
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad--;
+  }
+
+  return edad;
+};
+
+
   const obtenerGrados = async () => {
   try {
     setLoadingGrados(true);
@@ -91,8 +107,11 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
 
       // Formatear fecha
       if (student.fecha_nacimiento) {
-        formattedStudent.fecha_nacimiento = student.fecha_nacimiento.split('T')[0];
-      }
+  const fechaFormateada = student.fecha_nacimiento.split('T')[0];
+  formattedStudent.fecha_nacimiento = fechaFormateada;
+  formattedStudent.edad = calcularEdad(fechaFormateada); // 👈 recalcula edad
+}
+
 
       formattedStudent.foto_preview = student.imagen && student.imagen !== "null"
   ? `data:image/png;base64,${student.imagen}`
@@ -168,27 +187,59 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleNumericChange = (e) => {
+  const { name, value } = e.target;
+
+  // Elimina todo lo que no sea número
+  const numericValue = value.replace(/\D/g, '');
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: numericValue
+  }));
+
+  if (errors[name]) {
+    setErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  }
+};
+
+
+ const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === "fecha_nacimiento") {
+    const edadCalculada = calcularEdad(value);
+
+    setFormData(prev => ({
+      ...prev,
+      fecha_nacimiento: value,
+      edad: edadCalculada
+    }));
+  } else {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
+  }
+
+  if (errors[name]) {
+    setErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  }
+};
+
 
   const validateForm = () => {
     const newErrors = {};
 
     // Validaciones requeridas
     const requiredFields = [
-      'nombre_completo', 'fecha_nacimiento', 'edad', 'genero', 'id_documento',
+      'nombre_completo', 'fecha_nacimiento', 'genero', 'id_documento',
       'residencia_direccion', 'grado_a_matricular', 'nombre_encargado',
       'parentesco_encargado', 'id_documento_encargado', 'telefono_encargado'
     ];
@@ -206,13 +257,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     }
 
     // Validación de edad numérica
-    if (formData.edad) {
-      const edadNum = parseInt(formData.edad);
-      if (isNaN(edadNum) || edadNum < 5 || edadNum > 25) {
-        newErrors.edad = 'Edad debe ser un número entre 5 y 25';
-      }
-    }
-
+    
     // Validación de teléfonos (solo números)
     const phoneFields = ['telefono_alumno', 'telefono_encargado', 'contacto_emergencia_telefono'];
     phoneFields.forEach(field => {
@@ -332,15 +377,14 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               <div className="form-group">
                 <label htmlFor="edad">Edad *</label>
                 <input
-                  type="number"
-                  id="edad"
-                  name="edad"
-                  value={formData.edad}
-                  onChange={handleChange}
-                  min="3"
-                  max="25"
-                  className={errors.edad ? 'error' : ''}
-                />
+  type="number"
+  id="edad"
+  name="edad"
+  value={formData.edad}
+  readOnly
+  className={errors.edad ? 'error' : ''}
+/>
+
                 {errors.edad && <span className="error-message">{errors.edad}</span>}
               </div>
 
@@ -362,7 +406,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               </div>
 
               <div className="form-group">
-                <label htmlFor="id_documento">Documento de Identidad *</label>
+                <label htmlFor="id_documento">Numero de Acta de Nacimiento *</label>
                 <input
                   type="text"
                   id="id_documento"
@@ -388,7 +432,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               </div>
 
               <div className="form-group">
-                <label htmlFor="telefono_alumno">Teléfono del Alumno</label>
+                <label htmlFor="telefono_alumno">Teléfono del Alumno </label>
                 <input
                   type="tel"
                   id="telefono_alumno"
@@ -501,13 +545,17 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               <div className="form-group">
                 <label htmlFor="id_documento_encargado">Documento de Identificacion del Encargado *</label>
                 <input
-                  type="text"
-                  id="id_documento_encargado"
-                  name="id_documento_encargado"
-                  value={formData.id_documento_encargado}
-                  onChange={handleChange}
-                  className={errors.id_documento_encargado ? 'error' : ''}
-                />
+  type="text"
+  id="id_documento_encargado"
+  name="id_documento_encargado"
+  value={formData.id_documento_encargado}
+  onChange={handleNumericChange}
+  className={errors.id_documento_encargado ? 'error' : ''}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  maxLength="20"
+/>
+
                 {errors.id_documento_encargado && <span className="error-message">{errors.id_documento_encargado}</span>}
               </div>
 
