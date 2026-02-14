@@ -1387,7 +1387,7 @@ const handleOpenEditModal = (empleado) => {
                       type="text"
                       value={formData.especialidades}
                       onChange={(e) => setFormData({...formData, especialidades: e.target.value})}
-                      placeholder="React, Node.js, MongoDB"
+                      placeholder="Matematicas,Violin,etc"
                     />
                   </div>
                 <div className="form-group form-grid-full">
