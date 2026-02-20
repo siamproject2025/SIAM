@@ -29,7 +29,7 @@ const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
-   "https://siam-production-c916.up.railway.app", // URL exacta de la imagen
+   "https://siam-production-cce4.up.railway.app", // URL exacta de la imagen
   'http://localhost:3000',                       // Tu entorno local
 
 ];
