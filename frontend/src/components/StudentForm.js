@@ -40,6 +40,22 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
  const [grados, setGrados] = useState([]);
   const [loadingGrados, setLoadingGrados] = useState(false);
 
+  // ✅ Calcular edad automáticamente
+const calcularEdad = (fechaNacimiento) => {
+  const hoy = new Date();
+  const nacimiento = new Date(fechaNacimiento);
+
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mes = hoy.getMonth() - nacimiento.getMonth();
+
+  if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad--;
+  }
+
+  return edad;
+};
+
+
   const obtenerGrados = async () => {
   try {
     setLoadingGrados(true);
@@ -91,8 +107,11 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
 
       // Formatear fecha
       if (student.fecha_nacimiento) {
-        formattedStudent.fecha_nacimiento = student.fecha_nacimiento.split('T')[0];
-      }
+  const fechaFormateada = student.fecha_nacimiento.split('T')[0];
+  formattedStudent.fecha_nacimiento = fechaFormateada;
+  formattedStudent.edad = calcularEdad(fechaFormateada); 
+}
+
 
       formattedStudent.foto_preview = student.imagen && student.imagen !== "null"
   ? `data:image/png;base64,${student.imagen}`
@@ -168,81 +187,121 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleNumericChange = (e) => {
+  const { name, value } = e.target;
+
+  // Elimina todo lo que no sea número
+  const numericValue = value.replace(/\D/g, '');
+
+  setFormData(prev => ({
+    ...prev,
+    [name]: numericValue
+  }));
+
+  if (errors[name]) {
+    setErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  }
+};
+
+
+ const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === "fecha_nacimiento") {
+    const edadCalculada = calcularEdad(value);
+
+    setFormData(prev => ({
+      ...prev,
+      fecha_nacimiento: value,
+      edad: edadCalculada
+    }));
+  } else {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
+  }
+
+  if (errors[name]) {
+    setErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  }
+};
+
 
   const validateForm = () => {
-    const newErrors = {};
+  const newErrors = {};
 
-    // Validaciones requeridas
-    const requiredFields = [
-      'nombre_completo', 'fecha_nacimiento', 'edad', 'genero', 'id_documento',
-      'residencia_direccion', 'grado_a_matricular', 'nombre_encargado',
-      'parentesco_encargado', 'id_documento_encargado', 'telefono_encargado'
-    ];
+  // 1. Validaciones de Campos Requeridos
+  const requiredFields = [
+    'nombre_completo', 'fecha_nacimiento', 'genero', 'id_documento',
+    'residencia_direccion', 'grado_a_matricular', 'nombre_encargado',
+    'parentesco_encargado', 'id_documento_encargado', 'telefono_encargado'
+  ];
 
-    requiredFields.forEach(field => {
-      const fieldValue = formData[field];
-      if (!fieldValue || (typeof fieldValue === 'string' && !fieldValue.trim())) {
-        newErrors[field] = 'Este campo es requerido';
-      }
-    });
-
-    // Validación de email si se proporciona
-    if (formData.email_encargado && !/\S+@\S+\.\S+/.test(formData.email_encargado)) {
-      newErrors.email_encargado = 'Email inválido';
+  requiredFields.forEach(field => {
+    const fieldValue = formData[field];
+    if (!fieldValue || (typeof fieldValue === 'string' && !fieldValue.trim())) {
+      newErrors[field] = 'Este campo es requerido';
     }
+  });
 
-    // Validación de edad numérica
-    if (formData.edad) {
-      const edadNum = parseInt(formData.edad);
-      if (isNaN(edadNum) || edadNum < 5 || edadNum > 25) {
-        newErrors.edad = 'Edad debe ser un número entre 5 y 25';
-      }
+  // --- NUEVAS VALIDACIONES ESPECÍFICAS ---
+
+  // 2. Validación: Solo Letras (Nombre alumno, encargado y contacto emergencia)
+  const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+  const nameFields = ['nombre_completo', 'nombre_encargado', 'contacto_emergencia_nombre'];
+
+  nameFields.forEach(field => {
+    if (formData[field] && !soloLetrasRegex.test(formData[field])) {
+      newErrors[field] = 'Este campo solo debe contener letras';
     }
+  });
 
-    // Validación de teléfonos (solo números)
-    const phoneFields = ['telefono_alumno', 'telefono_encargado', 'contacto_emergencia_telefono'];
-    phoneFields.forEach(field => {
-      if (formData[field] && !/^\d+$/.test(formData[field])) {
+  // 3. Validación: Solo Números (Documentos de identidad)
+  const soloNumerosRegex = /^\d+$/;
+  const idFields = ['id_documento', 'id_documento_encargado'];
+
+  idFields.forEach(field => {
+    if (formData[field] && !soloNumerosRegex.test(formData[field])) {
+      newErrors[field] = 'El documento debe contener solo números';
+    }
+  });
+
+  // --- VALIDACIONES EXISTENTES MEJORADAS ---
+
+  // 4. Validación de email
+  if (formData.email_encargado && !/\S+@\S+\.\S+/.test(formData.email_encargado)) {
+    newErrors.email_encargado = 'Email inválido';
+  }
+
+  // 5. Validación de Teléfonos (Formato y Longitud)
+  const phoneFields = ['telefono_alumno', 'telefono_encargado', 'contacto_emergencia_telefono'];
+  phoneFields.forEach(field => {
+    if (formData[field]) {
+      if (!soloNumerosRegex.test(formData[field])) {
         newErrors[field] = 'Solo se permiten números';
+      } else if (formData[field].length < 8) {
+        newErrors[field] = 'El teléfono debe tener al menos 8 dígitos';
       }
-    });
-
-    // Validación de longitud de teléfonos
-    if (formData.telefono_encargado && formData.telefono_encargado.length < 8) {
-      newErrors.telefono_encargado = 'El teléfono debe tener al menos 8 dígitos';
     }
+  });
 
-    if (formData.telefono_alumno && formData.telefono_alumno.length < 8) {
-      newErrors.telefono_alumno = 'El teléfono debe tener al menos 8 dígitos';
-    }
-
-    if (formData.contacto_emergencia_telefono && formData.contacto_emergencia_telefono.length < 8) {
-      newErrors.contacto_emergencia_telefono = 'El teléfono debe tener al menos 8 dígitos';
-    }
-
-    setErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 5000);
-    }
-    
-    return Object.keys(newErrors).length === 0;
-  };
+  // Manejo de estado de errores y notificaciones
+  setErrors(newErrors);
+  
+  if (Object.keys(newErrors).length > 0) {
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 5000);
+  }
+  
+  return Object.keys(newErrors).length === 0;
+};
 
   
   const prepareDataForBackend = () => {
@@ -332,15 +391,14 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               <div className="form-group">
                 <label htmlFor="edad">Edad *</label>
                 <input
-                  type="number"
-                  id="edad"
-                  name="edad"
-                  value={formData.edad}
-                  onChange={handleChange}
-                  min="3"
-                  max="25"
-                  className={errors.edad ? 'error' : ''}
-                />
+  type="number"
+  id="edad"
+  name="edad"
+  value={formData.edad}
+  readOnly
+  className={errors.edad ? 'error' : ''}
+/>
+
                 {errors.edad && <span className="error-message">{errors.edad}</span>}
               </div>
 
@@ -362,7 +420,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               </div>
 
               <div className="form-group">
-                <label htmlFor="id_documento">Documento de Identidad *</label>
+                <label htmlFor="id_documento">Numero de Acta de Nacimiento *</label>
                 <input
                   type="text"
                   id="id_documento"
@@ -388,7 +446,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               </div>
 
               <div className="form-group">
-                <label htmlFor="telefono_alumno">Teléfono del Alumno</label>
+                <label htmlFor="telefono_alumno">Teléfono del Alumno </label>
                 <input
                   type="tel"
                   id="telefono_alumno"
@@ -501,13 +559,17 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               <div className="form-group">
                 <label htmlFor="id_documento_encargado">Documento de Identificacion del Encargado *</label>
                 <input
-                  type="text"
-                  id="id_documento_encargado"
-                  name="id_documento_encargado"
-                  value={formData.id_documento_encargado}
-                  onChange={handleChange}
-                  className={errors.id_documento_encargado ? 'error' : ''}
-                />
+  type="text"
+  id="id_documento_encargado"
+  name="id_documento_encargado"
+  value={formData.id_documento_encargado}
+  onChange={handleNumericChange}
+  className={errors.id_documento_encargado ? 'error' : ''}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  maxLength="20"
+/>
+
                 {errors.id_documento_encargado && <span className="error-message">{errors.id_documento_encargado}</span>}
               </div>
 

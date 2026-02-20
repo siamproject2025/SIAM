@@ -444,7 +444,7 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
           >
             <Plus size={18} />
           </motion.div>
-          Nuevo
+          Nuevo Horario 
         </motion.button>
         </AdminOnly>
       </motion.div>

@@ -441,7 +441,7 @@ const cancelarEliminacionProveedor = () => {
             </div>
             <div style={{ textAlign: 'center' }}>TIPO</div>
             <div style={{ textAlign: 'center' }}>ESTADO</div>
-            <div style={{ textAlign: 'center' }}>CALIFICACIÓN</div>
+            
             <div style={{ textAlign: 'center' }}>ACCIONES</div>
           </motion.div>
 
@@ -573,17 +573,7 @@ const cancelarEliminacionProveedor = () => {
                   </span>
                 </motion.div>
 
-                <motion.div 
-                  style={{ 
-                    textAlign: 'center',
-                    fontSize: '1rem'
-                  }} 
-                  className="estrellas"
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  {getEstrellas(proveedor.calificacion)}
-                </motion.div>
+                
 
                 <div style={{ 
                   display: 'flex', 
@@ -1176,15 +1166,7 @@ const cancelarEliminacionProveedor = () => {
                           </div>
       
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div className="form-group">
-                              <label>Persona de Contacto</label>
-                              <input
-                                type="text"
-                                value={formData.contacto}
-                                onChange={(e) => setFormData({...formData, contacto: e.target.value})}
-                                placeholder="Nombre del contacto"
-                              />
-                            </div>
+                            
       
                             <div className="form-group">
                               <label>RTN</label>
@@ -1254,19 +1236,6 @@ const cancelarEliminacionProveedor = () => {
                               </select>
                             </div>
       
-                            <div className="form-group">
-                              <label>Calificación</label>
-                              <select
-                                value={formData.calificacion}
-                                onChange={(e) => setFormData({...formData, calificacion: parseInt(e.target.value)})}
-                              >
-                                <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                                <option value="4">⭐⭐⭐⭐ (4)</option>
-                                <option value="3">⭐⭐⭐ (3)</option>
-                                <option value="2">⭐⭐ (2)</option>
-                                <option value="1">⭐ (1)</option>
-                              </select>
-                            </div>
                           </div>
       
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -1292,16 +1261,7 @@ const cancelarEliminacionProveedor = () => {
                             </div>
                           </div>
       
-                          <div className="form-group">
-                            <label>Sitio Web</label>
-                            <input
-                              type="url"
-                              value={formData.sitio_web}
-                              onChange={(e) => setFormData({...formData, sitio_web: e.target.value})}
-                              placeholder="https://www.ejemplo.com"
-                            />
-                          </div>
-      
+                         
                           <div className="form-group">
                             <label>Notas</label>
                             <textarea
@@ -1404,15 +1364,7 @@ const cancelarEliminacionProveedor = () => {
                             />
                           </div>
       
-                          <div className="form-group">
-                            <label>Contacto</label>
-                            <input
-                              type="text"
-                              value={formData.contacto}
-                              onChange={(e) => setFormData({...formData, contacto: e.target.value})}
-                            />
-                          </div>
-      
+                          
                           <div className="form-group">
                             <label>RTN</label>
                             <input
@@ -1473,20 +1425,7 @@ const cancelarEliminacionProveedor = () => {
                             </select>
                           </div>
       
-                          <div className="form-group">
-                            <label>Calificación</label>
-                            <select
-                              value={formData.calificacion}
-                              onChange={(e) => setFormData({...formData, calificacion: parseInt(e.target.value)})}
-                            >
-                              <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                              <option value="4">⭐⭐⭐⭐ (4)</option>
-                              <option value="3">⭐⭐⭐ (3)</option>
-                              <option value="2">⭐⭐ (2)</option>
-                              <option value="1">⭐ (1)</option>
-                            </select>
-                          </div>
-      
+                          
                           <div className="form-group">
                             <label>Condiciones de Pago</label>
                             <input
@@ -1506,15 +1445,7 @@ const cancelarEliminacionProveedor = () => {
                             />
                           </div>
       
-                          <div className="form-group full-width">
-                            <label>Sitio Web</label>
-                            <input
-                              type="url"
-                              value={formData.sitio_web}
-                              onChange={(e) => setFormData({...formData, sitio_web: e.target.value})}
-                            />
-                          </div>
-      
+                          
                           <div className="form-group full-width">
                             <label>Notas</label>
                             <textarea
