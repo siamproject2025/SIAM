@@ -25,10 +25,11 @@ const { userRole, cargando } = useUserRole();
   const canManage = userRole === "ADMIN"; 
   const canDownload = userRole === "ADMIN" || userRole === "DOCENTE";
 
-  const handleDeleteClick = (id) => {
+ const handleDeleteClick = (student) => {
   Swal.fire({
     title: '¿Confirmar eliminación?',
-    text: "No podrás revertir esto",
+    // Ahora inyectamos el nombre del alumno en el mensaje
+    text: `¿Estás seguro de que deseas eliminar a "${student.nombre_completo}"? No podrás revertir esto.`,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#d33',
@@ -37,7 +38,8 @@ const { userRole, cargando } = useUserRole();
     cancelButtonText: 'Cancelar'
   }).then((result) => {
     if (result.isConfirmed) {
-      onDelete(id);
+      // Enviamos solo el ID a la función que recibiste por props
+      onDelete(student._id);
     }
   });
 };
@@ -742,13 +744,14 @@ const { userRole, cargando } = useUserRole();
         <Edit size={16}/>
       </button>
       
-     <button
-  className="btn-icon btn-delete"
-  onClick={() => handleDeleteClick(student._id)}
-  title="Eliminar"
->
-  <Trash2 size={16}/>
-</button>
+      <button
+        className="btn-icon btn-delete"
+        // PASAMOS EL OBJETO COMPLETO 'student' en lugar de solo student._id
+        onClick={() => handleDeleteClick(student)} 
+        title="Eliminar"
+      >
+        <Trash2 size={16}/>
+      </button>
     </div>
   </td>
 )}
