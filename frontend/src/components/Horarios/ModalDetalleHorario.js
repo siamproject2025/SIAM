@@ -331,13 +331,17 @@ const ModalDetalleHorario = ({
                     onChange={handleDocenteChange}
                   >
                     <option value="" disabled>
+
                       Seleccione un docente *
-                    </option>
-                    {params.docentes.map((docente, i) => (
-                      <option key={i} value={docente._id}>
-                        {docente.numero_identidad} | {docente.nombres +" "+ docente.apellidos}
-                      </option>
-                    ))}
+                    </option> {console.log("prueba h",params.docentes)}
+                     {params.docentes
+                      .filter(d => d.cargo_asignacion?.cargo === "DOCENTE")
+                      .map((docente, i) => (
+                        <option key={i} value={docente._id}>
+                          {docente.numero_identidad} | {docente.nombres + " " + docente.apellidos}
+                        </option>
+                      ))}
+
                   </select>
                 </div>
                 <div className="form-group">

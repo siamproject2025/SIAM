@@ -1,257 +1,268 @@
-/* ===== ESTILOS ESPECÍFICOS PARA GRADOS ===== */
+/* ===== ESTILOS ESPECÍFICOS PARA GRADOS - DISEÑO COMPACTO ===== */
 
-/* Contenedor principal */
+/* Contenedor principal - MÁS COMPACTO */
 .grados-container {
-  background-color: rgb(239, 244, 246);
+  background-color: #f5f7fa;
   min-height: 100vh;
-  padding: 25px;
+  padding: 20px;
 }
 
-.grados-container .row.g-3{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.container-fluid{
-  padding: 0;
-}
-/* Header y botones */
-.grados-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 25px 0;
-  margin-bottom: 2rem;
-  border-radius: 0 0 15px 15px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+
+.donacion-busqueda-bar {
+  margin-top: 1.5rem;
+  padding: 0 25px;
 }
 
-.grados-title {
-  font-weight: 700;
-  font-size: 2rem;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
+/* BOTONES - DISEÑO MÁS LIMPIO */
 .grados-btn-primary {
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.7rem 1.5rem;
   border-radius: 8px;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
-  transition: all 0.3s ease;
-  
+  font-size: 0.9rem;
+  color: white;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .grados-btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  color: white;
 }
 
-/* Tarjeta de filtros */
+/* FILTROS - MÁS COMPACTOS */
 .grados-filters-card {
   background: white;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  margin-bottom: 1.5rem;
-  overflow: hidden;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  min-width: 300px;
 }
 
 .grados-filters-body {
-  padding: 1.5rem;
-}
-
-.grados-form-control {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 0.75rem;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-  width: 100%;
-}
-
-.grados-form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .grados-form-select {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 0.75rem;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  background: white;
+  flex: 1;
+  transition: border-color 0.2s ease;
 }
 
 .grados-form-select:focus {
   border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
 .grados-btn-search {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
   color: white;
   font-weight: 600;
-  transition: all 0.3s ease;
-  width: 100%;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .grados-btn-search:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
 }
 
-/* Tarjeta de tabla */
+/* TABLA - DISEÑO MÁS COMPACTO Y ELEGANTE */
 .grados-table-card {
   background: white;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin-top: 1rem;
 }
 
 .grados-table {
   width: 100%;
-  margin: 0;
+  border-collapse: collapse;
 }
 
-.grados-table thead{
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.grados-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .grados-table thead th {
-  
   color: white;
   font-weight: 600;
-  padding: 1rem;
-  border: none;
-  font-size: 0.9rem;
+  padding: 12px 16px;
+  font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.grados-table tbody td {
-  padding: 1rem;
-  vertical-align: middle;
-  border-bottom: 1px solid #f1f3f4;
-  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+  text-align: left;
+  border: none;
 }
 
 .grados-table tbody tr {
-  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f2f5;
+  transition: background-color 0.15s ease;
+}
+
+.grados-table tbody tr:last-child {
+  border-bottom: none;
 }
 
 .grados-table tbody tr:hover {
-  background-color: #f8f9fa;
-  transform: translateX(4px);
+  background-color: #f8fafc;
 }
 
-/* Badges de estado */
-.grados-badge-active {
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+.grados-table tbody td {
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  color: #374151;
+  vertical-align: middle;
+}
+
+/* Celdas específicas */
+.grados-table tbody td:first-child {
   font-weight: 600;
+  color: #1f2937;
+}
+
+/* Botón de alumnos */
+.grados-table tbody td:nth-child(4) .btn {
+  background: rgba(52, 152, 219, 0.08);
+  border: 1px solid rgba(52, 152, 219, 0.2);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #2c5282;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grados-table tbody td:nth-child(4) .btn:hover {
+  background: rgba(52, 152, 219, 0.15);
+  border-color: #3498db;
+  transform: translateY(-1px);
+}
+
+/* BADGES - MÁS COMPACTOS */
+.grados-badge-active {
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
 }
 
 .grados-badge-inactive {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  background: #9ca3af;
   color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
 }
 
-/* Botones de acción */
+/* BOTONES DE ACCIÓN - MÁS COMPACTOS */
 .grados-btn-edit {
-  background: linear-gradient(135deg, #34aef5 0%, #228be6 100%);
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  margin-right: 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #3b82f6;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
 }
 
 .grados-btn-edit:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
-  color: white;
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  color: #3b82f6;
+  height: 35px;
 }
 
 .grados-btn-deactivate {
-  background: transparent;
-  border: 2px solid #e74c3c;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  color: #e74c3c;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #ef4444;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 35px;
 }
 
 .grados-btn-deactivate:hover {
-  background: #e74c3c;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  transform: translateY(-1px);
+  color: #ef4444;
 }
 
-.grados-btn-restore {
-  background: transparent;
-  border: 2px solid #2ecc71;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  color: #2ecc71;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.grados-btn-restore:hover {
-  background: #2ecc71;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
-}
-
-/* Paginación */
+/* PAGINACIÓN - MÁS COMPACTA */
 .grados-pagination {
-  background: #f8f9fa;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e9ecef;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .grados-pagination-info {
-  color: #6c757d;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  color: #6b7280;
   font-weight: 500;
 }
 
 .grados-pagination-btn {
-  border: 2px solid #dee2e6;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  margin: 0 0.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
   background: white;
-  color: #495057;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  color: #4b5563;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 0 2px;
 }
 
 .grados-pagination-btn:hover:not(:disabled) {
   background: #667eea;
   border-color: #667eea;
   color: white;
-  transform: translateY(-1px);
 }
 
 .grados-pagination-btn:disabled {
@@ -265,146 +276,134 @@
   color: white;
 }
 
-/* Modal */
+/* MODAL - MÁS COMPACTO */
 .grados-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1050;
-  backdrop-filter: blur(4px);
 }
 
 .grados-modal-content {
   background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   width: 90%;
-  max-width: 800px;
+  max-width: 500px;
   max-height: 90vh;
   overflow: hidden;
-  animation: grados-modal-appear 0.3s ease-out;
-}
-
-@keyframes grados-modal-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .grados-modal-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 1.5rem;
-  border-bottom: none;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .grados-modal-title {
-  font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
   margin: 0;
 }
 
 .grados-modal-close {
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 35px;
-  height: 35px;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  transition: all 0.3s ease;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
 .grados-modal-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: rotate(90deg);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .grados-modal-body {
-  padding: 2rem;
-  max-height: 60vh;
-  overflow-y: auto;
+  padding: 1.5rem;
 }
 
 .grados-form-label {
+  font-size: 0.85rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #374151;
   margin-bottom: 0.5rem;
-  font-size: 0.95rem;
+  display: block;
 }
 
 .grados-modal-input {
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  padding: 0.75rem;
-  font-size: 0.95rem;
-  transition: all 0.3s ease;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
   width: 100%;
+  transition: border-color 0.2s ease;
 }
 
 .grados-modal-input:focus {
   border-color: #667eea;
-  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
 .grados-modal-input.is-invalid {
-  border-color: #e74c3c;
-  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
-}
-
-.grados-invalid-feedback {
-  font-size: 0.85rem;
-  font-weight: 500;
+  border-color: #ef4444;
 }
 
 .grados-modal-footer {
-  padding: 1.5rem;
-  border-top: 1px solid #e9ecef;
-  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .grados-modal-btn-cancel {
-  background: #95a5a6;
+  background: #9ca3af;
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  padding: 0.6rem 1rem;
   color: white;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  margin-right: 10px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
 }
 
 .grados-modal-btn-cancel:hover {
-  background: #7f8c8d;
-  transform: translateY(-1px);
+  background: #6b7280;
 }
 
 .grados-modal-btn-save {
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  padding: 0.6rem 1rem;
   color: white;
-  font-weight: 600;
-  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .grados-modal-btn-save:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .grados-modal-btn-save:disabled {
@@ -412,76 +411,117 @@
   cursor: not-allowed;
 }
 
-/* Estados de carga */
-.grados-loading {
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.grados-loading::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 30px;
-  height: 30px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #667eea;
-  border-radius: 50%;
-  animation: grados-spin 1s linear infinite;
-}
-
-@keyframes grados-spin {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* Responsive */
+/* RESPONSIVE */
 @media (max-width: 768px) {
-  .grados-header {
-    padding: 1rem 0;
+  .grados-container {
+    padding: 15px;
   }
   
-  .grados-title {
-    font-size: 1.5rem;
+  .donacion-header {
+    padding: 15px 0;
+    margin-bottom: 1rem;
   }
   
-  .grados-modal-content {
-    width: 95%;
-    margin: 1rem;
+  .header-gradient {
+    padding: 0 15px;
   }
   
-  .grados-modal-body {
-    padding: 1rem;
+  .header-content h2 {
+    font-size: 1.3rem;
+  }
+  
+  .grados-container .container-fluid .d-flex {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .grados-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .grados-filters-card {
+    width: 100%;
+    min-width: auto;
+  }
+  
+  .grados-table {
+    display: block;
+    overflow-x: auto;
   }
   
   .grados-table thead th,
   .grados-table tbody td {
-    padding: 0.75rem 0.5rem;
+    padding: 10px 12px;
     font-size: 0.85rem;
   }
   
-  .grados-btn-edit,
-  .grados-btn-deactivate,
-  .grados-btn-restore {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    margin-bottom: 0.25rem;
+  .grados-pagination {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .grados-modal-content {
+    width: 95%;
+    margin: 10px;
   }
 }
 
 @media (max-width: 576px) {
+  .header-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
   .grados-filters-body {
-    padding: 1rem;
+    flex-direction: column;
   }
   
-  .grados-modal-content {
-    width: 98%;
-    margin: 0.5rem;
+  .grados-form-select,
+  .grados-btn-search {
+    width: 100%;
   }
   
-  .grados-table-card {
-    border-radius: 8px;
+  .grados-table thead th,
+  .grados-table tbody td {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+  
+  .grados-btn-edit,
+  .grados-btn-deactivate {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* ESTILOS PARA TABLA VACÍA */
+.grados-table-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6b7280;
+  font-style: italic;
+  background: #f9fafb;
+}
+
+.grados-table-empty td {
+  border: none !important;
+}
+
+/* ANIMACIONES SUAVES */
+.grados-table tbody tr {
+  animation: fadeInRow 0.3s ease-out;
+}
+
+@keyframes fadeInRow {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
