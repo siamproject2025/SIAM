@@ -180,26 +180,49 @@ const handleFotoChange = (e) => {
   e.preventDefault();
 
   try {
-    // Validaciones antes de enviar
-      if (!formData.codigo.trim()) {
-        showNotification('El código es obligatorio', 'error');
-        return;
-      }
+    // --- NUEVAS VALIDACIONES ---
+    
+    // 1. Código de empleado: Tamaño mín 3, máx 10
+    if (!formData.codigo.trim() || formData.codigo.trim().length < 3 || formData.codigo.trim().length > 10) {
+      showNotification('El código debe tener entre 3 y 10 caracteres', 'error');
+      return;
+    }
 
-      if (!formData.nombres.trim() || formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
-        showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
-        return;
-      }
+    // 2. Nombres: Solo letras (incluye tildes y ñ)
+    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!formData.nombres.trim()) {
+      showNotification('Los nombres son obligatorios', 'error');
+      return;
+    }
+    if (!regexLetras.test(formData.nombres.trim())) {
+      showNotification('El campo nombres solo permite letras', 'error');
+      return;
+    }
+    if (formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
+      showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
+      return;
+    }
 
-      if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2 || formData.apellidos.trim().length > 100) {
-        showNotification('Los apellidos deben tener entre 2 y 100 caracteres', 'error');
-        return;
-      }
+    // 3. Documento de Identidad: Solo números
+    const regexNumeros = /^\d+$/;
+    if (!formData.numero_identidad.trim()) {
+      showNotification('El documento de identidad es obligatorio', 'error');
+      return;
+    }
+    if (!regexNumeros.test(formData.numero_identidad.trim())) {
+      showNotification('El documento de identidad solo acepta números', 'error');
+      return;
+    }
+    if (formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
+      showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
+      return;
+    }
 
-      if (!formData.numero_identidad.trim() || formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
-        showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
+    // --- CONTINUACIÓN DE VALIDACIONES EXISTENTES ---
+    if (!formData.apellidos.trim() || !regexLetras.test(formData.apellidos.trim())) {
+        showNotification('Los apellidos son obligatorios y solo deben contener letras', 'error');
         return;
-      }
+    }
 
       // Validación tipo_contrato
       const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
@@ -333,27 +356,26 @@ const handleFotoChange = (e) => {
   e.preventDefault();
 
   try {
-    //  Validaciones (mismas que handleCrearPersonal)
-    if (!formData.codigo.trim()) {
-      showNotification('El código es obligatorio', 'error');
+    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const regexNumeros = /^\d+$/;
+
+    // Validación Código (Mín 3, Máx 10)
+    if (!formData.codigo.trim() || formData.codigo.trim().length < 3 || formData.codigo.trim().length > 10) {
+      showNotification('El código debe tener entre 3 y 10 caracteres', 'error');
       return;
     }
 
-    if (!formData.nombres.trim() || formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
-      showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
+    // Validación Nombres (Solo letras)
+    if (!formData.nombres.trim() || !regexLetras.test(formData.nombres.trim())) {
+      showNotification('Los nombres son obligatorios y solo deben contener letras', 'error');
       return;
     }
 
-    if (!formData.apellidos.trim() || formData.apellidos.trim().length < 2 || formData.apellidos.trim().length > 100) {
-      showNotification('Los apellidos deben tener entre 2 y 100 caracteres', 'error');
+    // Validación Identidad (Solo números)
+    if (!formData.numero_identidad.trim() || !regexNumeros.test(formData.numero_identidad.trim())) {
+      showNotification('El documento de identidad debe contener solo números', 'error');
       return;
     }
-
-    if (!formData.numero_identidad.trim() || formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
-      showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
-      return;
-    }
-
     const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
     if (!tiposContrato.includes(formData.tipo_contrato)) {
       showNotification('Tipo de contrato inválido', 'error');
@@ -1387,7 +1409,7 @@ const handleOpenEditModal = (empleado) => {
                       type="text"
                       value={formData.especialidades}
                       onChange={(e) => setFormData({...formData, especialidades: e.target.value})}
-                      placeholder="React, Node.js, MongoDB"
+                      placeholder="Matematicas,Violin,etc"
                     />
                   </div>
                 <div className="form-group form-grid-full">

@@ -272,7 +272,7 @@ const ModalDetalleHorario = ({
               >
                 {/* ... (el contenido de detalle se mantiene igual) */}
                 <div className="form-group">
-                  <label className="form-label">Asignatura</label>
+                  <label className="form-label">Asignatura *</label>
                   <input
                     className="form-control"
                     placeholder="Escriba una asignatura..."
@@ -282,7 +282,7 @@ const ModalDetalleHorario = ({
                   />
                 </div>
                 <div className="form-group mb-0">
-                  <label className="form-label">Días de la semana</label>
+                  <label className="form-label">Días de la semana *</label>
                 </div>
                 <div className="mb-1">
                   {Object.keys(diasSemana).map((key, i) => {
@@ -302,9 +302,9 @@ const ModalDetalleHorario = ({
                   })}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Horario</label>
+                  <label className="form-label">Horario *</label>
                   <div className="input-group">
-                    <span className="input-group-text fw-bold">Inicio</span>
+                    <span className="input-group-text fw-bold">Inicio *</span>
                     <input
                       className="form-control"
                       placeholder="00:00"
@@ -312,7 +312,7 @@ const ModalDetalleHorario = ({
                       value={horarioEdicion.inicio}
                       onChange={handleInicioChange}
                     />
-                    <span className="input-group-text fw-bold">Final</span>
+                    <span className="input-group-text fw-bold">Final *</span>
                     <input
                       className="form-control"
                       placeholder="00:00"
@@ -323,7 +323,7 @@ const ModalDetalleHorario = ({
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Docente</label>
+                  <label className="form-label">Docente *</label>
                   <select
                     className="form-select"
                     aria-label=""
@@ -332,16 +332,18 @@ const ModalDetalleHorario = ({
                   >
                     <option value="" disabled>
                       Seleccione un docente
-                    </option>
-                    {params.docentes.map((docente, i) => (
-                      <option key={i} value={docente._id}>
-                        {docente.numero_identidad} | {docente.nombres +" "+ docente.apellidos}
-                      </option>
-                    ))}
+                    </option> {console.log("prueba h",params.docentes)}
+                     {params.docentes
+                      .filter(d => d.cargo_asignacion?.cargo === "DOCENTE")
+                      .map((docente, i) => (
+                        <option key={i} value={docente._id}>
+                          {docente.numero_identidad} | {docente.nombres + " " + docente.apellidos}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Grado/Aula</label>
+                  <label className="form-label">Grado/Aula *</label>
                   <select
                     className="form-select"
                     aria-label=""
@@ -349,7 +351,7 @@ const ModalDetalleHorario = ({
                     onChange={handleAulaChange}
                   >
                     <option value="" disabled>
-                      Seleccione un grado/aula
+                      Seleccione un grado/aula *
                     </option>
                     {params.aulas.map((aula, i) => (
                       <option key={i} value={aula._id}>

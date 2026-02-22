@@ -46,6 +46,7 @@ const Directiva = () => {
   // NUEVO ESTADO PARA EL MODAL DE DOCUMENTOS
   const [mostrarModalDocumentos, setMostrarModalDocumentos] = useState(false);
   const [documentoEditando, setDocumentoEditando] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -154,29 +155,48 @@ const cargarMiembros = async () => {
   e.preventDefault();
   
   try {
+    // 1. Validación de Nombre (Solo letras y espacios, incluyendo tildes y ñ)
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     if (!formData.nombre.trim()) {
       showNotification('El nombre del miembro es obligatorio', 'error');
       return;
     }
+    if (!regexNombre.test(formData.nombre.trim())) {
+      showNotification('El nombre solo puede contener letras y espacios', 'error');
+      return;
+    }
+
+    // 2. Validación de Cargo
     if (!formData.cargo.trim()) {
       showNotification('El cargo es obligatorio', 'error');
       return;
     }
+
+    // 3. Validación de Email
     if (!formData.email.trim()) {
       showNotification('El email es obligatorio', 'error');
       return;
     }
+
+    // 4. Validación de Teléfono (Solo números)
+    // El regex \d+ verifica que solo haya dígitos. 
+    // Si quieres limitar la cantidad (ej. 8 números), usa /^\d{8}$/
+    const regexTelefono = /^\d+$/; 
     if (!formData.telefono) {
       showNotification('El teléfono es obligatorio', 'error');
       return;
     }
+    if (!regexTelefono.test(formData.telefono.toString().trim())) {
+      showNotification('El teléfono solo puede contener números', 'error');
+      return;
+    }
 
+    // --- CONTINÚA TU LÓGICA DE ENVÍO ---
     const datosMiembro = {
       ...formData,
       fecha_registro: new Date(formData.fecha_registro)
     };
 
-    //  Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
@@ -185,12 +205,11 @@ const cargarMiembros = async () => {
 
     const token = await user.getIdToken();
 
-    //  Enviar solicitud al backend con el token
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, //  Token agregado
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(datosMiembro)
     });
@@ -211,28 +230,47 @@ const cargarMiembros = async () => {
 };
 
 
-  const handleEditarMiembro = async (e) => {
+ const handleEditarMiembro = async (e) => {
   e.preventDefault();
 
   try {
     loadingController.start();
+
+    // 1. Validación de Nombre (Solo letras y espacios)
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     if (!formData.nombre.trim()) {
       showNotification('El nombre del miembro es obligatorio', 'error');
       return;
     }
+    if (!regexNombre.test(formData.nombre.trim())) {
+      showNotification('El nombre solo puede contener letras y espacios', 'error');
+      return;
+    }
+
+    // 2. Validación de Cargo
     if (!formData.cargo.trim()) {
       showNotification('El cargo es obligatorio', 'error');
       return;
     }
+
+    // 3. Validación de Email
     if (!formData.email.trim()) {
       showNotification('El email es obligatorio', 'error');
       return;
     }
+
+    // 4. Validación de Teléfono (Solo números)
+    const regexTelefono = /^\d+$/; 
     if (!formData.telefono) {
       showNotification('El teléfono es obligatorio', 'error');
       return;
     }
+    if (!regexTelefono.test(formData.telefono.toString().trim())) {
+      showNotification('El teléfono solo puede contener números', 'error');
+      return;
+    }
 
+    // Lógica de preparación de datos
     const datosActualizados = {
       ...formData,
       fecha_registro: new Date(formData.fecha_registro)
@@ -243,7 +281,7 @@ const cargarMiembros = async () => {
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    // Enviar la solicitud con el token en headers
+    // Enviar la solicitud con el token en headers (Método PUT)
     const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
       method: 'PUT',
       headers: {
@@ -258,6 +296,7 @@ const cargarMiembros = async () => {
       throw new Error(errorData.message || 'Error al editar el miembro');
     }
 
+    // Finalización exitosa
     await cargarMiembros();
     setMiembroSeleccionado(null);
     resetForm();
@@ -266,11 +305,10 @@ const cargarMiembros = async () => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al editar el miembro', 'error');
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
+  } finally {
+    loadingController.stop(); 
+  }
 };
-
 
 // Eliminar miembro
 
@@ -711,11 +749,6 @@ const handleVerDocumento = async (documento) => {
               <Mail size={14} />
               CONTACTO
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Building size={14} />
-              EMPRESA
-            </div>
-            <div style={{ textAlign: 'center' }}>DOCUMENTOS</div>
             <div style={{ textAlign: 'center' }}>ESTADO</div>
             <div style={{ textAlign: 'center' }}>ACCIONES</div>
           </motion.div>
@@ -737,7 +770,7 @@ const handleVerDocumento = async (documento) => {
                   scale: 1.01,
                   transition: { duration: 0.2 }
                 }}
-                onClick={() => handleOpenEditModal(miembro)}
+                
                 style={{
                   gridTemplateColumns: '1.8fr 1.8fr 1.8fr 1.5fr 1.5fr 1.5fr 80px'
                 }}
@@ -811,29 +844,8 @@ const handleVerDocumento = async (documento) => {
                   </motion.div>
                 </div>
 
-                <motion.div 
-                  style={{ fontSize: '0.9rem', color: '#555' }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.05 + 0.25 }}
-                >
-                  {miembro.empresa || '-'}
-                </motion.div>
+                
 
-                <motion.div 
-                  style={{ textAlign: 'center' }}
-                  whileHover={{ scale: 1.1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                >
-                  {miembro.documentos_pdf && miembro.documentos_pdf.length > 0 ? (
-                    <span className="documentos-badge">
-                      <FileText size={14} />
-                      {miembro.documentos_pdf.length}
-                    </span>
-                  ) : (
-                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Sin docs</span>
-                  )}
-                </motion.div>
 
                 <motion.div
                   style={{ display: 'flex', justifyContent: 'center' }}
@@ -875,31 +887,7 @@ const handleVerDocumento = async (documento) => {
                     <Edit size={18} />
                   </motion.button>
                   
-                  {/* NUEVO BOTÓN PARA MODAL DE DOCUMENTOS */}
-                  <motion.button
-                    whileHover={{ 
-                      scale: 1.2,
-                      rotate: 15,
-                      transition: { duration: 0.2 }
-                    }}
-                    whileTap={{ scale: 0.9, rotate: -15 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleOpenDocumentosModal(miembro);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#10B981',
-                      padding: '5px',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                    title="Gestionar Documentos"
-                  >
-                    <FileText size={18} />
-                  </motion.button>
+            
                 </div>
               </motion.div>
             ))}
@@ -1311,15 +1299,7 @@ const handleVerDocumento = async (documento) => {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label>Empresa</label>
-                    <input
-                      type="text"
-                      value={formData.empresa}
-                      onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                      placeholder="Empresa que representa"
-                    />
-                  </div>
+                 
 
                   <div className="form-group">
                     <label>Estado</label>
@@ -1413,13 +1393,7 @@ const handleVerDocumento = async (documento) => {
                   <UserCheck size={16} />
                   Información General
                 </button>
-                <button 
-                  className={`tab-button ${tabActivo === 'documentos' ? 'active' : ''}`}
-                  onClick={() => setTabActivo('documentos')}
-                >
-                  <FileText size={16} />
-                  Documentos
-                </button>
+                
                 
               </div>
 
@@ -1466,14 +1440,7 @@ const handleVerDocumento = async (documento) => {
                       />
                     </div>
 
-                    <div className="form-group">
-                      <label>Empresa</label>
-                      <input
-                        type="text"
-                        value={formData.empresa}
-                        onChange={(e) => setFormData({...formData, empresa: e.target.value})}
-                      />
-                    </div>
+                    
 
                     <div className="form-group">
                       <label>Estado</label>
@@ -1549,146 +1516,7 @@ const handleVerDocumento = async (documento) => {
                   </div>
                 </form>
               )}
-              {tabActivo === 'documentos' && (
-  <div>
-    <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Documentos del Miembro</h4>
-    
-    {miembroSeleccionado.documentos_pdf && miembroSeleccionado.documentos_pdf.length > 0 ? (
-      <div style={{ marginBottom: '2rem' }}>
-        {miembroSeleccionado.documentos_pdf.map((doc, index) => (
-          <div key={index} style={{
-            padding: '1rem',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            marginBottom: '0.5rem',
-            background: '#f9fafb',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
-                <span className={getTipoDocBadge(doc.tipo_documento)}>
-                  {doc.tipo_documento}
-                </span>
-                <strong style={{ marginLeft: '0.5rem' }}>{doc.nombre_archivo}</strong>
-              </div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                {new Date(doc.fecha_subida).toLocaleDateString()} • {doc.tamano_kb} KB
-              </div>
-              {doc.descripcion && (
-                <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#6b7280' }}>
-                  {doc.descripcion}
-                </p>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => handleVerDocumento(doc)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#3B82F6',
-                  padding: '4px'
-                }}
-                title="Ver documento"
-              >
-                <FileText size={16} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => handleDescargarDocumento(doc)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#10B981',
-                  padding: '4px'
-                }}
-                title="Descargar documento"
-              >
-                <Download size={16} />
-              </motion.button>
-            </div>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
-        No hay documentos registrados
-      </p>
-    )}
-
-    <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Agregar Nuevo Documento</h4>
-    <form onSubmit={handleAgregarDocumentoModal}>
-      <div className="form-grid">
-        <div className="form-group">
-          <label>Nombre del Archivo *</label>
-          <input
-            type="text"
-            value={documentoModalData.nombre_archivo}
-            onChange={(e) => setDocumentoModalData({...documentoModalData, nombre_archivo: e.target.value})} 
-            placeholder="Nombre del documento"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Tipo de Documento *</label>
-          <select
-            value={documentoModalData.tipo_documento} 
-            onChange={(e) => setDocumentoModalData({...documentoModalData, tipo_documento: e.target.value})} 
-            required
-          >
-            <option value="acta">Acta</option>
-            <option value="contrato">Contrato</option>
-            <option value="informe">Informe</option>
-            <option value="certificado">Certificado</option>
-            <option value="nombramiento">Nombramiento</option>
-            <option value="otro">Otro</option>
-          </select>
-        </div>
-
-        <div className="form-group full-width">
-          <label>Descripción</label>
-          <textarea
-            value={documentoModalData.descripcion} 
-            onChange={(e) => setDocumentoModalData({...documentoModalData, descripcion: e.target.value})}
-            placeholder="Descripción del documento..."
-            rows="2"
-          />
-        </div>
-
-        <div className="form-group full-width">
-          <label>Archivo PDF</label>
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={(e) => setDocumentoModalData({...documentoModalData, archivo: e.target.files[0]})} 
-          />
-        </div>
-      </div>
-
-      <div className="modal-actions">
-        <motion.button 
-          type="submit" 
-          className="btn-guardar"
-         
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Plus size={16} />
-          Agregar Documento
-        </motion.button>
-      </div>
-    </form>
-  </div>
-)}
-              
+                            
               {tabActivo === 'historial' && (
                 <div>
                   <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Historial de Cargos</h4>
@@ -1774,150 +1602,6 @@ const handleVerDocumento = async (documento) => {
 
   
      {/* NUEVO MODAL PARA GESTIÓN DE DOCUMENTOS */}
-<AnimatePresence>
-  {mostrarModalDocumentos && miembroSeleccionado && (
-    <motion.div className="modal-overlay" onClick={handleCloseDocumentosModal}>
-      <motion.div className="modal-content" style={{ maxWidth: '1000px', maxHeight: '90vh', overflow: 'auto' }}>
-        <h3 className="modal-title">
-          <FileText size={20} />
-          Gestión de Documentos - {miembroSeleccionado.nombre}
-        </h3>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
-          {/* Lista de Documentos Existentes */}
-          <div>
-            <h4 style={{ marginBottom: '1rem', color: '#374151' }}>Documentos Existentes</h4>
-            
-            {miembroSeleccionado.documentos_pdf && miembroSeleccionado.documentos_pdf.length > 0 ? (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {miembroSeleccionado.documentos_pdf.map((doc, index) => (
-                  <motion.div 
-                    key={doc._id || index}
-                    style={{
-                      padding: '1rem',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      marginBottom: '0.5rem',
-                      background: '#f9fafb',
-                      position: 'relative'
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
-                          <span className={getTipoDocBadge(doc.tipo_documento)}>
-                            {doc.tipo_documento}
-                          </span>
-                          <strong style={{ marginLeft: '0.5rem', fontSize: '1rem' }}>
-                            {doc.nombre_archivo}
-                          </strong>
-                        </div>
-                        {doc.numero_sesion && (
-                          <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.25rem' }}>
-                            <strong>Sesión:</strong> {doc.numero_sesion}
-                          </div>
-                        )}
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                          {new Date(doc.fecha_subida).toLocaleDateString('es-ES', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </div>
-                      
-                      {/* AQUÍ VA EL FRAGMENTO DE LOS BOTONES */}
-                      <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleVerDocumento(doc)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#3B82F6',
-                            padding: '4px'
-                          }}
-                          title="Ver documento en Google Drive"
-                        >
-                          <FileText size={16} />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleDescargarDocumento(doc)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#10B981',
-                            padding: '4px'
-                          }}
-                          title="Descargar documento"
-                        >
-                          <Download size={16} />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleOpenEditarDocumentoModal(doc)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#F59E0B',
-                            padding: '4px'
-                          }}
-                          title="Editar documento"
-                        >
-                          <Edit size={16} />
-                        </motion.button>
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => handleEliminarDocumentoModal(doc._id)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#ef4444',
-                            padding: '4px'
-                          }}
-                          title="Eliminar documento"
-                        >
-                          <Trash2 size={16} />
-                        </motion.button>
-                      </div>
-                      {/* FIN DEL FRAGMENTO */}
-                      
-                    </div>
-                    {doc.descripcion && (
-                      <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.4' }}>
-                        {doc.descripcion}
-                      </p>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ color: '#6b7280', textAlign: 'center', padding: '2rem' }}>
-                No hay documentos registrados
-              </p>
-            )}
-          </div>
-
-          {/* Formulario para Agregar/Editar Documentos */}
-          <div>
-            {/* ... formulario permanece igual ... */}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
 
       {/* Notificaciones */}
       <AnimatePresence>
