@@ -179,14 +179,22 @@ if (!canManage) return;
 };
 
 // Eliminar estudiante
-const deleteStudent = async (id) => {
- if (!canManage) return;
+const deleteStudent = async (student) => {
+  if (!canManage) return;
+
+  // Confirmación con el nombre del alumno
+  const confirmacion = window.confirm(
+    `¿Estás seguro de que deseas eliminar al estudiante ${student.nombre_completo}? Esta acción no se puede deshacer.`
+  );
+
+  if (!confirmacion) return; // Si el usuario cancela, salimos de la función
+
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    const response = await fetch(`${API_URL}/${id}`, {
+    const response = await fetch(`${API_URL}/${student.id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`
@@ -195,7 +203,7 @@ const deleteStudent = async (id) => {
 
     if (response.ok) {
       fetchStudents();
-      setSelectedStudents(prev => prev.filter(studentId => studentId !== id));
+      setSelectedStudents(prev => prev.filter(studentId => studentId !== student.id));
       setNotification({
         message: 'Estudiante eliminado exitosamente',
         type: 'success'
@@ -204,7 +212,6 @@ const deleteStudent = async (id) => {
       const result = await response.json();
       throw new Error(result.message || 'Error al eliminar estudiante');
     }
-
   } catch (error) {
     console.error('Error deleting student:', error);
     setNotification({
@@ -216,7 +223,7 @@ const deleteStudent = async (id) => {
 
 // Eliminar estudiantes seleccionados
 const deleteSelectedStudents = async () => {
-if (!canManage) return;
+  if (!canManage) return;
   if (selectedStudents.length === 0) {
     setNotification({
       message: 'Seleccione al menos un estudiante para eliminar',
@@ -225,7 +232,13 @@ if (!canManage) return;
     return;
   }
 
-  
+  // Confirmación para eliminación masiva
+  const confirmacion = window.confirm(
+    `¿Estás seguro de que deseas eliminar los ${selectedStudents.length} estudiantes seleccionados?`
+  );
+
+  if (!confirmacion) return;
+
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('Usuario no autenticado');

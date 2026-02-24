@@ -109,7 +109,7 @@ const calcularEdad = (fechaNacimiento) => {
       if (student.fecha_nacimiento) {
   const fechaFormateada = student.fecha_nacimiento.split('T')[0];
   formattedStudent.fecha_nacimiento = fechaFormateada;
-  formattedStudent.edad = calcularEdad(fechaFormateada); // 👈 recalcula edad
+  formattedStudent.edad = calcularEdad(fechaFormateada); 
 }
 
 
@@ -235,59 +235,73 @@ const calcularEdad = (fechaNacimiento) => {
 
 
   const validateForm = () => {
-    const newErrors = {};
+  const newErrors = {};
 
-    // Validaciones requeridas
-    const requiredFields = [
-      'nombre_completo', 'fecha_nacimiento', 'genero', 'id_documento',
-      'residencia_direccion', 'grado_a_matricular', 'nombre_encargado',
-      'parentesco_encargado', 'id_documento_encargado', 'telefono_encargado'
-    ];
+  // 1. Validaciones de Campos Requeridos
+  const requiredFields = [
+    'nombre_completo', 'fecha_nacimiento', 'genero', 'id_documento',
+    'residencia_direccion', 'grado_a_matricular', 'nombre_encargado',
+    'parentesco_encargado', 'id_documento_encargado', 'telefono_encargado'
+  ];
 
-    requiredFields.forEach(field => {
-      const fieldValue = formData[field];
-      if (!fieldValue || (typeof fieldValue === 'string' && !fieldValue.trim())) {
-        newErrors[field] = 'Este campo es requerido';
-      }
-    });
-
-    // Validación de email si se proporciona
-    if (formData.email_encargado && !/\S+@\S+\.\S+/.test(formData.email_encargado)) {
-      newErrors.email_encargado = 'Email inválido';
+  requiredFields.forEach(field => {
+    const fieldValue = formData[field];
+    if (!fieldValue || (typeof fieldValue === 'string' && !fieldValue.trim())) {
+      newErrors[field] = 'Este campo es requerido';
     }
+  });
 
-    // Validación de edad numérica
-    
-    // Validación de teléfonos (solo números)
-    const phoneFields = ['telefono_alumno', 'telefono_encargado', 'contacto_emergencia_telefono'];
-    phoneFields.forEach(field => {
-      if (formData[field] && !/^\d+$/.test(formData[field])) {
+  // --- NUEVAS VALIDACIONES ESPECÍFICAS ---
+
+  // 2. Validación: Solo Letras (Nombre alumno, encargado y contacto emergencia)
+  const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+  const nameFields = ['nombre_completo', 'nombre_encargado', 'contacto_emergencia_nombre'];
+
+  nameFields.forEach(field => {
+    if (formData[field] && !soloLetrasRegex.test(formData[field])) {
+      newErrors[field] = 'Este campo solo debe contener letras';
+    }
+  });
+
+  // 3. Validación: Solo Números (Documentos de identidad)
+  const soloNumerosRegex = /^\d+$/;
+  const idFields = ['id_documento', 'id_documento_encargado'];
+
+  idFields.forEach(field => {
+    if (formData[field] && !soloNumerosRegex.test(formData[field])) {
+      newErrors[field] = 'El documento debe contener solo números';
+    }
+  });
+
+  // --- VALIDACIONES EXISTENTES MEJORADAS ---
+
+  // 4. Validación de email
+  if (formData.email_encargado && !/\S+@\S+\.\S+/.test(formData.email_encargado)) {
+    newErrors.email_encargado = 'Email inválido';
+  }
+
+  // 5. Validación de Teléfonos (Formato y Longitud)
+  const phoneFields = ['telefono_alumno', 'telefono_encargado', 'contacto_emergencia_telefono'];
+  phoneFields.forEach(field => {
+    if (formData[field]) {
+      if (!soloNumerosRegex.test(formData[field])) {
         newErrors[field] = 'Solo se permiten números';
+      } else if (formData[field].length < 8) {
+        newErrors[field] = 'El teléfono debe tener al menos 8 dígitos';
       }
-    });
-
-    // Validación de longitud de teléfonos
-    if (formData.telefono_encargado && formData.telefono_encargado.length < 8) {
-      newErrors.telefono_encargado = 'El teléfono debe tener al menos 8 dígitos';
     }
+  });
 
-    if (formData.telefono_alumno && formData.telefono_alumno.length < 8) {
-      newErrors.telefono_alumno = 'El teléfono debe tener al menos 8 dígitos';
-    }
-
-    if (formData.contacto_emergencia_telefono && formData.contacto_emergencia_telefono.length < 8) {
-      newErrors.contacto_emergencia_telefono = 'El teléfono debe tener al menos 8 dígitos';
-    }
-
-    setErrors(newErrors);
-    
-    if (Object.keys(newErrors).length > 0) {
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 5000);
-    }
-    
-    return Object.keys(newErrors).length === 0;
-  };
+  // Manejo de estado de errores y notificaciones
+  setErrors(newErrors);
+  
+  if (Object.keys(newErrors).length > 0) {
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 5000);
+  }
+  
+  return Object.keys(newErrors).length === 0;
+};
 
   
   const prepareDataForBackend = () => {

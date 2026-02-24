@@ -46,6 +46,7 @@ const Directiva = () => {
   // NUEVO ESTADO PARA EL MODAL DE DOCUMENTOS
   const [mostrarModalDocumentos, setMostrarModalDocumentos] = useState(false);
   const [documentoEditando, setDocumentoEditando] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -154,29 +155,48 @@ const cargarMiembros = async () => {
   e.preventDefault();
   
   try {
+    // 1. Validación de Nombre (Solo letras y espacios, incluyendo tildes y ñ)
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     if (!formData.nombre.trim()) {
       showNotification('El nombre del miembro es obligatorio', 'error');
       return;
     }
+    if (!regexNombre.test(formData.nombre.trim())) {
+      showNotification('El nombre solo puede contener letras y espacios', 'error');
+      return;
+    }
+
+    // 2. Validación de Cargo
     if (!formData.cargo.trim()) {
       showNotification('El cargo es obligatorio', 'error');
       return;
     }
+
+    // 3. Validación de Email
     if (!formData.email.trim()) {
       showNotification('El email es obligatorio', 'error');
       return;
     }
+
+    // 4. Validación de Teléfono (Solo números)
+    // El regex \d+ verifica que solo haya dígitos. 
+    // Si quieres limitar la cantidad (ej. 8 números), usa /^\d{8}$/
+    const regexTelefono = /^\d+$/; 
     if (!formData.telefono) {
       showNotification('El teléfono es obligatorio', 'error');
       return;
     }
+    if (!regexTelefono.test(formData.telefono.toString().trim())) {
+      showNotification('El teléfono solo puede contener números', 'error');
+      return;
+    }
 
+    // --- CONTINÚA TU LÓGICA DE ENVÍO ---
     const datosMiembro = {
       ...formData,
       fecha_registro: new Date(formData.fecha_registro)
     };
 
-    //  Obtener token del usuario autenticado
     const user = auth.currentUser;
     if (!user) {
       showNotification('No estás autenticado. Por favor inicia sesión.', 'error');
@@ -185,12 +205,11 @@ const cargarMiembros = async () => {
 
     const token = await user.getIdToken();
 
-    //  Enviar solicitud al backend con el token
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, //  Token agregado
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(datosMiembro)
     });
@@ -211,28 +230,47 @@ const cargarMiembros = async () => {
 };
 
 
-  const handleEditarMiembro = async (e) => {
+ const handleEditarMiembro = async (e) => {
   e.preventDefault();
 
   try {
     loadingController.start();
+
+    // 1. Validación de Nombre (Solo letras y espacios)
+    const regexNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
     if (!formData.nombre.trim()) {
       showNotification('El nombre del miembro es obligatorio', 'error');
       return;
     }
+    if (!regexNombre.test(formData.nombre.trim())) {
+      showNotification('El nombre solo puede contener letras y espacios', 'error');
+      return;
+    }
+
+    // 2. Validación de Cargo
     if (!formData.cargo.trim()) {
       showNotification('El cargo es obligatorio', 'error');
       return;
     }
+
+    // 3. Validación de Email
     if (!formData.email.trim()) {
       showNotification('El email es obligatorio', 'error');
       return;
     }
+
+    // 4. Validación de Teléfono (Solo números)
+    const regexTelefono = /^\d+$/; 
     if (!formData.telefono) {
       showNotification('El teléfono es obligatorio', 'error');
       return;
     }
+    if (!regexTelefono.test(formData.telefono.toString().trim())) {
+      showNotification('El teléfono solo puede contener números', 'error');
+      return;
+    }
 
+    // Lógica de preparación de datos
     const datosActualizados = {
       ...formData,
       fecha_registro: new Date(formData.fecha_registro)
@@ -243,7 +281,7 @@ const cargarMiembros = async () => {
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    // Enviar la solicitud con el token en headers
+    // Enviar la solicitud con el token en headers (Método PUT)
     const res = await fetch(`${API_URL}/${miembroSeleccionado._id}`, {
       method: 'PUT',
       headers: {
@@ -258,6 +296,7 @@ const cargarMiembros = async () => {
       throw new Error(errorData.message || 'Error al editar el miembro');
     }
 
+    // Finalización exitosa
     await cargarMiembros();
     setMiembroSeleccionado(null);
     resetForm();
@@ -266,11 +305,10 @@ const cargarMiembros = async () => {
   } catch (err) {
     console.error(err.message);
     showNotification(err.message || 'Error al editar el miembro', 'error');
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
+  } finally {
+    loadingController.stop(); 
+  }
 };
-
 
 // Eliminar miembro
 
