@@ -8,9 +8,6 @@ const cors = require("cors");
 
 // Rutas
 const horarios = require("./Routes/Horarios");
-const aulas = require("./Routes/aulasRoutes");
-const alumnos = require("./Routes/alumnosRoutes");
-const docentes = require("./Routes/docentesRoutes");
 const ordencompra = require('./Routes/ordenCompra'); 
 const bienesRoutes = require("./Routes/bienesRoutes");
 const usuarios_route = require('./Routes/usuario_ruta'); 
@@ -24,6 +21,10 @@ const directivaRoutes = require("./Routes/directivaRoutes");
 const question = require("./Routes/questionRoutes");
 const matriculas = require("./Routes/matriculas");
 const gradosRoutes = require("./Routes/gradosRoutes");
+const bitacora = require("./Routes/auditoriaRoutes");
+const Rol = require("./Models/Rol");
+const rolRoutes = require("./Routes/rol_routes"); 
+const authRoutes = require("./Routes/authRoutes");
 
 const app = express();
 app.use(express.json());
@@ -64,9 +65,7 @@ app.use("/api/bienes", bienesRoutes);
 app.use("/api/", usuarios_route);
 app.use("/api/", dashboard_route);
 app.use("/api/horario", horarios);
-app.use("/api/aula", aulas);
-app.use("/api/alumnos", alumnos);
-app.use("/api/docentes", docentes);
+
 app.use("/api/directiva", directivaRoutes);
 app.use("/api/personal", personalRoutes);
 app.use("/api/proveedores", proveedoresRoutes);
@@ -76,6 +75,10 @@ app.use("/api/biblioteca", biblioteca);
 app.use("/api/questions", question);
 app.use("/api/matriculas", matriculas);
 app.use("/api/grados", gradosRoutes);
+app.use("/api/auditoria", bitacora);
+app.use("/api/", rolRoutes);
+app.use("/api/", authRoutes);
+
 
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

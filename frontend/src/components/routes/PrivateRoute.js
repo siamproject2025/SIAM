@@ -1,98 +1,139 @@
-import React, { useState, useEffect } from "react";
+// components/PrivateRoute.jsx
+import React, { useState, useEffect, useRef } from "react"; // ← IMPORTANTE: agregar useRef
 import { Navigate, Outlet } from "react-router-dom";
 import { auth } from "../authentication/Auth";
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/usuarios/role";
+const API_URL = process.env.REACT_APP_API_URL;
 
-const PrivateRoute = ({ allowedRoles = [] }) => {
+const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR" }) => {
   const [authState, setAuthState] = useState({
     loading: true,
     isAuth: false,
     role: null,
-    hasRole: true, // nuevo: indica si el rol es válido
+    permissions: [],
+    hasAccess: true,
   });
 
- useEffect(() => {
-  const verifyUser = async () => {
-    try {
-      const user = auth.currentUser;
+  // 👇 Ref para controlar que solo se ejecute una vez
+  const hasVerified = useRef(false);
 
-      if (!user) {
-        console.log("️ No hay usuario autenticado");
+  useEffect(() => {
+    // 👇 Si ya verificó, no hacer nada
+    if (hasVerified.current) return;
+    
+    const verifyAccess = async () => {
+      try {
+        const user = auth.currentUser;
+
+        if (!user) {
+          console.log("❌ No hay usuario autenticado");
+          setAuthState({
+            loading: false,
+            isAuth: false,
+            role: null,
+            permissions: [],
+            hasAccess: true,
+          });
+          hasVerified.current = true;
+          return;
+        }
+
+        const token = await user.getIdToken();
+        
+        // 1. Obtener el rol del usuario
+        const roleResponse = await fetch(`${API_URL}/api/usuarios/role`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!roleResponse.ok) throw new Error("Error al verificar usuario");
+        
+        const roleData = await roleResponse.json();
+        const userRole = roleData?.role;
+
+        // 2. Obtener permisos del usuario
+        let userPermissions = [];
+        try {
+          const permisosResponse = await fetch(`${API_URL}/api/mis-permisos`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (permisosResponse.ok) {
+            const permisosData = await permisosResponse.json();
+            userPermissions = permisosData.permisos || [];
+          }
+        } catch (permError) {
+          console.log("Endpoint de permisos no disponible");
+        }
+
+        // 3. Verificar acceso
+        let hasRequiredAccess = true;
+
+        if (requiredPermissions.length > 0) {
+          const permResponse = await fetch(`${API_URL}/api/verify-access`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              roles: allowedRoles,
+              permisos: requiredPermissions,
+              mode: mode,
+            }),
+          });
+
+          if (permResponse.ok) {
+            const permData = await permResponse.json();
+            hasRequiredAccess = permData.hasAccess;
+          }
+        } else if (allowedRoles.length > 0) {
+          hasRequiredAccess = allowedRoles.includes(userRole);
+        }
+
+        setAuthState({
+          loading: false,
+          isAuth: true,
+          role: userRole,
+          permissions: userPermissions,
+          hasAccess: hasRequiredAccess,
+        });
+
+        // 👇 Marcar que ya verificó
+        hasVerified.current = true;
+
+      } catch (error) {
+        console.error("❌ Error verificando usuario:", error.message);
         setAuthState({
           loading: false,
           isAuth: false,
           role: null,
-          hasRole: true,
+          permissions: [],
+          hasAccess: true,
         });
-        return;
+        hasVerified.current = true;
       }
+    };
 
-      const token = await user.getIdToken();
-     
-      const response = await fetch(API_URL, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    verifyAccess();
+  }, []); // 👈 Array de dependencias VACÍO - solo se ejecuta una vez al montar
 
-     
+  if (authState.loading) return (
+    <div className="loading-screen" style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      fontSize: '1.2rem',
+      color: '#666'
+    }}>
+      Cargando...
+    </div>
+  );
 
-      if (!response.ok) throw new Error("Error al verificar usuario");
-
-      // Intentamos ver el contenido bruto antes de convertirlo a JSON
-      const rawText = await response.text();
-
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (err) {
-       
-        throw new Error("El servidor devolvió una respuesta no válida (no JSON).");
-      }
-
-      const userRole = data?.role;
-     
-
-      if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-        setAuthState({
-          loading: false,
-          isAuth: true,
-          role: userRole,
-          hasRole: false,
-        });
-      } else {
-        setAuthState({
-          loading: false,
-          isAuth: true,
-          role: userRole,
-          hasRole: true,
-        });
-      }
-    } catch (error) {
-      console.error(" Error verificando usuario:", error.message);
-      setAuthState({
-        loading: false,
-        isAuth: false,
-        role: null,
-        hasRole: true,
-      });
-    }
-  };
-
-  verifyUser();
-}, [allowedRoles]);
-
-
-
-  if (authState.loading) return <div>Cargando...</div>;
-
-  // No está autenticado → landing
   if (!authState.isAuth) return <Navigate to="/landing" replace />;
-
-  // Está autenticado pero el rol no coincide → restricted
-  if (!authState.hasRole) return <Navigate to="/restricted" replace />;
+  if (!authState.hasAccess) return <Navigate to="/restricted" replace />;
 
   return <Outlet />;
 };
