@@ -14,7 +14,7 @@ import Home from "./screens/Models/Dashboard/Home";
 //import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
-
+import CrearRol from './screens/Models/CreacionRol/CrearRol'
 
 //Models
 import OrdenCompra from './screens/Models/OrdenCompra/ordencompra';
@@ -212,6 +212,11 @@ function App() {
             {/* ==================== MÓDULO DASHBOARD ==================== */}
             <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
               <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+
+             {/* ==================== MÓDULO ROLES ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+              <Route path="/roles" element={<CrearRol />} />
             </Route>
 
             {/* ==================== RUTA RESTRINGIDA ==================== */}

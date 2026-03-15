@@ -25,6 +25,7 @@ const bitacora = require("./Routes/auditoriaRoutes");
 const Rol = require("./Models/Rol");
 const rolRoutes = require("./Routes/rol_routes"); 
 const authRoutes = require("./Routes/authRoutes");
+const audit = require("./Routes/auditControlRoutes");
 
 const app = express();
 app.use(express.json());
@@ -78,7 +79,7 @@ app.use("/api/grados", gradosRoutes);
 app.use("/api/auditoria", bitacora);
 app.use("/api/", rolRoutes);
 app.use("/api/", authRoutes);
-
+app.use("/api/", audit);
 
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

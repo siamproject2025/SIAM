@@ -2,14 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import "../../../styles/Bitacora/Bitacora.css"
+
 const Bitacora = () => {
   // Estados con valores por defecto seguros
+  // Nuevos estados para control de auditoría
+  const [auditEnabled, setAuditEnabled] = useState(true);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [auditAction, setAuditAction] = useState(null); // 'disable' o 'enable'
+  const [auditLoading, setAuditLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [registros, setRegistros] = useState([]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [statusLoading, setStatusLoading] = useState(true);
   const [filters, setFilters] = useState({
     busqueda: '',
     modulo: 'todos',
@@ -64,6 +71,49 @@ const Bitacora = () => {
     { value: 'DENEGADO', label: 'Denegado' }
   ];
 
+  // Cargar estado de auditoría
+  const cargarEstadoAuditoria = async () => {
+    try {
+      const response = await api.get('/audit-status');
+      setAuditEnabled(response.data.enabled);
+    } catch (error) {
+      console.error('Error cargando estado:', error);
+      setAuditEnabled(true);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  // Cambiar estado de auditoría
+  const toggleAudit = async (enable) => {
+    setAuditLoading(true);
+    try {
+      const response = await api.post('/audit-status', { enabled: enable });
+      
+      if (response.data.enabled === enable) {
+        setAuditEnabled(enable);
+        setShowAuditModal(false);
+        alert(`✅ Auditoría ${enable ? 'activada' : 'desactivada'} correctamente`);
+        if (enable) cargarRegistros();
+      }
+    } catch (error) {
+      alert('❌ Error: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  // Abrir modal de confirmación
+  const confirmAuditToggle = (action) => {
+    setAuditAction(action);
+    setShowAuditModal(true);
+  };
+
+  // Cargar estado al montar el componente
+  useEffect(() => {
+    cargarEstadoAuditoria();
+  }, []);
+
   // Cargar registros
   const cargarRegistros = async () => {
     setLoading(true);
@@ -81,6 +131,11 @@ const Bitacora = () => {
           params.append(key, value);
         }
       });
+
+      // Agregar skipAudit si la auditoría está desactivada
+      if (!auditEnabled) {
+        params.append('skipAudit', 'true');
+      }
 
       console.log('Consultando API con params:', params.toString());
       
@@ -130,8 +185,10 @@ const Bitacora = () => {
 
   // Cargar datos al montar el componente y cuando cambien página o límite
   useEffect(() => {
-    cargarRegistros();
-  }, [page, limit]);
+    if (!statusLoading) {
+      cargarRegistros();
+    }
+  }, [page, limit, statusLoading]);
 
   // Función segura para obtener stats
   const getStatsValue = (key) => {
@@ -290,20 +347,48 @@ const Bitacora = () => {
   const totalPages = Math.ceil((totalCount || 0) / limit);
 
   // Renderizado condicional seguro
+  if (statusLoading) {
+    return (
+      <div className="bitacora-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Cargando configuración de auditoría...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bitacora-container">
-      {/* Header */}
+      {/* Header con indicador de estado */}
       <div className="bitacora-header fade-in">
-        <h1>
-          <span className="header-icon">📋</span>
-          Bitácora del Sistema
-        </h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <h1>
+            <span className="header-icon">📋</span>
+            Bitácora del Sistema
+          </h1>
+          
+          {/* Indicador de estado de auditoría */}
+          <div className={`audit-status-indicator ${auditEnabled ? 'audit-status-active' : 'audit-status-inactive'}`}>
+            <span style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: auditEnabled ? '#48bb78' : '#f56565',
+              animation: auditEnabled ? 'none' : 'pulse 1.5s infinite',
+              display: 'inline-block'
+            }}></span>
+            <span style={{ fontSize: '14px', fontWeight: '500' }}>
+              Auditoría: {auditEnabled ? 'ACTIVA' : 'INACTIVA'}
+            </span>
+          </div>
+        </div>
         <p>Registro detallado de todas las acciones realizadas en el sistema para fines de auditoría</p>
       </div>
 
       {/* Stats Cards - CON VALORES SEGUROS */}
       <div className="stats-grid">
-        <div className="stat-card total fade-in" style={{ animationDelay: '0.1s' }}>
+        <div className="stat-card-bitacora total fade-in" style={{ animationDelay: '0.1s' }}>
           <div className="stat-info">
             <h3>Total Registros</h3>
             <div className="stat-number">{stats?.total ?? 0}</div>
@@ -311,7 +396,7 @@ const Bitacora = () => {
           <div className="stat-icon">📊</div>
         </div>
 
-        <div className="stat-card exito fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="stat-card-bitacora exito fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="stat-info">
             <h3>Éxitos</h3>
             <div className="stat-number">{stats?.exitos ?? 0}</div>
@@ -319,7 +404,7 @@ const Bitacora = () => {
           <div className="stat-icon">✓</div>
         </div>
 
-        <div className="stat-card error fade-in" style={{ animationDelay: '0.3s' }}>
+        <div className="stat-card-bitacora error fade-in" style={{ animationDelay: '0.3s' }}>
           <div className="stat-info">
             <h3>Errores</h3>
             <div className="stat-number">{stats?.errores ?? 0}</div>
@@ -327,7 +412,7 @@ const Bitacora = () => {
           <div className="stat-icon">✗</div>
         </div>
 
-        <div className="stat-card denegado fade-in" style={{ animationDelay: '0.4s' }}>
+        <div className="stat-card-bitacora denegado fade-in" style={{ animationDelay: '0.4s' }}>
           <div className="stat-info">
             <h3>Denegados</h3>
             <div className="stat-number">{stats?.denegados ?? 0}</div>
@@ -431,8 +516,44 @@ const Bitacora = () => {
             <span>↓</span>
             Exportar
           </button>
+          
+          {/* Botón para control de auditoría */}
+          <button 
+            className={`btn ${auditEnabled ? 'btn-warning' : 'btn-success'}`}
+            onClick={() => confirmAuditToggle(auditEnabled ? 'disable' : 'enable')}
+            disabled={auditLoading}
+            style={{
+              background: auditEnabled ? '#ed8936' : '#48bb78',
+              color: 'white',
+              border: 'none',
+              minWidth: '160px'
+            }}
+          >
+            {auditLoading ? (
+              <>
+                <span className="spinner-small"></span>
+                Procesando...
+              </>
+            ) : (
+              <>
+                <span>{auditEnabled ? '🔴' : '🟢'}</span>
+                {auditEnabled ? 'Desactivar Auditoría' : 'Activar Auditoría'}
+              </>
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Mensaje cuando la auditoría está desactivada */}
+      {!auditEnabled && (
+        <div className="alert alert-warning" style={{ marginBottom: '20px' }}>
+          <span className="alert-icon">⚠️</span>
+          <div>
+            <strong>Auditoría desactivada:</strong> Los registros mostrados son históricos. 
+            Las nuevas acciones no se están registrando.
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="table-container fade-in">
@@ -725,6 +846,88 @@ const Bitacora = () => {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para auditoría */}
+      {showAuditModal && (
+        <div className="modal-overlay-bitacora" onClick={() => setShowAuditModal(false)}>
+          <div className="modal-content-bitacora" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header-bitacora" style={{ 
+              background: auditAction === 'disable' ? '#fed7d7' : '#c6f6d5'
+            }}>
+              <h2 style={{ color: auditAction === 'disable' ? '#742a2a' : '#22543d' }}>
+                <span className="header-icon">{auditAction === 'disable' ? '🔴' : '🟢'}</span>
+                {auditAction === 'disable' ? 'Desactivar Auditoría' : 'Activar Auditoría'}
+              </h2>
+              <button className="modal-close" onClick={() => setShowAuditModal(false)}>✗</button>
+            </div>
+            
+            <div className="modal-body-bitacora" style={{ padding: '24px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <span style={{ 
+                  fontSize: '48px',
+                  display: 'block',
+                  marginBottom: '16px'
+                }}>
+                  {auditAction === 'disable' ? '⚠️' : '✅'}
+                </span>
+                
+                <h3 style={{ margin: '0 0 12px 0', color: '#2d3748' }}>
+                  {auditAction === 'disable' 
+                    ? '¿Estás seguro de desactivar la auditoría?' 
+                    : '¿Estás seguro de activar la auditoría?'}
+                </h3>
+                
+                <p style={{ color: '#718096', fontSize: '14px', lineHeight: '1.6', margin: 0 }}>
+                  {auditAction === 'disable' 
+                    ? 'Al desactivar la auditoría, no se registrarán las acciones de los usuarios en el sistema. Esta acción puede afectar el cumplimiento de políticas de seguridad.'
+                    : 'Al activar la auditoría, se comenzarán a registrar todas las acciones de los usuarios nuevamente.'}
+                </p>
+              </div>
+
+              {auditAction === 'disable' && (
+                <div className="alert alert-warning" style={{ marginTop: '16px' }}>
+                  <span className="alert-icon">⚠️</span>
+                  <div>
+                    <strong>Importante:</strong> Esta acción quedará registrada en el sistema y puede ser auditada posteriormente.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowAuditModal(false)}
+                disabled={auditLoading}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={`btn ${auditAction === 'disable' ? 'btn-danger' : 'btn-success'}`}
+                onClick={() => toggleAudit(auditAction === 'enable')}
+                disabled={auditLoading}
+                style={{
+                  background: auditAction === 'disable' ? '#f56565' : '#48bb78',
+                  color: 'white',
+                  minWidth: '140px'
+                }}
+              >
+                {auditLoading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Procesando...
+                  </>
+                ) : (
+                  <>
+                    <span>{auditAction === 'disable' ? '🔴' : '🟢'}</span>
+                    {auditAction === 'disable' ? 'Sí, Desactivar' : 'Sí, Activar'}
+                  </>
+                )}
               </button>
             </div>
           </div>

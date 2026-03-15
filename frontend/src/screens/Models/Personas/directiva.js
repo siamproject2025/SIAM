@@ -990,58 +990,58 @@ const handleVerDocumento = async (documento) => {
                 transition={{ delay: 0.4, duration: 0.5 }}
               >
                 <motion.div 
-                  className="stat-card"
+                  className="stat-card-directiva"
                   whileHover={{ scale: 1.05, y: -2 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <div className="stat-icon">
+                  <div className="stat-card-directiva-directiva">
                     <Users size={24} />
                   </div>
-                  <div className="stat-info">
-                    <div className="stat-value">{totalMiembros}</div>
-                    <div className="stat-label">Total Miembros</div>
+                  <div className="stat-info-directiva">
+                    <div className="stat-value-directiva">{totalMiembros}</div>
+                    <div className="stat-label-directiva">Total Miembros</div>
                   </div>
                 </motion.div>
 
                 <motion.div 
-                  className="stat-card active"
+                  className="stat-card-directiva active"
                   whileHover={{ scale: 1.05, y: -2 }}
                   transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
                 >
-                  <div className="stat-icon">
+                  <div className="stat-card-directiva-directiva">
                     <UserCheck size={24} />
                   </div>
-                  <div className="stat-info">
-                    <div className="stat-value">{miembrosActivos}</div>
-                    <div className="stat-label">Miembros Activos</div>
+                  <div className="stat-info-directiva">
+                    <div className="stat-value-directiva">{miembrosActivos}</div>
+                    <div className="stat-label-directiva">Miembros Activos</div>
                   </div>
                 </motion.div>
 
                 <motion.div 
-                  className="stat-card inactivo"
+                  className="stat-card-directiva inactivo"
                   whileHover={{ scale: 1.05, y: -2 }}
                   transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
                 >
-                  <div className="stat-icon">
+                  <div className="stat-card-directiva-directiva">
                     <Clock size={24} />
                   </div>
-                  <div className="stat-info">
-                    <div className="stat-value">{miembrosInactivos}</div>
-                    <div className="stat-label">Miembros Inactivos</div>
+                  <div className="stat-info-directiva">
+                    <div className="stat-value-directiva">{miembrosInactivos}</div>
+                    <div className="stat-label-directiva">Miembros Inactivos</div>
                   </div>
                 </motion.div>
 
                 <motion.div 
-                  className="stat-card suspendido"
+                  className="stat-card-directiva suspendido"
                   whileHover={{ scale: 1.05, y: -2 }}
                   transition={{ type: "spring", stiffness: 300, delay: 0.3 }}
                 >
-                  <div className="stat-icon">
+                  <div className="stat-card-directiva-directiva">
                     <Shield size={24} />
                   </div>
-                  <div className="stat-info">
-                    <div className="stat-value">{miembrosSuspendidos}</div>
-                    <div className="stat-label">Miembros Suspendidos</div>
+                  <div className="stat-info-directiva">
+                    <div className="stat-value-directiva">{miembrosSuspendidos}</div>
+                    <div className="stat-label-directiva">Miembros Suspendidos</div>
                   </div>
                 </motion.div>
               </motion.div>

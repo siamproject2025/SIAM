@@ -40,7 +40,7 @@
   margin-bottom: 24px;
 }
 
-.stat-card {
+.stat-card-bitacora {
   background: white;
   border-radius: 12px;
   padding: 20px;
@@ -51,7 +51,7 @@
   align-items: center;
 }
 
-.stat-card:hover {
+.stat-card-bitacora:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
@@ -79,39 +79,39 @@
   font-size: 28px;
 }
 
-.stat-card.total .stat-icon {
+.stat-card-bitacora.total .stat-icon {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
 }
 
-.stat-card.total .stat-number {
+.stat-card-bitacora.total .stat-number {
   color: #667eea;
 }
 
-.stat-card.exito .stat-icon {
+.stat-card-bitacora.exito .stat-icon {
   background: rgba(72, 187, 120, 0.1);
   color: #48bb78;
 }
 
-.stat-card.exito .stat-number {
+.stat-card-bitacora.exito .stat-number {
   color: #48bb78;
 }
 
-.stat-card.error .stat-icon {
+.stat-card-bitacora.error .stat-icon {
   background: rgba(245, 101, 101, 0.1);
   color: #f56565;
 }
 
-.stat-card.error .stat-number {
+.stat-card-bitacora.error .stat-number {
   color: #f56565;
 }
 
-.stat-card.denegado .stat-icon {
+.stat-card-bitacora.denegado .stat-icon {
   background: rgba(237, 137, 54, 0.1);
   color: #ed8936;
 }
 
-.stat-card.denegado .stat-number {
+.stat-card-bitacora.denegado .stat-number {
   color: #ed8936;
 }
 

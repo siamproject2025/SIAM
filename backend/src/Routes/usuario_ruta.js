@@ -13,7 +13,7 @@ router.post('/usuarios', usuarioController.crearUsuario);
 // Listar usuarios - Usando permisos en lugar de roles fijos
 router.get('/usuarios', 
   authenticateUser, 
-  checkPermission('VER_USUARIOS'), // Nuevo permiso específico
+  checkPermission('VISUALIZAR_SEGURIDAD'), // Nuevo permiso específico
   usuarioController.listarUsuario
 );
 
@@ -32,7 +32,7 @@ router.put('/usuarios/:id/rol',
 // Eliminar usuario
 router.delete('/usuarios/:id', 
   authenticateUser,
-  checkPermission('ELIMINAR_USUARIOS'), // Permiso específico
+  checkPermission('ELIMINAR_SEGURIDAD'), // Permiso específico
   usuarioController.eliminarUsuario
 );
 

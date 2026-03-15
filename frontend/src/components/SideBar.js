@@ -29,7 +29,7 @@ const SideBar = () => {
   const categorias = {
     "Académico": ["Matricula", "Grados", "Horarios", "Calendario", "Biblioteca", "Actividades"],
     "Administrativo": ["Compras", "Proveedores", "Bienes", "Donaciones", "Personal", "Directiva"],
-    "Seguridad": ["Seguridad", "Auditoria"]
+    "Seguridad": ["Seguridad", "Auditoria", "Roles"]
   };
 
   // MAPEO DE MÓDULOS A PERMISOS (usado como respaldo)
@@ -48,7 +48,8 @@ const SideBar = () => {
     "Directiva": "VISUALIZAR_DIRECTIVA",
     "Seguridad": "VISUALIZAR_SEGURIDAD",
     "Auditoria": "VISUALIZAR_AUDITORIA",
-    "Dashboard": "VISUALIZAR_DASHBOARD"
+    "Dashboard": "VISUALIZAR_DASHBOARD",
+    "Roles" : "VISUALIZAR_ROLES"
   };
 
   const getCategoria = (titulo) => {
