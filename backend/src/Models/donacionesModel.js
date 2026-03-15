@@ -1,4 +1,3 @@
-// models/donacionesModel.js
 const mongoose = require('mongoose');
 
 const donacionSchema = new mongoose.Schema({
@@ -58,7 +57,7 @@ const donacionSchema = new mongoose.Schema({
     maxlength: [500, 'Las observaciones no pueden exceder 500 caracteres'],
     trim: true
   },
-  // NUEVOS CAMPOS PARA IMAGEN
+  // CAMPOS PARA IMAGEN
   imagen: {
     type: String, // Guardará la imagen en Base64
     default: null
@@ -70,7 +69,7 @@ const donacionSchema = new mongoose.Schema({
 }, {
   timestamps: true,
   versionKey: false
-},);
+});
 
 // Índices para mejorar el rendimiento
 donacionSchema.index({ id_donacion: 1 });
@@ -84,4 +83,4 @@ donacionSchema.statics.getNextId = async function() {
   return lastDonacion ? lastDonacion.id_donacion + 1 : 1;
 };
 
-module.exports = mongoose.model('Donacion',donacionSchema,'donaciones');
+module.exports = mongoose.model('Donacion', donacionSchema, 'donaciones');
