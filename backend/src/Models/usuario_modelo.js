@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
  roles: {
     type: [String],
-    enum: ["ADMIN", "DOCENTE", "PADRE"], // Solo estos valores son válidos
+   
     required: false
   },
   intentos_fallidos: {
