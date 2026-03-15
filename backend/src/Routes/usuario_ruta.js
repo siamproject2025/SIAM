@@ -6,6 +6,8 @@ const usuarioController = require('../Controllers/usuario_controller');
 const { authenticateUser } = require('../middleware/authMiddleWare');
 const { checkRole, checkAccess } = require('../middleware/checkRole');
 const { checkPermission } = require('../middleware/checkPermission');
+const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
+const Modelo = require("../Models/usuario_modelo"); // Importar modelo para capturar datos previos
 
 // Crear usuario (público)
 router.post('/usuarios', usuarioController.crearUsuario);
@@ -25,19 +27,21 @@ router.get("/usuarios/role", authenticateUser, (req, res) => {
 // Asignar roles a usuario
 router.put('/usuarios/:id/rol', 
   authenticateUser, 
-  checkPermission('ASIGNAR_ROLES'), // Permiso específico
+  checkPermission('ASIGNAR_ROLES'),capturarDatosPrevios(Modelo), registrarAuditoria('USUARIOS'),
+ // Permiso específico
   usuarioController.asignarRol
 );
 
 // Eliminar usuario
 router.delete('/usuarios/:id', 
   authenticateUser,
-  checkPermission('ELIMINAR_SEGURIDAD'), // Permiso específico
+  checkPermission('ELIMINAR_SEGURIDAD'),capturarDatosPrevios(Modelo), registrarAuditoria('USUARIOS'),
+ // Permiso específico
   usuarioController.eliminarUsuario
 );
 
 // Logout
-router.post('/usuarios/logout', authenticateUser, async (req, res) => {
+router.post('/usuarios/logout', authenticateUser, registrarAuditoria('USUARIOS'),async (req, res) => {
   try {
     const userId = req.user._id;
     await Auth.findByIdAndUpdate(userId, { loggedIn: false });

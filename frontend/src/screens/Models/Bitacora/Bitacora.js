@@ -2,7 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import "../../../styles/Bitacora/Bitacora.css"
-
+import { TbChartInfographic } from "react-icons/tb";
+import { FaBookBookmark } from "react-icons/fa6";
+import { FaCheckDouble } from "react-icons/fa";
+import { MdError } from "react-icons/md";
+import { IoWarning } from "react-icons/io5";
+import { FaSearch } from "react-icons/fa";
 const Bitacora = () => {
   // Estados con valores por defecto seguros
   // Nuevos estados para control de auditoría
@@ -368,7 +373,7 @@ const Bitacora = () => {
       <div className="bitacora-header fade-in">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           <h1>
-            <span className="header-icon">📋</span>
+            <span className="header-icon"><FaBookBookmark /></span>
             Bitácora del Sistema
           </h1>
           
@@ -397,7 +402,7 @@ const Bitacora = () => {
             <h3>Total Registros</h3>
             <div className="stat-number">{stats?.total ?? 0}</div>
           </div>
-          <div className="stat-icon">📊</div>
+          <div className="stat-icon"><TbChartInfographic /></div>
         </div>
 
         <div className="stat-card-bitacora exito fade-in" style={{ animationDelay: '0.2s' }}>
@@ -405,7 +410,7 @@ const Bitacora = () => {
             <h3>Éxitos</h3>
             <div className="stat-number">{stats?.exitos ?? 0}</div>
           </div>
-          <div className="stat-icon">✓</div>
+          <div className="stat-icon"><FaCheckDouble /></div>
         </div>
 
         <div className="stat-card-bitacora error fade-in" style={{ animationDelay: '0.3s' }}>
@@ -413,7 +418,7 @@ const Bitacora = () => {
             <h3>Errores</h3>
             <div className="stat-number">{stats?.errores ?? 0}</div>
           </div>
-          <div className="stat-icon">✗</div>
+          <div className="stat-icon"><MdError /></div>
         </div>
 
         <div className="stat-card-bitacora denegado fade-in" style={{ animationDelay: '0.4s' }}>
@@ -421,7 +426,7 @@ const Bitacora = () => {
             <h3>Denegados</h3>
             <div className="stat-number">{stats?.denegados ?? 0}</div>
           </div>
-          <div className="stat-icon">⚠</div>
+          <div className="stat-icon"><IoWarning /></div>
         </div>
       </div>
 
@@ -431,7 +436,7 @@ const Bitacora = () => {
           <div className="filter-group">
             <label>Buscar</label>
             <div className="search-input">
-              <span className="search-icon">🔍</span>
+              <span className="search-icon"></span>
               <input
                 type="text"
                 className="filter-input"
@@ -513,7 +518,7 @@ const Bitacora = () => {
             Actualizar
           </button>
           <button className="btn btn-primary" onClick={handleSearch}>
-            <span>🔍</span>
+            <span><FaSearch /></span>
             Buscar
           </button>
           <button className="btn btn-primary" onClick={handleExport}>
@@ -731,8 +736,8 @@ const Bitacora = () => {
           <div className="modal-content-bitacora" onClick={e => e.stopPropagation()}>
             <div className="modal-header-bitacora">
               <h2>
-                <span className="header-icon">📋</span>
-                Detalles del Registro
+                <span className="header-icon"><FaBookBookmark fontSize="30px"/>  </span>
+                 Detalles del Registro
               </h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>✗</button>
             </div>
@@ -863,10 +868,10 @@ const Bitacora = () => {
             <div className="modal-header-bitacora" style={{ 
               background: auditAction === 'disable' ? '#fed7d7' : '#c6f6d5'
             }}>
-              <h2 style={{ color: auditAction === 'disable' ? '#742a2a' : '#22543d' }}>
-                <span className="header-icon">{auditAction === 'disable' ? '🔴' : '🟢'}</span>
+              <h3 style={{ color: auditAction === 'disable' ? '#742a2a' : '#22543d' }}>
+               
                 {auditAction === 'disable' ? 'Desactivar Auditoría' : 'Activar Auditoría'}
-              </h2>
+              </h3>
               <button className="modal-close" onClick={() => setShowAuditModal(false)}>✗</button>
             </div>
             
@@ -877,7 +882,7 @@ const Bitacora = () => {
                   display: 'block',
                   marginBottom: '16px'
                 }}>
-                  {auditAction === 'disable' ? '⚠️' : '✅'}
+                  {auditAction === 'disable' ? <IoWarning/> : <FaCheckDouble/>}
                 </span>
                 
                 <h3 style={{ margin: '0 0 12px 0', color: '#2d3748' }}>
@@ -895,7 +900,7 @@ const Bitacora = () => {
 
               {auditAction === 'disable' && (
                 <div className="alert alert-warning" style={{ marginTop: '16px' }}>
-                  <span className="alert-icon">⚠️</span>
+                  <span className="alert-icon"><IoWarning/> </span>
                   <div>
                     <strong>Importante:</strong> Esta acción quedará registrada en el sistema y puede ser auditada posteriormente.
                   </div>
@@ -928,7 +933,7 @@ const Bitacora = () => {
                   </>
                 ) : (
                   <>
-                    <span>{auditAction === 'disable' ? '🔴' : '🟢'}</span>
+                    
                     {auditAction === 'disable' ? 'Sí, Desactivar' : 'Sí, Activar'}
                   </>
                 )}
