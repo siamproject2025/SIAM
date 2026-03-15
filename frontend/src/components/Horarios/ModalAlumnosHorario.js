@@ -21,7 +21,6 @@ const ModalAlumnosHorario = ({ params, onGuardar, onCerrar }) => {
       );
 
       if (yaExiste) {
-        console.log("El alumno ya está en la lista");
         return previo; // No hacer cambios
       }
 

@@ -81,9 +81,8 @@ const SideBar = () => {
           // Asumiendo que la respuesta es { role: "ADMIN" } o { roles: ["ADMIN"] }
           roles = rolesRes.data.role ? [rolesRes.data.role] : (rolesRes.data.roles || []);
           setUserRoles(roles);
-          console.log("Roles obtenidos:", roles);
+       
         } catch (roleError) {
-          console.log("Endpoint de roles no disponible");
         }
         
         // 👇 2. OBTENER PERMISOS DEL USUARIO
@@ -94,9 +93,7 @@ const SideBar = () => {
           });
           permisos = permisosRes.data.permisos || [];
           setUserPermissions(permisos);
-          console.log("Permisos obtenidos:", permisos);
         } catch (permError) {
-          console.log("Endpoint de permisos no disponible, continuando sin filtrado");
         }
         
         // 👇 3. OBTENER MÓDULOS DEL DASHBOARD
@@ -104,7 +101,6 @@ const SideBar = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        console.log("Módulos recibidos:", modulosRes.data.modulos);
         
         // 👇 4. FILTRAR MÓDULOS (PERMISOS + ROLES COMO FALLBACK)
         let modulosFiltrados = modulosRes.data.modulos;
@@ -117,7 +113,6 @@ const SideBar = () => {
             // OPCIÓN 1: Usar el permiso del módulo si existe
             if (modulo.permiso) {
               const tienePermiso = permisos.includes(modulo.permiso);
-              console.log(`📌 ${titulo} (por permiso directo): ${tienePermiso ? '✅' : '❌'}`);
               if (tienePermiso) return true;
             }
             
@@ -125,18 +120,15 @@ const SideBar = () => {
             const permisoRequerido = moduloAPermiso[titulo];
             if (permisoRequerido) {
               const tienePermiso = permisos.includes(permisoRequerido);
-              console.log(`📌 ${titulo} (mapeado a ${permisoRequerido}): ${tienePermiso ? '✅' : '❌'}`);
               if (tienePermiso) return true;
             }
             
             // 👇 FALLBACK: Verificar por ROLES del módulo
             if (modulo.roles && modulo.roles.length > 0 && roles.length > 0) {
               const tieneRol = modulo.roles.some(rol => roles.includes(rol));
-              console.log(`📌 ${titulo} (por rol): ${tieneRol ? '✅' : '❌'}`);
               if (tieneRol) return true;
             }
             
-            console.log(`📌 ${titulo}: ❌ NO mostrado`);
             return false;
           });
         } 
@@ -145,7 +137,6 @@ const SideBar = () => {
           modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
             if (modulo.roles && modulo.roles.length > 0) {
               const tieneRol = modulo.roles.some(rol => roles.includes(rol));
-              console.log(`📌 ${modulo.titulo} (solo roles): ${tieneRol ? '✅' : '❌'}`);
               return tieneRol;
             }
             return false;
@@ -153,7 +144,6 @@ const SideBar = () => {
         }
         
         setModulos(modulosFiltrados);
-        console.log("Módulos filtrados:", modulosFiltrados);
         
       } catch (err) {
         console.error("Error al cargar datos:", err);
@@ -186,7 +176,6 @@ const SideBar = () => {
     return acc;
   }, {});
 
-  console.log("Módulos agrupados:", modulosAgrupados);
 
   // Si no hay módulos, mostrar mensaje
   if (Object.keys(modulosAgrupados).length === 0) {

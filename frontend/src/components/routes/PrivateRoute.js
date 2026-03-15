@@ -26,7 +26,6 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
         const user = auth.currentUser;
 
         if (!user) {
-          console.log("❌ No hay usuario autenticado");
           setAuthState({
             loading: false,
             isAuth: false,
@@ -64,7 +63,6 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
             userPermissions = permisosData.permisos || [];
           }
         } catch (permError) {
-          console.log("Endpoint de permisos no disponible");
         }
 
         // 3. Verificar acceso

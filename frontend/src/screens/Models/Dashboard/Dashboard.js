@@ -44,14 +44,14 @@ const DashboardCards = () => {
 
   return (
     <div className="main dashboard-container">
-      <AdminOnly><Home></Home></AdminOnly>
-      {/* <div className="dashboard-main">
+      <Home></Home>
+      <div className="dashboard-main">
         <div className="dashboard-grid">
           {modulos.map((modulo, index) => {
             const IconComponent = FiIcons[modulo.icon] || FiIcons.FiFile;
             const moduleType = getModuleType(index);
             
-           return (
+            return (
               <div
                 key={modulo._id}
                 className={`dashboard-card ${moduleType}`}
@@ -69,7 +69,7 @@ const DashboardCards = () => {
             );
           })}
         </div>
-      </div>*/}
+      </div>
     </div>
   );
 };

@@ -485,7 +485,6 @@ const calcularEdad = (fechaNacimiento) => {
                   {grados.map((grado) => (
                     <option key={grado._id} value={grado._id}>
                       {grado.nombre}  {/* ️ Aquí accedes al nombre */}
-                      {console.log("Debug grados", grado)}
                     </option>
                   ))}
                 </select>

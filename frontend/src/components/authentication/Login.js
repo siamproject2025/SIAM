@@ -100,7 +100,6 @@ const Login = () => {
          // Login exitoso → resetear intentos en backend
            await axios.post(`${API_URL}/api/usuarios/login/exito`, { email });
       } catch (error) {
-          console.log("AYUDA",error)
           if (error.response && error.response.status === 429) {
             setError(error.response.data.message || "Cuenta bloqueada temporalmente");
             return; // cortamos el login AQUÍ
@@ -158,7 +157,6 @@ const saveUserToAPI = async (user, name, password) => {
     }
 
     const data = await response.json();
-    console.log("Usuario guardado en API:", data);
     
   } catch (error) {
     console.error("Error detallado al guardar usuario:", error);

@@ -146,10 +146,8 @@ const Bitacora = () => {
         params.append('skipAudit', 'true');
       }
 
-      console.log('Consultando API con params:', params.toString());
       
       const response = await api.get(`/auditoria?${params.toString()}`);
-      console.log('Respuesta de API:', response.data);
       
       // Asegurarnos de que response.data existe
       if (response && response.data) {
@@ -165,7 +163,6 @@ const Bitacora = () => {
           denegados: response.data.stats?.denegados ?? 0
         };
         
-        console.log('Actualizando stats:', nuevosStats);
         setStats(nuevosStats);
       } else {
         // Si no hay datos, mantener valores por defecto

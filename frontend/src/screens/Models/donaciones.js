@@ -203,7 +203,6 @@ const Donaciones = () => {
       });
 
       const responseData = await response.json();
-      console.log('Respuesta del servidor:', responseData);
 
       if (!response.ok) {
         throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
