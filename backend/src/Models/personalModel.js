@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const personalSchema = new mongoose.Schema({
@@ -47,13 +46,12 @@ const personalSchema = new mongoose.Schema({
     },
     default: 'ACTIVO'
   },
-    // NUEVOS CAMPOS PARA IMAGEN
   imagen: {
-    type: String, // Guardará la imagen en Base64
+    type: String,
     default: null
   },
   tipo_imagen: {
-    type: String, // Guardará el tipo MIME, ej. image/png
+    type: String,
     default: null
   },
   cv: [{
@@ -92,20 +90,20 @@ const personalSchema = new mongoose.Schema({
     match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Por favor ingrese un correo válido']
   },
   cargo_asignacion: {
-   cargo: {
-  type: String,
-  required: [true, 'El cargo es obligatorio'],
-  enum: {
-    values: [
-      'DOCENTE',
-      'DIRECTOR',
-      'LIMPIEZA',
-      'GUARDIA',
-      'SERVICIO_SOCIAL'
-    ],
-    message: 'Cargo no válido'
-  }
-},
+    cargo: {
+      type: String,
+      required: [true, 'El cargo es obligatorio'],
+      enum: {
+        values: [
+          'DOCENTE',
+          'DIRECTOR',
+          'LIMPIEZA',
+          'GUARDIA',
+          'SERVICIO_SOCIAL'
+        ],
+        message: 'Cargo no válido'
+      }
+    },
     horario_preferido: {
       type: String,
       enum: ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE']
