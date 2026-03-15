@@ -14,7 +14,7 @@ import Home from "./screens/Models/Dashboard/Home";
 //import Footer from './components/Footer';
 import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
-
+import CrearRol from './screens/Models/CreacionRol/CrearRol'
 
 //Models
 import OrdenCompra from './screens/Models/OrdenCompra/ordencompra';
@@ -37,6 +37,7 @@ import ChatFlotanteConsultas from './components/ChatFlotanteConsultas';
 import GradosPage from './screens/Models/Matriculas/grados';
 import AccountSettings from './components/authentication/AccountSettings';
 import ChangePasswordLogueado from './components/authentication/ChangePasswordLogueado';
+import Bitacora from './screens/Models/Bitacora/Bitacora';
 
 
 const auth = getAuth(appFirebase);
@@ -115,90 +116,128 @@ function App() {
 }, [user]);
 
 
-return (
-  <>
+  return (
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
-      {/* Renderiza NavBar solo si el usuario está autenticado */}
       {user && <NavBar />}
-        <ChatFlotanteConsultas></ChatFlotanteConsultas>
+      <ChatFlotanteConsultas />
+      
       <div className="app-content">
         {user && <SideBar />}
-<ChatFlotanteConsultas />
+        
         <main className="main-content">
-        <Routes>
-        {/* Rutas públicas */}
-        <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
-        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-        <Route path="/ResetPassword" element={<PublicRoute><ResetPassword /></PublicRoute>} />
-        <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
-        <Route path="/account" element={<AccountSettings />} />
-        <Route path="/contrasena" element={<ChangePasswordLogueado />} />
-       
+          <Routes>
+            {/* ==================== RUTAS PÚBLICAS ==================== */}
+            <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/ResetPassword" element={<PublicRoute><ResetPassword /></PublicRoute>} />
+            <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
+            <Route path="/account" element={<AccountSettings />} />
+            <Route path="/contrasena" element={<ChangePasswordLogueado />} />
 
-        {/* Rutas privadas */}
+            {/* ==================== MÓDULO HOME (cualquier autenticado) ==================== */}
+            <Route element={<PrivateRoute />}>
+              <Route path="/home" element={<Home />} />
+            </Route>
 
-        {/*Rutas a las que todos roles tienen acceso*/}
-        <Route element={<PrivateRoute allowedRoles={["PADRE", "ADMIN", "DOCENTE"]} />}>
-          <Route path="/home" element={<Home />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/biblioteca" element={<BibliotecaTest />} /> 
-          <Route path="/horarios" element={<Horarios />} />
-          <Route path="/Calendario" element={<CalendarioActividades />} />      
-        </Route>
+            {/* ==================== MÓDULO COMPRAS ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_COMPRAS"]} />}>
+              <Route path="/ordencompra" element={<OrdenCompra />} />
+            </Route>
 
-        {/*Rutas a las que Admin y docentes tienen acceso*/}
-        <Route element={<PrivateRoute allowedRoles={["", "ADMIN", "DOCENTE"]} />}>
-          <Route path="/home" element={<Home />} />{/*Graficos del dashboard*/}
-          <Route path="/ordencompra" element={<OrdenCompra />} />
-          <Route path="/Bienes" element={<Bienes />} />
-          <Route path="/proveedores" element={<Proveedores />} />
-          <Route path="/donaciones" element={<Donaciones />} />
-          <Route path="/grados" element={<GradosPage />} />
-          <Route path="/admisiones" element={<Matricula />} /> 
-          <Route path="/Actividades" element={<ActividadesPage />} />   
-        </Route>
+            {/* ==================== MÓDULO BIENES ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_BIENES"]} />}>
+              <Route path="/Bienes" element={<Bienes />} />
+            </Route>
 
-         {/*Rutas a las que solo admins tienen acceso*/}
-        <Route element={<PrivateRoute allowedRoles={["", "ADMIN", ""]} />}>
-          <Route path="/personal" element={<Personal />} />
-          <Route path="/seguridad" element={<AsignarRol />} />
-          <Route path="/directiva" element={<Directiva />} />  
-        </Route>
+            {/* ==================== MÓDULO PROVEEDORES ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_PROVEEDORES"]} />}>
+              <Route path="/proveedores" element={<Proveedores />} />
+            </Route>
 
+            {/* ==================== MÓDULO DONACIONES ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DONACIONES"]} />}>
+              <Route path="/donaciones" element={<Donaciones />} />
+            </Route>
 
-        <Route path="/restricted" element={<RestrictedPage />} />
+            {/* ==================== MÓDULO DIRECTIVA ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DIRECTIVA"]} />}>
+              <Route path="/directiva" element={<Directiva />} />
+            </Route>
 
-        {/* Redirigir rutas desconocidas */}
-        <Route path="*" element={<Navigate to="/landing" replace />} />
+            {/* ==================== MÓDULO PERSONAL ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_PERSONAL"]} />}>
+              <Route path="/personal" element={<Personal />} />
+            </Route>
+
+            {/* ==================== MÓDULO SEGURIDAD ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+              <Route path="/seguridad" element={<AsignarRol />} />
+            </Route>
+
+            {/* ==================== MÓDULO AUDITORIA ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_AUDITORIA"]} />}>
+              <Route path='/bitacira' element={<Bitacora />} />
+            </Route>
+
+            {/* ==================== MÓDULO BIBLIOTECA ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_BIBLIOTECA"]} />}>
+              <Route path="/biblioteca" element={<BibliotecaTest />} />
+            </Route>
+
+            {/* ==================== MÓDULO CALENDARIO ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_CALENDARIO"]} />}>
+              <Route path="/Calendario" element={<CalendarioActividades />} />
+            </Route>
+
+            {/* ==================== MÓDULO ACTIVIDADES ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_ACTIVIDADES"]} />}>
+              <Route path="/Actividades" element={<ActividadesPage />} />
+            </Route>
+
+            {/* ==================== MÓDULO GRADOS ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_GRADOS"]} />}>
+              <Route path="/grados" element={<GradosPage />} />
+            </Route>
+
+            {/* ==================== MÓDULO HORARIOS ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_HORARIOS"]} />}>
+              <Route path="/horarios" element={<Horarios />} />
+            </Route>
+
+            {/* ==================== MÓDULO MATRICULA ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_MATRICULA"]} />}>
+              <Route path="/admisiones" element={<Matricula />} />
+            </Route>
+
+            {/* ==================== MÓDULO DASHBOARD ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+
+             {/* ==================== MÓDULO ROLES ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+              <Route path="/roles" element={<CrearRol />} />
+            </Route>
+
+            {/* ==================== RUTA RESTRINGIDA ==================== */}
+            <Route path="/restricted" element={<RestrictedPage />} />
+
+            {/* ==================== REDIRECCIÓN ==================== */}
+            <Route path="*" element={<Navigate to="/landing" replace />} />
           </Routes>
-          </main>
-        </div>
+        </main>
+      </div>
 
-        {/*<Footer />*/}
       {/* Advertencia de inactividad */}
       {warningVisible && (
-        <div
-          className="inactivity-warning"
-          style={{
-            position: 'fixed',
-            bottom: 20,
-            right: 20,
-            padding: '15px 20px',
-            backgroundColor: '#ffc107',
-            color: '#000',
-            borderRadius: '8px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-            zIndex: 9999,
-          }}
-        >
-          ️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
+        <div className="inactivity-warning">
+          ⚠️ Sesión inactiva: se cerrará en 1 minuto. Haz clic o presiona cualquier tecla para continuar.
         </div>
       )}
     </div>
+  );
 
-    
-  </>
-);
+
 
 }
 export default App;

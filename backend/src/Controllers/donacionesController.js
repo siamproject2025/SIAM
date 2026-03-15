@@ -1,32 +1,75 @@
-// controllers/donacionesController.js
 const Donacion = require('../Models/donacionesModel');
 const multer = require('multer');
 const sharp = require('sharp');
+// const Auditoria = require('../Models/Auditoria'); // Descomentar cuando exista
 
 // Configuración de multer para guardar archivos en memoria
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Ruta para usar en Express (ejemplo)
-// app.post('/donaciones', upload.single('imagen'), createDonacion);
+// Función auxiliar para detectar cambios específicos
+const detectarCambiosEspecificos = (objetoAnterior, objetoNuevo) => {
+  if (!objetoAnterior || !objetoNuevo) return { cambios: null, descripcion: '' };
+  
+  const cambios = {};
+  const camposIgnorar = ['_id', '__v', 'createdAt', 'updatedAt', 'fecha_ingreso', 'imagen', 'tipo_imagen'];
+  
+  // Obtener todos los campos únicos
+  const todosLosCampos = new Set([
+    ...Object.keys(objetoAnterior),
+    ...Object.keys(objetoNuevo)
+  ]);
+  
+  for (const campo of todosLosCampos) {
+    if (camposIgnorar.includes(campo)) continue;
+    
+    const valorAnterior = objetoAnterior[campo];
+    const valorNuevo = objetoNuevo[campo];
+    
+    // Comparar valores (manejar undefined, null, objetos)
+    if (JSON.stringify(valorAnterior) !== JSON.stringify(valorNuevo)) {
+      cambios[campo] = {
+        anterior: valorAnterior || 'vacío',
+        nuevo: valorNuevo || 'vacío'
+      };
+    }
+  }
+  
+  // Crear descripción legible
+  const camposModificados = Object.keys(cambios);
+  let descripcion = '';
+  
+  if (camposModificados.length > 0) {
+    descripcion = camposModificados.map(campo => {
+      const cambio = cambios[campo];
+      // Truncar valores largos
+      const anterior = String(cambio.anterior).substring(0, 50);
+      const nuevo = String(cambio.nuevo).substring(0, 50);
+      return `${campo}: "${anterior}" → "${nuevo}"`;
+    }).join('; ');
+  }
+  
+  return { cambios, descripcion };
+};
 
+// Crear nueva donación
 exports.createDonacion = async (req, res) => {
   try {
+    console.log('🚀 Iniciando creación de donación...');
+    
     const nextId = await Donacion.getNextId();
 
     let imagenBase64 = null;
     let tipoImagen = null;
 
     if (req.file) {
-      console.log(' Archivo recibido, procesando con Sharp...');
+      console.log('📸 Archivo recibido, procesando con Sharp...');
 
-      // Procesar con Sharp
       const TARGET_WIDTH = 600;
       const TARGET_HEIGHT = 600;
-      const QUALITY = 60; // Ajusta según lo que necesites
+      const QUALITY = 60;
 
       let imageSharp = sharp(req.file.buffer).resize(TARGET_WIDTH, TARGET_HEIGHT, { fit: 'inside' });
 
-      // Convertir a JPEG si no lo es, y aplicar calidad
       if (req.file.mimetype === 'image/png' || req.file.mimetype === 'image/jpeg') {
         const processedBuffer = await imageSharp.jpeg({ quality: QUALITY }).toBuffer();
         imagenBase64 = processedBuffer.toString('base64');
@@ -36,37 +79,62 @@ exports.createDonacion = async (req, res) => {
         imagenBase64 = processedBuffer.toString('base64');
         tipoImagen = 'image/webp';
       } else {
-        // Para otros tipos, convertir a JPEG
         const processedBuffer = await imageSharp.jpeg({ quality: QUALITY }).toBuffer();
         imagenBase64 = processedBuffer.toString('base64');
         tipoImagen = 'image/jpeg';
       }
 
-      console.log(` Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
+      console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
     }
 
     const donacionData = {
       ...req.body,
       id_donacion: nextId,
       imagen: imagenBase64,
-      tipo_imagen: tipoImagen
+      tipo_imagen: tipoImagen,
+      creado_por: req.user?._id || req.user?.id,
+      fecha_creacion: new Date()
     };
 
     const donacion = await Donacion.create(donacionData);
 
+    // Crear descripción detallada de lo que se creó
+    const camposPrincipales = ['id_donacion', 'tipo_donacion', 'cantidad_donacion', 'id_almacen']
+      .filter(c => donacion[c])
+      .map(c => `${c}=${donacion[c]}`)
+      .join(', ');
+    
+    const descripcionDetallada = `Donación creada: ${camposPrincipales}`;
+
+    // RESPUESTA EXITOSA
     res.status(201).json({
       success: true,
       message: 'Donación creada exitosamente',
       data: donacion
     });
+
+    // Crear copia para auditoría SIN imagen
+    const donacionDataParaAuditoria = { ...donacionData };
+    delete donacionDataParaAuditoria.imagen;
+    delete donacionDataParaAuditoria.tipo_imagen;
+
+    // AUDITORÍA: Registrar después de enviar la respuesta
+    
+
   } catch (error) {
-    console.error(' Error en createDonacion:', error);
+    console.error('❌ Error en createDonacion:', error);
+
+    // AUDITORÍA DE ERROR
+   
+
     res.status(400).json({
       success: false,
       message: 'Error al crear la donación',
       error: error.message
     });
-  }};
+  }
+};
+
 // Obtener todas las donaciones
 exports.getAllDonaciones = async (req, res) => {
   try {
@@ -110,14 +178,26 @@ exports.getDonacionById = async (req, res) => {
   }
 };
 
-
-
 // Actualizar una donación
 exports.updateDonacion = async (req, res) => {
   try {
+    console.log('🔄 Iniciando actualización de donación...');
+
+    // Obtener la donación antes de actualizar (para auditoría)
+    const donacionAnterior = await Donacion.findOne({ id_donacion: req.params.id });
+    
+    if (!donacionAnterior) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donación no encontrada'
+      });
+    }
+
     const updateData = { ...req.body };
 
     if (req.file) {
+      console.log('📸 Archivo recibido, procesando con Sharp...');
+      
       const MAX_WIDTH = 600;
       const MAX_HEIGHT = 600;
       const QUALITY = 60;
@@ -125,14 +205,40 @@ exports.updateDonacion = async (req, res) => {
       let imageSharp = sharp(req.file.buffer).resize({
         width: MAX_WIDTH,
         height: MAX_HEIGHT,
-        fit: 'inside', // Mantiene proporción
-        withoutEnlargement: true // No agranda imágenes pequeñas
+        fit: 'inside',
+        withoutEnlargement: true
       });
 
       const processedBuffer = await imageSharp.jpeg({ quality: QUALITY }).toBuffer();
       updateData.imagen = processedBuffer.toString('base64');
       updateData.tipo_imagen = 'image/jpeg';
+      
+      console.log(`✅ Imagen procesada, tamaño aproximado: ${(updateData.imagen.length / 1024 / 1024).toFixed(2)} MB`);
     }
+
+    updateData.fecha_actualizacion = new Date();
+
+    // ===== PREPARAR DATOS PARA AUDITORÍA =====
+    const donacionAnteriorObj = donacionAnterior.toObject ? donacionAnterior.toObject() : donacionAnterior;
+    
+    const datosPreviosLimpios = { ...donacionAnteriorObj };
+    if (datosPreviosLimpios.imagen) {
+      datosPreviosLimpios.imagen = "imagen no disponible en auditoría";
+    }
+    if (datosPreviosLimpios.tipo_imagen) {
+      datosPreviosLimpios.tipo_imagen = "tipo no disponible";
+    }
+
+    const datosNuevosLimpios = { ...updateData };
+    if (datosNuevosLimpios.imagen) {
+      datosNuevosLimpios.imagen = "imagen no disponible en auditoría";
+    }
+    if (datosNuevosLimpios.tipo_imagen) {
+      datosNuevosLimpios.tipo_imagen = "tipo no disponible";
+    }
+    // =========================================
+
+    const { cambios, descripcion } = detectarCambiosEspecificos(datosPreviosLimpios, datosNuevosLimpios);
 
     const donacion = await Donacion.findOneAndUpdate(
       { id_donacion: req.params.id },
@@ -140,19 +246,22 @@ exports.updateDonacion = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    if (!donacion) {
-      return res.status(404).json({
-        success: false,
-        message: 'Donación no encontrada'
-      });
-    }
-
+    // RESPUESTA EXITOSA
     res.status(200).json({
       success: true,
       message: 'Donación actualizada exitosamente',
       data: donacion
     });
+
+    // AUDITORÍA
+    
+
   } catch (error) {
+    console.error('❌ Error en updateDonacion:', error);
+
+    // AUDITORÍA DE ERROR
+    
+
     res.status(400).json({
       success: false,
       message: 'Error al actualizar la donación',
@@ -161,25 +270,48 @@ exports.updateDonacion = async (req, res) => {
   }
 };
 
-
 // Eliminar una donación
 exports.deleteDonacion = async (req, res) => {
   try {
-    const donacion = await Donacion.findOneAndDelete({ id_donacion: req.params.id });
+    // Obtener la donación antes de eliminar (para auditoría)
+    const donacionEliminada = await Donacion.findOne({ id_donacion: req.params.id });
 
-    if (!donacion) {
+    if (!donacionEliminada) {
       return res.status(404).json({
         success: false,
         message: 'Donación no encontrada'
       });
     }
 
+    // Guardar datos importantes antes de eliminar
+    const datosEliminados = {
+      id: donacionEliminada._id,
+      id_donacion: donacionEliminada.id_donacion,
+      tipo_donacion: donacionEliminada.tipo_donacion,
+      cantidad_donacion: donacionEliminada.cantidad_donacion,
+      id_almacen: donacionEliminada.id_almacen,
+      fecha: donacionEliminada.fecha
+    };
+
+    // Eliminar la donación
+    await Donacion.findOneAndDelete({ id_donacion: req.params.id });
+
+    // RESPUESTA EXITOSA
     res.status(200).json({
       success: true,
       message: 'Donación eliminada exitosamente',
-      data: donacion
+      data: donacionEliminada
     });
+
+    // AUDITORÍA
+   
+
   } catch (error) {
+    console.error('❌ Error en deleteDonacion:', error);
+
+    // AUDITORÍA DE ERROR
+    
+
     res.status(500).json({
       success: false,
       message: 'Error al eliminar la donación',

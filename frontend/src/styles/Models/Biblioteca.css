@@ -920,7 +920,6 @@
 .modal-content {
   background: var(--white);
   border-radius: var(--radius-lg);
-  width: 90%;
   max-width: 600px;
   box-shadow: var(--shadow-xl);
   animation: slideUp 0.3s ease-out;

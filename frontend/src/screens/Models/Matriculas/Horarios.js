@@ -355,7 +355,7 @@ const Horarios = () => {
       </div>
 
       {/* Modal Detalle/Edición de Horario */}
-      <AdminOnly><AnimatePresence>
+     <AnimatePresence>
         {mostrarModalDetalle && <ModalDetalleHorario
           params={{ horario: horarioSeleccionado, docentes, aulas, esCreacion: esModalCreacion, alumnos, esDetalle: esModalDetalle }}
           onCerrar={clickCerrarModeloHandler}
@@ -364,7 +364,7 @@ const Horarios = () => {
           canEdit={CAN_EDIT}
           enviarNotificacion={showNotification}
         />}
-      </AnimatePresence></AdminOnly>
+      </AnimatePresence>
 
       {/* Selector de formato */}
       <AnimatePresence>

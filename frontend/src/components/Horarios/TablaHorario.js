@@ -292,7 +292,7 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
               nombreDocente
             )}
           </td>
-          <AdminOnly>
+          
           <td className="cell-acciones justify-content-between">
             <a
               className="btn btn-outline-primary btn-sm"
@@ -316,7 +316,7 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
               <Trash />
             </a>
           </td>
-          </AdminOnly>
+          
         </tr>
       );
     });
@@ -425,7 +425,7 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
                 </motion.div>
                 Ayuda
               </motion.button>
-        <AdminOnly>
+      
         <motion.button
           className="btn-ayuda"
           onClick={onCrearHorario}
@@ -446,7 +446,7 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
           </motion.div>
           Nuevo Horario 
         </motion.button>
-        </AdminOnly>
+        
       </motion.div>
 
       {/* Información de resultados */}
@@ -487,11 +487,11 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
               <th className="th-autor">grado | Aula</th>
              
               <th className="th-autor">Docente</th>
-             <AdminOnly>
+             
               <th className="th-autor" style={{ minWidth: 30 }}>
                 Acciones
               </th>
-              </AdminOnly> 
+             
             </tr>
           </thead>
           <tbody>

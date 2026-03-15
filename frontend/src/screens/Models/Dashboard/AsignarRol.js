@@ -1,48 +1,65 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "../../../styles/AsignarRol.css";
 import { auth } from "../../../components/authentication/Auth";
-import { FiTrash2, FiMail, FiUser, FiKey, FiUsers, FiShield, FiAward } from "react-icons/fi";
+import { 
+  FiTrash2, FiMail, FiUser, FiKey, FiUsers, FiShield, FiAward, 
+  FiArrowRight, FiEdit3, FiFilter, FiX, FiChevronLeft, FiChevronRight,
+  FiSearch
+} from "react-icons/fi";
 import { HiMiniMagnifyingGlassCircle } from "react-icons/hi2";
-import { RiUserSettingsLine } from "react-icons/ri";
+import { RiUserSettingsLine, RiShieldUserLine } from "react-icons/ri";
 import { MdAdminPanelSettings } from "react-icons/md";
-import { motion } from "framer-motion";
-import UsuariosChart from "../../../components/UsuariosChart";
-
+import { FaUserGraduate, FaUserTie } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import UsuariosChart from '../../../components/UsuariosChart'
 import Notification from "../../../components/Notification";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
 
 const API_URL = process.env.REACT_APP_API_URL;
+const API_ROLES = `${API_URL}/api/roles`;
 
 const AsignarRol = () => {
+  const navigate = useNavigate();
   const [usuarios, setUsuarios] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [filtroTexto, setFiltroTexto] = useState("");
   const [filtroRol, setFiltroRol] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(true);
   const [actualizarChart, setActualizarChart] = useState(false);
   const [paginaActual, setPaginaActual] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [usuarioEditando, setUsuarioEditando] = useState(null);
 
   const usuariosPorPagina = 10;
-  const rolesDisponibles = ["ADMIN", "DOCENTE", "PADRE"];
 
   useEffect(() => {
-    const obtenerUsuarios = async () => {
+    const obtenerDatos = async () => {
       try {
         const user = auth.currentUser;
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}/api/usuarios`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsuarios(res.data.users);
+        
+        const [usuariosRes, rolesRes] = await Promise.all([
+          axios.get(`${API_URL}/api/usuarios`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(API_ROLES, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        ]);
+        
+        setUsuarios(usuariosRes.data.users);
+        setRoles(rolesRes.data);
       } catch (error) {
-        console.error("Error al obtener usuarios:", error);
-        setMensaje(" Error al cargar usuarios.");
+        console.error("Error al obtener datos:", error);
+        setMensaje(" Error al cargar datos.");
       } finally {
         setCargando(false);
       }
     };
-    obtenerUsuarios();
+    obtenerDatos();
   }, []);
 
   const asignarRol = async (id, nuevoRol) => {
@@ -62,10 +79,9 @@ const AsignarRol = () => {
 
       const usuarioActualizado = usuarios.find((u) => u._id === id);
       
-      // Mostrar notificación en lugar de alert
       setMensaje(
         <span>
-          Rol actualizado correctamente para <strong>{usuarioActualizado?.username || "usuario desconocido"}</strong> ({usuarioActualizado?.email || "sin email"})
+          ✓ Rol actualizado para <strong>{usuarioActualizado?.username}</strong>
         </span>
       );
 
@@ -73,17 +89,17 @@ const AsignarRol = () => {
         prev.map((u) => (u._id === id ? { ...u, roles: [nuevoRol] } : u))
       );
       setActualizarChart((prev) => !prev);
+      setUsuarioEditando(null);
     } catch (error) {
       console.error("Error al asignar rol:", error);
       setMensaje(
         <span>
-           {error.response?.data?.message || "No se pudo actualizar el rol."}
+          ✗ {error.response?.data?.message || "Error al actualizar el rol"}
         </span>
       );
     }
   };
 
-  // Eliminar usuario
   const [usuarioAEliminar, setUsuarioAEliminar] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -103,10 +119,9 @@ const AsignarRol = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const nombre = usuarioAEliminar.username || "desconocido";
       setMensaje(
         <span>
-           Usuario <strong>{nombre}</strong> eliminado correctamente
+          ✓ Usuario <strong>{usuarioAEliminar.username}</strong> eliminado
         </span>
       );
       setUsuarios((prev) => prev.filter((u) => u._id !== usuarioAEliminar._id));
@@ -114,7 +129,7 @@ const AsignarRol = () => {
       setUsuarioAEliminar(null);
     } catch (error) {
       console.error("Error al eliminar usuario:", error);
-      setMensaje(" No se pudo eliminar el usuario.");
+      setMensaje("✗ No se pudo eliminar el usuario");
     }
   };
 
@@ -138,294 +153,379 @@ const AsignarRol = () => {
   );
   const totalPaginas = Math.ceil(usuariosFiltrados.length / usuariosPorPagina);
 
-  // Calcular estadísticas
   const totalUsuarios = usuarios.length;
-  const totalAdmins = usuarios.filter(u => u.roles && u.roles.includes("ADMIN")).length;
-  const totalDocentes = usuarios.filter(u => u.roles && u.roles.includes("DOCENTE")).length;
-  const totalPadres = usuarios.filter(u => u.roles && u.roles.includes("PADRE")).length;
 
-  if (cargando) return <p className="asignarRol-loading">Cargando usuarios...</p>;
+  const irAGestionRoles = () => {
+    navigate("/roles");
+  };
+
+  const getRolIcon = (rolId) => {
+    switch(rolId) {
+      case 'ADMIN':
+        return <MdAdminPanelSettings />;
+      case 'DOCENTE':
+        return <FaUserGraduate />;
+      case 'PADRE':
+        return <FaUserTie />;
+      default:
+        return <RiShieldUserLine />;
+    }
+  };
+
+  const getRolColor = (rolId) => {
+    switch(rolId) {
+      case 'ADMIN':
+        return '#ef4444';
+      case 'DOCENTE':
+        return '#10b981';
+      case 'PADRE':
+        return '#f59e0b';
+      default:
+        return '#667eea';
+    }
+  };
+
+  if (cargando) {
+    return (
+      <div className="rol-asignar-loading">
+        <div className="rol-loading-spinner"></div>
+        <p>Cargando usuarios...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="RolHeader">
-      
+    <div className="rol-asignar-container">
+      {/* Header mantenido sin iconos flotantes */}
       <motion.div 
-        className="bien-header"
+        className="rol-asignar-header"
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+        transition={{ duration: 0.7 }}
       >
-        <motion.div
-          className="header-gradient"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-        >
-          {/* Patrón de fondo */}
-          <div className="header-pattern" />
+        <div className="rol-header-gradient">
+          <div className="rol-header-pattern" />
+          
+          <div className="rol-header-content">
+            <div className="rol-header-top">
+              <motion.h1
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <MdAdminPanelSettings className="rol-header-icon" />
+                Gestión de Usuarios
+                <motion.span
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="rol-header-badge"
+                >
+                  <FiShield />
+                </motion.span>
+              </motion.h1>
 
-          <div className="header-content">
-            <motion.h2
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+              <motion.button
+                className="rol-btn-gestion"
+                onClick={irAGestionRoles}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
               >
-                <MdAdminPanelSettings className="header-main-icon" />
-              </motion.div>
-              Gestión de Roles y Usuarios
-              <motion.div
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                className="header-shield-icon"
-              >
-                <FiShield />
-              </motion.div>
-            </motion.h2>
+                <RiShieldUserLine />
+                <span>Gestión de Roles</span>
+                <FiArrowRight />
+              </motion.button>
+            </div>
             
             <motion.p
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="header-subtitle"
+              className="rol-header-subtitle"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
             >
-              Administra permisos y roles del sistema de manera segura
+              Administra los roles y permisos de los usuarios del sistema
             </motion.p>
 
             <motion.div 
-              className="header-stats"
+              className="rol-stats-grid"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+              transition={{ delay: 0.5 }}
             >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className="stat-icon">
+              <div className="rol-stat-card">
+                <div className="rol-stat-icon" style={{ background: '#3b82f6' }}>
                   <FiUsers />
                 </div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{totalUsuarios}</div>
-                  <div className="stat-label" style={{color:"white"}}>Total Usuarios</div>
+                <div className="rol-stat-info">
+                  <span className="rol-stat-value">{totalUsuarios}</span>
+                  <span className="rol-stat-label">Total Usuarios</span>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-              >
-                <div className="stat-icon">
-                  <MdAdminPanelSettings />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{totalAdmins}</div>
-                  <div className="stat-label" style={{color:"white"}}>Administradores</div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-              >
-                <div className="stat-icon">
-                  <FiAward />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{totalDocentes + totalPadres}</div>
-                  <div className="stat-label" style={{color:"white"}}>Usuarios Activos</div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div 
-              className="floating-icons"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <FiUser />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0]
-                }}
-                transition={{ 
-                  duration: 3.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-              >
-                <FiKey />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ 
-                  duration: 4.2, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-              >
-                <FiMail />
-              </motion.div>
             </motion.div>
           </div>
-        </motion.div>
-
-        {/* BARRA DE BÚSQUEDA Y FILTROS */}
-        <motion.div 
-          className="filtros-container"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
-          <div className="filtro-item">
-            <HiMiniMagnifyingGlassCircle className="search-icon" />
-            <input
-              className="inputFiltro-rol"
-              placeholder="Buscar por nombre o correo..."
-              value={filtroTexto}
-              onChange={(e) => setFiltroTexto(e.target.value)}
-            />
-          </div>
-
-          <select
-            className="selectFiltro-rol"
-            value={filtroRol}
-            onChange={(e) => setFiltroRol(e.target.value)}
-          >
-            <option value="">Todos los roles</option>
-            {rolesDisponibles.map((rol) => (
-              <option key={rol}>{rol}</option>
-            ))}
-          </select>
-        </motion.div>
+        </div>
       </motion.div>
 
-      {/* TABLA */}
-            <motion.div
-        className="tabla-container-roles"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-      >
-        <motion.table
-          className="tablaUsuarios"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
+      {/* Barra de búsqueda y filtros */}
+      <div className="rol-search-section">
+        <div className="rol-search-container">
+          <FiSearch className="rol-search-icon" />
+          <input
+            type="text"
+            className="rol-search-input"
+            placeholder="Buscar por nombre o correo electrónico..."
+            value={filtroTexto}
+            onChange={(e) => setFiltroTexto(e.target.value)}
+          />
+          {filtroTexto && (
+            <button 
+              className="rol-clear-search"
+              onClick={() => setFiltroTexto('')}
+            >
+              <FiX />
+            </button>
+          )}
+        </div>
+
+        <button 
+          className={`rol-filter-toggle ${showFilters ? 'active' : ''}`}
+          onClick={() => setShowFilters(!showFilters)}
         >
+          <FiFilter />
+          <span>Filtros</span>
+        </button>
+      </div>
+
+      {/* Panel de filtros expandible */}
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div 
+            className="rol-filters-panel"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <div className="rol-filters-content">
+              <label>Filtrar por rol:</label>
+              <select
+                className="rol-filter-select"
+                value={filtroRol}
+                onChange={(e) => setFiltroRol(e.target.value)}
+              >
+                <option value="">Todos los roles</option>
+                {roles.map((rol) => (
+                  <option key={rol._id} value={rol._id}>
+                    {rol.nombre} ({rol._id})
+                  </option>
+                ))}
+              </select>
+              {filtroRol && (
+                <button 
+                  className="rol-clear-filter"
+                  onClick={() => setFiltroRol('')}
+                >
+                  <FiX /> Limpiar filtro
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tabla de usuarios */}
+      <div className="rol-table-container">
+        <table className="rol-users-table">
           <thead>
             <tr>
-              <th><FiUser /> Usuario</th>
-              <th><FiMail /> Email</th>
-              <th><FiKey /> Rol</th>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Rol Actual</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {usuariosPaginados.map((u) => (
-              <motion.tr
-                key={u._id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <td>{u.username}</td>
-                <td>{u.email}</td>
-                <td>{u.roles.join(", ")}</td>
-                <td className="acciones">
-                  <select
-                    className="role-select"
-                    defaultValue={u.roles[0] || ""}
-                    onChange={(e) => asignarRol(u._id, e.target.value)}
+            {usuariosPaginados.length > 0 ? (
+              usuariosPaginados.map((usuario) => {
+                const rolActual = roles.find(r => r._id === usuario.roles[0]);
+                const isEditing = usuarioEditando === usuario._id;
+                
+                return (
+                  <motion.tr
+                    key={usuario._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className={isEditing ? 'editing' : ''}
                   >
-                    <option value="">Cambiar rol…</option>
-                    {rolesDisponibles.map((r) => (
-                      <option key={r} value={r}>{r}</option>
-                    ))}
-                  </select>
-                 <button className="btn-delete" onClick={() => handleEliminarUsuario(u)}>
-                   <FiTrash2 />
-                </button>
-
+                    <td>
+                      <div className="rol-user-cell">
+                        <div className="rol-user-avatar-small">
+                          {usuario.username?.charAt(0).toUpperCase()}
+                        </div>
+                        <span>{usuario.username}</span>
+                      </div>
+                    </td>
+                    <td>{usuario.email}</td>
+                    <td>
+                      {rolActual ? (
+                        <span 
+                          className="rol-role-badge"
+                          style={{ 
+                            background: getRolColor(rolActual._id) + '20',
+                            color: getRolColor(rolActual._id),
+                            borderColor: getRolColor(rolActual._id)
+                          }}
+                        >
+                          {getRolIcon(rolActual._id)}
+                          {rolActual._id}
+                        </span>
+                      ) : (
+                        <span className="rol-role-badge">
+                          {usuario.roles.join(', ')}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <div className="rol-table-actions">
+                        {isEditing ? (
+                          <>
+                            <select
+                              className="rol-table-select"
+                              defaultValue={usuario.roles[0] || ""}
+                              onChange={(e) => asignarRol(usuario._id, e.target.value)}
+                              autoFocus
+                            >
+                              <option value="">Seleccionar rol...</option>
+                              {roles.map((r) => (
+                                <option key={r._id} value={r._id}>
+                                  {r.nombre} ({r._id})
+                                </option>
+                              ))}
+                            </select>
+                            <button 
+                              className="rol-table-btn cancel"
+                              onClick={() => setUsuarioEditando(null)}
+                              title="Cancelar"
+                            >
+                              <FiX />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              className="rol-table-btn edit"
+                              onClick={() => setUsuarioEditando(usuario._id)}
+                              title="Cambiar rol"
+                            >
+                              <FiEdit3 />
+                            </button>
+                            <button 
+                              className="rol-table-btn delete"
+                              onClick={() => handleEliminarUsuario(usuario)}
+                              title="Eliminar usuario"
+                            >
+                              <FiTrash2 />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan="4" className="rol-no-results-cell">
+                  <div className="rol-no-results">
+                    <FiUsers size={48} />
+                    <h3>No se encontraron usuarios</h3>
+                    <p>Intenta con otros términos de búsqueda</p>
+                  </div>
                 </td>
-              </motion.tr>
-            ))}
+              </tr>
+            )}
           </tbody>
-        </motion.table>
-      </motion.div>
-
-      {showConfirm && (
-  <ConfirmDialog
-    message={`¿Seguro que deseas eliminar al usuario "${usuarioAEliminar?.username}"?`}
-    onConfirm={confirmarEliminacionUsuario}
-    onCancel={cancelarEliminacionUsuario}
-    visible={showConfirm}
-  />
-)}
-
-{mensaje && (
-  <Notification
-    message={mensaje}
-    type="info"
-    onClose={() => setMensaje(null)}
-  />
-)}
-
+        </table>
+      </div>
 
       {/* Paginación */}
       {totalPaginas > 1 && (
-        <div className="paginacion">
-          {Array.from({ length: totalPaginas }, (_, i) => (
-            <button
-              key={i}
-              className={`pagina-btn ${paginaActual === i + 1 ? "activo" : ""}`}
-              onClick={() => setPaginaActual(i + 1)}
-            >
-              {i + 1}
-            </button>
-          ))}
+        <div className="rol-pagination">
+          <button
+            className="rol-pagination-btn"
+            onClick={() => setPaginaActual(prev => Math.max(1, prev - 1))}
+            disabled={paginaActual === 1}
+          >
+            <FiChevronLeft /> Anterior
+          </button>
+          
+          <div className="rol-pagination-numbers">
+            {Array.from({ length: totalPaginas }, (_, i) => {
+              const pageNum = i + 1;
+              if (
+                pageNum === 1 ||
+                pageNum === totalPaginas ||
+                (pageNum >= paginaActual - 1 && pageNum <= paginaActual + 1)
+              ) {
+                return (
+                  <button
+                    key={i}
+                    className={`rol-page-number ${paginaActual === pageNum ? 'active' : ''}`}
+                    onClick={() => setPaginaActual(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              } else if (
+                pageNum === paginaActual - 2 ||
+                pageNum === paginaActual + 2
+              ) {
+                return <span key={i} className="rol-pagination-dots">...</span>;
+              }
+              return null;
+            })}
+          </div>
+
+          <button
+            className="rol-pagination-btn"
+            onClick={() => setPaginaActual(prev => Math.min(totalPaginas, prev + 1))}
+            disabled={paginaActual === totalPaginas}
+          >
+            Siguiente <FiChevronRight />
+          </button>
         </div>
       )}
 
-      {/* Gráfico de roles */}
-      <div className="chart-section">
-        <h3 className="chart-title">
-          <RiUserSettingsLine /> Distribución de roles
+      {/* Gráfico de distribución */}
+      <div className="rol-chart-section">
+        <h3 className="rol-chart-title">
+          <RiUserSettingsLine /> Distribución de Roles
         </h3>
-        <UsuariosChart actualizar={actualizarChart} />
+        <div className="rol-chart-container">
+          <UsuariosChart actualizar={actualizarChart} />
+        </div>
       </div>
+
+      {/* Diálogos de confirmación y notificaciones */}
+      {showConfirm && (
+        <ConfirmDialog
+          message={`¿Seguro que deseas eliminar al usuario "${usuarioAEliminar?.username}"?`}
+          onConfirm={confirmarEliminacionUsuario}
+          onCancel={cancelarEliminacionUsuario}
+          visible={showConfirm}
+        />
+      )}
+
+      {mensaje && (
+        <Notification
+          message={mensaje}
+          type={mensaje.props?.children?.toString().includes('✓') ? 'success' : 'error'}
+          onClose={() => setMensaje(null)}
+        />
+      )}
     </div>
   );
 };

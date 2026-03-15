@@ -20,9 +20,8 @@ const moduloSchema = new mongoose.Schema({
     required: true
   },
   roles: {
-    type: [String],
-    enum: ['ADMIN', 'DOCENTE', 'PADRE'],
-    default: ['ADMIN']
+    type: [String]
+    
   }
 }, { timestamps: true });
 

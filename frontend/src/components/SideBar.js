@@ -10,6 +10,8 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const SideBar = () => {
   const [modulos, setModulos] = useState([]);
+  const [userPermissions, setUserPermissions] = useState([]);
+  const [userRoles, setUserRoles] = useState([]); // 👈 NUEVO: roles del usuario
   const [loading, setLoading] = useState(true);
   const [minimizado, setMinimizado] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,7 +29,27 @@ const SideBar = () => {
   const categorias = {
     "Académico": ["Matricula", "Grados", "Horarios", "Calendario", "Biblioteca", "Actividades"],
     "Administrativo": ["Compras", "Proveedores", "Bienes", "Donaciones", "Personal", "Directiva"],
-    "Seguridad": ["Seguridad"]
+    "Seguridad": ["Seguridad", "Auditoria", "Roles"]
+  };
+
+  // MAPEO DE MÓDULOS A PERMISOS (usado como respaldo)
+  const moduloAPermiso = {
+    "Matricula": "VISUALIZAR_MATRICULA",
+    "Grados": "VISUALIZAR_GRADOS",
+    "Horarios": "VISUALIZAR_HORARIOS",
+    "Calendario": "VISUALIZAR_CALENDARIO",
+    "Biblioteca": "VISUALIZAR_BIBLIOTECA",
+    "Actividades": "VISUALIZAR_ACTIVIDADES",
+    "Compras": "VISUALIZAR_COMPRAS",
+    "Proveedores": "VISUALIZAR_PROVEEDORES",
+    "Bienes": "VISUALIZAR_BIENES",
+    "Donaciones": "VISUALIZAR_DONACIONES",
+    "Personal": "VISUALIZAR_PERSONAL",
+    "Directiva": "VISUALIZAR_DIRECTIVA",
+    "Seguridad": "VISUALIZAR_SEGURIDAD",
+    "Auditoria": "VISUALIZAR_AUDITORIA",
+    "Dashboard": "VISUALIZAR_DASHBOARD",
+    "Roles" : "VISUALIZAR_ROLES"
   };
 
   const getCategoria = (titulo) => {
@@ -37,23 +59,100 @@ const SideBar = () => {
     return "Otros";
   };
 
+  // Cargar datos al montar el componente
   useEffect(() => {
-    const fetchModulos = async () => {
+    const fetchData = async () => {
       try {
+        setLoading(true);
         const user = auth.currentUser;
-        if (!user) { setLoading(false); return; }
+        if (!user) { 
+          setLoading(false); 
+          return; 
+        }
+        
         const token = await user.getIdToken();
-        const res = await axios.get(`${API_URL}/api/dashboard`, {
+        
+        // 👇 1. OBTENER ROLES DEL USUARIO (NUEVO)
+        let roles = [];
+        try {
+          const rolesRes = await axios.get(`${API_URL}/api/usuarios/role`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          // Asumiendo que la respuesta es { role: "ADMIN" } o { roles: ["ADMIN"] }
+          roles = rolesRes.data.role ? [rolesRes.data.role] : (rolesRes.data.roles || []);
+          setUserRoles(roles);
+       
+        } catch (roleError) {
+        }
+        
+        // 👇 2. OBTENER PERMISOS DEL USUARIO
+        let permisos = [];
+        try {
+          const permisosRes = await axios.get(`${API_URL}/api/mis-permisos`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          permisos = permisosRes.data.permisos || [];
+          setUserPermissions(permisos);
+        } catch (permError) {
+        }
+        
+        // 👇 3. OBTENER MÓDULOS DEL DASHBOARD
+        const modulosRes = await axios.get(`${API_URL}/api/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setModulos(res.data.modulos);
+        
+        
+        // 👇 4. FILTRAR MÓDULOS (PERMISOS + ROLES COMO FALLBACK)
+        let modulosFiltrados = modulosRes.data.modulos;
+        
+        // Si tenemos permisos, filtramos por ellos
+        if (permisos.length > 0) {
+          modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
+            const titulo = modulo.titulo;
+            
+            // OPCIÓN 1: Usar el permiso del módulo si existe
+            if (modulo.permiso) {
+              const tienePermiso = permisos.includes(modulo.permiso);
+              if (tienePermiso) return true;
+            }
+            
+            // OPCIÓN 2: Usar el mapeo de título a permiso
+            const permisoRequerido = moduloAPermiso[titulo];
+            if (permisoRequerido) {
+              const tienePermiso = permisos.includes(permisoRequerido);
+              if (tienePermiso) return true;
+            }
+            
+            // 👇 FALLBACK: Verificar por ROLES del módulo
+            if (modulo.roles && modulo.roles.length > 0 && roles.length > 0) {
+              const tieneRol = modulo.roles.some(rol => roles.includes(rol));
+              if (tieneRol) return true;
+            }
+            
+            return false;
+          });
+        } 
+        // Si no hay permisos, filtramos solo por roles
+        else if (roles.length > 0) {
+          modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
+            if (modulo.roles && modulo.roles.length > 0) {
+              const tieneRol = modulo.roles.some(rol => roles.includes(rol));
+              return tieneRol;
+            }
+            return false;
+          });
+        }
+        
+        setModulos(modulosFiltrados);
+        
       } catch (err) {
-        console.error("Error al cargar módulos:", err);
+        console.error("Error al cargar datos:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchModulos();
+    
+    fetchData();
   }, []);
 
   const handleToggleSubmenu = (nombreCat) => {
@@ -67,14 +166,31 @@ const SideBar = () => {
     setMobileOpen(false);
   };
 
-  if (loading) return null;
+  if (loading) return <div className="sidebar-loading">Cargando sidebar...</div>;
 
+  // Agrupar módulos filtrados
   const modulosAgrupados = modulos.reduce((acc, mod) => {
     const cat = getCategoria(mod.titulo);
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(mod);
     return acc;
   }, {});
+
+
+  // Si no hay módulos, mostrar mensaje
+  if (Object.keys(modulosAgrupados).length === 0) {
+    return (
+      <div className="dashboard-sidebar">
+        <button className="toggle-btn-floating" onClick={() => setMinimizado(!minimizado)}>
+          {minimizado ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
+        </button>
+        <div className="sidebar-empty">
+          <p>No hay módulos disponibles</p>
+          <small>Contacta al administrador</small>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
