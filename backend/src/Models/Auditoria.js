@@ -16,8 +16,8 @@ const auditoriaSchema = new mongoose.Schema({
   modulo: {
     type: String,   
     enum: ['USUARIOS', 'ROLES', 'PROVEEDORES', 'BIENES', 'PERSONAL', 'ESTUDIANTES', 
-           'HORARIOS', 'ACTIVIDADES', 'LIBROS', 'DONACIONES', 'GRADOS', 'ORDENES_COMPRA',
-           'QUESTIONS', 'DASHBOARD', 'AUDITORIA', 'DIRECTIVA','DIRECTIVA_DOCUMENTOS'],
+           'HORARIOS', 'ACTIVIDADES','DONACIONES', 'GRADOS', 'ORDENES_COMPRA',
+           'QUESTIONS', 'DASHBOARD', 'AUDITORIA','BIBLIOTECA', 'DIRECTIVA','DIRECTIVA_DOCUMENTOS','MATRICULA'],
     required: true
   },
   entidad: {

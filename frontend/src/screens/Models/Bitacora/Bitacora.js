@@ -44,11 +44,13 @@ const Bitacora = () => {
     { value: 'ROLES', label: 'Roles' },
     { value: 'PROVEEDORES', label: 'Proveedores' },
     { value: 'BIENES', label: 'Bienes' },
+    { value: 'MATRICULA', label: 'Matricula' },
+    { value: 'BIBLIOTECA', label: 'Biblioteca' },
+    { value: 'GRADOS', label: 'Grados' },
     { value: 'PERSONAL', label: 'Personal' },
     { value: 'ESTUDIANTES', label: 'Estudiantes' },
     { value: 'HORARIOS', label: 'Horarios' },
     { value: 'ACTIVIDADES', label: 'Actividades' },
-    { value: 'LIBROS', label: 'Libros' },
     { value: 'ORDENES_COMPRA', label: 'Orden de compra' },
     
   ];
