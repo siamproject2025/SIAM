@@ -48,7 +48,9 @@ const Bitacora = () => {
     { value: 'ESTUDIANTES', label: 'Estudiantes' },
     { value: 'HORARIOS', label: 'Horarios' },
     { value: 'ACTIVIDADES', label: 'Actividades' },
-    { value: 'LIBROS', label: 'Libros' }
+    { value: 'LIBROS', label: 'Libros' },
+    { value: 'ORDENES_COMPRA', label: 'Orden de compra' },
+    
   ];
 
   // Acciones disponibles
