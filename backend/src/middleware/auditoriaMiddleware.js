@@ -1,8 +1,17 @@
 // middleware/auditoria.js - MODIFICADO
 const Auditoria = require('../Models/Auditoria');
 
-// Variable para controlar auditoría globalmente (puedes guardarla en BD)
+// Variable para controlar auditoría globalmente
 let auditGlobalEnabled = true;
+
+// CACHE para peticiones GET (nuevo)
+const getCache = new Map();
+const GET_CACHE_DURATION = 5000; // 5 segundos en milisegundos
+
+// Función para generar clave única de la petición GET
+const generarClaveGet = (req) => {
+  return `${req.method}:${req.originalUrl}:${JSON.stringify(req.query)}:${req.user?._id || 'anonymous'}`;
+};
 
 // Función para eliminar campos de imagen
 const eliminarCamposImagen = (obj) => {
@@ -20,21 +29,54 @@ const eliminarCamposImagen = (obj) => {
   return limpio;
 };
 
-// NUEVA FUNCIÓN: Para cambiar estado de auditoría
+// Función para cambiar estado de auditoría
 const setAuditEnabled = (enabled) => {
   auditGlobalEnabled = enabled;
   console.log(`🔊 Auditoría ${enabled ? 'activada' : 'desactivada'} globalmente`);
 };
 
-// NUEVA FUNCIÓN: Para obtener estado
+// Función para obtener estado
 const getAuditEnabled = () => auditGlobalEnabled;
+
+// Limpiar caché periódicamente (cada minuto)
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, timestamp] of getCache.entries()) {
+    if (now - timestamp > GET_CACHE_DURATION) {
+      getCache.delete(key);
+    }
+  }
+  console.log(`🧹 Caché de GETs limpiado. Tamaño actual: ${getCache.size}`);
+}, 60000); // Limpiar cada minuto
 
 const registrarAuditoria = (modulo) => {
   return async (req, res, next) => {
+    // ⚠️ Manejo especial para GET con caché
+    if (req.method === 'GET') {
+      const cacheKey = generarClaveGet(req);
+      const ahora = Date.now();
+      const ultimoRegistro = getCache.get(cacheKey);
+      
+      // Si ya se registró un GET idéntico en los últimos 5 segundos, NO registrar
+      if (ultimoRegistro && (ahora - ultimoRegistro) < GET_CACHE_DURATION) {
+        console.log(`⏱️ GET duplicado ignorado (${Math.round((ahora - ultimoRegistro)/1000)}s): ${req.originalUrl}`);
+        return next(); // Continúa pero sin auditar
+      }
+      
+      // Marcar que vamos a registrar este GET
+      getCache.set(cacheKey, ahora);
+      
+      // Limpiar entradas antiguas de este usuario/ruta específica
+      // (opcional, para mantener el caché limpio)
+      setTimeout(() => {
+        if (getCache.get(cacheKey) === ahora) {
+          getCache.delete(cacheKey);
+          console.log(`🧹 Caché expirado para: ${req.originalUrl}`);
+        }
+      }, GET_CACHE_DURATION + 1000); // Expirar 1 segundo después
+    }
+    
     // VERIFICAR SI LA AUDITORÍA ESTÁ DESACTIVADA
-    // 1. Por estado global
-    // 2. Por cabecera HTTP
-    // 3. Por query param
     const skipGlobal = !auditGlobalEnabled;
     const skipByHeader = req.headers['x-skip-audit'] === 'true';
     const skipByQuery = req.query.skipAudit === 'true';
@@ -74,31 +116,40 @@ const registrarAuditoria = (modulo) => {
         rol: 'usuario'
       };
 
-      Auditoria.create({
-        usuario: usuarioData,
-        accion,
-        modulo,
-        entidad: {
-          nombre: req.baseUrl + req.path,
-          id: req.params.id || data?.data?._id || null,
-          datos_previos: datosPreviosLimpios,
-          datos_nuevos: datosNuevosLimpios
-        },
-        ip_address: req.ip || req.connection.remoteAddress,
-        user_agent: req.get('User-Agent'),
-        detalles: `${req.method} ${req.originalUrl}`,
-        resultado: res.statusCode >= 400 ? 'ERROR' : 'EXITO',
-        error_message: res.statusCode >= 400 ? data?.mensaje || data?.message || 'Error' : null,
-        metadata: {
-          query: req.query,
-          params: req.params,
-          statusCode: res.statusCode,
-          duration
-        },
-        fecha_creacion: new Date()
-      })
-      .then(() => console.log(`✅ Auditoría: ${accion} en ${modulo} por ${usuarioData.username}`))
-      .catch(err => console.error('❌ Error auditoría:', err));
+      // Solo registrar si es GET y está en caché (lo registramos) o si es otro método
+      if (req.method !== 'GET' || getCache.has(generarClaveGet(req))) {
+        Auditoria.create({
+          usuario: usuarioData,
+          accion,
+          modulo,
+          entidad: {
+            nombre: req.baseUrl + req.path,
+            id: req.params.id || data?.data?._id || null,
+            datos_previos: datosPreviosLimpios,
+            datos_nuevos: datosNuevosLimpios
+          },
+          ip_address: req.ip || req.connection.remoteAddress,
+          user_agent: req.get('User-Agent'),
+          detalles: `${req.method} ${req.originalUrl}`,
+          resultado: res.statusCode >= 400 ? 'ERROR' : 'EXITO',
+          error_message: res.statusCode >= 400 ? data?.mensaje || data?.message || 'Error' : null,
+          metadata: {
+            query: req.query,
+            params: req.params,
+            statusCode: res.statusCode,
+            duration
+          },
+          fecha_creacion: new Date()
+        })
+        .then(() => {
+          if (req.method === 'GET') {
+            console.log(`✅ Auditoría GET (cacheada): ${accion} en ${modulo} por ${usuarioData.username}`);
+          } else {
+            console.log(`✅ Auditoría: ${accion} en ${modulo} por ${usuarioData.username}`);
+          }
+        })
+        .catch(err => console.error('❌ Error auditoría:', err));
+      }
 
       return originalJson.call(this, data);
     };
@@ -128,6 +179,6 @@ const capturarDatosPrevios = (model) => {
 module.exports = { 
   registrarAuditoria, 
   capturarDatosPrevios,
-  setAuditEnabled,  // EXPORTAR NUEVAS FUNCIONES
+  setAuditEnabled,
   getAuditEnabled 
 };

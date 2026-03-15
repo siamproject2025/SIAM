@@ -119,87 +119,13 @@ exports.createDonacion = async (req, res) => {
     delete donacionDataParaAuditoria.tipo_imagen;
 
     // AUDITORÍA: Registrar después de enviar la respuesta
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'CREATE',
-          modulo: 'DONACIONES',
-          entidad: {
-            nombre: 'Donacion',
-            id: donacion._id,
-            datos_nuevos: donacionDataParaAuditoria,
-            cambios_detectados: null
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `POST /api/donaciones - Creación de donación`,
-          descripcion_detallada: descripcionDetallada,
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 201,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de creación guardada:', descripcionDetallada);
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+    
 
   } catch (error) {
     console.error('❌ Error en createDonacion:', error);
 
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'CREATE',
-          modulo: 'DONACIONES',
-          entidad: {
-            nombre: 'Donacion',
-            datos_nuevos: req.body
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `POST /api/donaciones - Error creando donación`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 400,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+   
 
     res.status(400).json({
       success: false,
@@ -328,93 +254,13 @@ exports.updateDonacion = async (req, res) => {
     });
 
     // AUDITORÍA
-    setImmediate(async () => {
-      try {
-        let descripcionFinal = descripcion;
-        if (req.file) {
-          descripcionFinal += (descripcionFinal ? '; ' : '') + 'imagen actualizada';
-        }
-
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'UPDATE',
-          modulo: 'DONACIONES',
-          entidad: {
-            nombre: 'Donacion',
-            id: donacionAnterior._id,
-            datos_previos: datosPreviosLimpios,
-            datos_nuevos: datosNuevosLimpios,
-            cambios_detectados: cambios
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `PUT /api/donaciones/${req.params.id}`,
-          descripcion_detallada: descripcionFinal || 'Actualización sin cambios detectados',
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 200,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de actualización guardada:', descripcionFinal || 'Sin cambios');
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+    
 
   } catch (error) {
     console.error('❌ Error en updateDonacion:', error);
 
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'UPDATE',
-          modulo: 'DONACIONES',
-          entidad: {
-            nombre: 'Donacion',
-            id: req.params.id
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `PUT /api/donaciones/${req.params.id} - Error actualizando donación`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 400,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+    
 
     res.status(400).json({
       success: false,
@@ -458,88 +304,13 @@ exports.deleteDonacion = async (req, res) => {
     });
 
     // AUDITORÍA
-    setImmediate(async () => {
-      try {
-        const descripcionDetallada = `Donación eliminada: ID ${datosEliminados.id_donacion} - ${datosEliminados.tipo_donacion} (Cantidad: ${datosEliminados.cantidad_donacion}, Almacén: ${datosEliminados.id_almacen})`;
-        
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'DELETE',
-          modulo: 'DONACIONES',
-          entidad: {
-            nombre: 'Donacion',
-            id: donacionEliminada._id,
-            datos_previos: datosEliminados
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `DELETE /api/donaciones/${req.params.id}`,
-          descripcion_detallada: descripcionDetallada,
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 200,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de eliminación guardada:', descripcionDetallada);
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+   
 
   } catch (error) {
     console.error('❌ Error en deleteDonacion:', error);
 
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'DELETE',
-          modulo: 'DONACIONES',
-          entidad: {
-            nombre: 'Donacion',
-            id: req.params.id
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `DELETE /api/donaciones/${req.params.id} - Error eliminando donación`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 500,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+    
 
     res.status(500).json({
       success: false,

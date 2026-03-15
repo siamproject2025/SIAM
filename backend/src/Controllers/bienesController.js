@@ -137,87 +137,13 @@ exports.createBien = async (req, res) => {
     delete bienDataParaAuditoria.imagen;
     delete bienDataParaAuditoria.tipo_imagen;
     // AUDITORÍA: Registrar después de enviar la respuesta (no bloquea)
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'CREATE',
-          modulo: 'BIENES',
-          entidad: {
-            nombre: 'Bien',
-            id: bien._id,
-            datos_nuevos: bienData,
-            cambios_detectados: null // No hay cambios previos en creación
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `POST /api/bienes - Creación de bien`,
-          descripcion_detallada: descripcionDetallada,
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 201,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de creación guardada:', descripcionDetallada);
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+   
 
   } catch (error) {
     console.error('❌ Error en createBien:', error);
     
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'CREATE',
-          modulo: 'BIENES',
-          entidad: {
-            nombre: 'Bien',
-            datos_nuevos: req.body
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `POST /api/bienes - Error creando bien`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 400,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+    
 
     res.status(400).json({
       success: false,
@@ -318,99 +244,13 @@ exports.updateBien = async (req, res) => {
      
 
     // AUDITORÍA: Registrar después de enviar la respuesta
-    setImmediate(async () => {
-      try {
-        // Si hay cambios en la imagen, agregarlo a la descripción
-        let descripcionFinal = descripcion;
-        if (req.file) {
-          descripcionFinal += (descripcionFinal ? '; ' : '') + 'imagen actualizada';
-        }
-
-        
-    
-        console.log(`✅ usuario procesado `, req.user?.roles[0]);
-       
-        
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'UPDATE',
-          modulo: 'BIENES',
-          entidad: {
-            nombre: 'Bien',
-            id: req.params.id,
-            datos_previos: datosPreviosLimpios, // ← USAR COPIA SIN IMAGEN
-            datos_nuevos: datosNuevosLimpios,   // ← USAR COPIA SIN IMAGEN
-            cambios_detectados: cambios
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `PUT /api/bienes/${req.params.id}`,
-          descripcion_detallada: descripcionFinal || 'Actualización sin cambios detectados',
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 200,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de actualización guardada:', descripcionFinal || 'Sin cambios');
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+   
 
   } catch (error) {
     console.error('❌ Error en updateBien:', error);
     
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'UPDATE',
-          modulo: 'BIENES',
-          entidad: {
-            nombre: 'Bien',
-            id: req.params.id
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `PUT /api/bienes/${req.params.id} - Error actualizando bien`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 400,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+  
 
     res.status(400).json({
       success: false,
@@ -450,88 +290,13 @@ exports.deleteBien = async (req, res) => {
     });
 
     // AUDITORÍA: Registrar después de enviar la respuesta
-    setImmediate(async () => {
-      try {
-        const descripcionDetallada = `Bien eliminado: ${datosEliminados.nombre || datosEliminados.codigo} (Categoría: ${datosEliminados.categoria}, Valor: ${datosEliminados.valor})`;
-        
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'DELETE',
-          modulo: 'BIENES',
-          entidad: {
-            nombre: 'Bien',
-            id: req.params.id,
-            datos_previos: datosEliminados
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `DELETE /api/bienes/${req.params.id}`,
-          descripcion_detallada: descripcionDetallada,
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 200,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de eliminación guardada:', descripcionDetallada);
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+    
 
   } catch (error) {
     console.error('❌ Error en deleteBien:', error);
     
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'DELETE',
-          modulo: 'BIENES',
-          entidad: {
-            nombre: 'Bien',
-            id: req.params.id
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `DELETE /api/bienes/${req.params.id} - Error eliminando bien`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 500,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+    
 
     res.status(500).json({ message: "Error al eliminar el bien", error });
   }

@@ -200,87 +200,13 @@ exports.crearPersonal = async (req, res) => {
     delete personalDataParaAuditoria.documentacion;
 
     // AUDITORÍA: Registrar después de enviar la respuesta
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'CREATE',
-          modulo: 'PERSONAL',
-          entidad: {
-            nombre: 'Personal',
-            id: empleadoGuardado._id,
-            datos_nuevos: personalDataParaAuditoria,
-            cambios_detectados: null
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `POST /api/personal - Creación de personal`,
-          descripcion_detallada: descripcionDetallada,
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 201,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de creación guardada:', descripcionDetallada);
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+  
 
   } catch (error) {
     console.error('❌ Error al crear empleado:', error);
 
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'CREATE',
-          modulo: 'PERSONAL',
-          entidad: {
-            nombre: 'Personal',
-            datos_nuevos: req.body
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `POST /api/personal - Error creando personal`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 500,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+    
 
     res.status(500).json({
       success: false,
@@ -408,93 +334,13 @@ exports.actualizarPersonal = async (req, res) => {
     });
 
     // AUDITORÍA
-    setImmediate(async () => {
-      try {
-        let descripcionFinal = descripcion;
-        if (req.file) {
-          descripcionFinal += (descripcionFinal ? '; ' : '') + 'imagen actualizada';
-        }
-
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'UPDATE',
-          modulo: 'PERSONAL',
-          entidad: {
-            nombre: 'Personal',
-            id: id,
-            datos_previos: datosPreviosLimpios,
-            datos_nuevos: datosNuevosLimpios,
-            cambios_detectados: cambios
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `PUT /api/personal/${id}`,
-          descripcion_detallada: descripcionFinal || 'Actualización sin cambios detectados',
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 200,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de actualización guardada:', descripcionFinal || 'Sin cambios');
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+    
 
   } catch (error) {
     console.error('Error en actualizarPersonal:', error);
 
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'UPDATE',
-          modulo: 'PERSONAL',
-          entidad: {
-            nombre: 'Personal',
-            id: req.params.id
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `PUT /api/personal/${req.params.id} - Error actualizando personal`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 500,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
+    
 
     res.status(500).json({ success: false, message: error.message });
   }
@@ -532,89 +378,13 @@ exports.eliminarPersonal = async (req, res) => {
     });
 
     // AUDITORÍA
-    setImmediate(async () => {
-      try {
-        const descripcionDetallada = `Personal eliminado: ${datosEliminados.nombres} ${datosEliminados.apellidos} (Código: ${datosEliminados.codigo}, Identidad: ${datosEliminados.numero_identidad})`;
-        
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'DELETE',
-          modulo: 'PERSONAL',
-          entidad: {
-            nombre: 'Personal',
-            id: req.params.id,
-            datos_previos: datosEliminados
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `DELETE /api/personal/${req.params.id}`,
-          descripcion_detallada: descripcionDetallada,
-          resultado: 'EXITO',
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 200,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-        console.log('✅ Auditoría de eliminación guardada:', descripcionDetallada);
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría:', auditError);
-      }
-    });
+    
 
   } catch (error) {
     console.error('Error al eliminar empleado:', error);
 
     // AUDITORÍA DE ERROR
-    setImmediate(async () => {
-      try {
-        await Auditoria.create({
-          usuario: req.user ? {
-            id: req.user._id || req.user.id,
-            username: req.user?.username || req.user?.email || 'Sistema',
-            email: req.user?.email || 'sistema@local',
-            rol: req.user?.roles ? req.user?.roles[0] : 'sistema'
-          } : {
-            username: 'Sistema',
-            email: 'sistema@local',
-            rol: 'sistema'
-          },
-          accion: 'DELETE',
-          modulo: 'PERSONAL',
-          entidad: {
-            nombre: 'Personal',
-            id: req.params.id
-          },
-          ip_address: req.ip || req.connection.remoteAddress,
-          user_agent: req.get('User-Agent'),
-          detalles: `DELETE /api/personal/${req.params.id} - Error eliminando personal`,
-          descripcion_detallada: `Error: ${error.message}`,
-          resultado: 'ERROR',
-          error_message: error.message,
-          metadata: {
-            query: req.query,
-            params: req.params,
-            statusCode: 500,
-            duration: Date.now() - (req.requestStartTime || Date.now())
-          },
-          fecha_creacion: new Date()
-        });
-      } catch (auditError) {
-        console.error('❌ Error guardando auditoría de error:', auditError);
-      }
-    });
-
+    
     res.status(500).json({
       success: false,
       message: 'Error al eliminar el empleado',
