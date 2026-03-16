@@ -13,7 +13,7 @@ const {
 } = require("../Controllers/actividadesController");
 
 router.post("/", authenticateUser,registrarAuditoria('ACTIVIDADES'), crearActividad);
-router.get("/", authenticateUser,registrarAuditoria('ACTIVIDADES'), obtenerActividades);
+router.get("/", authenticateUser, obtenerActividades);
 router.put("/:id", authenticateUser, capturarDatosPrevios(Modelo), registrarAuditoria('ACTIVIDADES'),
 actualizarActividad); // actualizar
 router.delete("/:id", authenticateUser, capturarDatosPrevios(Modelo), registrarAuditoria('ACTIVIDADES'),

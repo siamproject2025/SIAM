@@ -14,7 +14,7 @@ const {
   eliminarHorario,
 } = require("../Controllers/horariosController");
 
-router.get("/", registrarAuditoria('HORARIOS'), obtenerHorarios);
+router.get("/", obtenerHorarios);
 router.get("/:id", obtenerHorario);
 router.post("/",  registrarAuditoria('HORARIOS'), crearHorario);
 router.put("/:id",capturarDatosPrevios(Modelo), registrarAuditoria('HORARIOS'),actualizarHorario);

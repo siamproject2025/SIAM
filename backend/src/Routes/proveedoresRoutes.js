@@ -22,7 +22,7 @@ router.use((req, res, next) => {
 
 router.use(authenticateUser);
 // Rutas básicas CRUD
-router.get('/', registrarAuditoria('PROVEEDORES'), obtenerProveedores);
+router.get('/',  obtenerProveedores);
 router.get('/:id', obtenerProveedorPorId);
 router.post('/',  registrarAuditoria('PROVEEDORES'), crearProveedor);
 router.put('/:id',capturarDatosPrevios(Proveedor), registrarAuditoria('PROVEEDORES'),  actualizarProveedor);

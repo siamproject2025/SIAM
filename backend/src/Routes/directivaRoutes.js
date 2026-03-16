@@ -47,12 +47,12 @@ router.use((req, res, next) => {
 
 // Rutas principales
 router.get('/', 
-  registrarAuditoria('DIRECTIVA'),
+ 
   obtenerMiembrosDirectiva
 );
 
 router.get('/estadisticas/estados', 
-  registrarAuditoria('DIRECTIVA'),
+ 
   obtenerEstadisticas
 );
 

@@ -26,12 +26,12 @@ router.use(authenticateUser);
 
 // GET /api/bienes - Listar todos los bienes
 router.get("/", 
-  registrarAuditoria('BIENES'),
+  
   getBienes
 );
 
 router.get("/:id",
-  registrarAuditoria('BIENES'),
+  
   getBienById
 );
 

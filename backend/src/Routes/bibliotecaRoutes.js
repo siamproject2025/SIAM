@@ -12,7 +12,7 @@ const upload = multer({ storage });
 router.post("/", upload.single("archivo"),registrarAuditoria('BIBLIOTECA'), libroController.crearLibro);
 
 // GET: Listar libros
-router.get("/", registrarAuditoria('BIBLIOTECA'),libroController.obtenerLibros);
+router.get("/",libroController.obtenerLibros);
 
 // DELETE: Eliminar libro
 router.delete("/:id", capturarDatosPrevios(Modelo), registrarAuditoria('BIBLIOTECA'), libroController.eliminarLibro);
