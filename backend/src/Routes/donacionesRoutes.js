@@ -16,12 +16,12 @@ router.use(authenticateUser);
 
 // Rutas básicas CRUD
 router.get('/', 
-  registrarAuditoria('DONACIONES'),
+  
   donacionesController.getAllDonaciones
 );
 
 router.get('/:id', 
-  registrarAuditoria('DONACIONES'),
+  
   donacionesController.getDonacionById
 );
 

@@ -26,12 +26,12 @@ router.use(authenticateUser);
 
 // Rutas básicas CRUD
 router.get('/', 
-  registrarAuditoria('PERSONAL'),
+ 
   obtenerPersonal
 );
 
 router.get('/:id', 
-  registrarAuditoria('PERSONAL'),
+ 
   obtenerPersonalPorId
 );
 

@@ -68,7 +68,6 @@ const Bitacora = () => {
     { value: 'DELETE', label: 'Eliminación' },
     { value: 'LOGIN', label: 'Inicio de sesión' },
     { value: 'LOGOUT', label: 'Cierre de sesión' },
-    { value: 'VIEW', label: 'Visualización' },
     { value: 'EXPORT', label: 'Exportación' }
   ];
 

@@ -14,7 +14,7 @@ router.get("/ping", (req, res) => {
 
 router.use(authenticateUser);
 router.post("/", registrarAuditoria('GRADOS'), ctrl.crearGrado);
-router.get("/", registrarAuditoria('GRADOS'), ctrl.listarGrados);
+router.get("/", ctrl.listarGrados);
 
 /* ---- rutas finales con ID ---- */
 router.get("/:id", ctrl.obtenerGrado);

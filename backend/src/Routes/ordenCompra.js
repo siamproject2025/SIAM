@@ -10,7 +10,7 @@ const Orden = require("../Models/ordenCompra"); // Importar modelo para capturar
 
 router.use(authenticateUser);
 router.post("/", registrarAuditoria('ORDENES_COMPRA'),ordenController.crearOrden);
-router.get("/", registrarAuditoria('ORDENES_COMPRA'),ordenController.obtenerOrdenes);
+router.get("/",ordenController.obtenerOrdenes);
 router.put("/:id",capturarDatosPrevios(Orden), registrarAuditoria('ORDENES_COMPRA'), ordenController.actualizarOrden);
 router.delete("/:id",capturarDatosPrevios(Orden), registrarAuditoria('ORDENES_COMPRA'), ordenController.eliminarOrden);
 module.exports = router;
