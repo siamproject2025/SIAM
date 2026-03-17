@@ -27,7 +27,7 @@ router.get("/usuarios/role", authenticateUser, (req, res) => {
 // Asignar roles a usuario
 router.put('/usuarios/:id/rol', 
   authenticateUser, 
-  checkPermission('ASIGNAR_ROLES'),capturarDatosPrevios(Modelo), registrarAuditoria('USUARIOS'),
+  checkPermission('ACTUALIZAR_SEGURIDAD'),capturarDatosPrevios(Modelo), registrarAuditoria('USUARIOS'),
  // Permiso específico
   usuarioController.asignarRol
 );

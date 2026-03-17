@@ -10,6 +10,7 @@ import {
 import { MdDelete, MdAdminPanelSettings, MdSecurity } from "react-icons/md";
 import { RiShieldUserLine, RiArrowLeftSLine } from "react-icons/ri";
 import { FiShield } from "react-icons/fi";
+import WithPermission from '../../../components/Permisos/WithPermission';
 
 // Configuración de API
 const API_HOST = process.env.REACT_APP_API_URL;
@@ -97,7 +98,7 @@ function App() {
     BIENES: ['VISUALIZAR_BIENES', 'CREAR_BIENES', 'ACTUALIZAR_BIENES', 'ELIMINAR_BIENES'],
     DIRECTIVA: ['VISUALIZAR_DIRECTIVA', 'CREAR_DIRECTIVA', 'ACTUALIZAR_DIRECTIVA', 'ELIMINAR_DIRECTIVA'],
     PERSONAL: ['VISUALIZAR_PERSONAL', 'CREAR_PERSONAL', 'ACTUALIZAR_PERSONAL', 'ELIMINAR_PERSONAL'],
-    SEGURIDAD: ['VISUALIZAR_SEGURIDAD', 'CREAR_SEGURIDAD', 'ACTUALIZAR_SEGURIDAD', 'ELIMINAR_SEGURIDAD'],
+    GESTION_DE_USUARIOS: ['VISUALIZAR_SEGURIDAD', 'CREAR_SEGURIDAD', 'ACTUALIZAR_SEGURIDAD', 'ELIMINAR_SEGURIDAD'],
     AUDITORIA: ['VISUALIZAR_AUDITORIA', 'CREAR_AUDITORIA', 'ACTUALIZAR_AUDITORIA', 'ELIMINAR_AUDITORIA'],
     BIBLIOTECA: ['VISUALIZAR_BIBLIOTECA', 'CREAR_BIBLIOTECA', 'ACTUALIZAR_BIBLIOTECA', 'ELIMINAR_BIBLIOTECA'],
     CALENDARIO: ['VISUALIZAR_CALENDARIO', 'CREAR_CALENDARIO', 'ACTUALIZAR_CALENDARIO', 'ELIMINAR_CALENDARIO'],
@@ -105,7 +106,8 @@ function App() {
     GRADOS: ['VISUALIZAR_GRADOS', 'CREAR_GRADOS', 'ACTUALIZAR_GRADOS', 'ELIMINAR_GRADOS'],
     HORARIOS: ['VISUALIZAR_HORARIOS', 'CREAR_HORARIOS', 'ACTUALIZAR_HORARIOS', 'ELIMINAR_HORARIOS'],
     MATRICULA: ['VISUALIZAR_MATRICULA', 'CREAR_MATRICULA', 'ACTUALIZAR_MATRICULA', 'ELIMINAR_MATRICULA'],
-    DASHBOARD: ['VISUALIZAR_DASHBOARD']
+    DASHBOARD: ['VISUALIZAR_DASHBOARD'],
+    ROLES: ['VISUALIZAR_ROLES','CREAR_ROLES','ACTUALIZAR_ROLES', 'ELIMINAR_ROLES']
   };
 
   // Función para agrupar permisos por módulo para visualización
@@ -300,6 +302,7 @@ function App() {
           >
             <FaEraser /> Limpiar Filtros
           </button>
+          <WithPermission requiredPermissions={["CREAR_ROLES"]}>
           <button 
             className="rols-css-btn rols-css-btn-primary" 
             onClick={() => {
@@ -311,6 +314,7 @@ function App() {
           >
             <FaPlus /> Nuevo Rol
           </button>
+          </WithPermission>
         </div>
       </div>
 
@@ -336,6 +340,7 @@ function App() {
                   <span className="rols-css-rol-id">{rol._id}</span>
                 </div>
                 <div className="rols-css-rol-actions">
+                  <WithPermission requiredPermissions={["ACTUALIZAR_ROLES"]}>
                   <button 
                     className="rols-css-btn-icon" 
                     onClick={() => handleEditarRol(rol)}
@@ -345,6 +350,8 @@ function App() {
                   >
                     <FaEdit />
                   </button>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={["ELIMINAR_ROLES"]}>
                   <button 
                     className="rols-css-btn-icon rols-css-btn-icon-delete" 
                     onClick={() => handleEliminarRol(rol._id)}
@@ -354,6 +361,7 @@ function App() {
                   >
                     <MdDelete />
                   </button>
+                  </WithPermission>
                 </div>
               </div>
               

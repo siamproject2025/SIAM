@@ -8,6 +8,7 @@ import { FaCheckDouble } from "react-icons/fa";
 import { MdError } from "react-icons/md";
 import { IoWarning } from "react-icons/io5";
 import { FaSearch } from "react-icons/fa";
+import WithPermission from '../../../components/Permisos/WithPermission';
 const Bitacora = () => {
   // Estados con valores por defecto seguros
   // Nuevos estados para control de auditoría
@@ -523,6 +524,7 @@ const Bitacora = () => {
           </button>
           
           {/* Botón para control de auditoría */}
+          <WithPermission requiredPermissions={["ACTUALIZAR_AUDITORIA"]}>
           <button 
             className={`btn ${auditEnabled ? 'btn-warning' : 'btn-success'}`}
             onClick={() => confirmAuditToggle(auditEnabled ? 'disable' : 'enable')}
@@ -541,11 +543,12 @@ const Bitacora = () => {
               </>
             ) : (
               <>
-                <span>{auditEnabled ? '🔴' : '🟢'}</span>
+               
                 {auditEnabled ? 'Desactivar Auditoría' : 'Activar Auditoría'}
               </>
             )}
           </button>
+          </WithPermission>
         </div>
       </div>
 

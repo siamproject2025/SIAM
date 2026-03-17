@@ -2,6 +2,7 @@
 const { authenticateUser } = require('../middleware/authMiddleWare');
 const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
 const Modelo = require("../Models/Grado"); // Importar modelo para capturar datos previos
+const { checkPermission } = require('../middleware/checkPermission');
 
 const { Router } = require("express");
 const ctrl = require("../Controllers/gradosController");
@@ -13,13 +14,13 @@ router.get("/ping", (req, res) => {
 });
 
 router.use(authenticateUser);
-router.post("/", registrarAuditoria('GRADOS'), ctrl.crearGrado);
+router.post("/",checkPermission('CREAR_GRADOS'), registrarAuditoria('GRADOS'), ctrl.crearGrado);
 router.get("/", ctrl.listarGrados);
 
 /* ---- rutas finales con ID ---- */
 router.get("/:id", ctrl.obtenerGrado);
-router.put("/:id",capturarDatosPrevios(Modelo), registrarAuditoria('GRADOS'), ctrl.actualizarGrado);
-router.delete("/:id",capturarDatosPrevios(Modelo), registrarAuditoria('GRADOS'), ctrl.eliminarGrado);
+router.put("/:id",checkPermission('ACTUALIZAR_GRADOS'), capturarDatosPrevios(Modelo), registrarAuditoria('GRADOS'), ctrl.actualizarGrado);
+router.delete("/:id",checkPermission('ELIMINAR_GRADOS'),capturarDatosPrevios(Modelo), registrarAuditoria('GRADOS'), ctrl.eliminarGrado);
 router.patch("/:id/restaurar", ctrl.restaurarGrado);
 
 module.exports = router;
