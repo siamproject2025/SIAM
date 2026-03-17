@@ -4,6 +4,7 @@ import "../../../styles/grados.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { Apple, Book, Calendar, X, Trash2, Users, User, Search,Heart, Gift, Shirt } from "lucide-react";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
+import WithPermission from "../../../components/Permisos/WithPermission"
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API = `${API_BASE}/api/grados`;
@@ -237,10 +238,11 @@ export default function GradosPage() {
         </motion.div>
       <div className="container-fluid mt-4">
         <div className="d-flex justify-content-between align-items-center mb-4">
+            <WithPermission requiredPermissions={["CREAR_GRADOS"]}>
           <button className="grados-btn-primary" onClick={openCreate}>
             + Nuevo Grado
           </button>
-
+            </WithPermission>
           {/* FILTRO POR GRADOS REGISTRADOS */}
           <div className="grados-filters-card" style={{minWidth: '400px'}}>
             <div className="grados-filters-body d-flex gap-2">
@@ -286,11 +288,16 @@ export default function GradosPage() {
                     </span>
                   </td>
                   <td className="text-end">
+                      <WithPermission requiredPermissions={["ACTUALIZAR_GRADOS"]}>
                     <button className="grados-btn-edit" onClick={() => openEdit(g)}>Editar</button>
+                    </WithPermission>
                     {g.totalAlumnos === 0 && (
+                      <WithPermission requiredPermissions={["ELIMINAR_GRADOS"]}>
                        <button className="grados-btn-deactivate" onClick={() => { setGradoAEliminar(g); setShowConfirm(true); }}>
                          <Trash2 size={14} />
                        </button>
+                       </WithPermission>
+                       
                     )}
                   </td>
                 </tr>

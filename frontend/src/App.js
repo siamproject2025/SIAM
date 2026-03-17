@@ -215,7 +215,7 @@ function App() {
             </Route>
 
              {/* ==================== MÓDULO ROLES ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_ROLES"]} />}>
               <Route path="/roles" element={<CrearRol />} />
             </Route>
 

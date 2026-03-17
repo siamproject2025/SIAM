@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UsuariosChart from '../../../components/UsuariosChart'
 import Notification from "../../../components/Notification";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 const API_URL = process.env.REACT_APP_API_URL;
 const API_ROLES = `${API_URL}/api/roles`;
@@ -388,6 +389,7 @@ const AsignarRol = () => {
                         </span>
                       )}
                     </td>
+                    
                     <td>
                       <div className="rol-table-actions">
                         {isEditing ? (
@@ -414,7 +416,7 @@ const AsignarRol = () => {
                             </button>
                           </>
                         ) : (
-                          <>
+                          <><WithPermission requiredPermissions={["ACTUALIZAR_SEGURIDAD"]}>
                             <button 
                               className="rol-table-btn edit"
                               onClick={() => setUsuarioEditando(usuario._id)}
@@ -422,6 +424,8 @@ const AsignarRol = () => {
                             >
                               <FiEdit3 />
                             </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={["ELIMINAR_SEGURIDAD"]}>
                             <button 
                               className="rol-table-btn delete"
                               onClick={() => handleEliminarUsuario(usuario)}
@@ -429,10 +433,12 @@ const AsignarRol = () => {
                             >
                               <FiTrash2 />
                             </button>
+                            </WithPermission>
                           </>
                         )}
                       </div>
                     </td>
+                    
                   </motion.tr>
                 );
               })

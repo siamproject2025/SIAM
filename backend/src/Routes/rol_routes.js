@@ -10,38 +10,38 @@ const Modelo = require("../Models/Rol"); // Importar modelo para capturar datos 
 // Todas las rutas de roles requieren autenticación y permiso específico
 router.get('/roles', 
   authenticateUser, 
-  checkPermission('VISUALIZAR_SEGURIDAD'),
+
   rolController.listarRoles
 );
 
 router.get('/roles/:id', 
   authenticateUser, 
-  checkPermission('VISUALIZAR_SEGURIDAD'),
+
   rolController.obtenerRol
 );
 
 router.post('/roles', 
   authenticateUser, 
-  checkPermission('CREAR_SEGURIDAD'),capturarDatosPrevios(Modelo), registrarAuditoria('ROLES'),
+  checkPermission('CREAR_ROLES'),capturarDatosPrevios(Modelo), registrarAuditoria('ROLES'),
   rolController.crearRol
 );
 
 router.put('/roles/:id', 
   authenticateUser, 
-  checkPermission('ACTUALIZAR_SEGURIDAD'),capturarDatosPrevios(Modelo), registrarAuditoria('ROLES'),
+  checkPermission('ACTUALIZAR_ROLES'),capturarDatosPrevios(Modelo), registrarAuditoria('ROLES'),
   rolController.actualizarRol
 );
 
 router.delete('/roles/:id', 
   authenticateUser, 
-  checkPermission('ELIMINAR_SEGURIDAD'),capturarDatosPrevios(Modelo), registrarAuditoria('ROLES'),
+  checkPermission('ELIMINAR_ROLES'),capturarDatosPrevios(Modelo), registrarAuditoria('ROLES'),
   rolController.eliminarRol
 );
 
 // Rutas para permisos de usuario
 router.get('/usuarios/:id/permisos',
   authenticateUser,
-  checkPermission('VISUALIZAR_SEGURIDAD'),
+
   rolController.obtenerPermisosUsuario
 );
 
