@@ -4,6 +4,7 @@ import "../../../styles/grados.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { Apple, Book, Calendar, X, Trash2, Users, User, Search,Heart, Gift, Shirt } from "lucide-react";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
+import Notification from '../../../components/Notification';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API = `${API_BASE}/api/grados`;
@@ -39,6 +40,11 @@ export default function GradosPage() {
 
   const [gradoAEliminar, setGradoAEliminar] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [notification, setNotification] = useState(null);
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
 
   const params = useMemo(() => {
     const p = new URLSearchParams();
@@ -131,33 +137,42 @@ export default function GradosPage() {
     setShowAlumnosModal(true);
   };
 
-  const save = async () => {
-    const e = validate(form);
-    setErrors(e);
-    if (Object.keys(e).length > 0) return;
+const save = async () => {
+  const e = validate(form);
+  setErrors(e);
+  if (Object.keys(e).length > 0) return;
 
-    try {
-      setLoading(true);
-      const method = editing ? "PUT" : "POST";
-      const url = editing ? `${API}/${form._id}` : API;
+  try {
+    setLoading(true);
+    const method = editing ? "PUT" : "POST";
+    const url = editing ? `${API}/${form._id}` : API;
 
-      await fetchWithToken(url, {
-        method,
-        body: JSON.stringify({
-          ...form,
-          anio_academico: Number(form.anio_academico),
-          timestamp: new Date().toISOString() 
-        }),
-      });
+    await fetchWithToken(url, {
+      method,
+      body: JSON.stringify({
+        ...form,
+        anio_academico: Number(form.anio_academico),
+        timestamp: new Date().toISOString() 
+      }),
+    });
 
-      setShowModal(false);
-      fetchList(page);
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // --- FLUJO DE ÉXITO ---
+    setShowModal(false);
+    fetchList(page);
+    showNotification(
+      editing ? "¡Grado actualizado con éxito!" : "¡Grado creado exitosamente!",
+      "success"
+    );
+    // -----------------------
+
+  } catch (err) {
+    // --- FLUJO DE ERROR ---
+    showNotification(err.message || "Error al procesar la solicitud", "error");
+    // ----------------------
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="grados-container">
@@ -387,12 +402,44 @@ export default function GradosPage() {
 
       <ConfirmDialog
         visible={showConfirm}
-        onConfirm={async () => {
-          await fetchWithToken(`${API}/${gradoAEliminar._id}`, { method: "DELETE" });
-          setShowConfirm(false); fetchList(page);
-        }}
+        message={'Desea eliminar este grado?'}
+       onConfirm={async () => {
+  try {
+    setLoading(true);
+
+    await fetchWithToken(`${API}/${gradoAEliminar._id}`, { method: "DELETE" });
+
+    showNotification(
+      `El grado "${gradoAEliminar.grado}" fue eliminado correctamente`,
+      "success"
+    );
+
+    setShowConfirm(false);
+    setGradoAEliminar(null);
+    fetchList(page);
+
+  } catch (err) {
+    showNotification(
+      err.message || "Error al eliminar el grado",
+      "error"
+    );
+  } finally {
+    setLoading(false);
+  }
+}}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+<AnimatePresence>
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+    </AnimatePresence>
+  </div>
+  
+      
   );
 }

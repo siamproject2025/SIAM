@@ -7,6 +7,10 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 const ModalCrearBien = ({ onClose, onCreate }) => {
   const [notification, setNotification] = useState(null);
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
   const [nuevoBien, setNuevoBien] = useState({
     codigo: '',
     nombre: '',
@@ -36,13 +40,13 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
     if (file) {
       // Validar tamaño (5MB máximo)
       if (file.size > 5 * 1024 * 1024) {
-        mostrarNotificacion('La imagen no debe superar 5MB', 'error');
+        showNotification('La imagen no debe superar 5MB', 'error');
         return;
       }
 
       // Validar tipo
       if (!file.type.startsWith('image/')) {
-        mostrarNotificacion('Solo se permiten imágenes', 'error');
+        showNotification('Solo se permiten imágenes', 'error');
         return;
       }
 
@@ -54,10 +58,12 @@ const ModalCrearBien = ({ onClose, onCreate }) => {
     }
   };
 
+
+    /*  
     const mostrarNotificacion = (mensaje, tipo = 'success') => {
       setNotification({ message: mensaje, type: tipo });
       setTimeout(() => setNotification(null), 4000);
-    };
+    };*/
     
    const eliminarFoto = () => {
     if (nuevoBien.foto_preview) {
