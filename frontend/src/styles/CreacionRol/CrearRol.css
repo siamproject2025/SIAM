@@ -1,0 +1,919 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+.rols-css-app {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #fcfcfc;
+}
+
+/* ==================== HEADER CON GRADIENTE (IGUAL A ASIGNARROL) ==================== */
+.rols-css-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 32px 40px;
+  border-radius: 24px;
+  box-shadow: 0 20px 30px -10px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.rols-css-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5 L55 30 L30 55 L5 30 Z' fill='%23ffffff' fill-opacity='0.05'/%3E%3C/svg%3E");
+  opacity: 0.3;
+  z-index: 1;
+}
+
+.rols-css-header h1 {
+  position: relative;
+  z-index: 2;
+  font-size: 2.5rem;
+  color: white;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.rols-css-header h1 i,
+.rols-css-header h1 svg {
+  font-size: 2.5rem;
+  color: white;
+}
+
+.rols-css-header-badge {
+  display: inline-flex;
+  padding: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.rols-css-header-badge svg {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.rols-css-header-subtitle {
+  position: relative;
+  z-index: 2;
+  color: rgba(255,255,255,0.95);
+  font-size: 1.2rem;
+  margin: 8px 0 0 0;
+  font-weight: 400;
+}
+
+/* ==================== FILTROS ==================== */
+.rols-css-filtros-container {
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-bottom: 32px;
+  border: 1px solid #e2e8f0;
+}
+
+.rols-css-filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.rols-css-filtro-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rols-css-filtro-item i,
+.rols-css-filtro-item svg {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.rols-css-filtro-item input {
+  width: 100%;
+  padding: 14px 14px 14px 44px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background: white;
+}
+
+.rols-css-filtro-item input:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.rols-css-filtro-select {
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 14px;
+  color: #1f2937;
+  background: white;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.rols-css-filtro-select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.rols-css-filtro-select:hover {
+  border-color: #667eea;
+}
+
+.rols-css-filtros-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  border-top: 2px solid #e2e8f0;
+  padding-top: 24px;
+}
+
+/* ==================== BOTONES ==================== */
+.rols-css-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+
+.rols-css-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3);
+}
+
+.rols-css-btn-primary:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.4);
+}
+
+.rols-css-btn-outline {
+  background: transparent;
+  border: 2px solid #e2e8f0;
+  color: #4b5563;
+}
+
+.rols-css-btn-outline:hover {
+  background: #f8fafc;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.rols-css-btn-icon {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.rols-css-btn-icon:hover {
+  background: #f1f5f9;
+  color: #667eea;
+}
+
+.rols-css-btn-icon-delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ==================== ROLES HEADER ==================== */
+.rols-css-roles-header {
+  margin-bottom: 24px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.rols-css-roles-header h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ==================== ROLES GRID ==================== */
+.rols-css-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.rols-css-rol-card {
+  background: white;
+  border-radius: 20px;
+  padding: 18px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+  border: 1px solid #e2e8f0;
+}
+
+.rols-css-rol-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
+}
+
+.rols-css-rol-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.rols-css-rol-card-header h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.rols-css-rol-id {
+  font-size: 0.7rem;
+  color: #667eea;
+  background: #e0e7ff;
+  padding: 4px 10px;
+  border-radius: 30px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: inline-block;
+}
+
+.rols-css-rol-descripcion {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rols-css-rol-info {
+  flex: 1;
+}
+
+.rols-css-rol-resumen {
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #e2e8f0;
+}
+
+.rols-css-rol-resumen:hover {
+  background: #f1f5f9;
+  border-color: #667eea;
+}
+
+.rols-css-resumen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rols-css-resumen-titulo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #667eea;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.rols-css-resumen-titulo i,
+.rols-css-resumen-titulo svg {
+  font-size: 0.75rem;
+}
+
+.rols-css-resumen-modulos {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.rols-css-modulo-resumen {
+  background: white;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: #4b5563;
+  border: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.rols-css-modulo-resumen-mas {
+  background: #dbeafe;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.rols-css-expand-icon {
+  color: #94a3b8;
+  transition: transform 0.3s;
+  font-size: 0.85rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rols-css-expand-icon.rols-css-expanded {
+  transform: rotate(180deg);
+  color: #667eea;
+}
+
+/* ==================== PERMISOS DETALLADOS ==================== */
+.rols-css-rol-permisos-detallados {
+  margin-top: 12px;
+  padding-top: 12px;
+  animation: slideDown 0.3s ease;
+}
+
+.rols-css-rol-permisos-detallados h5 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.rols-css-modulo-permisos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.rols-css-modulo-permisos:last-child {
+  border-bottom: none;
+}
+
+.rols-css-modulo-nombre {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4b5563;
+  text-transform: capitalize;
+}
+
+.rols-css-acciones-container {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.rols-css-accion-badge {
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.rols-css-accion-ver {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.rols-css-accion-crear {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rols-css-accion-actualizar {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rols-css-accion-eliminar {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ==================== MODAL ==================== */
+.rols-css-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.rols-css-modal-content {
+  background: white;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 850px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.rols-css-modal-header {
+  padding: 24px 28px;
+  border-bottom: 1.5px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: white;
+  border-radius: 24px 24px 0 0;
+  z-index: 10;
+}
+
+.rols-css-modal-header h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.rols-css-modal-content form {
+  padding: 28px;
+}
+
+.rols-css-modal-footer {
+  padding: 24px 28px;
+  border-top: 1.5px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  border-radius: 0 0 24px 24px;
+  z-index: 10;
+}
+
+/* ==================== FORMULARIO ==================== */
+.rols-css-form-group {
+  margin-bottom: 24px;
+}
+
+.rols-css-form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.rols-css-form-control {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  background: white;
+}
+
+.rols-css-form-control:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.rols-css-form-control-error {
+  border-color: #dc2626;
+}
+
+.rols-css-error-message {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  display: block;
+}
+
+.rols-css-form-group small {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+textarea.rols-css-form-control {
+  resize: vertical;
+  min-height: 90px;
+}
+
+/* ==================== PERMISOS CONTAINER ==================== */
+.rols-css-permisos-container {
+  max-height: 450px;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  background: #f8fafc;
+}
+
+.rols-css-grupo-permisos {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.rols-css-grupo-permisos:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.rols-css-grupo-header {
+  margin-bottom: 16px;
+  background: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.rols-css-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.rols-css-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.rols-css-permisos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-left: 32px;
+}
+
+.rols-css-permiso-accion {
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.rols-css-permiso-accion-visualizar {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.rols-css-permiso-accion-crear {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rols-css-permiso-accion-actualizar {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rols-css-permiso-accion-eliminar {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ==================== NOTIFICACIONES ==================== */
+.rols-css-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
+  z-index: 1100;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rols-css-notification-success {
+  background: #10b981;
+}
+
+.rols-css-notification-error {
+  background: #ef4444;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ==================== LOADING ==================== */
+.rols-css-loading {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* ==================== ESTADOS DISABLED ==================== */
+.rols-css-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.rols-css-btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== ANIMACIONES ==================== */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* ==================== HEADER TOP CON BOTÓN DE REGRESO ==================== */
+.rols-css-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.rols-css-header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: center;
+}
+
+.rols-css-header-main-icon {
+  font-size: 2.8rem;
+  color: white;
+  opacity: 0.9;
+}
+
+.rols-css-header-secondary-icon {
+  font-size: 2.5rem;
+  color: white;
+  opacity: 0.7;
+}
+
+/* Botón de regreso */
+.rols-css-btn-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 30px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  text-decoration: none;
+  min-width: 140px;
+}
+
+.rols-css-btn-back:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateX(-3px);
+}
+
+.rols-css-btn-back .rols-css-back-icon {
+  font-size: 1.5rem;
+  color: white;
+}
+
+/* Subtítulo con icono */
+.rols-css-header-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 400;
+  position: relative;
+  z-index: 2;
+}
+
+.rols-css-subtitle-icon {
+  font-size: 1.2rem;
+  color: white;
+}
+
+/* Iconos en filtros */
+.rols-css-filtro-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rols-css-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .rols-css-btn-back {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .rols-css-header-title-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .rols-css-header-main-icon,
+  .rols-css-header-secondary-icon {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rols-css-header-title-container {
+    gap: 8px;
+  }
+  
+  .rols-css-header-main-icon,
+  .rols-css-header-secondary-icon {
+    font-size: 1.5rem;
+  }
+  
+  .rols-css-header-subtitle {
+    font-size: 0.95rem;
+  }
+}
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1024px) {
+  .rols-css-app {
+    padding: 20px;
+  }
+  
+  .rols-css-filtros-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .rols-css-app {
+    padding: 16px;
+  }
+  
+  .rols-css-header {
+    padding: 24px;
+  }
+  
+  .rols-css-header h1 {
+    font-size: 2rem;
+  }
+  
+  .rols-css-filtros-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .rols-css-filtros-actions {
+    flex-direction: column;
+  }
+  
+  .rols-css-filtros-actions .rols-css-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .rols-css-roles-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .rols-css-permisos-grid {
+    grid-template-columns: 1fr;
+    margin-left: 0;
+  }
+  
+  .rols-css-resumen-header {
+    flex-wrap: wrap;
+  }
+  
+  .rols-css-resumen-modulos {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rols-css-app {
+    padding: 12px;
+  }
+  
+  .rols-css-header {
+    padding: 20px;
+  }
+  
+  .rols-css-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .rols-css-header-subtitle {
+    font-size: 1rem;
+  }
+  
+  .rols-css-roles-header h3 {
+    font-size: 1.2rem;
+  }
+}

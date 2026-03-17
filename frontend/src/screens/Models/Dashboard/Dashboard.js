@@ -44,7 +44,7 @@ const DashboardCards = () => {
 
   return (
     <div className="main dashboard-container">
-      <AdminOnly><Home></Home></AdminOnly>
+      <Home></Home>
       <div className="dashboard-main">
         <div className="dashboard-grid">
           {modulos.map((modulo, index) => {

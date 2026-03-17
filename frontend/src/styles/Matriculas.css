@@ -438,7 +438,48 @@
   flex: 1;
   overflow-y: auto;
 }
+/* Header top con botones */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
 
+.header-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Botón de grados */
+.btn-grados {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 24px;
+  border-radius: 16px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.btn-grados:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-grados svg {
+  width: 20px;
+  height: 20px;
+}
 /* Responsive */
 @media (max-width: 768px) {
   .header-title {

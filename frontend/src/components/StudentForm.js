@@ -391,13 +391,13 @@ const calcularEdad = (fechaNacimiento) => {
               <div className="form-group">
                 <label htmlFor="edad">Edad *</label>
                 <input
-  type="number"
-  id="edad"
-  name="edad"
-  value={formData.edad}
-  readOnly
-  className={errors.edad ? 'error' : ''}
-/>
+                    type="number"
+                    id="edad"
+                    name="edad"
+                    value={formData.edad}
+                    readOnly
+                    className={errors.edad ? 'error' : ''}
+                  />
 
                 {errors.edad && <span className="error-message">{errors.edad}</span>}
               </div>
@@ -485,7 +485,6 @@ const calcularEdad = (fechaNacimiento) => {
                   {grados.map((grado) => (
                     <option key={grado._id} value={grado._id}>
                       {grado.nombre}  {/* ️ Aquí accedes al nombre */}
-                      {console.log("Debug grados", grado)}
                     </option>
                   ))}
                 </select>

@@ -1,9 +1,11 @@
 const express = require("express");
 const { authenticateUser } = require('../middleware/authMiddleWare');
+const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
+const Modelo = require("../Models/Horario"); // Importar modelo para capturar datos previos
 
 const router = express.Router();
 
-//router.use(authenticateUser);
+router.use(authenticateUser);
 const {
   crearHorario,
   obtenerHorarios,
@@ -12,10 +14,10 @@ const {
   eliminarHorario,
 } = require("../Controllers/horariosController");
 
-router.get("/", authenticateUser, obtenerHorarios);
+router.get("/", obtenerHorarios);
 router.get("/:id", obtenerHorario);
-router.post("/", crearHorario);
-router.put("/:id", actualizarHorario);
-router.delete("/:id", eliminarHorario);
+router.post("/",  registrarAuditoria('HORARIOS'), crearHorario);
+router.put("/:id",capturarDatosPrevios(Modelo), registrarAuditoria('HORARIOS'),actualizarHorario);
+router.delete("/:id", capturarDatosPrevios(Modelo), registrarAuditoria('HORARIOS'),eliminarHorario);
 
 module.exports = router;

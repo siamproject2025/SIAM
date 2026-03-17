@@ -1,17 +1,54 @@
-// controllers/personalController.js
 const Personal = require('../Models/personalModel');
 const multer = require('multer');
 const sharp = require('sharp');
+// const Auditoria = require('../Models/Auditoria'); // Descomentar cuando exista
 
-//  Configuración de multer para almacenar archivos en memoria
+// Configuración de multer para almacenar archivos en memoria
 const upload = multer({ storage: multer.memoryStorage() });
-
-// Ejemplo de uso en rutas:
-// router.post('/personal', upload.single('imagen'), crearPersonal);
-
 exports.uploadMiddleware = upload.single('imagen');
 
-//  Obtener todo el personal
+// Función auxiliar para detectar cambios específicos
+const detectarCambiosEspecificos = (objetoAnterior, objetoNuevo) => {
+  if (!objetoAnterior || !objetoNuevo) return { cambios: null, descripcion: '' };
+  
+  const cambios = {};
+  const camposIgnorar = ['_id', '__v', 'fecha_creacion', 'fecha_actualizacion', 'imagen', 'tipo_imagen', 'cv', 'documentacion'];
+  
+  const todosLosCampos = new Set([
+    ...Object.keys(objetoAnterior),
+    ...Object.keys(objetoNuevo)
+  ]);
+  
+  for (const campo of todosLosCampos) {
+    if (camposIgnorar.includes(campo)) continue;
+    
+    const valorAnterior = objetoAnterior[campo];
+    const valorNuevo = objetoNuevo[campo];
+    
+    if (JSON.stringify(valorAnterior) !== JSON.stringify(valorNuevo)) {
+      cambios[campo] = {
+        anterior: valorAnterior || 'vacío',
+        nuevo: valorNuevo || 'vacío'
+      };
+    }
+  }
+  
+  const camposModificados = Object.keys(cambios);
+  let descripcion = '';
+  
+  if (camposModificados.length > 0) {
+    descripcion = camposModificados.map(campo => {
+      const cambio = cambios[campo];
+      const anterior = String(cambio.anterior).substring(0, 50);
+      const nuevo = String(cambio.nuevo).substring(0, 50);
+      return `${campo}: "${anterior}" → "${nuevo}"`;
+    }).join('; ');
+  }
+  
+  return { cambios, descripcion };
+};
+
+// Obtener todo el personal
 exports.obtenerPersonal = async (req, res) => {
   try {
     const personal = await Personal.find().sort({ fecha_creacion: -1 });
@@ -25,7 +62,7 @@ exports.obtenerPersonal = async (req, res) => {
   }
 };
 
-//  Obtener un empleado por ID
+// Obtener un empleado por ID
 exports.obtenerPersonalPorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -52,9 +89,11 @@ exports.obtenerPersonalPorId = async (req, res) => {
   }
 };
 
-//  Crear nuevo empleado (con soporte para imagen)
+// Crear nuevo empleado (con soporte para imagen)
 exports.crearPersonal = async (req, res) => {
   try {
+    console.log('🚀 Iniciando creación de personal...');
+
     const {
       codigo,
       nombres,
@@ -62,7 +101,6 @@ exports.crearPersonal = async (req, res) => {
       numero_identidad,
       tipo_contrato,
       estado,
-      imagen,
       cv,
       especialidades,
       area_trabajo,
@@ -74,7 +112,7 @@ exports.crearPersonal = async (req, res) => {
       fecha_ingreso
     } = req.body;
 
-    //  Validaciones de duplicados
+    // Validaciones de duplicados
     const [codigoExiste, identidadExiste] = await Promise.all([
       Personal.findOne({ codigo }),
       Personal.findOne({ numero_identidad })
@@ -87,12 +125,12 @@ exports.crearPersonal = async (req, res) => {
       return res.status(400).json({ message: 'Ya existe un empleado con este número de identidad' });
     }
 
-    // ️ Procesamiento de imagen (si existe)
+    // Procesamiento de imagen (si existe)
     let imagenBase64 = null;
     let tipoImagen = null;
 
     if (req.file) {
-      console.log(' Archivo de imagen recibido, procesando...');
+      console.log('📸 Archivo recibido, procesando con Sharp...');
       const TARGET_WIDTH = 600;
       const TARGET_HEIGHT = 600;
       const QUALITY = 60;
@@ -102,9 +140,10 @@ exports.crearPersonal = async (req, res) => {
 
       imagenBase64 = processedBuffer.toString('base64');
       tipoImagen = 'image/jpeg';
-      console.log(` Imagen procesada (${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB)`);
+      console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
     }
-        let cargoAsignacionObj = null;
+
+    let cargoAsignacionObj = null;
     if (cargo_asignacion) {
       try {
         cargoAsignacionObj = JSON.parse(cargo_asignacion);
@@ -112,8 +151,9 @@ exports.crearPersonal = async (req, res) => {
         return res.status(400).json({ message: 'Formato de cargo_asignacion inválido' });
       }
     }
-    //  Crear nuevo registro
-   const nuevoEmpleado = new Personal({
+
+    // Crear el objeto con los datos del personal
+    const personalData = {
       codigo,
       nombres,
       apellidos,
@@ -129,19 +169,45 @@ exports.crearPersonal = async (req, res) => {
       salario,
       fecha_ingreso: fecha_ingreso || Date.now(),
       imagen: imagenBase64,
-      tipo_imagen: tipoImagen
-    });
+      tipo_imagen: tipoImagen,
+      creado_por: req.user?._id || req.user?.id,
+      fecha_creacion: new Date()
+    };
 
+    // Guardar en la base de datos
+    const empleadoGuardado = await Personal.create(personalData);
 
-    const empleadoGuardado = await nuevoEmpleado.save();
+    // Crear descripción detallada de lo que se creó
+    const camposPrincipales = ['codigo', 'nombres', 'apellidos', 'tipo_contrato', 'estado']
+      .filter(c => empleadoGuardado[c])
+      .map(c => `${c}=${empleadoGuardado[c]}`)
+      .join(', ');
+    
+    const descripcionDetallada = `Personal creado: ${camposPrincipales}`;
 
+    // RESPUESTA EXITOSA
     res.status(201).json({
       success: true,
       message: 'Empleado creado exitosamente',
       data: empleadoGuardado
     });
+
+    // Copia para auditoría SIN imagen
+    const personalDataParaAuditoria = { ...personalData };
+    delete personalDataParaAuditoria.imagen;
+    delete personalDataParaAuditoria.tipo_imagen;
+    delete personalDataParaAuditoria.cv;
+    delete personalDataParaAuditoria.documentacion;
+
+    // AUDITORÍA: Registrar después de enviar la respuesta
+  
+
   } catch (error) {
-    console.error(' Error al crear empleado:', error);
+    console.error('❌ Error al crear empleado:', error);
+
+    // AUDITORÍA DE ERROR
+    
+
     res.status(500).json({
       success: false,
       message: 'Error al crear el empleado',
@@ -150,18 +216,23 @@ exports.crearPersonal = async (req, res) => {
   }
 };
 
-//  Actualizar empleado (también permite nueva imagen)
+// Actualizar empleado (también permite nueva imagen)
 exports.actualizarPersonal = async (req, res) => {
   try {
+    console.log('🔄 Iniciando actualización de personal...');
     const { id } = req.params;
 
-    // 1. Validar que el ID sea válido
     if (!id) return res.status(400).json({ message: 'ID no proporcionado' });
 
-    // 2. Extraer datos (asegurarnos de que no vengan como strings "undefined" o "null")
+    // Obtener el personal antes de actualizar (para auditoría)
+    const personalAnterior = await Personal.findById(id);
+    if (!personalAnterior) {
+      return res.status(404).json({ message: 'Empleado no encontrado' });
+    }
+
     const body = req.body;
 
-    // 3. Validar duplicados (excluyendo el actual)
+    // Validar duplicados
     if (body.codigo || body.numero_identidad) {
       const [codigoExiste, identidadExiste] = await Promise.all([
         body.codigo ? Personal.findOne({ codigo: body.codigo, _id: { $ne: id } }) : null,
@@ -172,9 +243,10 @@ exports.actualizarPersonal = async (req, res) => {
       if (identidadExiste) return res.status(400).json({ message: 'La identidad ya está en uso' });
     }
 
-    // 4. Procesar Imagen nueva si existe
+    // Procesar Imagen nueva si existe
     let imagenData = {};
     if (req.file) {
+      console.log('📸 Archivo recibido, procesando con Sharp...');
       const processedBuffer = await sharp(req.file.buffer)
         .resize(600, 600, { fit: 'inside' })
         .jpeg({ quality: 60 })
@@ -184,9 +256,10 @@ exports.actualizarPersonal = async (req, res) => {
         imagen: processedBuffer.toString('base64'),
         tipo_imagen: 'image/jpeg'
       };
+      console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenData.imagen.length / 1024 / 1024).toFixed(2)} MB`);
     }
 
-    // 5. Parsear cargo_asignacion (Multer lo recibe como string)
+    // Parsear cargo_asignacion
     let cargoObj = {};
     if (body.cargo_asignacion) {
       try {
@@ -198,7 +271,7 @@ exports.actualizarPersonal = async (req, res) => {
       }
     }
 
-    // 6. Construir objeto de actualización LIMPIO (solo campos con valor)
+    // Construir objeto de actualización
     const updateData = {};
     const camposDisponibles = [
       'codigo', 'nombres', 'apellidos', 'numero_identidad', 
@@ -213,54 +286,105 @@ exports.actualizarPersonal = async (req, res) => {
       }
     });
 
-    // Añadir objetos procesados
     if (Object.keys(cargoObj).length > 0) updateData.cargo_asignacion = cargoObj;
     if (imagenData.imagen) {
       updateData.imagen = imagenData.imagen;
       updateData.tipo_imagen = imagenData.tipo_imagen;
     }
+    updateData.fecha_actualizacion = new Date();
 
-    // 7. EJECUTAR ACTUALIZACIÓN con $set para mayor seguridad
+    // ===== PREPARAR DATOS PARA AUDITORÍA =====
+    const personalAnteriorObj = personalAnterior.toObject ? personalAnterior.toObject() : personalAnterior;
+    
+    const datosPreviosLimpios = { ...personalAnteriorObj };
+    if (datosPreviosLimpios.imagen) {
+      datosPreviosLimpios.imagen = "imagen no disponible en auditoría";
+    }
+    if (datosPreviosLimpios.tipo_imagen) {
+      datosPreviosLimpios.tipo_imagen = "tipo no disponible";
+    }
+    delete datosPreviosLimpios.cv;
+    delete datosPreviosLimpios.documentacion;
+
+    const datosNuevosLimpios = { ...updateData };
+    if (datosNuevosLimpios.imagen) {
+      datosNuevosLimpios.imagen = "imagen no disponible en auditoría";
+    }
+    if (datosNuevosLimpios.tipo_imagen) {
+      datosNuevosLimpios.tipo_imagen = "tipo no disponible";
+    }
+    delete datosNuevosLimpios.cv;
+    delete datosNuevosLimpios.documentacion;
+    // =========================================
+
+    const { cambios, descripcion } = detectarCambiosEspecificos(datosPreviosLimpios, datosNuevosLimpios);
+
+    // EJECUTAR ACTUALIZACIÓN
     const empleadoActualizado = await Personal.findByIdAndUpdate(
       id, 
       { $set: updateData }, 
       { new: true, runValidators: true }
     );
 
-    if (!empleadoActualizado) {
-      return res.status(404).json({ message: 'Empleado no encontrado' });
-    }
-
+    // RESPUESTA EXITOSA
     res.status(200).json({
       success: true,
       message: 'Empleado actualizado correctamente',
       data: empleadoActualizado
     });
 
+    // AUDITORÍA
+    
+
   } catch (error) {
     console.error('Error en actualizarPersonal:', error);
+
+    // AUDITORÍA DE ERROR
+    
+
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-
-//  Eliminar empleado
+// Eliminar empleado
 exports.eliminarPersonal = async (req, res) => {
   try {
-    const { id } = req.params;
-    const empleadoEliminado = await Personal.findByIdAndDelete(id);
-
-    if (!empleadoEliminado) {
+    // Obtener el personal antes de eliminar (para auditoría)
+    const personalEliminado = await Personal.findById(req.params.id);
+    
+    if (!personalEliminado) {
       return res.status(404).json({ message: 'Empleado no encontrado' });
     }
 
+    // Guardar datos importantes antes de eliminar
+    const datosEliminados = {
+      id: personalEliminado._id,
+      codigo: personalEliminado.codigo,
+      nombres: personalEliminado.nombres,
+      apellidos: personalEliminado.apellidos,
+      numero_identidad: personalEliminado.numero_identidad,
+      tipo_contrato: personalEliminado.tipo_contrato,
+      estado: personalEliminado.estado
+    };
+
+    // Eliminar el personal
+    await Personal.findByIdAndDelete(req.params.id);
+
+    // RESPUESTA EXITOSA
     res.status(200).json({
       success: true,
       message: 'Empleado eliminado exitosamente',
-      data: empleadoEliminado
+      data: personalEliminado
     });
+
+    // AUDITORÍA
+    
+
   } catch (error) {
     console.error('Error al eliminar empleado:', error);
+
+    // AUDITORÍA DE ERROR
+    
     res.status(500).json({
       success: false,
       message: 'Error al eliminar el empleado',
@@ -269,7 +393,7 @@ exports.eliminarPersonal = async (req, res) => {
   }
 };
 
-//  Buscar por estado
+// Buscar por estado
 exports.buscarPorEstado = async (req, res) => {
   try {
     const { estado } = req.params;
@@ -288,7 +412,7 @@ exports.buscarPorEstado = async (req, res) => {
   }
 };
 
-//  Buscar por cargo
+// Buscar por cargo
 exports.buscarPorCargo = async (req, res) => {
   try {
     const { cargo } = req.params;

@@ -9,6 +9,6 @@ const { checkRole } = require('../middleware/checkRole');
 router.get('/dashboard', authenticateUser, dashboardController.listarModulos);
 
 // Si quieres filtrar por rol (ejemplo: solo ADMIN y DOCENTE pueden listar)
-router.get('/dashboard/admin', authenticateUser, checkRole(['ADMIN', 'DOCENTE']), dashboardController.listarModulos);
+router.get('/dashboard/admin', authenticateUser, dashboardController.listarModulos);
 
 module.exports = router;

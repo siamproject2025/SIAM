@@ -18,11 +18,6 @@ const moduloSchema = new mongoose.Schema({
   link: {
     type: String,
     required: true
-  },
-  roles: {
-    type: [String],
-    enum: ['ADMIN', 'DOCENTE', 'PADRE'],
-    default: ['ADMIN']
   }
 }, { timestamps: true });
 

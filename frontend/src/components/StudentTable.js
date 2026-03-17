@@ -8,6 +8,7 @@ import axios from 'axios';
 import { auth } from "../components/authentication/Auth";
 import useUserRole from '../components/hooks/useUserRole';
 import Swal from 'sweetalert2';
+import WithPermission from './Permisos/WithPermission';
 
 const API_HOST = process.env.REACT_APP_API_URL;
 const API_GRADOS = `${API_HOST}/api/grados`;
@@ -22,8 +23,6 @@ const StudentTable = ({ students, loading, selectedStudents, onSelectionChange, 
   const itemsPerPage = 10;
 const { userRole, cargando } = useUserRole();
   const studentsArray = students || [];
-  const canManage = userRole === "ADMIN"; 
-  const canDownload = userRole === "ADMIN" || userRole === "DOCENTE";
 
  const handleDeleteClick = (student) => {
   Swal.fire({
@@ -39,7 +38,7 @@ const { userRole, cargando } = useUserRole();
   }).then((result) => {
     if (result.isConfirmed) {
       // Enviamos solo el ID a la función que recibiste por props
-      onDelete(student._id);
+      onDelete(student);
     }
   });
 };
@@ -679,14 +678,14 @@ const { userRole, cargando } = useUserRole();
         <th>Fecha Matrícula</th>
         
         {/* COLUMNA ACCIONES: Solo aparece si es Admin */}
-        {canManage && <th>Acciones</th>}
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       {currentItems.length === 0 ? (
         <tr>
           {/* Ajuste de colSpan: 7 si es Docente, 8 si es Admin */}
-          <td colSpan={canManage ? "8" : "7"} className="no-results">
+          <td className="no-results">
             <div className="no-results-content">
               <i className="fas fa-search fa-2x"></i>
               <h4>No se encontraron estudiantes</h4>
@@ -724,8 +723,8 @@ const { userRole, cargando } = useUserRole();
                 <div className="relationship">{student.parentesco_encargado}</div>
               </div>
             </td>
-            <td>{student.telefono_encargado}</td>
-            <td>
+            <td style={{ textAlign: 'center' }}>{student.telefono_encargado}</td>
+            <td style={{ textAlign: 'center' }}>
               {student.fecha_matricula ? 
                 new Date(student.fecha_matricula).toLocaleDateString('es-ES') : 
                 'N/A'
@@ -733,9 +732,10 @@ const { userRole, cargando } = useUserRole();
             </td>
 
             {/* CELDA DE BOTONES: Solo se renderiza si es Admin */}
-           {canManage && (
+          
   <td>
     <div className="action-buttons">
+       <WithPermission requiredPermissions={["ACTUALIZAR_MATRICULA"]}>
       <button
         className="btn-icon btn-edit"
         onClick={() => onEdit(student)}
@@ -743,18 +743,20 @@ const { userRole, cargando } = useUserRole();
       >
         <Edit size={16}/>
       </button>
-      
-      <button
-        className="btn-icon btn-delete"
-        // PASAMOS EL OBJETO COMPLETO 'student' en lugar de solo student._id
-        onClick={() => handleDeleteClick(student)} 
-        title="Eliminar"
-      >
-        <Trash2 size={16}/>
-      </button>
+      </WithPermission>
+      <WithPermission requiredPermissions={["ELIMINAR_MATRICULA"]}>
+        <button
+          className="btn-icon btn-delete"
+          // PASAMOS EL OBJETO COMPLETO 'student' en lugar de solo student._id
+          onClick={() => handleDeleteClick(student)} 
+          title="Eliminar"
+        >
+          <Trash2 size={16}/>
+        </button>
+      </WithPermission>
     </div>
   </td>
-)}
+
           </tr>
         ))
       )}

@@ -1,6 +1,10 @@
 const express = require('express');
 const multer = require('multer');
 const router = express.Router();
+const { authenticateUser } = require('../middleware/authMiddleWare');
+const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
+const Directiva = require('../Models/directivaModel');
+
 const {
   obtenerMiembrosDirectiva,
   obtenerMiembroPorId,
@@ -29,17 +33,67 @@ const upload = multer({
   }
 });
 
-// Rutas existentes
-router.get('/', obtenerMiembrosDirectiva);
-router.get('/estadisticas/estados', obtenerEstadisticas);
-router.get('/:id', obtenerMiembroPorId);
-router.post('/', crearMiembroDirectiva);
-router.put('/:id', actualizarMiembroDirectiva);
-router.delete('/:id', eliminarMiembroDirectiva);
+// Middleware de autenticación para todas las rutas
+router.use(authenticateUser);
 
-// Nuevas rutas para documentos con upload de archivos
-router.post('/:id/documentos', upload.single('archivo_pdf'), agregarDocumento);
-router.put('/:id/documentos/:documentoId', upload.single('archivo_pdf'), actualizarDocumento);
-router.delete('/:id/documentos/:documentoId', eliminarDocumento);
+// Middleware para medir tiempo de respuesta (útil para auditoría)
+router.use((req, res, next) => {
+  req.requestStartTime = Date.now();
+  next();
+});
+
+// Aplicar autenticación a todas las rutas (descomenta si necesitas autenticación)
+// router.use(authenticateUser);
+
+// Rutas principales
+router.get('/', 
+ 
+  obtenerMiembrosDirectiva
+);
+
+router.get('/estadisticas/estados', 
+ 
+  obtenerEstadisticas
+);
+
+router.get('/:id', 
+  registrarAuditoria('DIRECTIVA'),
+  obtenerMiembroPorId
+);
+
+router.post('/', 
+  registrarAuditoria('DIRECTIVA'),
+  crearMiembroDirectiva
+);
+
+router.put('/:id', 
+  capturarDatosPrevios(Directiva),
+  registrarAuditoria('DIRECTIVA'),
+  actualizarMiembroDirectiva
+);
+
+router.delete('/:id', 
+  capturarDatosPrevios(Directiva),
+  registrarAuditoria('DIRECTIVA'),
+  eliminarMiembroDirectiva
+);
+
+// Rutas para documentos
+router.post('/:id/documentos', 
+  upload.single('archivo_pdf'),
+  registrarAuditoria('DIRECTIVA_DOCUMENTOS'),
+  agregarDocumento
+);
+
+router.put('/:id/documentos/:documentoId', 
+  upload.single('archivo_pdf'),
+  registrarAuditoria('DIRECTIVA_DOCUMENTOS'),
+  actualizarDocumento
+);
+
+router.delete('/:id/documentos/:documentoId', 
+  registrarAuditoria('DIRECTIVA_DOCUMENTOS'),
+  eliminarDocumento
+);
 
 module.exports = router;

@@ -1,27 +1,65 @@
-// routes/donacionesRoutes.js
 const express = require('express');
 const router = express.Router();
 const donacionesController = require('../Controllers/donacionesController');
-const { upload } = require('../middleware/uploadImage'); // Multer en memoria
+const { upload } = require('../middleware/uploadImage');
 const { authenticateUser } = require('../middleware/authMiddleWare');
+const { capturarDatosPrevios, registrarAuditoria } = require('../middleware/auditoriaMiddleware');
+const Donacion = require('../Models/donacionesModel');
 
+// Middleware para medir tiempo de respuesta
+router.use((req, res, next) => {
+  req.requestStartTime = Date.now();
+  next();
+});
 
 router.use(authenticateUser);
+
 // Rutas básicas CRUD
-router.get('/', donacionesController.getAllDonaciones);
-router.get('/:id', donacionesController.getDonacionById);
+router.get('/', 
+  
+  donacionesController.getAllDonaciones
+);
+
+router.get('/:id', 
+  
+  donacionesController.getDonacionById
+);
 
 // Crear donación con imagen
-router.post('/', upload.single('imagen'), donacionesController.createDonacion);
+router.post('/', 
+  upload.single('imagen'),
+  registrarAuditoria('DONACIONES'),
+  donacionesController.createDonacion
+);
 
 // Actualizar donación con posibilidad de nueva imagen
-router.put('/:id', upload.single('imagen'), donacionesController.updateDonacion);
+router.put('/:id', 
+  upload.single('imagen'),
+  capturarDatosPrevios(Donacion, 'id_donacion'), // Buscar por id_donacion en lugar de _id
+  registrarAuditoria('DONACIONES'),
+  donacionesController.updateDonacion
+);
 
-router.delete('/:id', donacionesController.deleteDonacion);
+router.delete('/:id', 
+  capturarDatosPrevios(Donacion, 'id_donacion'), // Buscar por id_donacion
+  registrarAuditoria('DONACIONES'),
+  donacionesController.deleteDonacion
+);
 
 // Rutas adicionales
-router.get('/almacen/:id_almacen', donacionesController.getDonacionesByAlmacen);
-router.get('/tipo/:tipo', donacionesController.getDonacionesByTipo);
-router.get('/estadisticas/resumen', donacionesController.getEstadisticasDonaciones);
+router.get('/almacen/:id_almacen', 
+  registrarAuditoria('DONACIONES'),
+  donacionesController.getDonacionesByAlmacen
+);
+
+router.get('/tipo/:tipo', 
+  registrarAuditoria('DONACIONES'),
+  donacionesController.getDonacionesByTipo
+);
+
+router.get('/estadisticas/resumen', 
+  registrarAuditoria('DONACIONES'),
+  donacionesController.getEstadisticasDonaciones
+);
 
 module.exports = router;
