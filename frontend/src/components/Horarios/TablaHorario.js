@@ -6,6 +6,7 @@ import autoTable from 'jspdf-autotable';
 import AdminOnly from '../../components/Plugins/AdminOnly';
 import "../../styles/Models/horarios.css"
 import { auth } from "../../components/authentication/Auth";
+import WithPermission from "../Permisos/WithPermission"
 
 const BusquedaTablaHorarios = ({
   horarios,
@@ -294,13 +295,16 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
           </td>
           
           <td className="cell-acciones justify-content-between">
-            <a
+             <WithPermission requiredPermissions={["ACTUALIZAR_HORARIOS"]}>
+              <a
               className="btn btn-outline-primary btn-sm"
               style={{ minWidth: 30, margin: "5px" }}
               onClick={() => onDetalleHorario(horario._id)}
             >
               <Edit />
             </a>
+             </WithPermission>
+              
             <a
               className="btn btn-outline-success btn-sm"
               style={{ minWidth: 30, margin: "5px" }}
@@ -308,6 +312,8 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
             >
               <Users />
             </a>
+            
+             <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>
             <a
               className="btn btn-outline-danger btn-sm"
               style={{ minWidth: 30, margin: "5px" }}
@@ -315,6 +321,7 @@ const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.
             >
               <Trash />
             </a>
+            </WithPermission>
           </td>
           
         </tr>

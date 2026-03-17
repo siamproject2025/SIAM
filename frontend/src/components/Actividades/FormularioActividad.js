@@ -6,6 +6,7 @@ import Notification from '../Notification';
 import ConfirmDialog from '../ConfirmDialog/ConfirmDialog';
 import '../../../src/styles/Models/Actividades.css';
 import { auth } from "../authentication/Auth";
+import WithPermission from "../Permisos/WithPermission"
 
 import { 
   Calendar,
@@ -612,7 +613,7 @@ function categorizarActividad(fechaActividad) {
             </motion.div>
             Ayuda
           </motion.button>
-          
+           <WithPermission requiredPermissions={["CREAR_ACTIVIDADES"]}>
           <motion.button 
             className="btn-nueva-actividad" 
             onClick={() => setMostrarModalCrear(true)}
@@ -632,6 +633,8 @@ function categorizarActividad(fechaActividad) {
             </motion.div>
             Nueva Actividad
           </motion.button>
+          </WithPermission>
+
         </motion.div>
       </motion.div>
 

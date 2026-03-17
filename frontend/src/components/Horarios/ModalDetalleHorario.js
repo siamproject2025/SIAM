@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Edit, Trash, Plus } from "lucide-react";
 import axios from 'axios';
 import { auth } from "../../components/authentication/Auth";
+import WithPermission from "../Permisos/WithPermission";
 
 const diasSemana = {
   LUN: "Lunes",
@@ -393,12 +394,14 @@ const ModalDetalleHorario = ({
                           <td>{getNombreGrado(alumno.grado_a_matricular)}</td>
 
                           <td>
+                             <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>
                             <button
                               className="btn btn-danger btn-sm text-sm"
                               onClick={() => handleAlumnoEliminar(alumno._id)}
                             >
                               <Trash size={16} />
                             </button>
+                            </WithPermission>
                           </td>
                         </tr>
                       );
@@ -441,6 +444,7 @@ const ModalDetalleHorario = ({
                 <div className="mb-3">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h6>Seleccionar alumnos ({alumnosFiltrados.length} encontrados)</h6>
+                    
                     <button
                       className="btn btn-outline-primary btn-sm"
                       onClick={handleSeleccionarTodos}
@@ -494,6 +498,7 @@ const ModalDetalleHorario = ({
                   <span className="text-muted">
                     {alumnosSeleccionados.length} alumno(s) seleccionado(s)
                   </span>
+                   <WithPermission requiredPermissions={["CREAR_MATRICULA"]}>
                   <button
                     className="btn btn-success"
                     onClick={handleAlumnosAgregar}
@@ -502,6 +507,7 @@ const ModalDetalleHorario = ({
                     <Plus size={16} className="me-1" />
                     Agregar seleccionados
                   </button>
+                  </WithPermission>
                 </div>
               </motion.div>
             )}
@@ -509,6 +515,7 @@ const ModalDetalleHorario = ({
         </div>
 
         <div className="modal-actions-donaciones justify-content-between">
+           <WithPermission requiredPermissions={["ACTUALIZAR_HORARIOS"]}>
           <motion.button
             className="btn-guardar-donaciones"
             onClick={() => onGuardar(horarioEdicion, esCreacion)}
@@ -517,7 +524,9 @@ const ModalDetalleHorario = ({
           >
             Guardar
           </motion.button>
+          </WithPermission>
           {!esCreacion && (
+             <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>
             <motion.button
               className="btn btn-danger"
               whileHover={{ scale: 1.05 }}
@@ -526,6 +535,7 @@ const ModalDetalleHorario = ({
             >
               Eliminar
             </motion.button>
+            </WithPermission>
           )}
           <motion.button
             type="button"

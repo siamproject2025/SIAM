@@ -23,6 +23,6 @@ router.get('/:id', matriculaController.getMatriculaById);
 router.put('/:id',checkPermission('ACTUALIZAR_MATRICULA'), upload.single('imagen'),capturarDatosPrevios(Modelo), registrarAuditoria('MATRICULA'), matriculaController.updateMatricula);
 
 // Eliminar matrícula
-router.delete('/:id',capturarDatosPrevios(Modelo), registrarAuditoria('MATRICULA'), matriculaController.deleteMatricula);
+router.delete('/:id',capturarDatosPrevios(Modelo),checkPermission('ELIMINAR_MATRICULA'), registrarAuditoria('MATRICULA'), matriculaController.deleteMatricula);
 
 module.exports = router;
