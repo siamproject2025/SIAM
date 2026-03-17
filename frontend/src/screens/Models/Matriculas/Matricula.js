@@ -379,12 +379,14 @@ function App() {
               </button>
             </div>
           )}
-
+          
+          
           <div className="action-bar">
+            <WithPermission requiredPermissions={["CREAR_MATRICULA"]}>
             <button className="btn btn-ayuda" onClick={() => setShowCreateModal(true)}>
               <i className="fas fa-plus"></i> Nueva Matrícula
             </button>
-
+          </WithPermission>
             <WithPermission requiredPermissions={["ELIMINAR_MATRICULA"]}>
               <button className="btn btn-danger" onClick={deleteSelectedStudents}>
                 <i className="fas fa-trash"></i> Eliminar Seleccionados ({selectedStudents.length})

@@ -5,12 +5,13 @@ const matriculaController = require('../Controllers/MatriculaController'); // re
 const { upload } = require('../middleware/uploadImage'); // Multer en memoria
 const { authenticateUser } = require('../middleware/authMiddleWare');
 const { checkRole } = require('../middleware/checkRole');
+const { checkPermission } = require('../middleware/checkPermission');
 const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
 const Modelo = require("../Models/Estudiante"); // Importar modelo para capturar datos previos
 
 router.use(authenticateUser); 
 // Crear matrícula
-router.post('/', upload.single('imagen'),registrarAuditoria('MATRICULA'), matriculaController.crearMatricula);
+router.post('/', checkPermission('CREAR_MATRICULA'),upload.single('imagen'),registrarAuditoria('MATRICULA'), matriculaController.crearMatricula);
 
 // Obtener todas las matrículas
 router.get('/',matriculaController.getAllMatriculas);
@@ -19,7 +20,7 @@ router.get('/',matriculaController.getAllMatriculas);
 router.get('/:id', matriculaController.getMatriculaById);
 
 // Actualizar matrícula
-router.put('/:id', upload.single('imagen'),capturarDatosPrevios(Modelo), registrarAuditoria('MATRICULA'), matriculaController.updateMatricula);
+router.put('/:id',checkPermission('ACTUALIZAR_MATRICULA'), upload.single('imagen'),capturarDatosPrevios(Modelo), registrarAuditoria('MATRICULA'), matriculaController.updateMatricula);
 
 // Eliminar matrícula
 router.delete('/:id',capturarDatosPrevios(Modelo), registrarAuditoria('MATRICULA'), matriculaController.deleteMatricula);
