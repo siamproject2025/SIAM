@@ -93,9 +93,9 @@ function App() {
     }, INACTIVITY_LIMIT - WARNING_TIME);
 
     // cerrar sesión al llegar al límite
-    inactivityTimer = setTimeout(() => {
+    /*inactivityTimer = setTimeout(() => {
       logoutUser();
-    }, INACTIVITY_LIMIT);
+    }, INACTIVITY_LIMIT);*/
   };
 
   // Escucha de actividad del usuario

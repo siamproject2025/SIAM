@@ -33,12 +33,8 @@ const inicializarHorario = () => ({
 });
 
 const Horarios = () => {
-  const { userRole, cargando } = useUserRole();
+  
   const calendarioRef = useRef(null);
-  const CAN_EDIT = userRole === "ADMIN" || userRole === "DOCENTE";
-  const CAN_VIEW = userRole === "ADMIN" || userRole === "DOCENTE" || userRole === "PADRE";
-  const CAN_SEE_ALL_TABS = userRole === "ADMIN" || userRole === "DOCENTE" || userRole === "PADRE";
-
   const [horarios, setHorarios] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [docentes, setDocentes] = useState([]);
@@ -88,11 +84,20 @@ const Horarios = () => {
   }, [showNotification]);
 
    const clickDetalleAlumnosHandler = async (id) => {
-    const res = await axios.get(`${API_HORARIO}/${id}`);
+  try {
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+    const res = await axios.get(`${API_HORARIO}/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setHorarioSeleccionado(res.data);
     setMostrarModalDetalle(true);
     setEsModalDetalle(false);
-  };
+  } catch (error) {
+    console.error("Error al cargar alumnos del horario:", error);
+    // Opcional: mostrar notificación de error
+  }
+};
 
   const clickDetalleHorarioHandler = async (id) => {
     try {
@@ -117,7 +122,6 @@ const Horarios = () => {
   };
 
   const clickCrearModeloHandler = () => {
-    if (!CAN_EDIT) return showNotification(" Permiso denegado para crear horarios.", "error");
     setHorarioSeleccionado(inicializarHorario());
     setEsModalCreacion(true);
     setEsModalDetalle(true);
@@ -125,7 +129,6 @@ const Horarios = () => {
   };
 
   const clickGuardarModeloHandler = async (horario, esCreacion) => {
-    if (!CAN_EDIT) return showNotification(" Permiso denegado para guardar cambios.", "error");
     try {
       loadingController.start();
       const user = auth.currentUser;
@@ -153,7 +156,6 @@ const Horarios = () => {
   };
 
   const clickEliminarModeloHandler = async (id_horario) => {
-    if (!CAN_EDIT) return showNotification(" Permiso denegado para eliminar horarios.", "error");
     try {
       loadingController.start();
       const user = auth.currentUser;
@@ -171,7 +173,7 @@ const Horarios = () => {
   };
 
   // ------------------------------ FILTRADO POR GRADO ------------------------------
-  const horariosVisibles = useMemo(() => (CAN_VIEW ? horarios : []), [horarios, CAN_VIEW]);
+ const horariosVisibles = useMemo(() => horarios, [horarios]);
 
   const gradosUnicos = useMemo(() => {
     if (!horariosVisibles || horariosVisibles.length === 0) return [];
@@ -190,7 +192,7 @@ const Horarios = () => {
 
   // ------------------------------ PESTAÑAS ------------------------------
   const clickHorariosContent = () => {
-    if (!CAN_SEE_ALL_TABS) return;
+   
     setHorariosContent(true);
     setCalendarioContent(false);
     setGradosContent(false);
@@ -201,7 +203,7 @@ const Horarios = () => {
     setGradosContent(false);
   };
   const clickGradosContent = () => {
-    if (!CAN_VIEW) return showNotification(" Permiso denegado.", "error");
+    
     setHorariosContent(false);
     setCalendarioContent(false);
     setGradosContent(true);
@@ -234,14 +236,10 @@ const Horarios = () => {
     }
   };
 
-  useEffect(() => { if (!cargando) obtenerHorarios(); }, [cargando, obtenerHorarios]);
 
-  if (cargando || (!CAN_VIEW && !cargando)) return (
-    <div className="text-center p-5">
-      {cargando ? "Cargando datos y verificando permisos..." :
-        <div className="alert alert-danger"> No tienes permiso para ver esta sección.</div>}
-    </div>
-  );
+        useEffect(() => {
+          obtenerHorarios();
+        }, [obtenerHorarios]);
 
   // ------------------------------ RENDER ------------------------------
   return (
@@ -307,10 +305,10 @@ const Horarios = () => {
         {/* Navegación de pestañas */}
         <motion.ul className="nav nav-tabs justify-content-center"
           initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.6 }}>
-          {CAN_SEE_ALL_TABS && <li className="nav-item">
+          {<li className="nav-item">
             <a href="#" className={`nav-link ${horariosContent ? "active" : ""}`} onClick={clickHorariosContent}><Table2 /> Horarios</a>
           </li>}
-          {CAN_VIEW && <li className="nav-item">
+          { <li className="nav-item">
            <a href="#" className={`nav-link ${gradosContent ? "active" : ""}`} onClick={clickGradosContent}><Book /> Horario Por Grado</a>
           </li>}
         </motion.ul>
@@ -324,10 +322,10 @@ const Horarios = () => {
               onDetalleAlumnos={clickDetalleAlumnosHandler}
               onCrearHorario={clickCrearModeloHandler}
               onEliminarHorario={clickEliminarModeloHandler}
-              canEdit={CAN_EDIT}
+              
             />}
             {calendarioContent && <CalendarioHorarios horarios={horariosVisibles} onDetalleHorario={clickDetalleHorarioHandler} />}
-            {gradosContent && CAN_VIEW && <motion.div key="horarios-por-grado-content" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.3 }} className="mt-3">
+            {gradosContent &&  <motion.div key="horarios-por-grado-content" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ duration: 0.3 }} className="mt-3">
               {gradosUnicos.length === 0 ? <div className="text-center p-5 border rounded bg-light"><p className="lead text-muted">No hay horarios disponibles con grado asignado.</p></div> :
                 <div className="p-4">
                   <div className="d-flex justify-content-between align-items-center mb-4">
@@ -360,8 +358,8 @@ const Horarios = () => {
           params={{ horario: horarioSeleccionado, docentes, aulas, esCreacion: esModalCreacion, alumnos, esDetalle: esModalDetalle }}
           onCerrar={clickCerrarModeloHandler}
           onEliminar={clickEliminarModeloHandler}
-          onGuardar={CAN_EDIT ? clickGuardarModeloHandler : () => showNotification(" Permiso denegado para guardar cambios.", "error")}
-          canEdit={CAN_EDIT}
+          onGuardar={clickGuardarModeloHandler}
+          
           enviarNotificacion={showNotification}
         />}
       </AnimatePresence>

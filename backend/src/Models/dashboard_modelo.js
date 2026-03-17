@@ -18,10 +18,6 @@ const moduloSchema = new mongoose.Schema({
   link: {
     type: String,
     required: true
-  },
-  roles: {
-    type: [String]
-    
   }
 }, { timestamps: true });
 

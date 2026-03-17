@@ -391,13 +391,13 @@ const calcularEdad = (fechaNacimiento) => {
               <div className="form-group">
                 <label htmlFor="edad">Edad *</label>
                 <input
-  type="number"
-  id="edad"
-  name="edad"
-  value={formData.edad}
-  readOnly
-  className={errors.edad ? 'error' : ''}
-/>
+                    type="number"
+                    id="edad"
+                    name="edad"
+                    value={formData.edad}
+                    readOnly
+                    className={errors.edad ? 'error' : ''}
+                  />
 
                 {errors.edad && <span className="error-message">{errors.edad}</span>}
               </div>
