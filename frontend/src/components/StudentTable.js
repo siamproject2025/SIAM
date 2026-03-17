@@ -39,7 +39,7 @@ const { userRole, cargando } = useUserRole();
   }).then((result) => {
     if (result.isConfirmed) {
       // Enviamos solo el ID a la función que recibiste por props
-      onDelete(student._id);
+      onDelete(student);
     }
   });
 };

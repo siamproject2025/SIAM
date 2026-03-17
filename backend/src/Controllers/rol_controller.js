@@ -27,24 +27,37 @@ const rolController = {
   },
 
   // Crear un nuevo rol
-  async crearRol(req, res) {
-    try {
-      const { _id, permisos, descripcion } = req.body;
-      
-      const existe = await Rol.findById(_id);
-      if (existe) {
-        return res.status(400).json({ message: 'El rol ya existe' });
-      }
-
-      const nuevoRol = new Rol({ _id, permisos, descripcion });
-      await nuevoRol.save();
-      
-      res.status(201).json(nuevoRol);
-    } catch (error) {
-      console.error('Error al crear rol:', error);
-      res.status(500).json({ message: 'Error al crear rol' });
+  // Crear un nuevo rol
+async crearRol(req, res) {
+  try {
+    console.log('📥 Body recibido:', req.body);
+    
+    // ✅ Incluir 'nombre' en la desestructuración
+    const { _id, nombre, permisos, descripcion } = req.body;
+    
+    console.log('📦 Datos extraídos:', { _id, nombre, permisos, descripcion });
+    
+    const existe = await Rol.findById(_id);
+    if (existe) {
+      return res.status(400).json({ message: 'El rol ya existe' });
     }
-  },
+
+    // ✅ Incluir 'nombre' al crear el nuevo rol
+    const nuevoRol = new Rol({ 
+      _id, 
+      nombre,      // ← Esto estaba faltando
+      permisos, 
+      descripcion 
+    });
+    
+    await nuevoRol.save();
+    
+    res.status(201).json(nuevoRol);
+  } catch (error) {
+    console.error('Error al crear rol:', error);
+    res.status(500).json({ message: 'Error al crear rol' });
+  }
+},
 
   // Actualizar permisos de un rol
   async actualizarRol(req, res) {

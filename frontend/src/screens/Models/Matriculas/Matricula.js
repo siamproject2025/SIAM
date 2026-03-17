@@ -8,8 +8,10 @@ import Modal from '../../../components/Modal';
 import Notification from '../../../components/Notification';
 import { auth } from "../../../components/authentication/Auth";
 import { loadingController } from "../../../api/loadingController";
-import useUserRole from '../../../components/hooks/useUserRole';
-const API_URL = process.env.REACT_APP_API_URL+'/api/matriculas';
+import WithPermission from '../../../components/Permisos/WithPermission';
+import { useNavigate } from 'react-router-dom';
+
+const API_URL = process.env.REACT_APP_API_URL + '/api/matriculas';
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -20,14 +22,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
-  // Obtener estudiantes
-const { userRole, cargando } = useUserRole();
+  const navigate = useNavigate();
 
-  // --- CONFIGURACIÓN DE PERMISOS ---
-  // El Admin hace todo, el Docente solo mira y descarga.
-  const canManage = userRole === "ADMIN"; 
-  const canDownload = userRole === "ADMIN" || userRole === "DOCENTE";
-  
   const fetchStudents = async () => {
     setLoading(true);
     setError(null);
@@ -46,7 +42,7 @@ const { userRole, cargando } = useUserRole();
       const response = await fetch(API_URL, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}` //  Token agregado
+          Authorization: `Bearer ${token}`
         }
       });
 
@@ -55,25 +51,23 @@ const { userRole, cargando } = useUserRole();
       }
 
       const data = await response.json();
-      setStudents(Array.isArray(data.data) ? data.data : []); // Asegurar que siempre sea un array
-
+      setStudents(Array.isArray(data.data) ? data.data : []);
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Error al cargar los estudiantes: ' + error.message);
-      setStudents([]); // Asegurar que students sea un array vacío en caso de error
+      setStudents([]);
     } finally {
       setLoading(false);
-      loadingController.stop()
+      loadingController.stop();
     }
   };
-
 
   const totalEstudiantes = students.length;
   const estudiantesActivos = students.filter(estudiante => estudiante.estado === 'activo').length;
   const estudiantesNuevos = students.filter(estudiante => {
     const fechaRegistro = new Date(estudiante.fechaRegistro);
     const fechaLimite = new Date();
-    fechaLimite.setDate(fechaLimite.getDate() - 30); // Últimos 30 días
+    fechaLimite.setDate(fechaLimite.getDate() - 30);
     return fechaRegistro > fechaLimite;
   }).length;
 
@@ -81,197 +75,187 @@ const { userRole, cargando } = useUserRole();
     fetchStudents();
   }, []);
 
-  // Crear estudiante
-// Crear estudiante
-const createStudent = async (studentData) => {
-  try {
-    loadingController.start();
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
+  const createStudent = async (studentData) => {
+    try {
+      loadingController.start();
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
 
-    const formData = new FormData();
-    for (const key in studentData) {
-      formData.append(key, studentData[key]);
-    }
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`
+      const formData = new FormData();
+      for (const key in studentData) {
+        formData.append(key, studentData[key]);
       }
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || 'Error desconocido del servidor');
-    }
-
-    setShowCreateModal(false);
-    fetchStudents();
-    setNotification({
-      message: result.message || "Estudiante matriculado exitosamente",
-      type: "success",
-    });
-
-  } catch (error) {
-    console.error(' Error creando estudiante:', error);
-    setNotification({
-      message: error.message || "Ocurrió un error al crear el estudiante",
-      type: "error",
-    });
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
-};
-
-// Actualizar estudiante---------------------------------------------------
-const updateStudent = async (studentData) => {
-if (!canManage) return;
-  try {
-    loadingController.start();
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const formData = new FormData();
-    for (const key in studentData) {
-      formData.append(key, studentData[key]);
-    }
-    // DEBUG: Ver qué se está enviando
-   
-    for (let [key, value] of formData.entries()) {
-      
-    }
-
-    const response = await fetch(`${API_URL}/${editingStudent._id}`, {
-      method: 'PUT',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Error desconocido del servidor");
-    }
-
-    setShowEditModal(false);
-    setEditingStudent(null);
-    fetchStudents();
-    setNotification({
-      message: result.message || "Estudiante actualizado exitosamente",
-      type: "success",
-    });
-
-  } catch (error) {
-    console.error(" Error actualizando estudiante:", error);
-    setNotification({
-      message: error.message || "Ocurrió un error al actualizar el estudiante",
-      type: "error",
-    });
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
-};
-
-// Eliminar estudiante
-const deleteStudent = async (student) => {
-  if (!canManage) return;
-
-  // Confirmación con el nombre del alumno
-  const confirmacion = window.confirm(
-    `¿Estás seguro de que deseas eliminar al estudiante ${student.nombre_completo}? Esta acción no se puede deshacer.`
-  );
-
-  if (!confirmacion) return; // Si el usuario cancela, salimos de la función
-
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const response = await fetch(`${API_URL}/${student.id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      fetchStudents();
-      setSelectedStudents(prev => prev.filter(studentId => studentId !== student.id));
-      setNotification({
-        message: 'Estudiante eliminado exitosamente',
-        type: 'success'
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
-    } else {
+
       const result = await response.json();
-      throw new Error(result.message || 'Error al eliminar estudiante');
+
+      if (!response.ok) {
+        throw new Error(result.message || 'Error desconocido del servidor');
+      }
+
+      setShowCreateModal(false);
+      fetchStudents();
+      setNotification({
+        message: result.message || "Estudiante matriculado exitosamente",
+        type: "success",
+      });
+    } catch (error) {
+      console.error('Error creando estudiante:', error);
+      setNotification({
+        message: error.message || "Ocurrió un error al crear el estudiante",
+        type: "error",
+      });
+    } finally {
+      loadingController.stop();
     }
-  } catch (error) {
-    console.error('Error deleting student:', error);
-    setNotification({
-      message: error.message || 'Error al eliminar el estudiante',
-      type: 'error'
-    });
-  }
-};
+  };
 
-// Eliminar estudiantes seleccionados
-const deleteSelectedStudents = async () => {
-  if (!canManage) return;
-  if (selectedStudents.length === 0) {
-    setNotification({
-      message: 'Seleccione al menos un estudiante para eliminar',
-      type: 'error'
-    });
-    return;
-  }
+  const updateStudent = async (studentData) => {
+    try {
+      loadingController.start();
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
 
-  // Confirmación para eliminación masiva
-  const confirmacion = window.confirm(
-    `¿Estás seguro de que deseas eliminar los ${selectedStudents.length} estudiantes seleccionados?`
-  );
+      const formData = new FormData();
+      for (const key in studentData) {
+        formData.append(key, studentData[key]);
+      }
 
-  if (!confirmacion) return;
+      const response = await fetch(`${API_URL}/${editingStudent._id}`, {
+        method: 'PUT',
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
+      const result = await response.json();
 
-    const deletePromises = selectedStudents.map(id => 
-      fetch(`${API_URL}/${id}`, {
+      if (!response.ok) {
+        throw new Error(result.message || "Error desconocido del servidor");
+      }
+
+      setShowEditModal(false);
+      setEditingStudent(null);
+      fetchStudents();
+      setNotification({
+        message: result.message || "Estudiante actualizado exitosamente",
+        type: "success",
+      });
+    } catch (error) {
+      console.error("Error actualizando estudiante:", error);
+      setNotification({
+        message: error.message || "Ocurrió un error al actualizar el estudiante",
+        type: "error",
+      });
+    } finally {
+      loadingController.stop();
+    }
+  };
+
+  const deleteStudent = async (student) => {
+    if (!student || !student._id) {
+      console.error('Error: Estudiante inválido o sin ID', student);
+      setNotification({
+        message: 'Error: ID de estudiante no válido',
+        type: 'error'
+      });
+      return;
+    }
+
+   
+
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
+
+      const response = await fetch(`${API_URL}/${student._id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
         }
-      })
+      });
+
+      if (response.ok) {
+        fetchStudents();
+        setSelectedStudents(prev => prev.filter(studentId => studentId !== student._id));
+        
+        if (showEditModal) {
+          setShowEditModal(false);
+          setEditingStudent(null);
+        }
+        
+        setNotification({
+          message: 'Estudiante eliminado exitosamente',
+          type: 'success'
+        });
+      } else {
+        const result = await response.json();
+        throw new Error(result.message || 'Error al eliminar estudiante');
+      }
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      setNotification({
+        message: error.message || 'Error al eliminar el estudiante',
+        type: 'error'
+      });
+    }
+  };
+
+  const deleteSelectedStudents = async () => {
+    if (selectedStudents.length === 0) {
+      setNotification({
+        message: 'Seleccione al menos un estudiante para eliminar',
+        type: 'error'
+      });
+      return;
+    }
+
+    const confirmacion = window.confirm(
+      `¿Estás seguro de que deseas eliminar los ${selectedStudents.length} estudiantes seleccionados?`
     );
 
-    await Promise.all(deletePromises);
-    setSelectedStudents([]);
-    fetchStudents();
-    setNotification({
-      message: 'Estudiantes eliminados exitosamente',
-      type: 'success'
-    });
+    if (!confirmacion) return;
 
-  } catch (error) {
-    console.error('Error deleting students:', error);
-    setNotification({
-      message: error.message || 'Error al eliminar los estudiantes',
-      type: 'error'
-    });
-  }
-};
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuario no autenticado');
+      const token = await user.getIdToken();
 
+      const deletePromises = selectedStudents.map(id =>
+        fetch(`${API_URL}/${id}`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+      );
 
-  // Abrir modal de edición
+      await Promise.all(deletePromises);
+      setSelectedStudents([]);
+      fetchStudents();
+      setNotification({
+        message: 'Estudiantes eliminados exitosamente',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Error deleting students:', error);
+      setNotification({
+        message: error.message || 'Error al eliminar los estudiantes',
+        type: 'error'
+      });
+    }
+  };
+
   const openEditModal = (student) => {
     setEditingStudent(student);
     setShowEditModal(true);
@@ -279,158 +263,113 @@ const deleteSelectedStudents = async () => {
 
   return (
     <div className="App2">
-      {/* Header con gradiente */}
       <div className='headerEstudiantes'>
-      <motion.div 
-        className="biblioteca-header"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-      >
         <motion.div
-          className="header-gradient"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
+          className="biblioteca-header"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
         >
-          {/* Patrón de fondo */}
-          <div className="header-pattern" />
+          <motion.div
+            className="header-gradient"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+          >
+            <div className="header-pattern" />
 
-          <div className="header-content">
-            <motion.h2
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
+            <div className="header-content">
+              <div className="header-top">
+                <motion.h2
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                  <motion.div
+                    initial={{ rotate: -180, scale: 0 }}
+                    animate={{ rotate: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                  >
+                    <Users size={36} fill="white" color="white" />
+                  </motion.div>
+                  Gestión de Estudiantes
+                </motion.h2>
+
+                <div className="header-buttons">
+                  <motion.button
+                    className="btn-grados"
+                    onClick={() => navigate('/grados')}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.35 }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                    <span>Grados</span>
+                  </motion.button>
+                </div>
+              </div>
+
+              <motion.p
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="header-subtitle"
+              >
+                Administra y supervisa el registro de estudiantes de manera eficiente.
+              </motion.p>
+
               <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                className="header-stats"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
               >
-                <Users size={36} fill="white" color="white" />
+                <motion.div
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
+                  <div className="stat-icon"><Users size={20} color="white" /></div>
+                  <div className="stat-text">
+                    <div className="stat-value" style={{ color: "white" }}>{totalEstudiantes}</div>
+                    <div className="stat-label" style={{ color: "white" }}>Total Estudiantes</div>
+                  </div>
+                </motion.div>
+                <motion.div
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
+                >
+                  <div className="stat-icon"><UserCheck size={20} color="white" /></div>
+                  <div className="stat-text">
+                    <div className="stat-value" style={{ color: "white" }}>{estudiantesActivos}</div>
+                    <div className="stat-label" style={{ color: "white" }}>Estudiantes Activos</div>
+                  </div>
+                </motion.div>
+                <motion.div
+                  className="stat-item"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
+                >
+                  <div className="stat-icon"><UserPlus size={20} color="white" /></div>
+                  <div className="stat-text">
+                    <div className="stat-value" style={{ color: "white" }}>{estudiantesNuevos}</div>
+                    <div className="stat-label" style={{ color: "white" }}>Nuevos Registros</div>
+                  </div>
+                </motion.div>
               </motion.div>
-              Gestión de Estudiantes
-              <motion.div
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                className="floating-main-icon"
-              >
-                <UserCheck size={32} color="white" />
-              </motion.div>
-            </motion.h2>
-            
-            <motion.p
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="header-subtitle"
-            >
-              Administra y supervisa el registro de estudiantes de manera eficiente.
-            </motion.p>
-
-            <motion.div 
-              className="header-stats"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className="stat-icon"><Users size={20} color="white" /></div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{totalEstudiantes}</div>
-                  <div className="stat-label" style={{color:"white"}}>Total Estudiantes</div>
-                </div>
-              </motion.div>
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-              >
-                <div className="stat-icon"><UserCheck size={20} color="white" /></div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{estudiantesActivos}</div>
-                  <div className="stat-label" style={{color:"white"}}>Estudiantes Activos</div>
-                </div>
-              </motion.div>
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-              >
-                <div className="stat-icon"><UserPlus size={20} color="white" /></div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{estudiantesNuevos}</div>
-                  <div className="stat-label" style={{color:"white"}}>Nuevos Registros</div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div 
-              className="floating-icons"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <User size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0]
-                }}
-                transition={{ 
-                  duration: 3.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-              >
-                <Calendar size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ 
-                  duration: 4.2, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-              >
-                <Award size={20} color="white" />
-              </motion.div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
       </div>
-      {/* Contenido principal */}
+
       <main className="main-content">
         <div className="container2">
-          {/* Mostrar error si existe */}
           {error && (
             <div className="error-banner">
               <i className="fas fa-exclamation-triangle"></i>
@@ -441,55 +380,64 @@ const deleteSelectedStudents = async () => {
             </div>
           )}
 
-          {/* Barra de acciones */}
           <div className="action-bar">
-             {canManage && (
-              <button className="btn btn-ayuda" onClick={() => setShowCreateModal(true)}>
-                <i className="fas fa-plus"></i> Nueva Matrícula
-              </button>
-            )}
+            <button className="btn btn-ayuda" onClick={() => setShowCreateModal(true)}>
+              <i className="fas fa-plus"></i> Nueva Matrícula
+            </button>
 
-           
-            {canManage && selectedStudents.length > 0 && (
+            <WithPermission requiredPermissions={["ELIMINAR_MATRICULA"]}>
               <button className="btn btn-danger" onClick={deleteSelectedStudents}>
                 <i className="fas fa-trash"></i> Eliminar Seleccionados ({selectedStudents.length})
               </button>
-            )}
+            </WithPermission>
           </div>
 
-          {/* Tabla de estudiantes */}
           <StudentTable
             students={students}
             loading={loading}
             selectedStudents={selectedStudents}
             onSelectionChange={setSelectedStudents}
-            onEdit={canManage ? openEditModal : null}
-            onDelete={canManage ? deleteStudent : null}
-            canManage={canManage}
+            onEdit={openEditModal}
+            onDelete={deleteStudent}
           />
         </div>
       </main>
 
-     
-      {/* Modal para editar estudiante */}
       <AnimatePresence>
-        {showCreateModal && canManage && (
-          <Modal key="modal-crear"
-           isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Nueva Matrícula">
-            <StudentForm onSubmit={createStudent} onCancel={() => setShowCreateModal(false)} />
+        {showCreateModal && (
+          <Modal
+            key="modal-crear"
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            title="Nueva Matrícula"
+          >
+            <StudentForm
+              onSubmit={createStudent}
+              onCancel={() => setShowCreateModal(false)}
+            />
           </Modal>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showEditModal && canManage && (
-          <Modal key="modal-crear" 
-          isOpen={showEditModal} onClose={() => { setShowEditModal(false); setEditingStudent(null); }} title="Editar Matrícula">
-            <StudentForm 
-              student={editingStudent} 
-              onSubmit={updateStudent} 
-              onCancel={() => { setShowEditModal(false); setEditingStudent(null); }}
-              onDelete={() => deleteStudent(editingStudent?._id)}
+        {showEditModal && editingStudent && (
+          <Modal
+            key="modal-editar"
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false);
+              setEditingStudent(null);
+            }}
+            title="Editar Matrícula"
+          >
+            <StudentForm
+              student={editingStudent}
+              onSubmit={updateStudent}
+              onCancel={() => {
+                setShowEditModal(false);
+                setEditingStudent(null);
+              }}
+              onDelete={() => deleteStudent(editingStudent)}
               isEdit={true}
             />
           </Modal>
