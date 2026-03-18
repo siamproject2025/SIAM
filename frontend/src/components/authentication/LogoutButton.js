@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import appFirebase from "./Auth";
 import { getAuth, signOut } from "firebase/auth";
+import axios from 'axios';
+
+const API_HOST = process.env.REACT_APP_API_URL;
+const API_LOGOUT = `${API_HOST}/api/usuarios/logout`;
 
 const auth = getAuth(appFirebase);
 
 const LogoutButton = () => {
   const navigate = useNavigate();
   const [showNotification, setShowNotification] = useState(false);
-  const [notificationType, setNotificationType] = useState('success'); // 'success' o 'error'
+  const [notificationType, setNotificationType] = useState('success');
   const [message, setMessage] = useState('');
 
   const showToast = (type, msg) => {
@@ -21,9 +25,27 @@ const LogoutButton = () => {
 
   const handleLogout = async () => {
     try {
+      // Obtener el token del usuario actual
+      const user = auth.currentUser;
+      
+      if (user) {
+        const token = await user.getIdToken();
+        
+        // Llamar a la API de logout
+        await axios.post(API_LOGOUT, {}, {
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          }
+        });
+      }
+      
+      // Cerrar sesión en Firebase
       await signOut(auth);
+      
+      // Limpiar localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
+      
       showToast('success', '¡Sesión cerrada exitosamente!');
       setTimeout(() => navigate('/landing'), 2000);
     } catch (error) {
@@ -35,7 +57,6 @@ const LogoutButton = () => {
   return (
     <div>
       <a
-        
         className="exitButton"
         onClick={handleLogout}
       >

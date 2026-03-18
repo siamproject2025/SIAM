@@ -6,7 +6,7 @@ const { authenticateUser } = require('../middleware/authMiddleWare');
 const { checkPermission } = require('../middleware/checkPermission');
 
 // Rutas para control de auditoría (protegidas con autenticación)
-router.get('/audit-status', checkPermission('ACTUALIZAR_AUDITORIA'), authenticateUser, getStatus);
-router.post('/audit-status', authenticateUser, setStatus);
+router.get('/audit-status', authenticateUser, getStatus);
+router.post('/audit-status',checkPermission('ACTUALIZAR_AUDITORIA'), authenticateUser, setStatus);
 
 module.exports = router;
