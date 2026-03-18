@@ -41,21 +41,24 @@ router.delete('/usuarios/:id',
 );
 
 // Logout
-router.post('/usuarios/logout', authenticateUser, registrarAuditoria('USUARIOS'),async (req, res) => {
-  try {
-    const userId = req.user._id;
-    await Auth.findByIdAndUpdate(userId, { loggedIn: false });
-    res.status(200).json({ message: "Sesión cerrada correctamente" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error al cerrar sesión" });
+router.post('/usuarios/logout', 
+  authenticateUser, 
+  registrarAuditoria('USUARIOS', 'LOGOUT'), // Especificamos acción personalizada
+  async (req, res) => {
+    try {
+      const userId = req.user._id;
+      await Auth.findByIdAndUpdate(userId, { loggedIn: false });
+      res.status(200).json({ message: "Sesión cerrada correctamente" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Error al cerrar sesión" });
+    }
   }
-});
-
+);
 // Login
-router.post("/usuarios/login", usuarioController.loginUsuario);
+router.post("/usuarios/login", registrarAuditoria('USUARIOS', 'LOGIN'),usuarioController.loginUsuario);
 router.post("/usuarios/login/fallo", usuarioController.registrarIntentoFallido);
-router.post("/usuarios/login/exito", usuarioController.reiniciarIntentos);
+router.post("/usuarios/login/exito", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.reiniciarIntentos);
 
 // Ejemplo de uso del nuevo middleware combinado
 router.get('/usuarios/reportes', 

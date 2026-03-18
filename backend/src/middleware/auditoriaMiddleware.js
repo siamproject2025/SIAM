@@ -49,7 +49,7 @@ setInterval(() => {
   console.log(`🧹 Caché de GETs limpiado. Tamaño actual: ${getCache.size}`);
 }, 60000); // Limpiar cada minuto
 
-const registrarAuditoria = (modulo) => {
+const registrarAuditoria = (modulo, accionPersonalizada = null) => {
   return async (req, res, next) => {
     // ⚠️ Manejo especial para GET con caché
     if (req.method === 'GET') {
@@ -67,7 +67,6 @@ const registrarAuditoria = (modulo) => {
       getCache.set(cacheKey, ahora);
       
       // Limpiar entradas antiguas de este usuario/ruta específica
-      // (opcional, para mantener el caché limpio)
       setTimeout(() => {
         if (getCache.get(cacheKey) === ahora) {
           getCache.delete(cacheKey);
@@ -89,14 +88,20 @@ const registrarAuditoria = (modulo) => {
     const originalJson = res.json;
     const startTime = Date.now();
 
+    // DETERMINAR LA ACCIÓN: usar personalizada si existe, sino mapear por método HTTP
     let accion;
-    switch (req.method) {
-      case 'POST': accion = 'CREATE'; break;
-      case 'PUT':
-      case 'PATCH': accion = 'UPDATE'; break;
-      case 'DELETE': accion = 'DELETE'; break;
-      case 'GET': accion = 'VIEW'; break;
-      default: accion = 'VIEW';
+    if (accionPersonalizada) {
+      accion = accionPersonalizada;
+      console.log(`📝 Usando acción personalizada: ${accion} para ${req.method} ${req.originalUrl}`);
+    } else {
+      switch (req.method) {
+        case 'POST': accion = 'CREATE'; break;
+        case 'PUT':
+        case 'PATCH': accion = 'UPDATE'; break;
+        case 'DELETE': accion = 'DELETE'; break;
+        case 'GET': accion = 'VIEW'; break;
+        default: accion = 'VIEW';
+      }
     }
 
     res.json = function(data) {
@@ -120,7 +125,7 @@ const registrarAuditoria = (modulo) => {
       if (req.method !== 'GET' || getCache.has(generarClaveGet(req))) {
         Auditoria.create({
           usuario: usuarioData,
-          accion,
+          accion, // Ahora usa la acción determinada (personalizada o mapeada)
           modulo,
           entidad: {
             nombre: req.baseUrl + req.path,
@@ -137,7 +142,9 @@ const registrarAuditoria = (modulo) => {
             query: req.query,
             params: req.params,
             statusCode: res.statusCode,
-            duration
+            duration,
+            metodoHttp: req.method,
+            accionPersonalizada: accionPersonalizada || null
           },
           fecha_creacion: new Date()
         })
@@ -157,7 +164,6 @@ const registrarAuditoria = (modulo) => {
     next();
   };
 };
-
 const capturarDatosPrevios = (model) => {
   return async (req, res, next) => {
     if (req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') {

@@ -38,6 +38,7 @@ import GradosPage from './screens/Models/Matriculas/grados';
 import AccountSettings from './components/authentication/AccountSettings';
 import ChangePasswordLogueado from './components/authentication/ChangePasswordLogueado';
 import Bitacora from './screens/Models/Bitacora/Bitacora';
+import VerifyEmail from './components/VerifyEmail';
 
 
 const auth = getAuth(appFirebase);
@@ -131,6 +132,8 @@ function App() {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/ResetPassword" element={<PublicRoute><ResetPassword /></PublicRoute>} />
             <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
+             <Route path="/verifyEmail" element={<PublicRoute><VerifyEmail /></PublicRoute>} />
+
             <Route path="/account" element={<AccountSettings />} />
             <Route path="/contrasena" element={<ChangePasswordLogueado />} />
 
