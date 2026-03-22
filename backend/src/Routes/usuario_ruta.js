@@ -27,7 +27,7 @@ router.get('/solicitudes',
 router.patch('/solicitudes/:id/resolver',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
-  registrarAuditoria('SOLICITUDES'),
+  
   solicitudController.resolverSolicitud
 );
 
