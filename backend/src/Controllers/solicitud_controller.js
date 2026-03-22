@@ -168,11 +168,12 @@ exports.resolverSolicitud = async (req, res) => {
 
       // ── Correo — si falla aquí no debe bloquear el proceso ──
       try {
-        console.log("🔵 PASO 5: Intentando enviar correo a:", solicitud.email);
-        console.log("🔵 GMAIL_USER:", process.env.GMAIL_USER ? "✅ definido" : "❌ NO definido");
-        console.log("🔵 GMAIL_PASS:", process.env.GMAIL_PASS ? "✅ definido" : "❌ NO definido");
-        await enviarCorreoAprobacion(solicitud.email, solicitud.nombre_solicitante, passwordTemporal);
-        console.log("✅ PASO 5: Correo enviado");
+          console.log("🔵 PASO 5: Intentando enviar correo a:", solicitud.email);
+          console.log("🔵 GMAIL_USER:",         process.env.GMAIL_USER         ? "✅ definido" : "❌ NO definido");
+          console.log("🔵 GMAIL_REFRESH_TOKEN:", process.env.GMAIL_REFRESH_TOKEN ? "✅ definido" : "❌ NO definido");
+          console.log("🔵 GOOGLE_CLIENT_ID:",    process.env.GOOGLE_CLIENT_ID    ? "✅ definido" : "❌ NO definido");
+          await enviarCorreoAprobacion(solicitud.email, solicitud.nombre_solicitante, passwordTemporal); // ← faltaba esto
+          console.log("✅ PASO 5: Correo enviado");
       } catch (mailErr) {
         console.error("❌ PASO 5 ERROR correo (no bloquea):", mailErr.message);
         // No hacer throw — el usuario ya fue creado, el correo es secundario
