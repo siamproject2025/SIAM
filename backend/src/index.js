@@ -50,7 +50,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS",'PATCH'],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
@@ -59,7 +59,10 @@ app.use(cors({
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log(" Conectado a MongoDB"))
   .catch(err => console.error(" Error MongoDB:", err));
-
+app.use((req, res, next) => {
+  console.log(`➡️ ${req.method} ${req.path}`);
+  next();
+});
 // Rutas API
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
