@@ -46,17 +46,35 @@ const OrdenCompra = () => {
   const [sortDescriptor, setSortDescriptor] = useState({ column: "fecha", direction: "descending" });
   const [page, setPage] = useState(1);
   const [showColumnMenu, setShowColumnMenu] = useState(false);
-  const [showStatusMenu, setShowStatusMenu] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState(null);
-  const [notification, setNotification] = useState(null);
+   const [notification, setNotification] = useState(null);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
-
+const [showStatusMenu, setShowStatusMenu] = useState(false); // ← AGREGAR
 
   //Dialogo de eliminación
   const [ordenAEliminar, setOrdenAEliminar] = useState(null);
 const [showConfirm, setShowConfirm] = useState(false);
 
+const [showActionMenu, setShowActionMenu] = useState(null);
+const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) {
+      setShowStatusMenu(false);
+    }
+    if (columnMenuRef.current && !columnMenuRef.current.contains(event.target)) {
+      setShowColumnMenu(false);
+    }
+    // ← Para el action menu usamos clase en lugar de ref
+    if (!event.target.closest('.action-wrapper') && !event.target.closest('.action-menu')) {
+      setShowActionMenu(null);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
 
   // Referencias para cerrar menús al hacer clic fuera
   const statusMenuRef = useRef(null);
@@ -88,6 +106,35 @@ const [showConfirm, setShowConfirm] = useState(false);
     setTimeout(() => setNotification(null), 3000);
   };
   
+  const handleToggleMenu = (e, ordenId) => {
+  console.log('click recibido', ordenId); // ← agregar
+  
+  if (showActionMenu === ordenId) {
+    setShowActionMenu(null);
+    return;
+  }
+
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  console.log('rect:', rect); // ← agregar
+  console.log('window.innerHeight:', window.innerHeight); // ← agregar
+  
+  const menuHeight = 100;
+  const spaceBelow = window.innerHeight - rect.bottom;
+
+  const top = spaceBelow < menuHeight
+    ? rect.top - menuHeight
+    : rect.bottom + 6;
+
+  setMenuPosition({
+    top,
+    left: rect.right - 160,
+  });
+
+  console.log('menuPosition calculado:', { top, left: rect.right - 160 }); // ← agregar
+  setShowActionMenu(ordenId);
+};
+
   //  Cargar proveedores
   useEffect(() => {
     
@@ -1050,8 +1097,8 @@ const cancelarEliminacionOrden = () => {
                       )}
                       {visibleColumns.has("proveedor") && (
                         <td className="cell-proveedor" title={orden.proveedor_id?.empresa || "Sin empresa"}>
-                           {orden.proveedor_id?.nombre? `${orden.proveedor_id.nombre} (${orden.proveedor_id.empresa})` : "Sin proveedor"}
-                         </td>
+  {orden.proveedor_id?.nombre || "Sin proveedor"}
+</td>
                       )}
                       {visibleColumns.has("fecha") && (
                         <td className="cell-fecha">
@@ -1080,37 +1127,35 @@ const cancelarEliminacionOrden = () => {
                           </span>
                         </td>
                       )}
-                      {visibleColumns.has("acciones") && (
-                        <td className="cell-acciones">
-                          <div className="action-wrapper" ref={showActionMenu === orden._id ? actionMenuRef : null}>
-                            <button
-                              onClick={() => setShowActionMenu(showActionMenu === orden._id ? null : orden._id)}
-                              className="action-button"
-                            >
-                              <DotsIcon />
-                            </button>
-                            {showActionMenu === orden._id && (
-                              <div className="action-menu">
-                                <button
-                                  onClick={() => {
-                                    setOrdenSeleccionada(orden);
-                                    setShowActionMenu(null);
-                                  }}
-                                  className="action-item action-view"
-                                >
-                                  ️ Ver / Editar
-                                </button>
-                                <button
-                                  onClick={() => handleEliminarOrden(orden._id)}
-                                  className="action-item action-delete"
-                                >
-                                  ️ Eliminar
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      )}
+                    
+                        {visibleColumns.has("acciones") && (
+  <td className="cell-acciones">
+    <div className="action-buttons-row">
+      <button
+        onClick={() => setOrdenSeleccionada(orden)}
+        className="action-btn-edit"
+        title="Ver / Editar"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </button>
+      <button
+        onClick={() => handleEliminarOrden(orden._id)}
+        className="action-btn-delete"
+        title="Eliminar"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </button>
+    </div>
+  </td>
+)}                   
                     </tr>
                   );
                 })
@@ -1188,7 +1233,7 @@ const cancelarEliminacionOrden = () => {
 
 {showConfirm && (
   <ConfirmDialog
-    message={`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`}
+    message={`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}" del proveedor "${ordenAEliminar?.proveedor_id?.nombre || 'Sin proveedor'}"?`}
     onConfirm={confirmarEliminacionOrden}
     onCancel={cancelarEliminacionOrden}
     visible={showConfirm}

@@ -52,6 +52,7 @@ const Donaciones = () => {
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
   const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [formData, setFormData] = useState({
     tipo_donacion: '',
     cantidad_donacion: '',
@@ -128,6 +129,7 @@ const Donaciones = () => {
       ...prev,
       [name]: value
     }));
+    setHasUnsavedChanges(true);
   };
 
   const handleFotoChange = (e) => {
@@ -150,6 +152,7 @@ const Donaciones = () => {
         imagen: file,
         foto_preview: URL.createObjectURL(file)
       }));
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -168,8 +171,26 @@ const Donaciones = () => {
     e.preventDefault();
     
     // Validaciones mejoradas
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen || !formData.descripcion.trim() || !formData.observaciones.trim()) {
+      mostrarNotificacion('Por favor completa todos los campos requeridos (tipo, cantidad, almacén, descripción y observaciones)', 'error');
+      return;
+    }
+
+    if (formData.descripcion && formData.descripcion.length > 500) {
+      mostrarNotificacion('La descripción no puede superar 500 caracteres', 'error');
+      return;
+    }
+
+    if (formData.observaciones && formData.observaciones.length > 1000) {
+      mostrarNotificacion('Las observaciones no pueden superar 1000 caracteres', 'error');
+      return;
+    }
+
+    const fechaSeleccionada = new Date(formData.fecha);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    if (fechaSeleccionada > hoy) {
+      mostrarNotificacion('La fecha no puede ser futura', 'error');
       return;
     }
 
@@ -226,8 +247,26 @@ const handleSubmitEditar = async (e) => {
 
   if (!donacionSeleccionada) return;
 
-  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen) {
-    mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+  if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen || !formData.descripcion.trim() || !formData.observaciones.trim()) {
+    mostrarNotificacion('Por favor completa todos los campos requeridos (tipo, cantidad, almacén, descripción y observaciones)', 'error');
+    return;
+  }
+
+  if (formData.descripcion && formData.descripcion.length > 500) {
+    mostrarNotificacion('La descripción no puede superar 500 caracteres', 'error');
+    return;
+  }
+
+  if (formData.observaciones && formData.observaciones.length > 1000) {
+    mostrarNotificacion('Las observaciones no pueden superar 1000 caracteres', 'error');
+    return;
+  }
+
+  const fechaSeleccionada = new Date(formData.fecha);
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  if (fechaSeleccionada > hoy) {
+    mostrarNotificacion('La fecha no puede ser futura', 'error');
     return;
   }
 
@@ -277,7 +316,7 @@ const handleSubmitEditar = async (e) => {
 
 
 const [showConfirm, setShowConfirm] = useState(false);
-
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
 const prepararEliminacionDonacion = () => {
   if (!donacionSeleccionada) return;
   setShowConfirm(true);
@@ -320,9 +359,19 @@ const confirmarEliminacionDonacion = async () => {
 
 
   const handleCloseModals = () => {
+    if (hasUnsavedChanges) {
+      setShowConfirmClose(true);
+    } else {
+      closeModals();
+    }
+  };
+
+  const closeModals = () => {
     setMostrarModal(false);
     setMostrarModalEditar(false);
     setDonacionSeleccionada(null);
+    setHasUnsavedChanges(false);
+    setShowConfirmClose(false);
     
     // Limpiar preview
     if (formData.foto_preview) {
@@ -356,6 +405,7 @@ const confirmarEliminacionDonacion = async () => {
       foto_preview: donacion.imagen ? `data:image/png;base64,${donacion.imagen}` : null
 
     });
+    setHasUnsavedChanges(false);
     
     setMostrarModalEditar(true);
   };
@@ -371,6 +421,7 @@ const confirmarEliminacionDonacion = async () => {
       imagen: null,
       foto_preview: null
     });
+    setHasUnsavedChanges(false);
     setMostrarModal(true);
   };
 
@@ -416,8 +467,7 @@ const confirmarEliminacionDonacion = async () => {
     return (
       donacion.tipo_donacion?.toLowerCase().includes(searchLower) ||
       donacion.descripcion?.toLowerCase().includes(searchLower) ||
-      almacenNombre.toLowerCase().includes(searchLower) ||
-      donacion.cantidad_donacion?.toString().includes(searchLower)
+      almacenNombre.toLowerCase().includes(searchLower)
     );
   }) : [];
 
@@ -592,7 +642,7 @@ const confirmarEliminacionDonacion = async () => {
               <input
                 type="text"
                 className="donacion-busqueda"
-                placeholder="Buscar por tipo, descripción, almacén o cantidad..."
+                placeholder="Buscar por tipo, descripción o almacén..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -841,22 +891,26 @@ const confirmarEliminacionDonacion = async () => {
                     </div>
 
                     <div className="form-group form-grid-full">
-                      <label>Descripción</label>
+                      <label>Descripción <span>*</span></label>
                       <textarea 
                         name="descripcion" 
                         value={formData.descripcion} 
                         onChange={handleInputChange}
                         placeholder="Describe la donación..."
+                        maxLength="500"
+                        required
                       />
                     </div>
 
                     <div className="form-group form-grid-full">
-                      <label>Observaciones</label>
+                      <label>Observaciones <span>*</span></label>
                       <textarea 
                         name="observaciones" 
                         value={formData.observaciones} 
                         onChange={handleInputChange}
                         placeholder="Notas adicionales..."
+                        maxLength="1000"
+                        required
                       />
                     </div>
 
@@ -877,6 +931,19 @@ const confirmarEliminacionDonacion = async () => {
                         <option value="4">Almacén 4</option>
                         <option value="5">Almacén 5</option>
                       </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        Fecha <span>*</span>
+                      </label>
+                      <input 
+                        type="date" 
+                        name="fecha" 
+                        value={formData.fecha} 
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
 
                     <div className="form-group form-grid-full">
@@ -1016,22 +1083,26 @@ const confirmarEliminacionDonacion = async () => {
                     </div>
 
                     <div className="form-group form-grid-full">
-                      <label>Descripción</label>
+                      <label>Descripción <span>*</span></label>
                       <textarea 
                         name="descripcion" 
                         value={formData.descripcion} 
                         onChange={handleInputChange}
                         placeholder="Describe la donación..."
+                        maxLength="500"
+                        required
                       />
                     </div>
 
                     <div className="form-group form-grid-full">
-                      <label>Observaciones</label>
+                      <label>Observaciones <span>*</span></label>
                       <textarea 
                         name="observaciones" 
                         value={formData.observaciones} 
                         onChange={handleInputChange}
                         placeholder="Notas adicionales..."
+                        maxLength="1000"
+                        required
                       />
                     </div>
 
@@ -1052,6 +1123,19 @@ const confirmarEliminacionDonacion = async () => {
                         <option value="4">Almacén 4</option>
                         <option value="5">Almacén 5</option>
                       </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        Fecha <span>*</span>
+                      </label>
+                      <input 
+                        type="date" 
+                        name="fecha" 
+                        value={formData.fecha} 
+                        onChange={handleInputChange}
+                        required
+                      />
                     </div>
 
                     <div className="form-group form-grid-full">
@@ -1126,10 +1210,19 @@ const confirmarEliminacionDonacion = async () => {
                   </motion.button>
                   {showConfirm && (
                     <ConfirmDialog
-                      message="¿Estás seguro de que deseas eliminar esta donación?"
+                      message={`¿Estás seguro de que deseas eliminar la donación "${donacionSeleccionada.tipo_donacion}" con cantidad ${donacionSeleccionada.cantidad_donacion}?`}
                       onConfirm={confirmarEliminacionDonacion}
                       onCancel={() => setShowConfirm(false)}
                       visible={showConfirm}
+                    />
+                  )}
+
+                  {showConfirmClose && (
+                    <ConfirmDialog
+                      message="Hay cambios sin guardar. ¿Estás seguro de que deseas cerrar el modal?"
+                      onConfirm={closeModals}
+                      onCancel={() => setShowConfirmClose(false)}
+                      visible={showConfirmClose}
                     />
                   )}
 

@@ -669,7 +669,7 @@ function categorizarActividad(fechaActividad) {
       {/* Confirmación de eliminación */}
       {showConfirm && (
         <ConfirmDialog
-          message={`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}"?`}
+          message={`¿Seguro que deseas eliminar la actividad "${actividadAEliminar?.nombre}" programada para el ${new Date(actividadAEliminar?.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}?`}
           onConfirm={confirmarEliminacion}
           onCancel={cancelarEliminacion}
           visible={showConfirm}
