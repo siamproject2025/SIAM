@@ -10,7 +10,6 @@ import {
 } from "react-icons/fa";
 import { MdDelete, MdAdminPanelSettings, MdSecurity } from "react-icons/md";
 import { RiShieldUserLine, RiArrowLeftSLine } from "react-icons/ri";
-import { FiShield } from "react-icons/fi";
 import WithPermission from '../../../components/Permisos/WithPermission';
 
 // Configuración de API
@@ -108,7 +107,8 @@ function App() {
     HORARIOS: ['VISUALIZAR_HORARIOS', 'CREAR_HORARIOS', 'ACTUALIZAR_HORARIOS', 'ELIMINAR_HORARIOS'],
     MATRICULA: ['VISUALIZAR_MATRICULA', 'CREAR_MATRICULA', 'ACTUALIZAR_MATRICULA', 'ELIMINAR_MATRICULA'],
     DASHBOARD: ['VISUALIZAR_DASHBOARD'],
-    ROLES: ['VISUALIZAR_ROLES','CREAR_ROLES','ACTUALIZAR_ROLES', 'ELIMINAR_ROLES']
+    ROLES: ['VISUALIZAR_ROLES','CREAR_ROLES','ACTUALIZAR_ROLES', 'ELIMINAR_ROLES'],
+    SOLICITUDES: ['VISUALIZAR_SOLICITUDES','CREAR_SOLICITUDES','ACTUALIZAR_SOLICITUDES', 'ELIMINAR_SOLICITUDES']
   };
 
   // Función para agrupar permisos por módulo para visualización
@@ -442,7 +442,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
 
   // Importar iconos para las categorías
   const categoriaIconos = {
-    'Operativo/Administrativo': <FaUsersCog size={18} />,
+    'Operativo': <FaUsersCog size={18} />,
     'Académico': <FaBook size={18} />,
     'Recursos Humanos': <FaUserFriends size={18} />,
     'Seguridad': <MdSecurity size={18} />,
@@ -451,7 +451,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
 
   // Nueva estructura de agrupación de módulos con sus respectivos permisos
   const gruposAgrupados = {
-    'Operativo/Administrativo': {
+    'Operativo': {
       icon: <FaUsersCog />,
       modulos: ['DONACIONES','BIENES', 'PROVEEDORES', 'COMPRAS' ]
     },
@@ -465,7 +465,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
     },
     'Seguridad': {
       icon: <MdSecurity />,
-      modulos: ['GESTION_DE_USUARIOS', 'AUDITORIA', 'ROLES']
+      modulos: ['GESTION_DE_USUARIOS', 'AUDITORIA', 'ROLES', 'SOLICITUDES']
     },
     'Global/Dashboard': {
       icon: <FaChartLine />,
@@ -587,7 +587,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
 
         <form onSubmit={handleSubmit}>
           <div className="rols-css-form-group">
-            <label>ID del Rol *</label>
+            <label>Nombre del rol</label>
             <input
               type="text"
               className={`rols-css-form-control ${idError ? 'rols-css-form-control-error' : ''}`}
@@ -602,7 +602,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
           </div>
 
           <div className="rols-css-form-group">
-            <label>Nombre del Rol *</label>
+            <label>Etiqueta</label>
             <input
               type="text"
               className="rols-css-form-control"
