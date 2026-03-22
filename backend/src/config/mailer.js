@@ -1,17 +1,28 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-const transporter = nodemailer.createTransport({
-  host:   'smtp.gmail.com',
-  port:   465,
-  secure: true,
-  family: 4,          // ← fuerza IPv4
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  },
-  connectionTimeout: 10000,
-  greetingTimeout:   10000,
-  socketTimeout:     15000,
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Mantiene la misma interfaz que nodemailer para no cambiar el resto del código
+const transporter = {
+  sendMail: async ({ from, to, subject, html }) => {
+    const { data, error } = await resend.emails.send({
+      from,
+      to,
+      subject,
+      html
+    });
+    if (error) throw new Error(error.message);
+    return data;
+  }
+};
 
 module.exports = transporter;
+```
+
+---
+
+## 4. Agregar variable en Railway
+
+En tu proyecto Railway → Variables → agrega:
+```
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxx

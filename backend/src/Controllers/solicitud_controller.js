@@ -394,7 +394,8 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
   `;
 
   await transporter.sendMail({
-    from:    `"Sistema Escolar" <${process.env.GMAIL_USER}>`,
+    
+    from: `"Sistema Escolar" <onboarding@resend.dev>`,
     to:      email,
     subject: '✅ Tu acceso ha sido aprobado — Credenciales de ingreso',
     html
