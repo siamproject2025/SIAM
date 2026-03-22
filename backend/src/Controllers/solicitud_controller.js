@@ -112,23 +112,24 @@ exports.resolverSolicitud = async (req, res) => {
   try {
     const { id }     = req.params;
     const { accion } = req.body;
+    console.log("🔵 resolverSolicitud iniciado:", { id, accion });
 
     if (!['APROBADO', 'DENEGADO'].includes(accion)) {
       return res.status(400).json({ message: 'Acción inválida.' });
     }
 
     const solicitud = await Solicitud.findById(id);
+    console.log("🔵 Solicitud encontrada:", solicitud?.email, solicitud?.estado);
+
     if (!solicitud) return res.status(404).json({ message: 'Solicitud no encontrada.' });
     if (solicitud.estado !== 'PENDIENTE') {
       return res.status(400).json({ message: 'Esta solicitud ya fue resuelta.' });
     }
 
     if (accion === 'APROBADO') {
-      // 1. Generar contraseña temporal
       const passwordTemporal = generarPasswordTemporal();
+      console.log("✅ PASO 1: Password generado");
 
-      // 2. Crear o reutilizar usuario en Firebase
-      // El usuario de Google puede ya existir en Firebase
       let firebaseUid;
       try {
         const firebaseUser = await admin.auth().createUser({
@@ -138,23 +139,22 @@ exports.resolverSolicitud = async (req, res) => {
           emailVerified: true
         });
         firebaseUid = firebaseUser.uid;
+        console.log("✅ PASO 2: Firebase user creado:", firebaseUid);
       } catch (firebaseErr) {
+        console.log("⚠️ PASO 2 Firebase error:", firebaseErr.code);
         if (firebaseErr.code === 'auth/email-already-exists') {
-          // Usuario ya existe en Firebase (entró con Google antes)
           const existingUser = await admin.auth().getUserByEmail(solicitud.email);
           firebaseUid = existingUser.uid;
-          // Actualizar contraseña para que pueda entrar con email/password
-          await admin.auth().updateUser(firebaseUid, {
-            password:      passwordTemporal,
-            emailVerified: true
-          });
+          await admin.auth().updateUser(firebaseUid, { password: passwordTemporal, emailVerified: true });
+          console.log("✅ PASO 2b: Firebase user reutilizado:", firebaseUid);
         } else {
           throw firebaseErr;
         }
       }
 
-      // 3. Guardar en MongoDB con flag de cambio obligatorio
       const hashedPassword = await argon2.hash(passwordTemporal);
+      console.log("✅ PASO 3: Password hasheado");
+
       const nuevoUsuario = new Usuario({
         authId:                firebaseUid,
         email:                 solicitud.email,
@@ -165,29 +165,38 @@ exports.resolverSolicitud = async (req, res) => {
         debe_cambiar_password: true
       });
       await nuevoUsuario.save();
+      console.log("✅ PASO 4: Usuario guardado en MongoDB");
 
-      // 4. Enviar correo con credenciales
-      await enviarCorreoAprobacion(
-        solicitud.email,
-        solicitud.nombre_solicitante,
-        passwordTemporal
-      );
+      // ── Correo — si falla aquí no debe bloquear el proceso ──
+      try {
+        console.log("🔵 PASO 5: Intentando enviar correo a:", solicitud.email);
+        console.log("🔵 GMAIL_USER:", process.env.GMAIL_USER ? "✅ definido" : "❌ NO definido");
+        console.log("🔵 GMAIL_PASS:", process.env.GMAIL_PASS ? "✅ definido" : "❌ NO definido");
+        await enviarCorreoAprobacion(solicitud.email, solicitud.nombre_solicitante, passwordTemporal);
+        console.log("✅ PASO 5: Correo enviado");
+      } catch (mailErr) {
+        console.error("❌ PASO 5 ERROR correo (no bloquea):", mailErr.message);
+        // No hacer throw — el usuario ya fue creado, el correo es secundario
+      }
     }
 
-    // 5. Actualizar estado de la solicitud
     solicitud.estado           = accion;
     solicitud.fecha_resolucion = new Date();
     solicitud.resuelto_por     = req.user?.uid || 'ADMIN';
     await solicitud.save();
+    console.log("✅ PASO 6: Solicitud actualizada a:", accion);
 
     res.json({ message: `Solicitud ${accion.toLowerCase()} correctamente.` });
 
   } catch (error) {
-    console.error('Error al resolver solicitud:', error);
-    res.status(500).json({ message: 'Error al procesar la solicitud.' });
+    console.error("❌ ERROR GENERAL resolverSolicitud:", {
+      message: error.message,
+      code:    error.code,
+      stack:   error.stack
+    });
+    res.status(500).json({ message: 'Error al procesar la solicitud.', detalle: error.message });
   }
 };
-
 // ─── Bloquear usuario ya existente ───────────────────────────────────────
 exports.bloquearUsuario = async (req, res) => {
   try {
