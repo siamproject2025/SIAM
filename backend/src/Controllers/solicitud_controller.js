@@ -2,8 +2,7 @@ const Solicitud   = require('../../src/Models/solicitud_modelo');
 const Usuario     = require('../../src/Models/usuario_modelo');
 const admin       = require('../config/firebaseAdmin');
 const argon2      = require('argon2');
-const transporter = require('../config/mailer');
-
+const createTransporter = require('../config/mailer'); // ✅
 // ─── Crear solicitud (público, sin auth) ──────────────────────────────────
 exports.crearSolicitud = async (req, res) => {
   try {
@@ -298,6 +297,7 @@ const generarPasswordTemporal = () => {
 };
 
 // ─── Enviar correo de aprobación ──────────────────────────────────────────
+
 const enviarCorreoAprobacion = async (email, nombre, password) => {
   const html = `
     <!DOCTYPE html>
@@ -393,10 +393,12 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
     </html>
   `;
 
+  // ✅ Llamar la función para obtener el transporter real
+  const transporter = await createTransporter();
+
   await transporter.sendMail({
-    
-    from: `"Sistema Escolar" <noreply@escuelamusica.com>`,
-    to:      email,
+    from: `"Sistema Escolar" <${process.env.GMAIL_USER}>`,
+    to: email,
     subject: '✅ Tu acceso ha sido aprobado — Credenciales de ingreso',
     html
   });

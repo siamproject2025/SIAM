@@ -1,20 +1,33 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
+const { google } = require('googleapis');
+require('dotenv').config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const createTransporter = async () => {
+  const oAuth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI
+  );
 
-// Mantiene la misma interfaz que nodemailer para no cambiar el resto del código
-const transporter = {
-  sendMail: async ({ from, to, subject, html }) => {
-    const { data, error } = await resend.emails.send({
-      from,
-      to,
-      subject,
-      html
-    });
-    if (error) throw new Error(error.message);
-    return data;
-  }
+  oAuth2Client.setCredentials({
+    refresh_token: process.env.GMAIL_REFRESH_TOKEN
+  });
+
+  const accessToken = await oAuth2Client.getAccessToken();
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      type: 'OAuth2',
+      user: process.env.GMAIL_USER,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      refreshToken: process.env.GMAIL_REFRESH_TOKEN,
+      accessToken: accessToken.token
+    }
+  });
+
+  return transporter;
 };
 
-module.exports = transporter;
-
+module.exports = createTransporter;
