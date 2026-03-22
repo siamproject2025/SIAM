@@ -1,4 +1,4 @@
-import { FiChevronLeft, FiChevronRight, FiMenu, FiChevronDown, FiBook, FiBriefcase, FiShield, FiFile } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiMenu, FiChevronDown, FiBook, FiBriefcase, FiShield, FiFile, FiUsers, FiDatabase, FiBarChart2 } from 'react-icons/fi';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -11,7 +11,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 const SideBar = () => {
   const [modulos, setModulos] = useState([]);
   const [userPermissions, setUserPermissions] = useState([]);
-  const [userRoles, setUserRoles] = useState([]); // 👈 NUEVO: roles del usuario
+  const [userRoles, setUserRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [minimizado, setMinimizado] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -25,14 +25,31 @@ const SideBar = () => {
     setActiveLink(location.pathname);
   }, [location.pathname]);
 
-  // Mapeo para organizar tus componentes en carpetas
+  // ESTRUCTURA DE CATEGORÍAS
   const categorias = {
-    "Académico": ["Matricula", "Grados", "Horarios", "Calendario", "Biblioteca", "Actividades"],
-    "Administrativo": ["Compras", "Proveedores", "Bienes", "Donaciones", "Personal", "Directiva"],
-    "Seguridad": ["Seguridad", "Auditoria", "Roles"]
+    "Operativo": {
+      icon: FiBriefcase,
+      modulos: ["Compras", "Proveedores", "Donaciones", "Bienes"]
+    },
+    "Académico": {
+      icon: FiBook,
+      modulos: ["Matricula", "Horarios", "Biblioteca", "Actividades", "Calendario", "Grados"]
+    },
+    "RRHH": {
+      icon: FiUsers,
+      modulos: ["Personal", "Directiva"]
+    },
+    "Seguridad": {
+      icon: FiShield,
+      modulos: ["Seguridad", "Auditoria", "Roles", "Solicitudes"]
+    },
+    "Global/Dashboard": {
+      icon: FiBarChart2,
+      modulos: ["Dashboard"]
+    }
   };
 
-  // MAPEO DE MÓDULOS A PERMISOS (usado como respaldo)
+  // MAPEO DE MÓDULOS A PERMISOS (IMPORTANTE: actualizado con todos los módulos)
   const moduloAPermiso = {
     "Matricula": "VISUALIZAR_MATRICULA",
     "Grados": "VISUALIZAR_GRADOS",
@@ -44,17 +61,18 @@ const SideBar = () => {
     "Proveedores": "VISUALIZAR_PROVEEDORES",
     "Bienes": "VISUALIZAR_BIENES",
     "Donaciones": "VISUALIZAR_DONACIONES",
+    "Solicitudes": "VISUALIZAR_SOLICITUDES", // 👈 AGREGADO
     "Personal": "VISUALIZAR_PERSONAL",
     "Directiva": "VISUALIZAR_DIRECTIVA",
     "Seguridad": "VISUALIZAR_SEGURIDAD",
     "Auditoria": "VISUALIZAR_AUDITORIA",
     "Dashboard": "VISUALIZAR_DASHBOARD",
-    "Roles" : "VISUALIZAR_ROLES"
+    "Roles": "VISUALIZAR_ROLES",
   };
 
   const getCategoria = (titulo) => {
-    for (const [cat, nombres] of Object.entries(categorias)) {
-      if (nombres.includes(titulo)) return cat;
+    for (const [cat, datos] of Object.entries(categorias)) {
+      if (datos.modulos.includes(titulo)) return cat;
     }
     return "Otros";
   };
@@ -66,26 +84,28 @@ const SideBar = () => {
         setLoading(true);
         const user = auth.currentUser;
         if (!user) { 
+          console.log("❌ No hay usuario autenticado");
           setLoading(false); 
           return; 
         }
         
         const token = await user.getIdToken();
+        console.log("🔑 Token obtenido para sidebar");
         
-        // 👇 1. OBTENER ROLES DEL USUARIO (NUEVO)
+        // 1. OBTENER ROLES DEL USUARIO
         let roles = [];
         try {
           const rolesRes = await axios.get(`${API_URL}/api/usuarios/role`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          // Asumiendo que la respuesta es { role: "ADMIN" } o { roles: ["ADMIN"] }
           roles = rolesRes.data.role ? [rolesRes.data.role] : (rolesRes.data.roles || []);
           setUserRoles(roles);
-       
+          console.log("✅ Roles del usuario:", roles);
         } catch (roleError) {
+          console.error("Error al obtener roles:", roleError);
         }
         
-        // 👇 2. OBTENER PERMISOS DEL USUARIO
+        // 2. OBTENER PERMISOS DEL USUARIO
         let permisos = [];
         try {
           const permisosRes = await axios.get(`${API_URL}/api/mis-permisos`, {
@@ -93,60 +113,80 @@ const SideBar = () => {
           });
           permisos = permisosRes.data.permisos || [];
           setUserPermissions(permisos);
+          console.log("✅ Permisos del usuario:", permisos);
         } catch (permError) {
+          console.error("Error al obtener permisos:", permError);
         }
         
-        // 👇 3. OBTENER MÓDULOS DEL DASHBOARD
+        // 3. OBTENER MÓDULOS DEL DASHBOARD
         const modulosRes = await axios.get(`${API_URL}/api/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        console.log("📦 Módulos recibidos del backend:", modulosRes.data.modulos.map(m => m.titulo));
         
-        // 👇 4. FILTRAR MÓDULOS (PERMISOS + ROLES COMO FALLBACK)
-        let modulosFiltrados = modulosRes.data.modulos;
+        // 4. FILTRAR MÓDULOS - PRIORIZAR PERMISOS SOBRE ROLES
+        let modulosFiltrados = [];
         
-        // Si tenemos permisos, filtramos por ellos
-        if (permisos.length > 0) {
-          modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
-            const titulo = modulo.titulo;
+        // Verificar cada módulo individualmente
+        modulosRes.data.modulos.forEach(modulo => {
+          const titulo = modulo.titulo;
+          let tieneAcceso = false;
+          let razon = "";
+          
+          console.log(`\n🔍 Verificando módulo: ${titulo}`);
+          console.log(`   - Permisos del usuario:`, permisos);
+          
+          // 🔥 NUEVO: Verificar si el usuario TIENE EL PERMISO ESPECÍFICO del módulo
+          const permisoRequerido = moduloAPermiso[titulo];
+          
+          if (permisoRequerido) {
+            const tienePermiso = permisos.includes(permisoRequerido);
+            console.log(`   - Permiso requerido (${permisoRequerido}): ${tienePermiso}`);
             
-            // OPCIÓN 1: Usar el permiso del módulo si existe
-            if (modulo.permiso) {
-              const tienePermiso = permisos.includes(modulo.permiso);
-              if (tienePermiso) return true;
+            if (tienePermiso) {
+              tieneAcceso = true;
+              razon = `Tiene permiso ${permisoRequerido}`;
+            } else {
+              console.log(`   ❌ NO tiene el permiso ${permisoRequerido}`);
             }
-            
-            // OPCIÓN 2: Usar el mapeo de título a permiso
-            const permisoRequerido = moduloAPermiso[titulo];
-            if (permisoRequerido) {
-              const tienePermiso = permisos.includes(permisoRequerido);
-              if (tienePermiso) return true;
-            }
-            
-            // 👇 FALLBACK: Verificar por ROLES del módulo
-            if (modulo.roles && modulo.roles.length > 0 && roles.length > 0) {
-              const tieneRol = modulo.roles.some(rol => roles.includes(rol));
-              if (tieneRol) return true;
-            }
-            
-            return false;
-          });
-        } 
-        // Si no hay permisos, filtramos solo por roles
-        else if (roles.length > 0) {
-          modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
+          } else {
+            console.log(`   ⚠️ No hay permiso definido para ${titulo} en moduloAPermiso`);
+          }
+          
+          // 🔥 IMPORTANTE: NO usar roles como fallback si el usuario es ADMIN
+          // Solo usar roles como fallback si el módulo NO tiene permiso definido
+          // Y el usuario NO es ADMIN (para evitar que ADMIN vea todo)
+          if (!tieneAcceso && !permisoRequerido && roles.length > 0) {
+            // Solo permitir por roles si el módulo tiene roles definidos explícitamente
             if (modulo.roles && modulo.roles.length > 0) {
               const tieneRol = modulo.roles.some(rol => roles.includes(rol));
-              return tieneRol;
+              console.log(`   - Verificación por roles (${modulo.roles}): ${tieneRol}`);
+              if (tieneRol) {
+                tieneAcceso = true;
+                razon = `Tiene rol ${modulo.roles.join(', ')}`;
+              }
             }
-            return false;
-          });
-        }
+          }
+          
+          // Si tiene acceso, agregarlo a la lista
+          if (tieneAcceso) {
+            console.log(`   ✅ MÓDULO AUTORIZADO: ${titulo} (${razon})`);
+            modulosFiltrados.push(modulo);
+          } else {
+            console.log(`   ❌ MÓDULO NO AUTORIZADO: ${titulo}`);
+          }
+        });
+        
+        console.log("\n📊 RESUMEN FINAL:");
+        console.log(`Total módulos originales: ${modulosRes.data.modulos.length}`);
+        console.log(`Total módulos filtrados: ${modulosFiltrados.length}`);
+        console.log("Módulos autorizados:", modulosFiltrados.map(m => m.titulo));
         
         setModulos(modulosFiltrados);
         
       } catch (err) {
-        console.error("Error al cargar datos:", err);
+        console.error("❌ Error al cargar datos:", err);
       } finally {
         setLoading(false);
       }
@@ -168,7 +208,7 @@ const SideBar = () => {
 
   if (loading) return <div className="sidebar-loading">Cargando sidebar...</div>;
 
-  // Agrupar módulos filtrados
+  // Agrupar módulos filtrados según la nueva estructura
   const modulosAgrupados = modulos.reduce((acc, mod) => {
     const cat = getCategoria(mod.titulo);
     if (!acc[cat]) acc[cat] = [];
@@ -176,6 +216,17 @@ const SideBar = () => {
     return acc;
   }, {});
 
+  console.log("📂 Módulos agrupados por categoría:", Object.keys(modulosAgrupados));
+
+  // Ordenar las categorías según el orden definido
+  const ordenCategorias = [
+    "Operativo",
+    "Académico",
+    "RRHH",
+    "Seguridad",
+    "Global/Dashboard",
+    "Otros"
+  ];
 
   // Si no hay módulos, mostrar mensaje
   if (Object.keys(modulosAgrupados).length === 0) {
@@ -185,8 +236,8 @@ const SideBar = () => {
           {minimizado ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
         </button>
         <div className="sidebar-empty">
-          <p>No hay módulos disponibles</p>
-          <small>Contacta al administrador</small>
+          <p>No hay módulos disponibles para tus permisos</p>
+          <small>Contacta al administrador para solicitar acceso</small>
         </div>
       </div>
     );
@@ -208,40 +259,45 @@ const SideBar = () => {
         <h2 className="sidebar-logo">{!minimizado && "WorkSpace"}</h2>
         
         <div className="sidebar-nav-container">
-          {Object.keys(modulosAgrupados).map((catName) => (
-            <div key={catName} className="menu-group">
-              <div 
-                className={`group-header ${menuAbierto === catName ? 'active-header' : ''}`}
-                onClick={() => handleToggleSubmenu(catName)}
-              >
-                <div className="group-info">
-                   {catName === "Académico" && <FiBook size={20} />}
-                   {catName === "Administrativo" && <FiBriefcase size={20} />}
-                   {catName === "Seguridad" && <FiShield size={20} />}
-                   {catName === "Otros" && <FiFile size={20} />}
-                   {!minimizado && <span>{catName}</span>}
+          {ordenCategorias.map((catName) => {
+            const modulosCat = modulosAgrupados[catName];
+            if (!modulosCat || modulosCat.length === 0) return null;
+            
+            const categoriaData = categorias[catName];
+            const IconComponent = categoriaData ? categoriaData.icon : FiFile;
+            
+            return (
+              <div key={catName} className="menu-group">
+                <div 
+                  className={`group-header ${menuAbierto === catName ? 'active-header' : ''}`}
+                  onClick={() => handleToggleSubmenu(catName)}
+                >
+                  <div className="group-info">
+                    <IconComponent size={20} />
+                    {!minimizado && <span>{catName}</span>}
+                  </div>
+                  {!minimizado && <FiChevronDown className={`arrow-icon ${menuAbierto === catName ? 'rotate' : ''}`} />}
                 </div>
-                {!minimizado && <FiChevronDown className={`arrow-icon ${menuAbierto === catName ? 'rotate' : ''}`} />}
-              </div>
 
-              <ul className={`submenu-list ${menuAbierto === catName && !minimizado ? 'show' : ''}`}>
-                {modulosAgrupados[catName].map((modulo) => {
-                  const IconComponent = FiIcons[modulo.icon] || FiFile;
-                  const isActive = activeLink === modulo.link;
-                  return (
-                    <li
-                      key={modulo._id}
-                      onClick={() => handleClick(modulo.link)}
-                      className={isActive ? "active-item" : ""}
-                    >
-                      <IconComponent size={18} />
-                      {!minimizado && <span>{modulo.titulo}</span>}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                <ul className={`submenu-list ${menuAbierto === catName && !minimizado ? 'show' : ''}`}>
+                  {modulosCat.map((modulo) => {
+                    const IconModulo = FiIcons[modulo.icon] || FiFile;
+                    const isActive = activeLink === modulo.link;
+                    return (
+                      <li
+                        key={modulo._id}
+                        onClick={() => handleClick(modulo.link)}
+                        className={isActive ? "active-item" : ""}
+                      >
+                        <IconModulo size={18} />
+                        {!minimizado && <span>{modulo.titulo}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </div>
     </>
