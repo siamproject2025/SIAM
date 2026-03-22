@@ -3,8 +3,6 @@ const { google } = require('googleapis');
 require('dotenv').config();
 
 const createTransporter = async () => {
-  console.log('📧 [mailer] Iniciando createTransporter...');
-  
   const oAuth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -15,12 +13,13 @@ const createTransporter = async () => {
     refresh_token: process.env.GMAIL_REFRESH_TOKEN
   });
 
-  console.log('📧 [mailer] Obteniendo access token...');
   const accessToken = await oAuth2Client.getAccessToken();
-  console.log('📧 [mailer] Access token obtenido ✅');
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',   // ← en lugar de service: 'gmail'
+    port: 465,
+    secure: true,
+    family: 4,                // ← forzar IPv4 ✅
     auth: {
       type: 'OAuth2',
       user: process.env.GMAIL_USER,
@@ -31,7 +30,6 @@ const createTransporter = async () => {
     }
   });
 
-  console.log('📧 [mailer] Transporter creado ✅');
   return transporter;
 };
 
