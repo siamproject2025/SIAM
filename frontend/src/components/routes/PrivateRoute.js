@@ -1,5 +1,4 @@
-// components/PrivateRoute.jsx
-import React, { useState, useEffect, useRef } from "react"; // ← IMPORTANTE: agregar useRef
+import React, { useState, useEffect, useRef } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { auth } from "../authentication/Auth";
 
@@ -12,15 +11,14 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
     role: null,
     permissions: [],
     hasAccess: true,
+    debeCambiarPassword: false, // ✅ nuevo flag
   });
 
-  // 👇 Ref para controlar que solo se ejecute una vez
   const hasVerified = useRef(false);
 
   useEffect(() => {
-    // 👇 Si ya verificó, no hacer nada
     if (hasVerified.current) return;
-    
+
     const verifyAccess = async () => {
       try {
         const user = auth.currentUser;
@@ -32,40 +30,61 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
             role: null,
             permissions: [],
             hasAccess: true,
+            debeCambiarPassword: false,
           });
           hasVerified.current = true;
           return;
         }
 
         const token = await user.getIdToken();
-        
-        // 1. Obtener el rol del usuario
+
+        // 1. Obtener rol
         const roleResponse = await fetch(`${API_URL}/api/usuarios/role`, {
           method: "GET",
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!roleResponse.ok) throw new Error("Error al verificar usuario");
-        
         const roleData = await roleResponse.json();
         const userRole = roleData?.role;
 
-        // 2. Obtener permisos del usuario
+        // 2. ✅ Obtener perfil (incluye debe_cambiar_password)
+        let debeCambiarPassword = false;
+        try {
+          const perfilResponse = await fetch(`${API_URL}/api/usuarios/mi-perfil`, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (perfilResponse.ok) {
+            const perfilData = await perfilResponse.json();
+            debeCambiarPassword = perfilData.debe_cambiar_password || false;
+          }
+        } catch (perfilError) {
+          console.error("Error al obtener perfil:", perfilError);
+        }
+const perfilResponse = await fetch(`${API_URL}/api/usuarios/mi-perfil`, {
+  method: "GET",
+  headers: { Authorization: `Bearer ${token}` },
+});
+if (perfilResponse.ok) {
+  const perfilData = await perfilResponse.json();
+  console.log("🔍 PERFIL:", perfilData); // ← agrega esto
+  debeCambiarPassword = perfilData.debe_cambiar_password || false;
+}
+        // 3. Obtener permisos
         let userPermissions = [];
         try {
           const permisosResponse = await fetch(`${API_URL}/api/mis-permisos`, {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
           });
-          
           if (permisosResponse.ok) {
             const permisosData = await permisosResponse.json();
             userPermissions = permisosData.permisos || [];
           }
-        } catch (permError) {
-        }
+        } catch (permError) {}
 
-        // 3. Verificar acceso
+        // 4. Verificar acceso por permisos/roles
         let hasRequiredAccess = true;
 
         if (requiredPermissions.length > 0) {
@@ -96,9 +115,9 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
           role: userRole,
           permissions: userPermissions,
           hasAccess: hasRequiredAccess,
+          debeCambiarPassword, // ✅
         });
 
-        // 👇 Marcar que ya verificó
         hasVerified.current = true;
 
       } catch (error) {
@@ -109,28 +128,35 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
           role: null,
           permissions: [],
           hasAccess: true,
+          debeCambiarPassword: false,
         });
         hasVerified.current = true;
       }
     };
 
     verifyAccess();
-  }, []); // 👈 Array de dependencias VACÍO - solo se ejecuta una vez al montar
+  }, []);
 
   if (authState.loading) return (
-    <div className="loading-screen" style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      fontSize: '1.2rem',
-      color: '#666'
+    <div style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "100vh",
+      fontSize: "1.2rem",
+      color: "#666",
     }}>
       Cargando...
     </div>
   );
 
   if (!authState.isAuth) return <Navigate to="/landing" replace />;
+
+  // ✅ Si debe cambiar password y NO está ya en esa ruta, redirigir
+  if (authState.debeCambiarPassword) {
+    return <Navigate to="/cambiar-password" replace />;
+  }
+
   if (!authState.hasAccess) return <Navigate to="/restricted" replace />;
 
   return <Outlet />;
