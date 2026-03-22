@@ -298,7 +298,7 @@ const generarPasswordTemporal = () => {
 };
 
 // ─── Enviar correo de aprobación ──────────────────────────────────────────
-
+// enviarCorreoAprobacion
 const enviarCorreoAprobacion = async (email, nombre, password) => {
   const html = `
     <!DOCTYPE html>
@@ -386,20 +386,14 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
     </body>
     </html>
   `;
-
-  console.log('📧 [resend] Enviando correo a:', email);
-
-  const { data, error } = await resend.emails.send({
-    from: 'Sistema Escolar <onboarding@resend.dev>',
-    to: email,
+  const sendSmtpEmail = {
+    
+    to: [{ email }],
+    sender: { email: 'siamproject2025@gmail.com', name: 'Sistema Escolar' },
     subject: '✅ Tu acceso ha sido aprobado — Credenciales de ingreso',
-    html
-  });
+    htmlContent: html  // tu mismo HTML de antes
+  };
 
-  if (error) {
-    console.error('📧 [resend] ❌ Error:', error);
-    throw new Error(error.message);
-  }
-
-  console.log('📧 [resend] ✅ Correo enviado. ID:', data.id);
+  await mailer.sendTransacEmail(sendSmtpEmail);
+  console.log(`📧 Correo enviado a ${email}`);
 };
