@@ -38,7 +38,7 @@ const createTransporter = async () => {
   console.log('📧 [mailer] Creando transporter con host smtp.gmail.com:465 IPv4...');
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
+    port: 587,
     secure: true,
     family: 4,
     auth: {
