@@ -17,12 +17,5 @@ const transporter = {
 };
 
 module.exports = transporter;
-```
 
----
-
-## 4. Agregar variable en Railway
-
-En tu proyecto Railway → Variables → agrega:
-```
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxx
