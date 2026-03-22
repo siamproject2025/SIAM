@@ -4,7 +4,7 @@ require("./config/firebaseAdmin");
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-const cors = require("cors");
+// const cors = require("cors"); // ELIMINADO - No usar cors
 
 // Rutas
 const horarios = require("./Routes/Horarios");
@@ -30,29 +30,39 @@ const audit = require("./Routes/auditControlRoutes");
 const app = express();
 app.use(express.json());
 
-app.use(cors({
-  origin: true,  // Permite todos los orígenes
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
+// MIDDLEWARE CORS PERSONALIZADO - SIN RESTRICCIONES
+app.use((req, res, next) => {
+  // Permite absolutamente cualquier origen
+  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.header('Access-Control-Max-Age', '86400'); // 24 horas cache para preflight
+  
+  // Responder inmediatamente a las peticiones OPTIONS (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
 
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log(" Conectado a MongoDB"))
   .catch(err => console.error(" Error MongoDB:", err));
+
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
   next();
 });
+
 // Rutas API
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
 app.use("/api/", usuarios_route);
 app.use("/api/", dashboard_route);
 app.use("/api/horario", horarios);
-
 app.use("/api/directiva", directivaRoutes);
 app.use("/api/personal", personalRoutes);
 app.use("/api/proveedores", proveedoresRoutes);
@@ -66,7 +76,6 @@ app.use("/api/auditoria", bitacora);
 app.use("/api/", rolRoutes);
 app.use("/api/", authRoutes);
 app.use("/api/", audit);
-
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
