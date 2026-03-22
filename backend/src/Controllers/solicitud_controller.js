@@ -2,7 +2,7 @@ const Solicitud   = require('../../src/Models/solicitud_modelo');
 const Usuario     = require('../../src/Models/usuario_modelo');
 const admin       = require('../config/firebaseAdmin');
 const argon2      = require('argon2');
-const resend = require('../config/mailer');
+const mailer = require('../config/mailer');
 // ─── Crear solicitud (público, sin auth) ──────────────────────────────────
 exports.crearSolicitud = async (req, res) => {
   try {
@@ -168,15 +168,12 @@ exports.resolverSolicitud = async (req, res) => {
 
       // ── Correo — si falla aquí no debe bloquear el proceso ──
       try {
-          console.log("🔵 PASO 5: Intentando enviar correo a:", solicitud.email);
-          console.log("🔵 GMAIL_USER:",         process.env.GMAIL_USER         ? "✅ definido" : "❌ NO definido");
-          console.log("🔵 GMAIL_REFRESH_TOKEN:", process.env.GMAIL_REFRESH_TOKEN ? "✅ definido" : "❌ NO definido");
-          console.log("🔵 GOOGLE_CLIENT_ID:",    process.env.GOOGLE_CLIENT_ID    ? "✅ definido" : "❌ NO definido");
-          await enviarCorreoAprobacion(solicitud.email, solicitud.nombre_solicitante, passwordTemporal); // ← faltaba esto
-          console.log("✅ PASO 5: Correo enviado");
+        console.log("🔵 PASO 5: Intentando enviar correo a:", solicitud.email);
+        console.log("🔵 BREVO_API_KEY:", process.env.BREVO_API_KEY ? "✅ definido" : "❌ NO definido");
+        await enviarCorreoAprobacion(solicitud.email, solicitud.nombre_solicitante, passwordTemporal);
+        console.log("✅ PASO 5: Correo enviado");
       } catch (mailErr) {
         console.error("❌ PASO 5 ERROR correo (no bloquea):", mailErr.message);
-        // No hacer throw — el usuario ya fue creado, el correo es secundario
       }
     }
 
