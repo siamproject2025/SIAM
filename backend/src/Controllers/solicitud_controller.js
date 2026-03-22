@@ -393,9 +393,13 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
     </body>
     </html>
   `;
-
-  // ✅ Llamar la función para obtener el transporter real
-  const transporter = await createTransporter();
+ // Timeout de 15 segundos para no colgar el proceso
+  const transporter = await Promise.race([
+    createTransporter(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('createTransporter timeout después de 15s')), 15000)
+    )
+  ]);
 
   await transporter.sendMail({
     from: `"Sistema Escolar" <${process.env.GMAIL_USER}>`,
