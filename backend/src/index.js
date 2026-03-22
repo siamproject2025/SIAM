@@ -4,7 +4,7 @@ require("./config/firebaseAdmin");
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-const cors = require("cors"); // ELIMINADO - No usar cors
+// NO importes cors - const cors = require("cors"); - COMENTADO
 
 // Rutas
 const horarios = require("./Routes/Horarios");
@@ -30,17 +30,29 @@ const audit = require("./Routes/auditControlRoutes");
 const app = express();
 
 app.use(express.json());
-const allowedOrigins = [
-  "http://localhost:3000", // desarrollo
-  "https://frontend-production-a861.up.railway.app" // producción
-];
 
-app.use(cors({ origin: true }));
+// MIDDLEWARE CORS MANUAL - SIN NINGUNA RESTRICCIÓN
+app.use((req, res, next) => {
+  // Permite absolutamente cualquier origen
+  const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Manejar preflight requests (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log(" Conectado a MongoDB"))
-  .catch(err => console.error(" Error MongoDB:", err));
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch(err => console.error("❌ Error MongoDB:", err));
 
 app.use((req, res, next) => {
   console.log(`➡️ ${req.method} ${req.path}`);
@@ -74,9 +86,9 @@ app.use(express.static(path.join(__dirname, "../../frontend/build")));
 
 // Capturar cualquier ruta que no sea API
 app.get(/^\/(?!api).*/, (req, res) => {
-   res.send("¡Servidor funcionando correctamente! ");
+   res.send("¡Servidor funcionando correctamente!");
 });
 
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(` Servidor corriendo en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`));
