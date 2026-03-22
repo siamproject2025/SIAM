@@ -4,7 +4,7 @@ require("./config/firebaseAdmin");
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-// const cors = require("cors"); // ELIMINADO - No usar cors
+const cors = require("cors"); // ELIMINADO - No usar cors
 
 // Rutas
 const horarios = require("./Routes/Horarios");
@@ -28,24 +28,14 @@ const authRoutes = require("./Routes/authRoutes");
 const audit = require("./Routes/auditControlRoutes");
 
 const app = express();
-app.use(express.json());
 
-// MIDDLEWARE CORS PERSONALIZADO - SIN RESTRICCIONES
-app.use((req, res, next) => {
-  // Permite absolutamente cualquier origen
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
-  res.header('Access-Control-Max-Age', '86400'); // 24 horas cache para preflight
-  
-  // Responder inmediatamente a las peticiones OPTIONS (preflight)
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  
-  next();
-});
+app.use(express.json());
+const allowedOrigins = [
+  "http://localhost:3000", // desarrollo
+  "https://frontend-production-a861.up.railway.app" // producción
+];
+
+app.use(cors({ origin: true }));
 
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
