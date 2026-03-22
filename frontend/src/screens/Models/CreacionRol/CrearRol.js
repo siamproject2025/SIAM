@@ -5,7 +5,8 @@ import { auth } from "../../../components/authentication/Auth";
 import { motion } from 'framer-motion';
 import { 
   FaEdit, FaShieldAlt, FaSearch, FaEraser, FaPlus, FaUsersCog, 
-  FaChevronDown, FaTimes, FaArrowLeft, FaUserShield 
+  FaChevronDown, FaTimes, FaArrowLeft, FaUserShield, FaBook, 
+  FaUserFriends, FaChartLine
 } from "react-icons/fa";
 import { MdDelete, MdAdminPanelSettings, MdSecurity } from "react-icons/md";
 import { RiShieldUserLine, RiArrowLeftSLine } from "react-icons/ri";
@@ -439,6 +440,39 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
 
   const [idError, setIdError] = useState('');
 
+  // Importar iconos para las categorías
+  const categoriaIconos = {
+    'Operativo/Administrativo': <FaUsersCog size={18} />,
+    'Académico': <FaBook size={18} />,
+    'Recursos Humanos': <FaUserFriends size={18} />,
+    'Seguridad': <MdSecurity size={18} />,
+    'Global/Dashboard': <FaChartLine size={18} />
+  };
+
+  // Nueva estructura de agrupación de módulos con sus respectivos permisos
+  const gruposAgrupados = {
+    'Operativo/Administrativo': {
+      icon: <FaUsersCog />,
+      modulos: ['DONACIONES','BIENES', 'PROVEEDORES', 'COMPRAS' ]
+    },
+    'Académico': {
+      icon: <FaBook />,
+      modulos: ['MATRICULA', 'HORARIOS', 'BIBLIOTECA', 'ACTIVIDADES', 'CALENDARIO', 'GRADOS']
+    },
+    'Recursos Humanos': {
+      icon: <FaUserFriends />,
+      modulos: ['PERSONAL', 'DIRECTIVA']
+    },
+    'Seguridad': {
+      icon: <MdSecurity />,
+      modulos: ['GESTION_DE_USUARIOS', 'AUDITORIA', 'ROLES']
+    },
+    'Global/Dashboard': {
+      icon: <FaChartLine />,
+      modulos: ['DASHBOARD']
+    }
+  };
+
   useEffect(() => {
     if (rol) {
       setFormData({
@@ -478,7 +512,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
     }));
   };
 
-  const handleToggleGrupo = (grupo, permisos) => {
+  const handleToggleGrupo = (permisos) => {
     setFormData(prev => {
       const todosSeleccionados = permisos.every(p => prev.permisos.includes(p));
       
@@ -487,6 +521,19 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
         permisos: todosSeleccionados
           ? prev.permisos.filter(p => !permisos.includes(p))
           : [...new Set([...prev.permisos, ...permisos])]
+      };
+    });
+  };
+
+  const handleToggleModulo = (moduloPermisos) => {
+    setFormData(prev => {
+      const todosSeleccionados = moduloPermisos.every(p => prev.permisos.includes(p));
+      
+      return {
+        ...prev,
+        permisos: todosSeleccionados
+          ? prev.permisos.filter(p => !moduloPermisos.includes(p))
+          : [...new Set([...prev.permisos, ...moduloPermisos])]
       };
     });
   };
@@ -510,6 +557,17 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
   const handleClose = (e) => {
     e.preventDefault();
     onClose();
+  };
+
+  // Función para obtener todos los permisos de un grupo de módulos
+  const obtenerPermisosDelGrupo = (modulos) => {
+    let permisos = [];
+    modulos.forEach(modulo => {
+      if (gruposPermisos[modulo]) {
+        permisos = [...permisos, ...gruposPermisos[modulo]];
+      }
+    });
+    return permisos;
   };
 
   return (
@@ -571,39 +629,73 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
           <div className="rols-css-form-group">
             <label>Permisos</label>
             <div className="rols-css-permisos-container">
-              {Object.entries(gruposPermisos).map(([grupo, permisos]) => (
-                <div key={grupo} className="rols-css-grupo-permisos">
-                  <div className="rols-css-grupo-header">
-                    <label className="rols-css-checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={permisos.every(p => formData.permisos.includes(p))}
-                        onChange={() => handleToggleGrupo(grupo, permisos)}
-                        disabled={loading}
-                      />
-                      <strong>{grupo}</strong>
-                    </label>
+              {Object.entries(gruposAgrupados).map(([categoria, { icon, modulos }]) => {
+                const permisosDelGrupo = obtenerPermisosDelGrupo(modulos);
+                const todosSeleccionados = permisosDelGrupo.length > 0 && 
+                  permisosDelGrupo.every(p => formData.permisos.includes(p));
+                
+                return (
+                  <div key={categoria} className="rols-css-categoria-permisos">
+                    <div className="rols-css-categoria-header">
+                      <label className="rols-css-checkbox-label-categoria">
+                        <input
+                          type="checkbox"
+                          checked={todosSeleccionados}
+                          onChange={() => handleToggleGrupo(permisosDelGrupo)}
+                          disabled={loading}
+                        />
+                        <span className="rols-css-categoria-icon">{icon}</span>
+                        <strong>{categoria}</strong>
+                      </label>
+                    </div>
+                    
+                    <div className="rols-css-modulos-container">
+                      {modulos.map(modulo => {
+                        const permisosModulo = gruposPermisos[modulo];
+                        if (!permisosModulo) return null;
+                        
+                        const todosModuloSeleccionados = permisosModulo.every(p => 
+                          formData.permisos.includes(p)
+                        );
+                        
+                        return (
+                          <div key={modulo} className="rols-css-modulo-permisos-grupo">
+                            <div className="rols-css-modulo-header">
+                              <label className="rols-css-checkbox-label-modulo">
+                                <input
+                                  type="checkbox"
+                                  checked={todosModuloSeleccionados}
+                                  onChange={() => handleToggleModulo(permisosModulo)}
+                                  disabled={loading}
+                                />
+                                <span className="rols-css-modulo-titulo">{modulo}</span>
+                              </label>
+                            </div>
+                            <div className="rols-css-permisos-grid">
+                              {permisosModulo.map(permiso => {
+                                const accion = permiso.split('_')[0];
+                                return (
+                                  <label key={permiso} className="rols-css-checkbox-label">
+                                    <input
+                                      type="checkbox"
+                                      checked={formData.permisos.includes(permiso)}
+                                      onChange={() => handleTogglePermiso(permiso)}
+                                      disabled={loading}
+                                    />
+                                    <span className={`rols-css-permiso-accion rols-css-permiso-accion-${accion.toLowerCase()}`}>
+                                      {accion}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="rols-css-permisos-grid">
-                    {permisos.map(permiso => {
-                      const accion = permiso.split('_')[0];
-                      return (
-                        <label key={permiso} className="rols-css-checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={formData.permisos.includes(permiso)}
-                            onChange={() => handleTogglePermiso(permiso)}
-                            disabled={loading}
-                          />
-                          <span className={`rols-css-permiso-accion rols-css-permiso-accion-${accion.toLowerCase()}`}>
-                            {accion}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

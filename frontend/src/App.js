@@ -72,20 +72,7 @@ function App() {
     let inactivityTimer;
     let warningTimer;
 
-    const logoutUser = async () => {
-      try {
-        await axios.post("/api/auth/revoke-token", { uid: user.uid });
-      } catch (error) {
-        console.error("Error revocando token:", error);
-      }
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.error("Error cerrando sesión en Firebase:", error);
-      }
-      window.location.href = "/login";
-    };
-
+  
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
       clearTimeout(warningTimer);

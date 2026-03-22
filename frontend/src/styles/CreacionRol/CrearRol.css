@@ -4,6 +4,237 @@
   box-sizing: border-box;
 }
 
+/* ==================== NUEVA ESTRUCTURA DE PERMISOS AGRUPADOS ==================== */
+/* Estilos para la nueva agrupación de permisos en el modal */
+.rols-css-permisos-container {
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 0;
+  background: #f8fafc;
+}
+
+/* Categoría principal (Operativo/Administrativo, Académico, etc.) */
+.rols-css-categoria-permisos {
+  margin-bottom: 0;
+  border-bottom: 2px solid #e2e8f0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.rols-css-categoria-permisos:last-child {
+  border-bottom: none;
+}
+
+/* Header de categoría con gradiente */
+.rols-css-categoria-header {
+  background: rgb(232, 238, 248);
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.rols-css-categoria-header:hover {
+  background: rgb(246, 246, 246);
+}
+
+.rols-css-checkbox-label-categoria {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #ffffff;
+  user-select: none;
+}
+
+.rols-css-checkbox-label-categoria input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #48bb78;
+}
+
+.rols-css-categoria-icon {
+  font-size: 1.3rem;
+  margin: 10px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+/* Contenedor de módulos */
+.rols-css-modulos-container {
+  padding: 16px 20px;
+  background: #ffffff;
+}
+
+/* Cada módulo individual */
+.rols-css-modulo-permisos-grupo {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rols-css-modulo-permisos-grupo:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Header de módulo */
+.rols-css-modulo-header {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: #f7fafc;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+  border-left: 4px solid #667eea;
+}
+
+.rols-css-modulo-header:hover {
+  background: #edf2f7;
+}
+
+.rols-css-checkbox-label-modulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+}
+
+.rols-css-checkbox-label-modulo input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #4299e1;
+  margin: 0;
+}
+
+.rols-css-modulo-titulo {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Grid de permisos individuales */
+.rols-css-permisos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  padding-left: 32px;
+}
+
+/* Estilos para los badges de acciones */
+.rols-css-permiso-accion {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.rols-css-permiso-accion-visualizar {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.rols-css-permiso-accion-visualizar:hover {
+  background: #bfdbfe;
+  transform: translateY(-1px);
+}
+
+.rols-css-permiso-accion-crear {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rols-css-permiso-accion-crear:hover {
+  background: #a7f3d0;
+  transform: translateY(-1px);
+}
+
+.rols-css-permiso-accion-actualizar {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rols-css-permiso-accion-actualizar:hover {
+  background: #fde68a;
+  transform: translateY(-1px);
+}
+
+.rols-css-permiso-accion-eliminar {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.rols-css-permiso-accion-eliminar:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* Checkbox labels individuales */
+.rols-css-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.rols-css-checkbox-label:hover {
+  background: #f1f5f9;
+  border-color: #667eea;
+  transform: translateX(2px);
+}
+
+.rols-css-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #667eea;
+  margin: 0;
+}
+
+/* Scroll personalizado para el contenedor de permisos */
+.rols-css-permisos-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.rols-css-permisos-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 10px;
+}
+
+.rols-css-permisos-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.rols-css-permisos-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Indicador visual de selección */
+.rols-css-checkbox-label-categoria input[type="checkbox"]:checked + span,
+.rols-css-checkbox-label-modulo input[type="checkbox"]:checked + .rols-css-modulo-titulo {
+  text-shadow: 0 0 1px currentColor;
+}
+
 
 .rols-css-app {
   max-width: 1400px;
@@ -567,8 +798,6 @@ textarea.rols-css-form-control {
 
 /* ==================== PERMISOS CONTAINER ==================== */
 .rols-css-permisos-container {
-  max-height: 450px;
-  overflow-y: auto;
   border: 2px solid #e2e8f0;
   border-radius: 16px;
   padding: 20px;
@@ -915,5 +1144,72 @@ textarea.rols-css-form-control {
   
   .rols-css-roles-header h3 {
     font-size: 1.2rem;
+  }
+}
+
+
+/* Animación de despliegue para módulos */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rols-css-modulos-container {
+  animation: fadeSlideIn 0.2s ease;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .rols-css-permisos-grid {
+    grid-template-columns: 1fr;
+    padding-left: 16px;
+    gap: 8px;
+  }
+  
+  .rols-css-modulos-container {
+    padding: 12px;
+  }
+  
+  .rols-css-categoria-header {
+    padding: 10px 16px;
+  }
+  
+  .rols-css-checkbox-label-categoria {
+    font-size: 0.9rem;
+  }
+  
+  .rols-css-modulo-titulo {
+    font-size: 0.85rem;
+  }
+  
+  .rols-css-checkbox-label {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .rols-css-permisos-container {
+    max-height: 400px;
+  }
+  
+  .rols-css-modulo-header {
+    padding: 6px 10px;
+  }
+  
+  .rols-css-checkbox-label {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .rols-css-permiso-accion {
+    padding: 4px 10px;
+    font-size: 0.75rem;
   }
 }
