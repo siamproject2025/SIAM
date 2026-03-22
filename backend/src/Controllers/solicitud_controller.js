@@ -2,7 +2,7 @@ const Solicitud   = require('../../src/Models/solicitud_modelo');
 const Usuario     = require('../../src/Models/usuario_modelo');
 const admin       = require('../config/firebaseAdmin');
 const argon2      = require('argon2');
-const createTransporter = require('../config/mailer'); // ✅
+const resend = require('../config/mailer');
 // ─── Crear solicitud (público, sin auth) ──────────────────────────────────
 exports.crearSolicitud = async (req, res) => {
   try {
@@ -310,7 +310,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
             <table width="520" cellpadding="0" cellspacing="0"
               style="background:#ffffff;border-radius:12px;overflow:hidden;
                      box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-
               <tr>
                 <td style="background:#1a1d27;padding:32px 40px;text-align:center;">
                   <h1 style="color:#4f8ef7;margin:0;font-size:22px;letter-spacing:-0.5px;">
@@ -318,7 +317,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                   </h1>
                 </td>
               </tr>
-
               <tr>
                 <td style="padding:36px 40px;">
                   <p style="color:#374151;font-size:15px;margin:0 0 12px;">
@@ -328,7 +326,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                     Tu solicitud de acceso ha sido <strong style="color:#22c55e;">aprobada</strong>.
                     A continuación encontrarás tus credenciales para ingresar al sistema.
                   </p>
-
                   <table width="100%" cellpadding="0" cellspacing="0"
                     style="background:#f8faff;border:1px solid #e5e7eb;
                            border-radius:8px;margin-bottom:28px;">
@@ -352,7 +349,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                       </td>
                     </tr>
                   </table>
-
                   <table width="100%" cellpadding="0" cellspacing="0"
                     style="background:#fff7ed;border:1px solid #fed7aa;
                            border-radius:8px;margin-bottom:28px;">
@@ -365,7 +361,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                       </td>
                     </tr>
                   </table>
-
                   <p style="text-align:center;margin:0;">
                     <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login"
                       style="display:inline-block;background:#4f8ef7;color:#ffffff;
@@ -376,7 +371,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                   </p>
                 </td>
               </tr>
-
               <tr>
                 <td style="background:#f9fafb;padding:20px 40px;text-align:center;
                            border-top:1px solid #e5e7eb;">
@@ -385,7 +379,6 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                   </p>
                 </td>
               </tr>
-
             </table>
           </td>
         </tr>
@@ -393,20 +386,20 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
     </body>
     </html>
   `;
- // Timeout de 15 segundos para no colgar el proceso
-  const transporter = await Promise.race([
-    createTransporter(),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('createTransporter timeout después de 15s')), 15000)
-    )
-  ]);
 
-  await transporter.sendMail({
-    from: `"Sistema Escolar" <${process.env.GMAIL_USER}>`,
+  console.log('📧 [resend] Enviando correo a:', email);
+
+  const { data, error } = await resend.emails.send({
+    from: 'Sistema Escolar <onboarding@resend.dev>',
     to: email,
     subject: '✅ Tu acceso ha sido aprobado — Credenciales de ingreso',
     html
   });
 
-  console.log(`📧 Correo enviado a ${email}`);
+  if (error) {
+    console.error('📧 [resend] ❌ Error:', error);
+    throw new Error(error.message);
+  }
+
+  console.log('📧 [resend] ✅ Correo enviado. ID:', data.id);
 };
