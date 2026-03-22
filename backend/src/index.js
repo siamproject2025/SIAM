@@ -54,11 +54,18 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Conectado a MongoDB"))
   .catch(err => console.error("❌ Error MongoDB:", err));
 
-app.use((req, res, next) => {
-  console.log(`➡️ ${req.method} ${req.path}`);
-  next();
-});
+const cors = require("cors");
 
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permite requests sin origin (Postman, mobile apps)
+    if (!origin) return callback(null, true);
+
+    // Permite cualquier dominio
+    return callback(null, true);
+  },
+  credentials: true
+}));
 // Rutas API
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
