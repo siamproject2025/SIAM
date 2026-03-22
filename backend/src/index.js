@@ -30,27 +30,10 @@ const audit = require("./Routes/auditControlRoutes");
 const app = express();
 app.use(express.json());
 
-const allowedOrigins = [
-   "https://siam-production-cce4.up.railway.app", // URL exacta de la imagen
-  'http://localhost:3000',                       // Tu entorno local
-
-];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir requests sin origin (como Postman o apps móviles)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // Aquí está el detalle: si el origen no coincide, lanza el error que ves
-      console.log("Origen bloqueado por CORS:", origin); // Agrega esto para debuguear
-      callback(new Error("No permitido por CORS"));
-    }
-  },
+  origin: true,  // Permite todos los orígenes
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS",'PATCH'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
