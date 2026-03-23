@@ -26,7 +26,7 @@ const Rol = require("./Models/Rol");
 const rolRoutes = require("./Routes/rol_routes"); 
 const authRoutes = require("./Routes/authRoutes");
 const audit = require("./Routes/auditControlRoutes");
-const resetRoutes = require('./routes/reset_password_routes');
+const resetRoutes = require('./Routes/reset_password_routes');
 
 
 const app = express();
