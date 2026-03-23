@@ -1184,6 +1184,8 @@ const handleEliminarBien = async (id) => {
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               minWidth: '200px',
               zIndex: 1000,
+              maxHeight: '280px',   // ← AGREGAR
+    overflowY: 'auto',    // ← AGREGAR
             }}>
               {categoriasOptions.map(categorias => (
                 <div
