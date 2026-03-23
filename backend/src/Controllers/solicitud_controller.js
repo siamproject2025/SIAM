@@ -214,7 +214,8 @@ exports.bloquearUsuario = async (req, res) => {
       { estado: 'BLOQUEADO' }
     );
 
-    res.json({ message: 'Usuario bloqueado correctamente.' });
+    // ✅ devuelve el usuario actualizado
+    res.json({ message: 'Usuario bloqueado correctamente.', usuario });
 
   } catch (error) {
     console.error('Error al bloquear usuario:', error);
@@ -244,6 +245,7 @@ exports.reabrirSolicitud = async (req, res) => {
   }
 };
 // ─── Desbloquear usuario ──────────────────────────────────────────────────
+// ─── Desbloquear usuario ──────────────────────────────────────────────────
 exports.desbloquearUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -265,7 +267,8 @@ exports.desbloquearUsuario = async (req, res) => {
       { estado: 'APROBADO' }
     );
 
-    res.json({ message: 'Usuario desbloqueado correctamente.' });
+    // ✅ devuelve el usuario actualizado
+    res.json({ message: 'Usuario desbloqueado correctamente.', usuario });
 
   } catch (error) {
     console.error('Error al desbloquear usuario:', error);

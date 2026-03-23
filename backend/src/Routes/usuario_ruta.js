@@ -43,7 +43,7 @@ router.post("/usuarios/login", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioC
 router.post("/usuarios/login/fallo", usuarioController.registrarIntentoFallido);
 router.post("/usuarios/login/exito", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.reiniciarIntentos);
 // Verificar acceso Google (público, se llama antes de navegar)
-router.post('/usuarios/google-acceso', usuarioController.loginOCrearSolicitudGoogle);
+router.post('/usuarios/google-acceso', authenticateUser, registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.loginOCrearSolicitudGoogle);
 // Logout
 router.post('/usuarios/logout',
   authenticateUser,
@@ -62,6 +62,7 @@ router.post('/usuarios/logout',
 router.patch('/solicitudes/:id/reabrir',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
+  capturarDatosPrevios('SOLICITUDES'),
   registrarAuditoria('SOLICITUDES'),
   solicitudController.reabrirSolicitud
 );
@@ -127,7 +128,7 @@ router.get('/usuarios',
 router.put('/usuarios/:id/rol',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
-  capturarDatosPrevios(Usuario),
+  capturarDatosPrevios('USUARIOS'),
   registrarAuditoria('USUARIOS'),
   usuarioController.asignarRol
 );
@@ -136,6 +137,7 @@ router.put('/usuarios/:id/rol',
 router.patch('/usuarios/:id/bloquear',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
+  capturarDatosPrevios('USUARIOS'), // ✅ agrega esto
   registrarAuditoria('USUARIOS'),
   solicitudController.bloquearUsuario
 );
@@ -144,6 +146,7 @@ router.patch('/usuarios/:id/bloquear',
 router.patch('/usuarios/:id/desbloquear',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
+  capturarDatosPrevios('USUARIOS'), // ✅ agrega esto
   registrarAuditoria('USUARIOS'),
   solicitudController.desbloquearUsuario
 );
@@ -152,7 +155,7 @@ router.patch('/usuarios/:id/desbloquear',
 router.delete('/usuarios/:id',
   authenticateUser,
   checkPermission('ELIMINAR_SEGURIDAD'),
-  capturarDatosPrevios(Usuario),
+  capturarDatosPrevios('USUARIOS'),
   registrarAuditoria('USUARIOS'),
   usuarioController.eliminarUsuario
 );

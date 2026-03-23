@@ -78,60 +78,82 @@ exports.obtenerRegistros = async (req, res) => {
 
 exports.exportarRegistros = async (req, res) => {
   try {
-    const filtros = { ...req.query };
-    
-    // Eliminar parámetros de paginación
-    delete filtros.page;
-    delete filtros.limit;
+    const {
+      busqueda, modulo, accion, resultado,
+      fechaInicio, fechaFin, usuario
+    } = req.query;
 
-    // Convertir fechas si existen
-    if (filtros.fechaInicio || filtros.fechaFin) {
+    const filtros = {};
+    if (modulo && modulo !== 'todos') filtros.modulo = modulo;
+    if (accion && accion !== 'todos') filtros.accion = accion;
+    if (resultado && resultado !== 'todos') filtros.resultado = resultado;
+
+    if (fechaInicio || fechaFin) {
       filtros.fecha_creacion = {};
-      if (filtros.fechaInicio) {
-        filtros.fecha_creacion.$gte = new Date(filtros.fechaInicio);
-        delete filtros.fechaInicio;
-      }
-      if (filtros.fechaFin) {
-        const fin = new Date(filtros.fechaFin);
+      if (fechaInicio) filtros.fecha_creacion.$gte = new Date(fechaInicio);
+      if (fechaFin) {
+        const fin = new Date(fechaFin);
         fin.setHours(23, 59, 59, 999);
         filtros.fecha_creacion.$lte = fin;
-        delete filtros.fechaFin;
       }
     }
 
-    // Obtener todos los registros
-    const registros = await Auditoria.find(filtros)
-      .sort({ fecha_creacion: -1 });
+    if (busqueda) {
+      filtros.$or = [
+        { 'usuario.username': { $regex: busqueda, $options: 'i' } },
+        { 'usuario.email':    { $regex: busqueda, $options: 'i' } },
+        { detalles:           { $regex: busqueda, $options: 'i' } },
+        { modulo:             { $regex: busqueda, $options: 'i' } }
+      ];
+    }
 
-    // Preparar datos para CSV
+    if (usuario) {
+      filtros['usuario.username'] = { $regex: usuario, $options: 'i' };
+    }
+
+    const registros = await Auditoria.find(filtros).sort({ fecha_creacion: -1 });
+
+    if (registros.length === 0) {
+      return res.status(404).json({ mensaje: 'No hay registros para exportar.' });
+    }
+
+    // ✅ Función para limpiar un objeto antes de serializarlo
+    const limpiarObj = (obj) => {
+      if (!obj) return '';
+      const EXCLUIR = ['_id', '__v', 'createdAt', 'updatedAt', 'fecha_actualizacion', 'timestamp'];
+      const limpio = Object.fromEntries(
+        Object.entries(obj).filter(([k]) => !EXCLUIR.includes(k))
+      );
+      return JSON.stringify(limpio);
+    };
+
     const datosCSV = registros.map(r => ({
-      fecha: r.fecha_creacion,
-      usuario: r.usuario?.username || 'Sistema',
-      email: r.usuario?.email || '',
-      rol: r.usuario?.rol || '',
-      accion: r.accion,
-      modulo: r.modulo,
-      detalles: r.detalles,
-      resultado: r.resultado,
-      ip: r.ip_address,
-      error: r.error_message || ''
+      fecha:          r.fecha_creacion ? new Date(r.fecha_creacion).toLocaleString('es-ES') : '',
+      email:          r.usuario?.email || '',
+      rol:            r.usuario?.rol || '',
+      accion:         r.accion,
+      modulo:         r.modulo,
+      // ✅ Datos previos y nuevos como JSON limpio
+      datos_previos:  limpiarObj(r.entidad?.datos_previos),
+      datos_nuevos:   limpiarObj(r.entidad?.datos_nuevos),
     }));
 
-    // Convertir a CSV
-    const fields = ['fecha', 'usuario', 'email', 'rol', 'accion', 'modulo', 'detalles', 'resultado', 'ip', 'error'];
+    const fields = [
+      'fecha', 'usuario', 'email', 'rol', 'accion', 'modulo', 'error',
+      'datos_previos', 'datos_nuevos'  // ✅ nuevas columnas
+    ];
+
     const json2csvParser = new Parser({ fields });
     const csv = json2csvParser.parse(datosCSV);
 
-    // Configurar respuesta
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=bitacora.csv');
-    res.send(csv);
+    res.send('\uFEFF' + csv); // BOM para Excel con tildes
   } catch (error) {
     console.error('Error exportando registros:', error);
-    res.status(500).json({ mensaje: 'Error al exportar la bitácora' });
+    res.status(500).json({ mensaje: 'Error al exportar la bitácora', detalle: error.message });
   }
 };
-
 // Obtener estadísticas rápidas
 exports.obtenerEstadisticas = async (req, res) => {
   try {
@@ -175,41 +197,55 @@ exports.obtenerEstadisticas = async (req, res) => {
 // Limpiar registros antiguos
 exports.limpiarRegistrosAntiguos = async (req, res) => {
   try {
-    const { dias = 90 } = req.body;
-    const fechaLimite = new Date();
-    fechaLimite.setDate(fechaLimite.getDate() - parseInt(dias));
+    // ✅ Lee tanto de query (DELETE con params) como de body
+    const { fechaHasta } = req.query;
+    const { dias } = req.body || {};
 
-    const resultado = await Auditoria.deleteMany({ 
-      fecha_creacion: { $lt: fechaLimite },
-      modulo: { $ne: 'AUDITORIA' } // Preservar auditoría de auditoría
-    });
+    let filtro = { modulo: { $ne: 'AUDITORIA' } };
+
+    if (fechaHasta) {
+      // Borrado parcial — hasta una fecha específica
+      filtro.fecha_creacion = { $lte: new Date(fechaHasta) };
+    } else if (dias) {
+      // Borrado por antigüedad en días
+      const fechaLimite = new Date();
+      fechaLimite.setDate(fechaLimite.getDate() - parseInt(dias));
+      filtro.fecha_creacion = { $lt: fechaLimite };
+    }
+    // Si no hay ni fechaHasta ni dias → borra todo (excepto AUDITORIA)
+
+    const resultado = await Auditoria.deleteMany(filtro);
 
     // Registrar la limpieza
     await Auditoria.create({
       usuario: {
-        id: req.usuario?._id,
-        username: req.usuario?.username || 'Sistema',
-        email: req.usuario?.email || '',
-        rol: req.usuario?.rol || 'sistema'
+        id: req.user?._id,
+        username: req.user?.username || 'Sistema',
+        email: req.user?.email || '',
+        rol: req.user?.roles?.[0] || 'sistema'
       },
       accion: 'DELETE',
       modulo: 'AUDITORIA',
-      detalles: `Limpieza de registros anteriores a ${dias} días`,
+      detalles: fechaHasta
+        ? `Limpieza de registros hasta ${fechaHasta}`
+        : dias
+          ? `Limpieza de registros anteriores a ${dias} días`
+          : 'Limpieza total de bitácora',
       resultado: 'EXITO',
       metadata: {
         registrosEliminados: resultado.deletedCount,
-        dias: parseInt(dias),
-        fechaLimite
+        fechaHasta: fechaHasta || null,
+        dias: dias || null
       }
     });
 
-    res.json({ 
-      mensaje: 'Registros antiguos eliminados correctamente',
-      registrosEliminados: resultado.deletedCount 
+    res.json({
+      mensaje: 'Registros eliminados correctamente',
+      registrosEliminados: resultado.deletedCount
     });
   } catch (error) {
     console.error('Error limpiando registros:', error);
-    res.status(500).json({ mensaje: 'Error al limpiar registros antiguos' });
+    res.status(500).json({ mensaje: 'Error al limpiar registros', detalle: error.message });
   }
 };
 

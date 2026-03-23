@@ -51,9 +51,9 @@ function App() {
   const [warningVisible, setWarningVisible] = useState(false);
 
   const location = useLocation();
-  const appClass = location.pathname === "/login" ? "no-margin" : "with-margin";
-
-  // ── ¿Estamos en cambiar-password? Renderizar sin layout ──
+  const noMarginPaths = ["/login", "/ResetPassword"];
+  const appClass = noMarginPaths.includes(location.pathname) ? "no-margin" : "with-margin";
+    // ── ¿Estamos en cambiar-password? Renderizar sin layout ──
   const esCambiarPassword = location.pathname === "/cambiar-password";
 
   // ── Auth state ──────────────────────────────────────────
