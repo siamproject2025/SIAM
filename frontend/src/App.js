@@ -1,4 +1,3 @@
-//Prueba
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useState, useEffect } from "react";
@@ -15,7 +14,7 @@ import PublicRoute from './components/routes/PublicRoute';
 import BibliotecaTest from './components/BibliotecaTest';
 import CrearRol from './screens/Models/CreacionRol/CrearRol';
 
-//Models
+// Models
 import OrdenCompra from './screens/Models/OrdenCompra/ordencompra';
 import Bienes from './screens/Models/Bienes/Bienes';
 import Personal from './screens/Models/Personas/personal';
@@ -40,6 +39,9 @@ import Bitacora from './screens/Models/Bitacora/Bitacora';
 import VerifyEmail from './components/VerifyEmail';
 import SolicitudesPanel from "./components/authentication/SolicitudesPanel";
 import CambiarPasswordObligatorio from './components/authentication/CambiarPasswordObligatorio';
+
+// ── NUEVO: Módulo de Parámetros del Sistema ──────────────────
+import Parametros from './screens/Parametros';
 
 const auth = getAuth(appFirebase);
 const API_URL = process.env.REACT_APP_API_URL;
@@ -72,7 +74,6 @@ function App() {
     let inactivityTimer;
     let warningTimer;
 
-  
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
       clearTimeout(warningTimer);
@@ -215,6 +216,11 @@ function App() {
             {/* ==================== MÓDULO ROLES ==================== */}
             <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_ROLES"]} />}>
               <Route path="/roles" element={<CrearRol />} />
+            </Route>
+
+            {/* ==================== MÓDULO PARÁMETROS DEL SISTEMA ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+              <Route path="/parametros" element={<Parametros />} />
             </Route>
 
             {/* ==================== RUTA RESTRINGIDA ==================== */}

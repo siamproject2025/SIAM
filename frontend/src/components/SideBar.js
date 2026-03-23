@@ -41,12 +41,16 @@ const SideBar = () => {
     },
     "Seguridad": {
       icon: FiShield,
-      modulos: ["Seguridad", "Auditoria", "Roles", "Solicitudes"]
+      modulos: ["Seguridad", "Auditoria", "Roles", "Solicitudes","Pagina principal"]
     },
     "Global/Dashboard": {
       icon: FiBarChart2,
       modulos: ["Dashboard"]
-    }
+    },
+    "Personalizacion": {
+      icon: FiShield,
+      modulos: ["Pagina principal"]
+    },
   };
 
   // MAPEO DE MÓDULOS A PERMISOS (IMPORTANTE: actualizado con todos los módulos)
@@ -68,6 +72,7 @@ const SideBar = () => {
     "Auditoria": "VISUALIZAR_AUDITORIA",
     "Dashboard": "VISUALIZAR_DASHBOARD",
     "Roles": "VISUALIZAR_ROLES",
+    "Pagina principal": "VISUALIZAR_SEGURIDAD",
   };
 
   const getCategoria = (titulo) => {
