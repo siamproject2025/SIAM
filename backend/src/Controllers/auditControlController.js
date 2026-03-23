@@ -22,26 +22,7 @@ const setStatus = async (req, res) => {
     // Cambiar estado
     setAuditEnabled(enabled);
 
-    // Registrar el cambio en auditoría (si está activa)
-    if (getAuditEnabled()) {
-      await Auditoria.create({
-        usuario: {
-          id: req.usuario?._id,
-          username: req.usuario?.username || 'Sistema',
-          email: req.usuario?.email || 'sistema@local',
-          rol: req.usuario?.rol || 'admin'
-        },
-        accion: 'UPDATE',
-        modulo: 'AUDITORIA',
-        detalles: `Cambio de estado de auditoría: ${enabled ? 'activada' : 'desactivada'}`,
-        resultado: 'EXITO',
-        metadata: {
-          nuevoEstado: enabled,
-          usuario: req.usuario?.username || 'Sistema'
-        }
-      });
-    }
-
+   
     res.json({
       enabled,
       message: `Auditoría ${enabled ? 'activada' : 'desactivada'} correctamente`

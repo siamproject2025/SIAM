@@ -479,7 +479,7 @@ const AsignarRol = () => {
                             </button>
                             </WithPermission>
                             <WithPermission requiredPermissions={["ACTUALIZAR_SEGURIDAD"]}>
-                              {usuario.estado === 'ACTIVO' ? (
+                              {usuario.estado === 'BLOQUEADO' ? (
                                 <button className="rol-table-btn" style={{color:'#10b981'}} title="Desbloquear"
                                   onClick={() => desbloquearUsuario(usuario)}>
                                   <FiUnlock />

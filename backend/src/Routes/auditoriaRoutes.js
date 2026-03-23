@@ -53,4 +53,9 @@ router.get('/:id',
   auditoriaController.obtenerRegistroPorId
 );
 
+router.get('/exportar',
+ 
+  auditoriaController.exportarRegistros
+);
+
 module.exports = router;
