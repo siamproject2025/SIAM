@@ -18,7 +18,19 @@ const Profile = () => {
     <div>
       <div className="dropdown-header">
         <h6>Mi Cuenta</h6>
-        <Link to='/account'>Gestiona tu perfil</Link>
+       <Link 
+          style={{ 
+            textDecoration: "none",
+            color: "white", 
+            cursor: "pointer",
+            fontWeight: "normal"
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.fontWeight = "bold"}
+          onMouseLeave={(e) => e.currentTarget.style.fontWeight = "normal"}
+          to='/account'
+        >
+          Gestiona tu perfil
+        </Link>
       </div>
     
       <div style={{ padding: '20px' }}>

@@ -6,8 +6,8 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const theme = {
   bg:          "#0f1117",
-  surface:     "#1a1d27",
-  surfaceAlt:  "#22263a",
+  surface:     "#fbfbfb",
+  surfaceAlt:  "#fbfbfb",
   border:      "#2e3352",
   accent:      "#4f8ef7",
   accentHover: "#6ba3ff",
@@ -287,7 +287,7 @@ const SolicitudesPanel = () => {
                 <tr
                   key={s._id}
                   style={{ ...styles.tr, background: i % 2 === 0 ? theme.surface : theme.surfaceAlt }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#2a2f4a"}
+                  onMouseEnter={e => e.currentTarget.style.background = "#fbfbfb"}
                   onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? theme.surface : theme.surfaceAlt}
                 >
                   <td style={styles.td}>
@@ -455,34 +455,34 @@ const Spinner     = () => (
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
 const styles = {
-  root:       { minHeight: "100vh", background: "#0f1117", color: "#e8eaf0", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", padding: "32px 28px", boxSizing: "border-box" },
+  root:       { minHeight: "100vh", background: "#ffffff", color: "#0f1117", fontFamily: "'DM Sans', 'Segoe UI', sans-serif", padding: "32px 28px", boxSizing: "border-box" },
   header:     { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 12 },
-  titulo:     { fontSize: "1.7rem", fontWeight: 700, margin: 0, letterSpacing: "-0.02em" },
-  subtitulo:  { color: "#9ca3af", marginTop: 4, fontSize: "0.9rem" },
-  btnRefresh: { display: "flex", alignItems: "center", background: "#22263a", border: "1px solid #2e3352", color: "#e8eaf0", borderRadius: 8, padding: "9px 16px", cursor: "pointer", fontSize: "0.87rem", fontWeight: 500, transition: "all 0.15s" },
+  titulo:     { fontSize: "1.7rem", fontWeight: 700, margin: 0, letterSpacing: "-0.02em", color: "#1e1b4b" },
+  subtitulo:  { color: "#6b7280", marginTop: 4, fontSize: "0.9rem" },
+  btnRefresh: { display: "flex", alignItems: "center", background: "#f5f3ff", border: "1px solid #ddd6fe", color: "#1e1b4b", borderRadius: 8, padding: "9px 16px", cursor: "pointer", fontSize: "0.87rem", fontWeight: 500, transition: "all 0.15s" },
   toolbar:    { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 },
   filtros:    { display: "flex", gap: 8, flexWrap: "wrap" },
-  filtroBtn:  { display: "flex", alignItems: "center", gap: 6, background: "#22263a", border: "1px solid #2e3352", color: "#9ca3af", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: "0.85rem", fontWeight: 500, transition: "all 0.15s" },
-  filtroBtnActivo: { background: "#4f8ef722", border: "1px solid #4f8ef766", color: "#4f8ef7" },
+  filtroBtn:  { display: "flex", alignItems: "center", gap: 6, background: "#f5f3ff", border: "1px solid #ddd6fe", color: "#6b7280", borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: "0.85rem", fontWeight: 500, transition: "all 0.15s" },
+  filtroBtnActivo: { background: "#ede9fe", border: "1px solid #c4b5fd", color: "#5b21b6" },
   badge:      { borderRadius: 20, padding: "1px 8px", fontSize: "0.75rem", fontWeight: 700 },
-  buscador:   { background: "#22263a", border: "1px solid #2e3352", color: "#e8eaf0", borderRadius: 8, padding: "9px 14px", fontSize: "0.87rem", width: 260, outline: "none" },
-  tableWrap:  { background: "#1a1d27", border: "1px solid #2e3352", borderRadius: 12, overflow: "hidden" },
+  buscador:   { background: "#f5f3ff", border: "1px solid #ddd6fe", color: "#1e1b4b", borderRadius: 8, padding: "9px 14px", fontSize: "0.87rem", width: 260, outline: "none" },
+  tableWrap:  { background: "#ffffff", border: "1px solid #ddd6fe", borderRadius: 12, overflow: "hidden" },
   table:      { width: "100%", borderCollapse: "collapse" },
-  thead:      { background: "#22263a" },
-  th:         { padding: "13px 16px", textAlign: "left", fontSize: "0.78rem", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid #2e3352" },
+  thead:      { background: "#f5f3ff" },
+  th:         { padding: "13px 16px", textAlign: "left", fontSize: "0.78rem", fontWeight: 600, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid #ddd6fe" },
   tr:         { transition: "background 0.12s" },
-  td:         { padding: "12px 16px", fontSize: "0.875rem", borderBottom: "1px solid #2e335222", color: "#e8eaf0" },
+  td:         { padding: "12px 16px", fontSize: "0.875rem", borderBottom: "1px solid #ede9fe", color: "#1e1b4b" },
   estadoBadge:{ borderRadius: 20, padding: "3px 10px", fontSize: "0.78rem", fontWeight: 600, display: "inline-block" },
   acciones:   { display: "flex", gap: 6, alignItems: "center" },
-  linkBtn:    { background: "none", border: "none", color: "#6ba3ff", cursor: "pointer", padding: 0, fontWeight: 600, fontSize: "0.875rem", textDecoration: "underline", textUnderlineOffset: 2 },
-  empty:      { padding: "48px 24px", textAlign: "center", color: "#9ca3af", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 },
-  overlay:    { position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(3px)" },
-  modal:      { background: "#1a1d27", border: "1px solid #2e3352", borderRadius: 14, padding: "28px 32px", width: 500, maxWidth: "95vw", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" },
+  linkBtn:    { background: "none", border: "none", color: "#6366f1", cursor: "pointer", padding: 0, fontWeight: 600, fontSize: "0.875rem", textDecoration: "underline", textUnderlineOffset: 2 },
+  empty:      { padding: "48px 24px", textAlign: "center", color: "#a78bfa", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 },
+  overlay:    { position: "fixed", inset: 0, background: "rgba(9, 13, 235, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(3px)" },
+  modal:      { background: "#ffffff", border: "1px solid #ddd6fe", borderRadius: 14, padding: "28px 32px", width: 500, maxWidth: "95vw", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(99,102,241,0.15)" },
   modalHeader:{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 },
-  modalTitulo:{ fontSize: "1.2rem", fontWeight: 700, margin: 0 },
-  modalClose: { background: "none", border: "none", color: "#9ca3af", fontSize: "1.2rem", cursor: "pointer", padding: "2px 6px", borderRadius: 6 },
+  modalTitulo:{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "#1e1b4b" },
+  modalClose: { background: "none", border: "none", color: "#a78bfa", fontSize: "1.2rem", cursor: "pointer", padding: "2px 6px", borderRadius: 6 },
   modalGrid:  { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" },
-  modalActions:{ display: "flex", gap: 12, marginTop: 24, paddingTop: 20, borderTop: "1px solid #2e3352", flexWrap: "wrap" },
+  modalActions:{ display: "flex", gap: 12, marginTop: 24, paddingTop: 20, borderTop: "1px solid #ddd6fe", flexWrap: "wrap" },
   btnModal:   { display: "flex", alignItems: "center", gap: 8, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", cursor: "pointer", fontWeight: 600, fontSize: "0.9rem", transition: "opacity 0.15s" },
 };
 
