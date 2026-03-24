@@ -223,11 +223,11 @@ const s = {
     flexShrink:     0,
   },
   cardTitulo: { fontSize: "1.15rem", fontWeight: 700, margin: 0, color: "#1e1b4b" },
-  cardSub:    { color: "#6b7280", fontSize: "0.82rem", margin: 0 },
+  cardSub:    { color: "#494949", fontSize: "0.82rem", margin: 0 },
   divider:    { height: 1, background: "#ddd6fe", margin: "20px 0" },
   fieldWrap:  { marginBottom: 16 },
   label: {
-    color:         "#7c3aed",
+    color:         "#2e1d4b",
     fontSize:      "0.78rem",
     textTransform: "uppercase",
     letterSpacing: "0.07em",
@@ -257,7 +257,7 @@ const s = {
     border:     "none",
     cursor:     "pointer",
     fontSize:   16,
-    color:      "#a78bfa",
+    color:      "#332755",
   },
   requisitosBox: {
     background:   "#f5f3ff",
@@ -268,7 +268,7 @@ const s = {
   },
   reqTitulo: {
     fontSize:      "0.72rem",
-    color:         "#7c3aed",
+    color:         "#000000",
     textTransform: "uppercase",
     letterSpacing: "0.07em",
     fontWeight:    600,
@@ -301,7 +301,7 @@ const s = {
     borderRadius: 8,
     padding:      "12px 14px",
   },
-  warningTitulo: { fontSize: "0.78rem", color: "#7c3aed", fontWeight: 600, margin: "0 0 4px" },
+  warningTitulo: { fontSize: "0.78rem", color: "#242424", fontWeight: 600, margin: "0 0 4px" },
   warningText:   { fontSize: "0.78rem", color: "#6b7280", margin: 0, lineHeight: 1.6 },
   tipsBox: {
     marginTop:    12,
@@ -312,11 +312,11 @@ const s = {
   },
   tipsLabel: {
     fontSize:      "0.72rem",
-    color:         "#7c3aed",
+    color:         "#2a1847",
     fontWeight:    600,
     textTransform: "uppercase",
     letterSpacing: "0.07em",
     margin:        "0 0 8px",
   },
-  tip: { fontSize: "0.78rem", color: "#6b7280", marginBottom: 4, lineHeight: 1.5 },
+  tip: { fontSize: "0.78rem", color: "#18253e", marginBottom: 4, lineHeight: 1.5 },
 };

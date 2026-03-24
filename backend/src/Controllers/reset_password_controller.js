@@ -21,10 +21,12 @@ const htmlCorreoOTP = (nombre, codigo) => `
                  box-shadow:0 4px 24px rgba(0,0,0,0.08);">
           <tr>
             <td style="background:#1a1d27;padding:32px 40px;text-align:center;">
+              <h2 style="color:#a0a8c0;margin:0 0 16px 0;font-size:16px;font-weight:500;letter-spacing:-0.3px;">
+                S.I.A.M Escuela de niños para la música
+              </h2>
               <h1 style="color:#4f8ef7;margin:0;font-size:22px;letter-spacing:-0.5px;">
                 🔐 Restablecer contraseña
               </h1>
-            </td>
           </tr>
           <tr>
             <td style="padding:36px 40px;">
