@@ -235,7 +235,7 @@ const Login = () => {
                 </div>
 
                 <div className="login-center-options">
-                  <a className="forgot-pass-link" onClick={() => navigate("/ResetPassword")}>
+                  <a  className="forgot-pass-link" onClick={() => navigate("/ResetPassword")}>
                     ¿Has olvidado tu contraseña?
                   </a>
                 </div>
@@ -249,9 +249,9 @@ const Login = () => {
                 </div>
               </form>
 
-              <p className="login-bottom-p">
+              <p  href="#" onClick={(e) => { e.preventDefault(); setVistaActual("solicitud"); reset(); }} className="login-bottom-p">
                 ¿No tienes cuenta?{" "}
-                <a href="#" onClick={(e) => { e.preventDefault(); setVistaActual("solicitud"); reset(); }}>
+                <a>
                   Solicitar acceso
                 </a>
               </p>
@@ -343,9 +343,9 @@ const Login = () => {
                 </div>
               </form>
 
-              <p className="login-bottom-p">
+              <p href="#" onClick={(e) => { e.preventDefault(); setVistaActual("login"); reset(); }} className="login-bottom-p">
                 ¿Ya tienes cuenta?{" "}
-                <a href="#" onClick={(e) => { e.preventDefault(); setVistaActual("login"); reset(); }}>
+                <a >
                   Iniciar sesión
                 </a>
               </p>

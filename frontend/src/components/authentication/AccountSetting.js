@@ -165,7 +165,7 @@ const s = {
     flexShrink:     0,
   },
   cardTitulo: { fontSize: "1.15rem", fontWeight: 700, margin: 0, color: "#1e1b4b" },
-  cardSub:    { color: "#6b7280", fontSize: "0.82rem", margin: 0 },
+  cardSub:    { color: "#000000", fontSize: "0.82rem", margin: 0 },
   divider:    { height: 1, background: "#ddd6fe", margin: "20px 0" },
   perfilRow: {
     display:      "flex",
@@ -187,12 +187,12 @@ const s = {
     flexShrink:     0,
     boxShadow:      "0 4px 16px rgba(99,102,241,0.25)",
   },
-  perfilNombre: { color: "#1e1b4b", fontWeight: 700, fontSize: "1rem" },
-  perfilEmail:  { color: "#6b7280", fontSize: "0.82rem", marginTop: 2 },
-  perfilBadge:  { fontSize: "0.75rem", color: "#7c3aed", marginTop: 4 },
+  perfilNombre: { color: "#000000", fontWeight: 700, fontSize: "1rem" },
+  perfilEmail:  { color: "#000000", fontSize: "0.82rem", marginTop: 2 },
+  perfilBadge:  { fontSize: "0.75rem", color: "#32195e", marginTop: 4 },
   fieldWrap:    { marginBottom: 20 },
   label: {
-    color:         "#7c3aed",
+    color:         "#31195c",
     fontSize:      "0.78rem",
     textTransform: "uppercase",
     letterSpacing: "0.07em",
@@ -206,7 +206,7 @@ const s = {
     border:       "1px solid #ddd6fe",
     borderRadius: 8,
     padding:      "11px 14px",
-    color:        "#1e1b4b",
+    color:        "#2e2e2e",
     fontSize:     "0.9rem",
     outline:      "none",
     boxSizing:    "border-box",
@@ -223,9 +223,9 @@ const s = {
     opacity:      0.7,
   },
   emailIcon:  { fontSize: "0.9rem" },
-  emailValue: { color: "#7c3aed", fontSize: "0.88rem", flex: 1 },
+  emailValue: { color: "#25163f", fontSize: "0.88rem", flex: 1 },
   emailLock:  { fontSize: "0.85rem" },
-  emailHint:  { color: "#6b7280", fontSize: "0.75rem", marginTop: 6 },
+  emailHint:  { color: "#000000", fontSize: "0.75rem", marginTop: 6 },
   btn: {
     background:   "linear-gradient(135deg, #6366f1, #8b5cf6)",
     color:        "#fff",
@@ -246,7 +246,7 @@ const s = {
   },
   infoLabel: {
     fontSize:      "0.75rem",
-    color:         "#7c3aed",
+    color:         "#1b0f30",
     fontWeight:    600,
     margin:        "0 0 10px",
     textTransform: "uppercase",
@@ -259,8 +259,8 @@ const s = {
     padding:        "6px 0",
     borderBottom:   "1px solid #ede9fe",
   },
-  infoKey: { color: "#6b7280", fontSize: "0.8rem" },
-  infoVal: { color: "#5b21b6", fontSize: "0.8rem", fontWeight: 500 },
+  infoKey: { color: "#303030", fontSize: "0.8rem" },
+  infoVal: { color: "#000000", fontSize: "0.8rem", fontWeight: 500 },
 };
 
 export default AccountSetting;

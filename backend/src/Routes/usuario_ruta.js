@@ -43,7 +43,7 @@ router.post("/usuarios/login", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioC
 router.post("/usuarios/login/fallo", usuarioController.registrarIntentoFallido);
 router.post("/usuarios/login/exito", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.reiniciarIntentos);
 // Verificar acceso Google (público, se llama antes de navegar)
-router.post('/usuarios/google-acceso', authenticateUser, registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.loginOCrearSolicitudGoogle);
+router.post('/usuarios/google-acceso', usuarioController.loginOCrearSolicitudGoogle);
 // Logout
 router.post('/usuarios/logout',
   authenticateUser,

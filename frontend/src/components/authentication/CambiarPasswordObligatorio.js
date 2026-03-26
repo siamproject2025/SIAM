@@ -101,7 +101,7 @@ const CambiarPasswordObligatorio = () => {
           {password && (
             <div style={s.requisitos}>
               {requisitos.map(r => (
-                <div key={r.label} style={{ ...s.req, color: r.test(password) ? "#22c55e" : "#6b7280" }}>
+                <div key={r.label} style={{ ...s.req, color: r.test(password) ? "#a522c5" : "#6b7280" }}>
                   <span style={{ marginRight: 6 }}>{r.test(password) ? "✓" : "○"}</span>
                   {r.label}
                 </div>
@@ -119,7 +119,7 @@ const CambiarPasswordObligatorio = () => {
               style={{
                 ...s.input,
                 borderColor: confirmar
-                  ? (coincide ? "#22c55e" : "#ef4444")
+                  ? (coincide ? "#a2c522" : "#ef4444")
                   : "#2e3352"
               }}
               placeholder="Repite tu nueva contraseña"
@@ -149,17 +149,17 @@ const CambiarPasswordObligatorio = () => {
 };
 
 const s = {
-  root:      { minHeight: "100vh", background: "#0f1117", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-  card:      { background: "#1a1d27", border: "1px solid #2e3352", borderRadius: 14, padding: "40px 36px", width: 420, maxWidth: "100%" },
+  root:      { minHeight: "100vh",   background: "linear-gradient(-45deg, #52eedc4f, #ae3ce7a9, #23a5d5af, #23d5abab)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  card:      { background: "#ffffff",  borderRadius: 14, padding: "40px 36px", width: 420, maxWidth: "100%" },
   iconWrap:  { fontSize: 40, textAlign: "center", marginBottom: 16 },
-  titulo:    { color: "#e8eaf0", fontSize: "1.4rem", fontWeight: 700, textAlign: "center", margin: "0 0 8px" },
-  sub:       { color: "#9ca3af", fontSize: "0.88rem", textAlign: "center", lineHeight: 1.6, margin: "0 0 28px" },
+  titulo:    { color: "#000000", fontSize: "1.4rem", fontWeight: 700, textAlign: "center", margin: "0 0 8px" },
+  sub:       { color: "#4d4d4d", fontSize: "0.88rem", textAlign: "center", lineHeight: 1.6, margin: "0 0 28px" },
   fieldWrap: { marginBottom: 8 },
-  label:     { color: "#9ca3af", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 6 },
+  label:     { color: "#000000", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.07em", display: "block", marginBottom: 6 },
   inputWrap: { position: "relative" },
-  input:     { width: "100%", background: "#22263a", border: "1px solid #2e3352", borderRadius: 8, padding: "11px 14px", color: "#e8eaf0", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" },
+  input:     { width: "100%", background: "#f3f3f3", border: "1px solid #2e3352", borderRadius: 8, padding: "11px 14px", color: "#000000", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" },
   ojo:       { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16 },
-  requisitos:{ background: "#22263a", borderRadius: 8, padding: "12px 16px", marginTop: 8 },
+  requisitos:{ background: "#ebebeb", borderRadius: 8, padding: "12px 16px", marginTop: 8 },
   req:       { fontSize: "0.82rem", marginBottom: 4, display: "flex", alignItems: "center" },
   btn:       { width: "100%", background: "#4f8ef7", color: "#fff", border: "none", borderRadius: 8, padding: "13px", fontWeight: 700, fontSize: "0.95rem", marginTop: 24, transition: "opacity 0.15s" },
 };

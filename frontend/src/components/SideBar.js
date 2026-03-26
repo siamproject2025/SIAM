@@ -1,10 +1,28 @@
-import { FiChevronLeft, FiChevronRight, FiMenu, FiChevronDown, FiBook, FiBriefcase, FiShield, FiFile, FiUsers, FiDatabase, FiBarChart2 } from 'react-icons/fi';
+import { FiChevronLeft , FiChevronRight, FiMenu, FiChevronDown, FiBook, FiBriefcase, FiShield, FiFile, FiUsers, FiDatabase, FiBarChart2 } from 'react-icons/fi';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import '../styles/SideBar.css';
 import { auth } from "./authentication/Auth";
-import * as FiIcons from "react-icons/fi";
+import { FaPaintRoller , FaUserGraduate } from "react-icons/fa6";
+import { RiPagesFill } from "react-icons/ri";
+import { MdOutlinePendingActions } from "react-icons/md";
+import { FaUsersCog } from "react-icons/fa";
+import { TbBus } from "react-icons/tb";
+
+import * as FiIcons from 'react-icons/fi';
+import * as RiIcons from 'react-icons/ri';
+import * as FaIcons from 'react-icons/fa';
+import * as TbIcons from 'react-icons/tb';
+import * as MdIcons from 'react-icons/md';
+
+const allIcons = {
+  ...FiIcons,
+  ...RiIcons,
+  ...FaIcons,
+  ...TbIcons,
+  ...MdIcons,
+};
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -41,14 +59,14 @@ const SideBar = () => {
     },
     "Seguridad": {
       icon: FiShield,
-      modulos: ["Seguridad", "Auditoria", "Roles", "Solicitudes","Pagina principal"]
+      modulos: ["Usuarios", "Auditoria", "Roles", "Solicitudes"]
     },
     "Global/Dashboard": {
       icon: FiBarChart2,
       modulos: ["Dashboard"]
     },
-    "Personalizacion": {
-      icon: FiShield,
+    "Personalización": {
+      icon: FaPaintRoller,
       modulos: ["Pagina principal"]
     },
   };
@@ -68,7 +86,7 @@ const SideBar = () => {
     "Solicitudes": "VISUALIZAR_SOLICITUDES", // 👈 AGREGADO
     "Personal": "VISUALIZAR_PERSONAL",
     "Directiva": "VISUALIZAR_DIRECTIVA",
-    "Seguridad": "VISUALIZAR_SEGURIDAD",
+    "Usuarios": "VISUALIZAR_SEGURIDAD",
     "Auditoria": "VISUALIZAR_AUDITORIA",
     "Dashboard": "VISUALIZAR_DASHBOARD",
     "Roles": "VISUALIZAR_ROLES",
@@ -221,7 +239,7 @@ const SideBar = () => {
     return acc;
   }, {});
 
-  console.log("📂 Módulos agrupados por categoría:", Object.keys(modulosAgrupados));
+
 
   // Ordenar las categorías según el orden definido
   const ordenCategorias = [
@@ -230,6 +248,7 @@ const SideBar = () => {
     "RRHH",
     "Seguridad",
     "Global/Dashboard",
+    "Personalización",
     "Otros"
   ];
 
@@ -286,7 +305,7 @@ const SideBar = () => {
 
                 <ul className={`submenu-list ${menuAbierto === catName && !minimizado ? 'show' : ''}`}>
                   {modulosCat.map((modulo) => {
-                    const IconModulo = FiIcons[modulo.icon] || FiFile;
+                    const IconModulo = allIcons[modulo.icon] || FiFile;
                     const isActive = activeLink === modulo.link;
                     return (
                       <li

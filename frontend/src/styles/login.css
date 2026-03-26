@@ -72,7 +72,7 @@ border-radius: 15px;
 .login-right form{
   display: flex;
   flex-direction: column;
-  margin-bottom: 50px;
+  margin-bottom: 10px;
 }
 
 .login-logo{
@@ -99,7 +99,7 @@ border-radius: 15px;
 
 .login-center p{
   font-weight: 400;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   margin-bottom: 40px;
   color: rgb(0, 0, 0);
 }
@@ -210,15 +210,25 @@ border-radius: 15px;
   color: white;
 }
 
+.login-bottom-p:hover{
+  cursor: pointer;
+  color: white;
+  background: rgb(48, 48, 48);
+}
+
 .login-bottom-p{
   text-align: center;
-  font-size: 0.8rem;
-  padding-bottom: 40px;
+  font-size: 15px;
+  padding: 15px;
+  background: white;
+  border-radius: 100px;
+   border-bottom: 1px solid rgb(36, 36, 36)!important;
 }
 
 .login-bottom-p a{
   text-decoration: none;
   font-weight: 600;
+  font-size: 15px;
 }
 
 .login-bottom-p a:hover{

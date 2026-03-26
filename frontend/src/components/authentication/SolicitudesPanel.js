@@ -6,17 +6,17 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 const theme = {
   bg:          "#0f1117",
-  surface:     "#fbfbfb",
+  surface:     "#ffffff",
   surfaceAlt:  "#fbfbfb",
   border:      "#2e3352",
   accent:      "#4f8ef7",
   accentHover: "#6ba3ff",
   success:     "#22c55e",
   danger:      "#ef4444",
-  warning:     "#f59e0b",
-  muted:       "#6b7280",
-  text:        "#e8eaf0",
-  textSoft:    "#9ca3af",
+  warning:     "#000000",
+  muted:       "#000000",
+  text:        "#000000",
+  textSoft:    "#000000",
 };
 
 const badge = {
@@ -432,10 +432,10 @@ const ActionBtn = ({ color, onClick, disabled, title, children }) => (
 
 const Field = ({ label, value }) => (
   <div style={{ marginBottom: 14 }}>
-    <div style={{ fontSize: "0.73rem", color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+    <div style={{ fontSize: "0.73rem", color: "#000000", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
       {label}
     </div>
-    <div style={{ color: "#e8eaf0", fontWeight: 500 }}>{value}</div>
+    <div style={{ color: "#444444", fontWeight: 500 }}>{value}</div>
   </div>
 );
 
@@ -468,8 +468,8 @@ const styles = {
   buscador:   { background: "#f5f3ff", border: "1px solid #ddd6fe", color: "#1e1b4b", borderRadius: 8, padding: "9px 14px", fontSize: "0.87rem", width: 260, outline: "none" },
   tableWrap:  { background: "#ffffff", border: "1px solid #ddd6fe", borderRadius: 12, overflow: "hidden" },
   table:      { width: "100%", borderCollapse: "collapse" },
-  thead:      { background: "#f5f3ff" },
-  th:         { padding: "13px 16px", textAlign: "left", fontSize: "0.78rem", fontWeight: 600, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid #ddd6fe" },
+  thead:      { background: "linear-gradient(135deg, #6C4FBF, #9B59B6)" },
+  th:         { padding: "13px 16px", textAlign: "left", fontSize: "0.78rem", fontWeight: 600, color: "#ffffff", textTransform: "uppercase", letterSpacing: "0.07em", borderBottom: "1px solid #ddd6fe" },
   tr:         { transition: "background 0.12s" },
   td:         { padding: "12px 16px", fontSize: "0.875rem", borderBottom: "1px solid #ede9fe", color: "#1e1b4b" },
   estadoBadge:{ borderRadius: 20, padding: "3px 10px", fontSize: "0.78rem", fontWeight: 600, display: "inline-block" },
@@ -479,7 +479,7 @@ const styles = {
   overlay:    { position: "fixed", inset: 0, background: "rgba(9, 13, 235, 0.12)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(3px)" },
   modal:      { background: "#ffffff", border: "1px solid #ddd6fe", borderRadius: 14, padding: "28px 32px", width: 500, maxWidth: "95vw", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(99,102,241,0.15)" },
   modalHeader:{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 },
-  modalTitulo:{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "#1e1b4b" },
+  modalTitulo:{ fontSize: "1.2rem", fontWeight: 700, margin: 0, color: "#000000" },
   modalClose: { background: "none", border: "none", color: "#a78bfa", fontSize: "1.2rem", cursor: "pointer", padding: "2px 6px", borderRadius: 6 },
   modalGrid:  { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" },
   modalActions:{ display: "flex", gap: 12, marginTop: 24, paddingTop: 20, borderTop: "1px solid #ddd6fe", flexWrap: "wrap" },

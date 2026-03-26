@@ -219,9 +219,9 @@ const ResetPassword = () => {
                   </button>
                 </div>
               </form>
-              <p className="login-bottom-p">
+              <p href="#" onClick={(e) => { e.preventDefault(); navigate("/login"); }} className="login-bottom-p">
                 ¿Recordaste tu contraseña?{" "}
-                <a href="#" onClick={(e) => { e.preventDefault(); navigate("/login"); }}>
+                <a >
                   Iniciar sesión
                 </a>
               </p>
@@ -261,7 +261,7 @@ const ResetPassword = () => {
                   </button>
                   <button
                     type="button"
-                    className="button button-outline"
+                    className="login-bottom-p"
                     onClick={() => { setPaso("correo"); setOtp(""); }}
                   >
                     Cambiar correo
