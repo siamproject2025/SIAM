@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WithPermission from "../../../components/Permisos/WithPermission"
 
 const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
   // CORRECCIÓN: Función para convertir fecha de DB a formato local para el input
@@ -81,8 +82,13 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
         </div>
 
         <div className="modal-actions">
-          <button className="btn btn-guardar-donaciones" onClick={handleGuardar}>Guardar Cambios</button>
-          <button className="btn btn-danger" onClick={handleEliminar}>Eliminar</button>
+             <WithPermission requiredPermissions={["ELIMINAR_ACTIVIDADES"]}>
+              <button className="btn btn-danger" onClick={handleEliminar}>Eliminar</button>
+              </WithPermission>
+
+             <WithPermission requiredPermissions={["ACTUALIZAR_ACTIVIDADES"]}>
+              <button className="btn btn-guardar-donaciones" onClick={handleGuardar}>Guardar Cambios</button>
+              </WithPermission>
           <button className="btn btn-dark" onClick={onClose}>Cerrar</button>
         </div>
       </div>

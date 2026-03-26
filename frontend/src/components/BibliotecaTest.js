@@ -35,6 +35,7 @@ import {
   FiUser,
   FiLock
 } from 'react-icons/fi';
+import WithPermission from "./Permisos/WithPermission";
 
 export default function BibliotecaTest() {
   
@@ -59,8 +60,6 @@ export default function BibliotecaTest() {
 
   const API_URL = process.env.REACT_APP_API_URL+"/api/biblioteca";
   // Permisos basados en rol
-  const canUpload = userRole === "ADMIN" || userRole === "DOCENTE";
-  const canDelete = userRole === "ADMIN";
 
   const cargarLibros = async () => {
     setLoading(true);
@@ -111,11 +110,6 @@ export default function BibliotecaTest() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!canUpload) {
-      showNotification("No tienes permiso para subir libros", "error");
-      setMostrarModal(false);
-      return;
-    }
 
     if (!titulo.trim()) {
       showNotification("El título es obligatorio", "error");
@@ -190,10 +184,7 @@ export default function BibliotecaTest() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [libroAEliminar, setLibroAEliminar] = useState(null);
   const prepararEliminacion = (libro) => {
-    if (!canDelete) {
-      showNotification("No tienes permiso para eliminar libros", "error");
-      return;
-    }
+   
 
     setLibroAEliminar(libro);
     setShowConfirm(true);
@@ -532,7 +523,7 @@ export default function BibliotecaTest() {
               </select>
             </div>
 
-            {canUpload && (
+               <WithPermission requiredPermissions={["CREAR_BIBLIOTECA"]}>
               <motion.button
                 className="btn-subir-libro"
                 onClick={() => setMostrarModal(true)}
@@ -551,7 +542,7 @@ export default function BibliotecaTest() {
                 </motion.div>
                 Subir Libro
               </motion.button>
-            )}
+              </WithPermission>
           </div>
 
           <div className="biblioteca-meta-row">
@@ -702,8 +693,8 @@ export default function BibliotecaTest() {
                               Sin archivo
                             </span>
                           )}
-                    
-                          {canDelete && (
+
+                           <WithPermission requiredPermissions={["ELIMINAR_BIBLIOTECA"]}>
                             <motion.button
                               onClick={() => prepararEliminacion(libro)}
                               className="btn btn-danger"
@@ -721,7 +712,7 @@ export default function BibliotecaTest() {
                             >
                               <FiTrash2 size={16} />
                             </motion.button>
-                          )}
+                              </WithPermission>
                         </div>
                       </td>
                     </tr>
@@ -795,7 +786,7 @@ export default function BibliotecaTest() {
 
       {/* MODAL SUBIR LIBRO */}
       <AnimatePresence>
-        {mostrarModal && canUpload && (
+        {mostrarModal  && (
           <motion.div 
             className="modal-overlay" 
             onClick={handleModalClose}

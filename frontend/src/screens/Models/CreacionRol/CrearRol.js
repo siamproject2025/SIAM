@@ -5,11 +5,12 @@ import { auth } from "../../../components/authentication/Auth";
 import { motion } from 'framer-motion';
 import { 
   FaEdit, FaShieldAlt, FaSearch, FaEraser, FaPlus, FaUsersCog, 
-  FaChevronDown, FaTimes, FaArrowLeft, FaUserShield 
+  FaChevronDown, FaTimes, FaArrowLeft, FaUserShield, FaBook, 
+  FaUserFriends, FaChartLine
 } from "react-icons/fa";
 import { MdDelete, MdAdminPanelSettings, MdSecurity } from "react-icons/md";
 import { RiShieldUserLine, RiArrowLeftSLine } from "react-icons/ri";
-import { FiShield } from "react-icons/fi";
+import WithPermission from '../../../components/Permisos/WithPermission';
 
 // Configuración de API
 const API_HOST = process.env.REACT_APP_API_URL;
@@ -97,7 +98,7 @@ function App() {
     BIENES: ['VISUALIZAR_BIENES', 'CREAR_BIENES', 'ACTUALIZAR_BIENES', 'ELIMINAR_BIENES'],
     DIRECTIVA: ['VISUALIZAR_DIRECTIVA', 'CREAR_DIRECTIVA', 'ACTUALIZAR_DIRECTIVA', 'ELIMINAR_DIRECTIVA'],
     PERSONAL: ['VISUALIZAR_PERSONAL', 'CREAR_PERSONAL', 'ACTUALIZAR_PERSONAL', 'ELIMINAR_PERSONAL'],
-    SEGURIDAD: ['VISUALIZAR_SEGURIDAD', 'CREAR_SEGURIDAD', 'ACTUALIZAR_SEGURIDAD', 'ELIMINAR_SEGURIDAD'],
+    GESTION_DE_USUARIOS: ['VISUALIZAR_SEGURIDAD', 'CREAR_SEGURIDAD', 'ACTUALIZAR_SEGURIDAD', 'ELIMINAR_SEGURIDAD'],
     AUDITORIA: ['VISUALIZAR_AUDITORIA', 'CREAR_AUDITORIA', 'ACTUALIZAR_AUDITORIA', 'ELIMINAR_AUDITORIA'],
     BIBLIOTECA: ['VISUALIZAR_BIBLIOTECA', 'CREAR_BIBLIOTECA', 'ACTUALIZAR_BIBLIOTECA', 'ELIMINAR_BIBLIOTECA'],
     CALENDARIO: ['VISUALIZAR_CALENDARIO', 'CREAR_CALENDARIO', 'ACTUALIZAR_CALENDARIO', 'ELIMINAR_CALENDARIO'],
@@ -105,7 +106,9 @@ function App() {
     GRADOS: ['VISUALIZAR_GRADOS', 'CREAR_GRADOS', 'ACTUALIZAR_GRADOS', 'ELIMINAR_GRADOS'],
     HORARIOS: ['VISUALIZAR_HORARIOS', 'CREAR_HORARIOS', 'ACTUALIZAR_HORARIOS', 'ELIMINAR_HORARIOS'],
     MATRICULA: ['VISUALIZAR_MATRICULA', 'CREAR_MATRICULA', 'ACTUALIZAR_MATRICULA', 'ELIMINAR_MATRICULA'],
-    DASHBOARD: ['VISUALIZAR_DASHBOARD']
+    DASHBOARD: ['VISUALIZAR_DASHBOARD'],
+    ROLES: ['VISUALIZAR_ROLES','CREAR_ROLES','ACTUALIZAR_ROLES', 'ELIMINAR_ROLES'],
+    SOLICITUDES: ['VISUALIZAR_SOLICITUDES','CREAR_SOLICITUDES','ACTUALIZAR_SOLICITUDES', 'ELIMINAR_SOLICITUDES']
   };
 
   // Función para agrupar permisos por módulo para visualización
@@ -300,6 +303,7 @@ function App() {
           >
             <FaEraser /> Limpiar Filtros
           </button>
+          <WithPermission requiredPermissions={["CREAR_ROLES"]}>
           <button 
             className="rols-css-btn rols-css-btn-primary" 
             onClick={() => {
@@ -311,6 +315,7 @@ function App() {
           >
             <FaPlus /> Nuevo Rol
           </button>
+          </WithPermission>
         </div>
       </div>
 
@@ -336,6 +341,7 @@ function App() {
                   <span className="rols-css-rol-id">{rol._id}</span>
                 </div>
                 <div className="rols-css-rol-actions">
+                  <WithPermission requiredPermissions={["ACTUALIZAR_ROLES"]}>
                   <button 
                     className="rols-css-btn-icon" 
                     onClick={() => handleEditarRol(rol)}
@@ -345,6 +351,8 @@ function App() {
                   >
                     <FaEdit />
                   </button>
+                  </WithPermission>
+                  <WithPermission requiredPermissions={["ELIMINAR_ROLES"]}>
                   <button 
                     className="rols-css-btn-icon rols-css-btn-icon-delete" 
                     onClick={() => handleEliminarRol(rol._id)}
@@ -354,6 +362,7 @@ function App() {
                   >
                     <MdDelete />
                   </button>
+                  </WithPermission>
                 </div>
               </div>
               
@@ -431,6 +440,39 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
 
   const [idError, setIdError] = useState('');
 
+  // Importar iconos para las categorías
+  const categoriaIconos = {
+    'Operativo': <FaUsersCog size={18} />,
+    'Académico': <FaBook size={18} />,
+    'Recursos Humanos': <FaUserFriends size={18} />,
+    'Seguridad': <MdSecurity size={18} />,
+    'Global/Dashboard': <FaChartLine size={18} />
+  };
+
+  // Nueva estructura de agrupación de módulos con sus respectivos permisos
+  const gruposAgrupados = {
+    'Operativo': {
+      icon: <FaUsersCog />,
+      modulos: ['DONACIONES','BIENES', 'PROVEEDORES', 'COMPRAS' ]
+    },
+    'Académico': {
+      icon: <FaBook />,
+      modulos: ['MATRICULA', 'HORARIOS', 'BIBLIOTECA', 'ACTIVIDADES', 'CALENDARIO', 'GRADOS']
+    },
+    'Recursos Humanos': {
+      icon: <FaUserFriends />,
+      modulos: ['PERSONAL', 'DIRECTIVA']
+    },
+    'Seguridad': {
+      icon: <MdSecurity />,
+      modulos: ['GESTION_DE_USUARIOS', 'AUDITORIA', 'ROLES', 'SOLICITUDES']
+    },
+    'Global/Dashboard': {
+      icon: <FaChartLine />,
+      modulos: ['DASHBOARD']
+    }
+  };
+
   useEffect(() => {
     if (rol) {
       setFormData({
@@ -470,7 +512,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
     }));
   };
 
-  const handleToggleGrupo = (grupo, permisos) => {
+  const handleToggleGrupo = (permisos) => {
     setFormData(prev => {
       const todosSeleccionados = permisos.every(p => prev.permisos.includes(p));
       
@@ -479,6 +521,19 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
         permisos: todosSeleccionados
           ? prev.permisos.filter(p => !permisos.includes(p))
           : [...new Set([...prev.permisos, ...permisos])]
+      };
+    });
+  };
+
+  const handleToggleModulo = (moduloPermisos) => {
+    setFormData(prev => {
+      const todosSeleccionados = moduloPermisos.every(p => prev.permisos.includes(p));
+      
+      return {
+        ...prev,
+        permisos: todosSeleccionados
+          ? prev.permisos.filter(p => !moduloPermisos.includes(p))
+          : [...new Set([...prev.permisos, ...moduloPermisos])]
       };
     });
   };
@@ -504,6 +559,17 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
     onClose();
   };
 
+  // Función para obtener todos los permisos de un grupo de módulos
+  const obtenerPermisosDelGrupo = (modulos) => {
+    let permisos = [];
+    modulos.forEach(modulo => {
+      if (gruposPermisos[modulo]) {
+        permisos = [...permisos, ...gruposPermisos[modulo]];
+      }
+    });
+    return permisos;
+  };
+
   return (
     <div className="rols-css-modal-overlay" onClick={handleClose}>
       <div className="rols-css-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -521,7 +587,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
 
         <form onSubmit={handleSubmit}>
           <div className="rols-css-form-group">
-            <label>ID del Rol *</label>
+            <label>Nombre del rol</label>
             <input
               type="text"
               className={`rols-css-form-control ${idError ? 'rols-css-form-control-error' : ''}`}
@@ -536,7 +602,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
           </div>
 
           <div className="rols-css-form-group">
-            <label>Nombre del Rol *</label>
+            <label>Etiqueta</label>
             <input
               type="text"
               className="rols-css-form-control"
@@ -563,39 +629,73 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
           <div className="rols-css-form-group">
             <label>Permisos</label>
             <div className="rols-css-permisos-container">
-              {Object.entries(gruposPermisos).map(([grupo, permisos]) => (
-                <div key={grupo} className="rols-css-grupo-permisos">
-                  <div className="rols-css-grupo-header">
-                    <label className="rols-css-checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={permisos.every(p => formData.permisos.includes(p))}
-                        onChange={() => handleToggleGrupo(grupo, permisos)}
-                        disabled={loading}
-                      />
-                      <strong>{grupo}</strong>
-                    </label>
+              {Object.entries(gruposAgrupados).map(([categoria, { icon, modulos }]) => {
+                const permisosDelGrupo = obtenerPermisosDelGrupo(modulos);
+                const todosSeleccionados = permisosDelGrupo.length > 0 && 
+                  permisosDelGrupo.every(p => formData.permisos.includes(p));
+                
+                return (
+                  <div key={categoria} className="rols-css-categoria-permisos">
+                    <div className="rols-css-categoria-header">
+                      <label className="rols-css-checkbox-label-categoria">
+                        <input
+                          type="checkbox"
+                          checked={todosSeleccionados}
+                          onChange={() => handleToggleGrupo(permisosDelGrupo)}
+                          disabled={loading}
+                        />
+                        <span className="rols-css-categoria-icon">{icon}</span>
+                        <strong>{categoria}</strong>
+                      </label>
+                    </div>
+                    
+                    <div className="rols-css-modulos-container">
+                      {modulos.map(modulo => {
+                        const permisosModulo = gruposPermisos[modulo];
+                        if (!permisosModulo) return null;
+                        
+                        const todosModuloSeleccionados = permisosModulo.every(p => 
+                          formData.permisos.includes(p)
+                        );
+                        
+                        return (
+                          <div key={modulo} className="rols-css-modulo-permisos-grupo">
+                            <div className="rols-css-modulo-header">
+                              <label className="rols-css-checkbox-label-modulo">
+                                <input
+                                  type="checkbox"
+                                  checked={todosModuloSeleccionados}
+                                  onChange={() => handleToggleModulo(permisosModulo)}
+                                  disabled={loading}
+                                />
+                                <span className="rols-css-modulo-titulo">{modulo}</span>
+                              </label>
+                            </div>
+                            <div className="rols-css-permisos-grid">
+                              {permisosModulo.map(permiso => {
+                                const accion = permiso.split('_')[0];
+                                return (
+                                  <label key={permiso} className="rols-css-checkbox-label">
+                                    <input
+                                      type="checkbox"
+                                      checked={formData.permisos.includes(permiso)}
+                                      onChange={() => handleTogglePermiso(permiso)}
+                                      disabled={loading}
+                                    />
+                                    <span className={`rols-css-permiso-accion rols-css-permiso-accion-${accion.toLowerCase()}`}>
+                                      {accion}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="rols-css-permisos-grid">
-                    {permisos.map(permiso => {
-                      const accion = permiso.split('_')[0];
-                      return (
-                        <label key={permiso} className="rols-css-checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={formData.permisos.includes(permiso)}
-                            onChange={() => handleTogglePermiso(permiso)}
-                            disabled={loading}
-                          />
-                          <span className={`rols-css-permiso-accion rols-css-permiso-accion-${accion.toLowerCase()}`}>
-                            {accion}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

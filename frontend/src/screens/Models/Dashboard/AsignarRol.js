@@ -6,7 +6,7 @@ import { auth } from "../../../components/authentication/Auth";
 import { 
   FiTrash2, FiMail, FiUser, FiKey, FiUsers, FiShield, FiAward, 
   FiArrowRight, FiEdit3, FiFilter, FiX, FiChevronLeft, FiChevronRight,
-  FiSearch
+  FiSearch, FiLock, FiUnlock
 } from "react-icons/fi";
 import { HiMiniMagnifyingGlassCircle } from "react-icons/hi2";
 import { RiUserSettingsLine, RiShieldUserLine } from "react-icons/ri";
@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import UsuariosChart from '../../../components/UsuariosChart'
 import Notification from "../../../components/Notification";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 const API_URL = process.env.REACT_APP_API_URL;
 const API_ROLES = `${API_URL}/api/roles`;
@@ -36,31 +37,33 @@ const AsignarRol = () => {
   const usuariosPorPagina = 10;
 
   useEffect(() => {
-    const obtenerDatos = async () => {
-      try {
-        const user = auth.currentUser;
-        const token = await user.getIdToken();
-        
-        const [usuariosRes, rolesRes] = await Promise.all([
-          axios.get(`${API_URL}/api/usuarios`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(API_ROLES, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        ]);
-        
-        setUsuarios(usuariosRes.data.users);
-        setRoles(rolesRes.data);
-      } catch (error) {
-        console.error("Error al obtener datos:", error);
-        setMensaje(" Error al cargar datos.");
-      } finally {
-        setCargando(false);
-      }
-    };
-    obtenerDatos();
-  }, []);
+  const obtenerDatos = async () => {
+    try {
+      const user = auth.currentUser;
+      const token = await user.getIdToken();
+      
+      const [usuariosRes, rolesRes] = await Promise.all([
+        axios.get(`${API_URL}/api/usuarios`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(API_ROLES, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
+      
+      console.log("Primer usuario:", usuariosRes.data.users[0]); // ← agrega esto
+      
+      setUsuarios(usuariosRes.data.users);
+      setRoles(rolesRes.data);
+    } catch (error) {
+      console.error("Error al obtener datos:", error);
+      setMensaje(" Error al cargar datos.");
+    } finally {
+      setCargando(false);
+    }
+  };
+  obtenerDatos();
+}, []);
 
   const asignarRol = async (id, nuevoRol) => {
     try {
@@ -193,6 +196,36 @@ const AsignarRol = () => {
       </div>
     );
   }
+  
+  const bloquearUsuario = async (usuario) => {
+     try {
+       const user = auth.currentUser;
+       const token = await user.getIdToken();
+       await axios.patch(`${API_URL}/api/usuarios/${usuario._id}/bloquear`, {},
+         { headers: { Authorization: `Bearer ${token}` } });
+       setMensaje(<span>✓ Usuario <strong>{usuario.username}</strong> bloqueado</span>);
+       setUsuarios((prev) =>
+  prev.map((u) => (u._id === usuario._id ? { ...u, estado: 'BLOQUEADO' } : u))
+);
+     } catch (error) {
+       setMensaje("✗ No se pudo bloquear el usuario");
+     }
+   };
+  
+   const desbloquearUsuario = async (usuario) => {
+     try {
+       const user = auth.currentUser;
+       const token = await user.getIdToken();
+       await axios.patch(`${API_URL}/api/usuarios/${usuario._id}/desbloquear`, {},
+         { headers: { Authorization: `Bearer ${token}` } });
+       setMensaje(<span>✓ Usuario <strong>{usuario.username}</strong> desbloqueado</span>);
+       setUsuarios((prev) =>
+  prev.map((u) => (u._id === usuario._id ? { ...u, estado: 'ACTIVO' } : u))
+);
+     } catch (error) {
+       setMensaje("✗ No se pudo desbloquear el usuario");
+     }
+   };
 
   return (
     <div className="rol-asignar-container">
@@ -343,6 +376,7 @@ const AsignarRol = () => {
               <th>Usuario</th>
               <th>Email</th>
               <th>Rol Actual</th>
+              <th>Estado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -388,6 +422,18 @@ const AsignarRol = () => {
                         </span>
                       )}
                     </td>
+                     <td>
+                        {usuario.estado === 'BLOQUEADO' ? (
+                          <span className="rol-role-badge" style={{ background: '#ef444420', color: '#ef4444', borderColor: '#ef4444' }}>
+                            <FiLock /> Bloqueado
+                          </span>
+                        ) : (
+                          <span className="rol-role-badge" style={{ background: '#10b98120', color: '#10b981', borderColor: '#10b981' }}>
+                            <FiUnlock /> Activo
+                          </span>
+                        )}
+                      </td>
+                                      
                     <td>
                       <div className="rol-table-actions">
                         {isEditing ? (
@@ -414,7 +460,7 @@ const AsignarRol = () => {
                             </button>
                           </>
                         ) : (
-                          <>
+                          <><WithPermission requiredPermissions={["ACTUALIZAR_SEGURIDAD"]}>
                             <button 
                               className="rol-table-btn edit"
                               onClick={() => setUsuarioEditando(usuario._id)}
@@ -422,6 +468,8 @@ const AsignarRol = () => {
                             >
                               <FiEdit3 />
                             </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={["ELIMINAR_SEGURIDAD"]}>
                             <button 
                               className="rol-table-btn delete"
                               onClick={() => handleEliminarUsuario(usuario)}
@@ -429,10 +477,26 @@ const AsignarRol = () => {
                             >
                               <FiTrash2 />
                             </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={["ACTUALIZAR_SEGURIDAD"]}>
+                              {usuario.estado === 'BLOQUEADO' ? (
+                                <button className="rol-table-btn" style={{color:'#10b981'}} title="Desbloquear"
+                                  onClick={() => desbloquearUsuario(usuario)}>
+                                  <FiUnlock />
+                                </button>
+                              ) : (
+                                <button className="rol-table-btn" style={{color:'#ef4444'}} title="Bloquear"
+                                  onClick={() => bloquearUsuario(usuario)}>
+                                  <FiLock />
+                                </button>
+                              )}
+                            </WithPermission>
+
                           </>
                         )}
                       </div>
                     </td>
+                    
                   </motion.tr>
                 );
               })

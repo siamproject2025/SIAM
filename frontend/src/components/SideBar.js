@@ -1,22 +1,141 @@
-import { FiChevronLeft, FiChevronRight, FiMenu, FiChevronDown, FiBook, FiBriefcase, FiShield, FiFile } from 'react-icons/fi';
+import { FiChevronLeft , FiChevronRight, FiMenu, FiChevronDown, FiBook, FiBriefcase, FiShield, FiFile, FiUsers, FiDatabase, FiBarChart2 } from 'react-icons/fi';
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import '../styles/SideBar.css';
 import { auth } from "./authentication/Auth";
-import * as FiIcons from "react-icons/fi";
+import { FaPaintRoller , FaUserGraduate } from "react-icons/fa6";
+import { RiPagesFill } from "react-icons/ri";
+import { MdOutlinePendingActions } from "react-icons/md";
+import { FaUsersCog } from "react-icons/fa";
+import { TbBus } from "react-icons/tb";
+
+import * as FiIcons from 'react-icons/fi';
+import * as RiIcons from 'react-icons/ri';
+import * as FaIcons from 'react-icons/fa';
+import * as TbIcons from 'react-icons/tb';
+import * as MdIcons from 'react-icons/md';
+
+const allIcons = {
+  ...FiIcons,
+  ...RiIcons,
+  ...FaIcons,
+  ...TbIcons,
+  ...MdIcons,
+};
 
 const API_URL = process.env.REACT_APP_API_URL;
+
+// ORDEN FIJO DE CATEGORÍAS Y MÓDULOS CON SUS LABELS
+const estructuraSidebar = [
+  {
+    categoria: "Académico",
+    icon: FiBook,
+    grupos: [
+      {
+        label: "Gestión académica",
+        modulos: ["Matricula", "Grados", "Horarios"]
+      },
+      {
+        label: "Recursos bibliográficos",
+        modulos: ["Biblioteca"]
+      },
+      {
+        label: "Eventos",
+        modulos: ["Actividades", "Calendario"]
+      }
+    ]
+  },
+  {
+    categoria: "Operativo",
+    icon: FiBriefcase,
+    grupos: [
+      {
+        label: "Inventario",
+        modulos: ["Bienes", "Donaciones"]
+      },
+      {
+        label: "Adquisiciones",
+        modulos: ["Compras", "Proveedores"]
+      }
+    ]
+  },
+  {
+    categoria: "RRHH",
+    icon: FiUsers,
+    grupos: [
+      {
+        label: "Talento humano",
+        modulos: ["Personal", "Directiva"]
+      }
+    ]
+  },
+  {
+    categoria: "Seguridad",
+    icon: FiShield,
+    grupos: [
+      {
+        label: "Control de accesos",
+        modulos: ["Usuarios", "Roles", "Solicitudes"]
+      },
+      {
+        label: "Historial de acciones",
+        modulos: ["Auditoria"]
+      }
+    ]
+  },
+  {
+    categoria: "Global/Dashboard",
+    icon: FiBarChart2,
+    grupos: [
+      {
+        label: "Dashboard",
+        modulos: ["Dashboard"]
+      }
+    ]
+  },
+  {
+    categoria: "Personalización",
+    icon: FaPaintRoller,
+    grupos: [
+      {
+        label: "Personalización",
+        modulos: ["Pagina principal"]
+      }
+    ]
+  }
+];
+
+const moduloAPermiso = {
+  "Matricula": "VISUALIZAR_MATRICULA",
+  "Grados": "VISUALIZAR_GRADOS",
+  "Horarios": "VISUALIZAR_HORARIOS",
+  "Calendario": "VISUALIZAR_CALENDARIO",
+  "Biblioteca": "VISUALIZAR_BIBLIOTECA",
+  "Actividades": "VISUALIZAR_ACTIVIDADES",
+  "Compras": "VISUALIZAR_COMPRAS",
+  "Proveedores": "VISUALIZAR_PROVEEDORES",
+  "Bienes": "VISUALIZAR_BIENES",
+  "Donaciones": "VISUALIZAR_DONACIONES",
+  "Solicitudes": "VISUALIZAR_SOLICITUDES", 
+  "Personal": "VISUALIZAR_PERSONAL",
+  "Directiva": "VISUALIZAR_DIRECTIVA",
+  "Usuarios": "VISUALIZAR_SEGURIDAD",
+  "Auditoria": "VISUALIZAR_AUDITORIA",
+  "Dashboard": "VISUALIZAR_DASHBOARD",
+  "Roles": "VISUALIZAR_ROLES",
+  "Pagina principal": "VISUALIZAR_SEGURIDAD",
+};
 
 const SideBar = () => {
   const [modulos, setModulos] = useState([]);
   const [userPermissions, setUserPermissions] = useState([]);
-  const [userRoles, setUserRoles] = useState([]); // 👈 NUEVO: roles del usuario
+  const [userRoles, setUserRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [minimizado, setMinimizado] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("");
-  const [menuAbierto, setMenuAbierto] = useState(null); 
+  const [menuAbierto, setMenuAbierto] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,67 +144,32 @@ const SideBar = () => {
     setActiveLink(location.pathname);
   }, [location.pathname]);
 
-  // Mapeo para organizar tus componentes en carpetas
-  const categorias = {
-    "Académico": ["Matricula", "Grados", "Horarios", "Calendario", "Biblioteca", "Actividades"],
-    "Administrativo": ["Compras", "Proveedores", "Bienes", "Donaciones", "Personal", "Directiva"],
-    "Seguridad": ["Seguridad", "Auditoria", "Roles"]
-  };
-
-  // MAPEO DE MÓDULOS A PERMISOS (usado como respaldo)
-  const moduloAPermiso = {
-    "Matricula": "VISUALIZAR_MATRICULA",
-    "Grados": "VISUALIZAR_GRADOS",
-    "Horarios": "VISUALIZAR_HORARIOS",
-    "Calendario": "VISUALIZAR_CALENDARIO",
-    "Biblioteca": "VISUALIZAR_BIBLIOTECA",
-    "Actividades": "VISUALIZAR_ACTIVIDADES",
-    "Compras": "VISUALIZAR_COMPRAS",
-    "Proveedores": "VISUALIZAR_PROVEEDORES",
-    "Bienes": "VISUALIZAR_BIENES",
-    "Donaciones": "VISUALIZAR_DONACIONES",
-    "Personal": "VISUALIZAR_PERSONAL",
-    "Directiva": "VISUALIZAR_DIRECTIVA",
-    "Seguridad": "VISUALIZAR_SEGURIDAD",
-    "Auditoria": "VISUALIZAR_AUDITORIA",
-    "Dashboard": "VISUALIZAR_DASHBOARD",
-    "Roles" : "VISUALIZAR_ROLES"
-  };
-
-  const getCategoria = (titulo) => {
-    for (const [cat, nombres] of Object.entries(categorias)) {
-      if (nombres.includes(titulo)) return cat;
-    }
-    return "Otros";
-  };
-
-  // Cargar datos al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const user = auth.currentUser;
         if (!user) { 
+          console.log("❌ No hay usuario autenticado");
           setLoading(false); 
           return; 
         }
         
         const token = await user.getIdToken();
+        console.log("🔑 Token obtenido para sidebar");
         
-        // 👇 1. OBTENER ROLES DEL USUARIO (NUEVO)
         let roles = [];
         try {
           const rolesRes = await axios.get(`${API_URL}/api/usuarios/role`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          // Asumiendo que la respuesta es { role: "ADMIN" } o { roles: ["ADMIN"] }
           roles = rolesRes.data.role ? [rolesRes.data.role] : (rolesRes.data.roles || []);
           setUserRoles(roles);
-       
+          console.log("✅ Roles del usuario:", roles);
         } catch (roleError) {
+          console.error("Error al obtener roles:", roleError);
         }
         
-        // 👇 2. OBTENER PERMISOS DEL USUARIO
         let permisos = [];
         try {
           const permisosRes = await axios.get(`${API_URL}/api/mis-permisos`, {
@@ -93,60 +177,51 @@ const SideBar = () => {
           });
           permisos = permisosRes.data.permisos || [];
           setUserPermissions(permisos);
+          console.log("✅ Permisos del usuario:", permisos);
         } catch (permError) {
+          console.error("Error al obtener permisos:", permError);
         }
         
-        // 👇 3. OBTENER MÓDULOS DEL DASHBOARD
         const modulosRes = await axios.get(`${API_URL}/api/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        console.log("📦 Módulos recibidos del backend:", modulosRes.data.modulos.map(m => m.titulo));
         
-        // 👇 4. FILTRAR MÓDULOS (PERMISOS + ROLES COMO FALLBACK)
-        let modulosFiltrados = modulosRes.data.modulos;
+        let modulosFiltrados = [];
         
-        // Si tenemos permisos, filtramos por ellos
-        if (permisos.length > 0) {
-          modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
-            const titulo = modulo.titulo;
-            
-            // OPCIÓN 1: Usar el permiso del módulo si existe
-            if (modulo.permiso) {
-              const tienePermiso = permisos.includes(modulo.permiso);
-              if (tienePermiso) return true;
+        modulosRes.data.modulos.forEach(modulo => {
+          const titulo = modulo.titulo;
+          let tieneAcceso = false;
+          
+          const permisoRequerido = moduloAPermiso[titulo];
+          
+          if (permisoRequerido) {
+            const tienePermiso = permisos.includes(permisoRequerido);
+            if (tienePermiso) {
+              tieneAcceso = true;
             }
-            
-            // OPCIÓN 2: Usar el mapeo de título a permiso
-            const permisoRequerido = moduloAPermiso[titulo];
-            if (permisoRequerido) {
-              const tienePermiso = permisos.includes(permisoRequerido);
-              if (tienePermiso) return true;
-            }
-            
-            // 👇 FALLBACK: Verificar por ROLES del módulo
-            if (modulo.roles && modulo.roles.length > 0 && roles.length > 0) {
-              const tieneRol = modulo.roles.some(rol => roles.includes(rol));
-              if (tieneRol) return true;
-            }
-            
-            return false;
-          });
-        } 
-        // Si no hay permisos, filtramos solo por roles
-        else if (roles.length > 0) {
-          modulosFiltrados = modulosRes.data.modulos.filter(modulo => {
+          }
+          
+          if (!tieneAcceso && !permisoRequerido && roles.length > 0) {
             if (modulo.roles && modulo.roles.length > 0) {
               const tieneRol = modulo.roles.some(rol => roles.includes(rol));
-              return tieneRol;
+              if (tieneRol) {
+                tieneAcceso = true;
+              }
             }
-            return false;
-          });
-        }
+          }
+          
+          if (tieneAcceso) {
+            modulosFiltrados.push(modulo);
+          }
+        });
         
+        console.log("Módulos autorizados:", modulosFiltrados.map(m => m.titulo));
         setModulos(modulosFiltrados);
         
       } catch (err) {
-        console.error("Error al cargar datos:", err);
+        console.error("❌ Error al cargar datos:", err);
       } finally {
         setLoading(false);
       }
@@ -155,9 +230,9 @@ const SideBar = () => {
     fetchData();
   }, []);
 
-  const handleToggleSubmenu = (nombreCat) => {
+  const handleToggleSubmenu = (categoria) => {
     if (minimizado) setMinimizado(false);
-    setMenuAbierto(menuAbierto === nombreCat ? null : nombreCat);
+    setMenuAbierto(menuAbierto === categoria ? null : categoria);
   };
 
   const handleClick = (link) => {
@@ -168,25 +243,37 @@ const SideBar = () => {
 
   if (loading) return <div className="sidebar-loading">Cargando sidebar...</div>;
 
-  // Agrupar módulos filtrados
-  const modulosAgrupados = modulos.reduce((acc, mod) => {
-    const cat = getCategoria(mod.titulo);
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(mod);
-    return acc;
-  }, {});
+  // Función para verificar si un módulo está disponible
+  const moduloDisponible = (titulo) => {
+    return modulos.some(modulo => modulo.titulo === titulo);
+  };
 
+  // Construir estructura filtrada con solo los grupos que tienen al menos un módulo disponible
+  const estructuraFiltrada = estructuraSidebar.map(categoria => {
+    const gruposFiltrados = categoria.grupos
+      .map(grupo => ({
+        ...grupo,
+        modulos: grupo.modulos
+          .map(titulo => modulos.find(m => m.titulo === titulo))
+          .filter(m => m !== undefined)
+      }))
+      .filter(grupo => grupo.modulos.length > 0);
+    
+    return {
+      ...categoria,
+      grupos: gruposFiltrados
+    };
+  }).filter(categoria => categoria.grupos.length > 0);
 
-  // Si no hay módulos, mostrar mensaje
-  if (Object.keys(modulosAgrupados).length === 0) {
+  if (estructuraFiltrada.length === 0) {
     return (
       <div className="dashboard-sidebar">
         <button className="toggle-btn-floating" onClick={() => setMinimizado(!minimizado)}>
           {minimizado ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
         </button>
         <div className="sidebar-empty">
-          <p>No hay módulos disponibles</p>
-          <small>Contacta al administrador</small>
+          <p>No hay módulos disponibles para tus permisos</p>
+          <small>Contacta al administrador para solicitar acceso</small>
         </div>
       </div>
     );
@@ -200,7 +287,6 @@ const SideBar = () => {
 
       <div className={`dashboard-sidebar ${minimizado ? "minimized" : ""} ${mobileOpen ? "mobile-open" : ""}`}>
         
-        {/* Botón Flotante Morado */}
         <button className="toggle-btn-floating" onClick={() => setMinimizado(!minimizado)}>
           {minimizado ? <FiChevronRight size={18} /> : <FiChevronLeft size={18} />}
         </button>
@@ -208,40 +294,55 @@ const SideBar = () => {
         <h2 className="sidebar-logo">{!minimizado && "WorkSpace"}</h2>
         
         <div className="sidebar-nav-container">
-          {Object.keys(modulosAgrupados).map((catName) => (
-            <div key={catName} className="menu-group">
-              <div 
-                className={`group-header ${menuAbierto === catName ? 'active-header' : ''}`}
-                onClick={() => handleToggleSubmenu(catName)}
-              >
-                <div className="group-info">
-                   {catName === "Académico" && <FiBook size={20} />}
-                   {catName === "Administrativo" && <FiBriefcase size={20} />}
-                   {catName === "Seguridad" && <FiShield size={20} />}
-                   {catName === "Otros" && <FiFile size={20} />}
-                   {!minimizado && <span>{catName}</span>}
+          {estructuraFiltrada.map((categoria) => {
+            const isOpen = menuAbierto === categoria.categoria;
+            
+            return (
+              <div key={categoria.categoria} className="menu-group">
+                <div 
+                  className={`group-header ${isOpen ? 'active-header' : ''}`}
+                  onClick={() => handleToggleSubmenu(categoria.categoria)}
+                >
+                  <div className="group-info">
+                    <categoria.icon size={20} />
+                    {!minimizado && <span>{categoria.categoria}</span>}
+                  </div>
+                  {!minimizado && <FiChevronDown className={`arrow-icon ${isOpen ? 'rotate' : ''}`} />}
                 </div>
-                {!minimizado && <FiChevronDown className={`arrow-icon ${menuAbierto === catName ? 'rotate' : ''}`} />}
-              </div>
 
-              <ul className={`submenu-list ${menuAbierto === catName && !minimizado ? 'show' : ''}`}>
-                {modulosAgrupados[catName].map((modulo) => {
-                  const IconComponent = FiIcons[modulo.icon] || FiFile;
-                  const isActive = activeLink === modulo.link;
-                  return (
-                    <li
-                      key={modulo._id}
-                      onClick={() => handleClick(modulo.link)}
-                      className={isActive ? "active-item" : ""}
-                    >
-                      <IconComponent size={18} />
-                      {!minimizado && <span>{modulo.titulo}</span>}
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+                <div className={`submenu-container ${isOpen && !minimizado ? 'show' : ''}`}>
+                  {categoria.grupos.map((grupo, grupoIndex) => (
+                    <div key={grupo.label} className="grupo-label-container">
+                      {/* Label del grupo */}
+                      {!minimizado && (
+                        <div className="grupo-label">
+                          <span>{grupo.label}</span>
+                        </div>
+                      )}
+                      
+                      {/* Módulos del grupo */}
+                      <ul className="modulos-list">
+                        {grupo.modulos.map((modulo) => {
+                          const IconModulo = allIcons[modulo.icon] || FiFile;
+                          const isActive = activeLink === modulo.link;
+                          return (
+                            <li
+                              key={modulo._id}
+                              onClick={() => handleClick(modulo.link)}
+                              className={isActive ? "active-item" : ""}
+                            >
+                              <IconModulo size={18} />
+                              {!minimizado && <span>{modulo.titulo}</span>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </>

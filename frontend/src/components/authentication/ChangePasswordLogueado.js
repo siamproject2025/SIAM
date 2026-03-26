@@ -1,144 +1,322 @@
 import { useState } from "react";
 import {
-  getAuth,
-  updatePassword,
-  signOut,
-  EmailAuthProvider,
-  reauthenticateWithCredential
+  getAuth, updatePassword, signOut,
+  EmailAuthProvider, reauthenticateWithCredential
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-
-import "./ResetPassword.css";
+import Swal from "sweetalert2";
 
 export default function ChangePasswordLogueado() {
-  const auth = getAuth();
+  const auth     = getAuth();
   const navigate = useNavigate();
-  const user = auth.currentUser;
+  const user     = auth.currentUser;
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [actual, setActual]       = useState("");
+  const [nueva, setNueva]         = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [mostrar, setMostrar]     = useState(false);
+  const [cargando, setCargando]   = useState(false);
 
-  const validarContrasena = (pwd) => {
-    const regex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    return regex.test(pwd);
-  };
+  const requisitos = [
+    { label: "Mínimo 8 caracteres",            test: (p) => p.length >= 8 },
+    { label: "Una letra mayúscula",             test: (p) => /[A-Z]/.test(p) },
+    { label: "Una letra minúscula",             test: (p) => /[a-z]/.test(p) },
+    { label: "Un número",                       test: (p) => /\d/.test(p) },
+    { label: "Un carácter especial (@$!%*?&)",  test: (p) => /[@$!%*?&]/.test(p) },
+  ];
+
+  const todosOk  = requisitos.every(r => r.test(nueva));
+  const coincide = nueva === confirmar && confirmar !== "";
+
+  const toast = (icon, text) => Swal.fire({
+    icon, text,
+    timer: 2800,
+    showConfirmButton: false,
+    position: "top",
+    toast: true,
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
-    setError("");
+    if (!user) { toast("error", "No hay un usuario activo."); return; }
+    if (!todosOk)        { toast("error", "La contraseña no cumple los requisitos."); return; }
+    if (!coincide)       { toast("error", "Las contraseñas no coinciden."); return; }
+    if (actual === nueva){ toast("error", "La nueva contraseña debe ser diferente a la actual."); return; }
 
-    if (!user) {
-      setError("No hay un usuario activo.");
-      return;
-    }
-
-    if (!validarContrasena(password)) {
-      setError("La contraseña no cumple con los requisitos de seguridad.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
-      return;
-    }
-
-    if (currentPassword === password) {
-      setError("La nueva contraseña debe ser diferente a la actual.");
-      return;
-    }
-
+    setCargando(true);
     try {
-      const credential = EmailAuthProvider.credential(
-        user.email,
-        currentPassword
-      );
-
+      const credential = EmailAuthProvider.credential(user.email, actual);
       await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, password);
+      await updatePassword(user, nueva);
 
-      setMessage("¡Contraseña actualizada! Cerrando sesión...");
-
-      setTimeout(async () => {
+      Swal.fire({
+        icon:              "success",
+        title:             "¡Contraseña actualizada!",
+        text:              "Tu contraseña fue cambiada correctamente. Serás redirigido al login.",
+        confirmButtonText: "Entendido",
+        confirmButtonColor:"#4f8ef7",
+        background:        "#1a1d27",
+        color:             "#e8eaf0",
+      }).then(async () => {
         await signOut(auth);
         navigate("/login");
-      }, 500);
+      });
+
     } catch (err) {
-      if (err.code === "auth/wrong-password") {
-        setError("La contraseña actual es incorrecta.");
+      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        toast("error", "La contraseña actual es incorrecta.");
       } else if (err.code === "auth/requires-recent-login") {
-        setError("Por seguridad, vuelve a iniciar sesión.");
+        toast("error", "Por seguridad, vuelve a iniciar sesión.");
       } else {
-        setError("Error: " + err.message);
+        toast("error", "Error: " + err.message);
       }
+    } finally {
+      setCargando(false);
     }
   };
 
   return (
-    <div className="reset-container">
-      <div className="reset-card">
-        <form className="reset-form" onSubmit={handleSubmit}>
-          <h2>Cambiar Contraseña</h2>
+    <div style={s.card}>
 
-          <div className="form-group">
-            <label>Contraseña actual</label>
+      {/* ── Encabezado ── */}
+      <div style={s.cardHeader}>
+        <div style={s.iconWrap}>🔒</div>
+        <div>
+          <h2 style={s.cardTitulo}>Cambiar Contraseña</h2>
+          <p style={s.cardSub}>Actualiza tu contraseña de acceso al sistema</p>
+        </div>
+      </div>
+
+      <div style={s.divider} />
+
+      <form onSubmit={handleSubmit} autoComplete="off">
+
+        {/* Contraseña actual */}
+        <div style={s.fieldWrap}>
+          <label style={s.label}>Contraseña actual</label>
+          <div style={s.inputWrap}>
             <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Contraseña actual"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
+              style={s.input}
+              type={mostrar ? "text" : "password"}
+              placeholder="Ingresa tu contraseña actual"
+              value={actual}
+              onChange={e => setActual(e.target.value)}
+              required
+            />
+            <button type="button" style={s.ojo} onClick={() => setMostrar(!mostrar)}>
+              {mostrar ? "🙈" : "👁"}
+            </button>
+          </div>
+        </div>
+
+        <div style={s.divider} />
+
+        {/* Nueva contraseña */}
+        <div style={s.fieldWrap}>
+          <label style={s.label}>Nueva contraseña</label>
+          <div style={s.inputWrap}>
+            <input
+              style={{
+                ...s.input,
+                borderColor: nueva ? (todosOk ? "#22c55e66" : "#2e3352") : "#2e3352"
+              }}
+              type={mostrar ? "text" : "password"}
+              placeholder="Escribe tu nueva contraseña"
+              value={nueva}
+              onChange={e => setNueva(e.target.value)}
               required
             />
           </div>
+        </div>
 
-          <div className="form-group">
-            <label>Nueva Contraseña</label>
-            <div className="input-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Nueva contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className="eye-btn"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? "👁️‍🗨️" : "👁️"}
-              </button>
-            </div>
+        {/* Requisitos */}
+        {nueva && (
+          <div style={s.requisitosBox}>
+            <p style={s.reqTitulo}>Requisitos de contraseña</p>
+            {requisitos.map(r => (
+              <div key={r.label} style={{ ...s.req, color: r.test(nueva) ? "#22c55e" : "#6b7280" }}>
+                <span>{r.test(nueva) ? "✓" : "○"}</span>
+                {r.label}
+              </div>
+            ))}
           </div>
+        )}
 
-          <div className="form-group">
-            <label>Confirmar nueva Contraseña</label>
-            <div className="input-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Confirmar nueva contraseña"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
+        {/* Confirmar contraseña */}
+        <div style={{ ...s.fieldWrap, marginTop: nueva ? 16 : 0 }}>
+          <label style={s.label}>Confirmar nueva contraseña</label>
+          <div style={s.inputWrap}>
+            <input
+              style={{
+                ...s.input,
+                borderColor: confirmar ? (coincide ? "#22c55e66" : "#ef444466") : "#2e3352"
+              }}
+              type={mostrar ? "text" : "password"}
+              placeholder="Repite tu nueva contraseña"
+              value={confirmar}
+              onChange={e => setConfirmar(e.target.value)}
+              required
+            />
           </div>
+          {confirmar && !coincide && (
+            <span style={s.errorMsg}>Las contraseñas no coinciden</span>
+          )}
+        </div>
 
-          <button type="submit" className="submit-btn">
-            Actualizar y cerrar sesión
-          </button>
+        <button
+          type="submit"
+          disabled={!todosOk || !coincide || !actual || cargando}
+          style={{
+            ...s.btn,
+            opacity: (!todosOk || !coincide || !actual || cargando) ? 0.5 : 1,
+            cursor:  (!todosOk || !coincide || !actual || cargando) ? "not-allowed" : "pointer",
+          }}
+        >
+          {cargando ? "Actualizando..." : "Actualizar contraseña"}
+        </button>
+      </form>
 
-          <div className="status-messages">
-            {message && <p className="success-msg">{message}</p>}
-            {error && <p className="error-msg">{error}</p>}
-          </div>
-        </form>
+      {/* ── Aviso de seguridad ── */}
+      <div style={s.warningBox}>
+        <p style={s.warningTitulo}>⚠️ Importante</p>
+        <p style={s.warningText}>
+          Al cambiar tu contraseña se cerrará la sesión actual y deberás ingresar con la nueva contraseña.
+        </p>
       </div>
+
+      {/* ── Tips ── */}
+      <div style={s.tipsBox}>
+        <p style={s.tipsLabel}>💡 Consejos de seguridad</p>
+        <div style={s.tip}>• No uses la misma contraseña en otros sitios.</div>
+        <div style={s.tip}>• Evita datos personales como nombres o fechas.</div>
+        <div style={s.tip}>• Una contraseña más larga es siempre más segura.</div>
+      </div>
+
     </div>
   );
 }
+
+const s = {
+  card: {
+    background:   "#ffffff",
+    border:       "1px solid #ddd6fe",
+    borderRadius: 14,
+    padding:      "28px 32px",
+    fontFamily:   "'DM Sans', 'Segoe UI', sans-serif",
+  },
+  cardHeader: {
+    display:      "flex",
+    alignItems:   "center",
+    gap:          14,
+    marginBottom: 20,
+  },
+  iconWrap: {
+    fontSize:       22,
+    background:     "#ede9fe",
+    border:         "1px solid #c4b5fd",
+    borderRadius:   10,
+    width:          44,
+    height:         44,
+    display:        "flex",
+    alignItems:     "center",
+    justifyContent: "center",
+    flexShrink:     0,
+  },
+  cardTitulo: { fontSize: "1.15rem", fontWeight: 700, margin: 0, color: "#1e1b4b" },
+  cardSub:    { color: "#494949", fontSize: "0.82rem", margin: 0 },
+  divider:    { height: 1, background: "#ddd6fe", margin: "20px 0" },
+  fieldWrap:  { marginBottom: 16 },
+  label: {
+    color:         "#2e1d4b",
+    fontSize:      "0.78rem",
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+    display:       "block",
+    marginBottom:  6,
+    fontWeight:    600,
+  },
+  inputWrap: { position: "relative" },
+  input: {
+    width:        "100%",
+    background:   "#f5f3ff",
+    border:       "1px solid #ddd6fe",
+    borderRadius: 8,
+    padding:      "11px 44px 11px 14px",
+    color:        "#1e1b4b",
+    fontSize:     "0.9rem",
+    outline:      "none",
+    boxSizing:    "border-box",
+    transition:   "border-color 0.15s",
+  },
+  ojo: {
+    position:   "absolute",
+    right:      12,
+    top:        "50%",
+    transform:  "translateY(-50%)",
+    background: "none",
+    border:     "none",
+    cursor:     "pointer",
+    fontSize:   16,
+    color:      "#332755",
+  },
+  requisitosBox: {
+    background:   "#f5f3ff",
+    border:       "1px solid #ddd6fe",
+    borderRadius: 8,
+    padding:      "12px 14px",
+    marginBottom: 4,
+  },
+  reqTitulo: {
+    fontSize:      "0.72rem",
+    color:         "#000000",
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+    fontWeight:    600,
+    margin:        "0 0 8px",
+  },
+  req: {
+    fontSize:     "0.8rem",
+    marginBottom: 3,
+    display:      "flex",
+    alignItems:   "center",
+    gap:          6,
+  },
+  errorMsg: { color: "#ef4444", fontSize: "0.78rem", marginTop: 4, display: "block" },
+  btn: {
+    width:        "100%",
+    background:   "linear-gradient(135deg, #6366f1, #8b5cf6)",
+    color:        "#fff",
+    border:       "none",
+    borderRadius: 8,
+    padding:      "13px",
+    fontWeight:   700,
+    fontSize:     "0.95rem",
+    transition:   "opacity 0.15s",
+    marginTop:    8,
+  },
+  warningBox: {
+    marginTop:    20,
+    background:   "#fdf4ff",
+    border:       "1px solid #e9d5ff",
+    borderRadius: 8,
+    padding:      "12px 14px",
+  },
+  warningTitulo: { fontSize: "0.78rem", color: "#242424", fontWeight: 600, margin: "0 0 4px" },
+  warningText:   { fontSize: "0.78rem", color: "#6b7280", margin: 0, lineHeight: 1.6 },
+  tipsBox: {
+    marginTop:    12,
+    background:   "#f5f3ff",
+    border:       "1px solid #ddd6fe",
+    borderRadius: 8,
+    padding:      "12px 14px",
+  },
+  tipsLabel: {
+    fontSize:      "0.72rem",
+    color:         "#2a1847",
+    fontWeight:    600,
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+    margin:        "0 0 8px",
+  },
+  tip: { fontSize: "0.78rem", color: "#18253e", marginBottom: 4, lineHeight: 1.5 },
+};

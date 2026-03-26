@@ -1,6 +1,13 @@
 // middleware/auditoria.js - MODIFICADO
 const Auditoria = require('../Models/Auditoria');
+const Usuario = require('../Models/usuario_modelo');
+const Solicitud = require('../Models/solicitud_modelo'); // ajusta el path
 
+const modelosMap = {
+  'USUARIOS': Usuario,
+  'SOLICITUDES': Solicitud,
+  // agrega más entidades aquí según necesites
+};
 // Variable para controlar auditoría globalmente
 let auditGlobalEnabled = true;
 
@@ -49,7 +56,7 @@ setInterval(() => {
   console.log(`🧹 Caché de GETs limpiado. Tamaño actual: ${getCache.size}`);
 }, 60000); // Limpiar cada minuto
 
-const registrarAuditoria = (modulo) => {
+const registrarAuditoria = (modulo, accionPersonalizada = null) => {
   return async (req, res, next) => {
     // ⚠️ Manejo especial para GET con caché
     if (req.method === 'GET') {
@@ -67,7 +74,6 @@ const registrarAuditoria = (modulo) => {
       getCache.set(cacheKey, ahora);
       
       // Limpiar entradas antiguas de este usuario/ruta específica
-      // (opcional, para mantener el caché limpio)
       setTimeout(() => {
         if (getCache.get(cacheKey) === ahora) {
           getCache.delete(cacheKey);
@@ -89,38 +95,51 @@ const registrarAuditoria = (modulo) => {
     const originalJson = res.json;
     const startTime = Date.now();
 
+    // DETERMINAR LA ACCIÓN: usar personalizada si existe, sino mapear por método HTTP
     let accion;
-    switch (req.method) {
-      case 'POST': accion = 'CREATE'; break;
-      case 'PUT':
-      case 'PATCH': accion = 'UPDATE'; break;
-      case 'DELETE': accion = 'DELETE'; break;
-      case 'GET': accion = 'VIEW'; break;
-      default: accion = 'VIEW';
+    if (accionPersonalizada) {
+      accion = accionPersonalizada;
+      console.log(`📝 Usando acción personalizada: ${accion} para ${req.method} ${req.originalUrl}`);
+    } else {
+      switch (req.method) {
+        case 'POST': accion = 'CREATE'; break;
+        case 'PUT':
+        case 'PATCH': accion = 'UPDATE'; break;
+        case 'DELETE': accion = 'DELETE'; break;
+        case 'GET': accion = 'VIEW'; break;
+        default: accion = 'VIEW';
+      }
     }
 
-    res.json = function(data) {
-      const duration = Date.now() - startTime;
-      
-      const datosPreviosLimpios = req.datosPrevios ? eliminarCamposImagen(req.datosPrevios) : null;
-      const datosNuevosLimpios = req.body ? eliminarCamposImagen(req.body) : null;
+            res.json = function(data) {
+          const duration = Date.now() - startTime;
 
-      const usuarioData = req.user ? {
-        id: req.user._id || req.user.id,
-        username: req.user?.username || req.user?.email?.split('@')[0] || 'Sistema',
-        email: req.user?.email || 'sistema@local',
-        rol: req.user?.roles?.[0] || 'usuario'
-      } : {
-        username: 'Sistema',
-        email: 'sistema@local',
-        rol: 'usuario'
-      };
+          const datosPreviosLimpios = req.datosPrevios
+            ? eliminarCamposImagen(req.datosPrevios)
+            : null;
+
+          // ✅ Toma la respuesta del controlador, no solo req.body
+          const datosNuevosRaw = data?.data || data?.usuario || data?.solicitud || req.body || null;
+          const datosNuevosLimpios = datosNuevosRaw
+            ? eliminarCamposImagen(datosNuevosRaw)
+            : null;
+            
+            const usuarioData = req.user ? {
+              id: req.user._id || req.user.id,
+              username: req.user?.username || req.user?.email?.split('@')[0] || 'Sistema',
+              email: req.user?.email || 'sistema@local',
+              rol: req.user?.roles?.[0] || 'usuario'
+            } : {
+              username: 'Sistema',
+              email: 'sistema@local',
+              rol: 'usuario'
+            };
 
       // Solo registrar si es GET y está en caché (lo registramos) o si es otro método
       if (req.method !== 'GET' || getCache.has(generarClaveGet(req))) {
         Auditoria.create({
           usuario: usuarioData,
-          accion,
+          accion, // Ahora usa la acción determinada (personalizada o mapeada)
           modulo,
           entidad: {
             nombre: req.baseUrl + req.path,
@@ -137,7 +156,9 @@ const registrarAuditoria = (modulo) => {
             query: req.query,
             params: req.params,
             statusCode: res.statusCode,
-            duration
+            duration,
+            metodoHttp: req.method,
+            accionPersonalizada: accionPersonalizada || null
           },
           fecha_creacion: new Date()
         })
@@ -157,24 +178,34 @@ const registrarAuditoria = (modulo) => {
     next();
   };
 };
-
-const capturarDatosPrevios = (model) => {
+const capturarDatosPrevios = (entidad) => {
   return async (req, res, next) => {
     if (req.method === 'PUT' || req.method === 'PATCH' || req.method === 'DELETE') {
       try {
+        const Model = modelosMap[entidad]; // ✅ obtiene el modelo real
+
+        if (!Model) {
+          console.warn(`⚠️ No hay modelo definido para: ${entidad}`);
+          return next();
+        }
+
         if (req.params.id) {
-          const documento = await model.findById(req.params.id);
+          const documento = await Model.findById(req.params.id);
           if (documento) {
             req.datosPrevios = documento.toObject ? documento.toObject() : documento;
+            console.log(`✅ Datos previos capturados para ${entidad}:`, req.datosPrevios);
+          } else {
+            console.warn(`⚠️ No se encontró documento con ID: ${req.params.id}`);
           }
         }
       } catch (error) {
-        console.error('Error capturando datos previos:', error);
+        console.error('❌ Error capturando datos previos:', error);
       }
     }
     next();
   };
 };
+
 
 module.exports = { 
   registrarAuditoria, 

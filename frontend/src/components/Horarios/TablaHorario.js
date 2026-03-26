@@ -1,12 +1,207 @@
-import { motion } from "framer-motion";
-import { Search, HelpCircle, Plus, Edit, Users, Trash, Filter, Download, X } from "lucide-react";
+// ============================================================
+// TablaHorario.jsx (BusquedaTablaHorarios)
+// MEJORAS:
+// - Vista de tabla rediseñada: cards visuales por horario
+//   con colores según día, badge de asignatura, avatar del
+//   docente, chips de días con color por día de semana.
+// - PDF corregido: el grado aparece en el encabezado de CADA
+//   página cuando se descarga con "Todos los grados" —
+//   se genera UNA PÁGINA POR GRADO con su nombre bien visible.
+// ============================================================
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Search, HelpCircle, Plus, Edit, Users, Trash,
+  Filter, Download, X, Clock, BookOpen, GraduationCap,
+  UserRound, ChevronRight
+} from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import jsPDF from "jspdf";
-import autoTable from 'jspdf-autotable';
-import AdminOnly from '../../components/Plugins/AdminOnly';
-import "../../styles/Models/horarios.css"
+import autoTable from "jspdf-autotable";
+import "../../styles/Models/horarios.css";
 import { auth } from "../../components/authentication/Auth";
+import WithPermission from "../Permisos/WithPermission";
 
+// ── Paleta por día de semana ──────────────────────────────────
+const DIA_COLORS = {
+  LUN: { bg: "#EDE9FF", text: "#6C4FBF", dot: "#6C4FBF" },
+  MAR: { bg: "#E8F4FD", text: "#2271B3", dot: "#2271B3" },
+  MIE: { bg: "#D4F5E2", text: "#1a7a40", dot: "#27AE60" },
+  JUE: { bg: "#FFF3E0", text: "#b45309", dot: "#F39C12" },
+  VIE: { bg: "#FDE8E8", text: "#b02a2a", dot: "#E74C3C" },
+  SAB: { bg: "#F3E8FF", text: "#7B2D8B", dot: "#9B59B6" },
+};
+const DIA_FULL = { LUN:"Lunes", MAR:"Martes", MIE:"Miércoles", JUE:"Jueves", VIE:"Viernes", SAB:"Sábado" };
+
+// ── Paleta de colores para asignaturas (cíclica) ─────────────
+const ASIG_COLORS = [
+  ["#6C4FBF","#EDE9FF"], ["#2271B3","#E8F4FD"], ["#1a7a40","#D4F5E2"],
+  ["#b45309","#FFF3E0"], ["#7B2D8B","#F3E8FF"], ["#0e6655","#D1F2EB"],
+  ["#1a5276","#D6EAF8"], ["#784212","#FDEBD0"],
+];
+const asigColor = (name = "") => {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = ((h << 5) - h) + name.charCodeAt(i);
+  return ASIG_COLORS[Math.abs(h) % ASIG_COLORS.length];
+};
+
+// ── Iniciales para el avatar del docente ─────────────────────
+const iniciales = (nombre = "") => {
+  const p = nombre.trim().split(" ").filter(Boolean);
+  if (p.length === 0) return "?";
+  if (p.length === 1) return p[0][0].toUpperCase();
+  return (p[0][0] + p[p.length - 1][0]).toUpperCase();
+};
+
+// ── CSS inline ────────────────────────────────────────────────
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+  .ht-wrap { font-family:'Nunito',sans-serif; }
+
+  /* ── Toolbar ── */
+  .ht-toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:16px 0 12px; }
+  .ht-search-box {
+    flex:1; min-width:240px; display:flex; align-items:center; gap:10px;
+    background:#fff; border:2px solid #E0D9F5; border-radius:12px;
+    padding:10px 16px; transition:border-color .2s, box-shadow .2s;
+  }
+  .ht-search-box:focus-within { border-color:#6C4FBF; box-shadow:0 0 0 3px rgba(108,79,191,.1); }
+  .ht-search-box input { border:none; outline:none; flex:1; font-size:.9rem; font-family:inherit; color:#2D2250; background:transparent; }
+  .ht-search-box input::placeholder { color:#7A6FA0; }
+  .ht-select {
+    padding:10px 14px; background:#fff; border:2px solid #E0D9F5;
+    border-radius:12px; font-family:inherit; font-size:.87rem;
+    color:#2D2250; cursor:pointer; outline:none; min-width:160px;
+    transition:border-color .2s;
+  }
+  .ht-select:focus { border-color:#6C4FBF; }
+  .ht-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:10px 18px; border-radius:12px; font-size:.87rem;
+    font-weight:700; border:none; cursor:pointer;
+    font-family:inherit; transition:all .18s; white-space:nowrap;
+  }
+  .ht-btn-primary { background:linear-gradient(135deg,#6C4FBF,#9B59B6); color:#fff; }
+  .ht-btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(108,79,191,.35); }
+  .ht-btn-green { background:linear-gradient(135deg,#27AE60,#1e8449); color:#fff; }
+  .ht-btn-green:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(39,174,96,.3); }
+  .ht-btn-ghost { background:#F4F3FB; color:#6C4FBF; border:2px solid #E0D9F5; }
+  .ht-btn-ghost:hover { background:#EDE9FF; border-color:#6C4FBF; }
+
+  /* ── Info row ── */
+  .ht-info-row { display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0 14px; font-size:.83rem; color:#7A6FA0; }
+
+  /* ── Cards grid ── */
+  .ht-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:16px; padding-bottom:24px; }
+
+  /* ── Horario Card ── */
+  .ht-card {
+    background:#fff; border-radius:16px; border:1px solid #E0D9F5;
+    box-shadow:0 2px 12px rgba(108,79,191,.06);
+    overflow:hidden; transition:all .22s; cursor:default;
+    display:flex; flex-direction:column;
+  }
+  .ht-card:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(108,79,191,.14); border-color:#C4B5E8; }
+
+  /* Card accent bar (top border colored by first day) */
+  .ht-card-accent { height:4px; width:100%; }
+
+  .ht-card-body { padding:16px 18px 14px; flex:1; display:flex; flex-direction:column; gap:10px; }
+
+  /* Asignatura pill + horario */
+  .ht-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .ht-asig-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:5px 12px; border-radius:20px; font-size:.82rem; font-weight:700;
+  }
+  .ht-time-chip {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:8px; font-size:.8rem;
+    font-weight:700; background:#F4F3FB; color:#6C4FBF;
+    border:1px solid #E0D9F5; white-space:nowrap;
+  }
+
+  /* Grado row */
+  .ht-card-grado {
+    display:flex; align-items:center; gap:7px;
+    font-size:.84rem; color:#2D2250; font-weight:600;
+  }
+  .ht-card-grado svg { color:#7A6FA0; flex-shrink:0; }
+
+  /* Docente row */
+  .ht-card-docente { display:flex; align-items:center; gap:10px; }
+  .ht-avatar {
+    width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:.75rem; flex-shrink:0;
+    background:linear-gradient(135deg,#6C4FBF,#9B59B6); color:#fff;
+  }
+  .ht-docente-name { font-size:.84rem; color:#2D2250; font-weight:600; }
+  .ht-docente-role { font-size:.74rem; color:#7A6FA0; }
+
+  /* Días chips */
+  .ht-dias { display:flex; flex-wrap:wrap; gap:5px; margin-top:2px; }
+  .ht-dia-chip {
+    padding:3px 9px; border-radius:20px; font-size:.73rem;
+    font-weight:700; letter-spacing:.02em;
+  }
+
+  /* Card footer / actions */
+  .ht-card-footer {
+    display:flex; gap:0; border-top:1px solid #F0EBF8;
+    background:#FAFAFE;
+  }
+  .ht-action-btn {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:5px;
+    padding:10px 6px; border:none; background:transparent; cursor:pointer;
+    font-size:.78rem; font-weight:700; color:#7A6FA0;
+    transition:all .15s; font-family:inherit;
+  }
+  .ht-action-btn:hover { background:#F0EBFF; color:#6C4FBF; }
+  .ht-action-btn.edit:hover { color:#6C4FBF; background:#EDE9FF; }
+  .ht-action-btn.alumnos:hover { color:#27AE60; background:#D4F5E2; }
+  .ht-action-btn.del:hover { color:#E74C3C; background:#FDE8E8; }
+  .ht-action-sep { width:1px; background:#E0D9F5; }
+
+  /* ── Empty state ── */
+  .ht-empty { text-align:center; padding:60px 20px; color:#7A6FA0; }
+  .ht-empty-icon { opacity:.2; margin-bottom:14px; }
+  .ht-empty h4 { font-size:1rem; font-weight:700; color:#2D2250; margin-bottom:6px; }
+
+  /* ── Help modal ── */
+  .ht-help-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.45);
+    z-index:10001; display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(3px);
+  }
+  .ht-help-box {
+    background:#fff; border-radius:18px; width:480px; max-width:95vw;
+    max-height:85vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.2);
+  }
+  .ht-help-header {
+    background:linear-gradient(135deg,#6C4FBF,#9B59B6);
+    padding:18px 24px; border-radius:18px 18px 0 0;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .ht-help-header h3 { color:#fff; font-size:1rem; font-weight:800; margin:0; display:flex; align-items:center; gap:8px; }
+  .ht-help-close { background:rgba(255,255,255,.2); border:none; border-radius:8px; color:#fff; cursor:pointer; padding:6px; display:flex; }
+  .ht-help-close:hover { background:rgba(255,255,255,.35); }
+  .ht-help-body { padding:20px 24px; }
+  .ht-help-section { margin-bottom:18px; }
+  .ht-help-section h4 { font-size:.88rem; font-weight:800; color:#6C4FBF; margin-bottom:8px; }
+  .ht-help-section p, .ht-help-section li { font-size:.84rem; color:#555; line-height:1.6; }
+  .ht-help-section ul { padding-left:18px; }
+  .ht-help-footer { padding:14px 24px; border-top:1px solid #E0D9F5; display:flex; justify-content:flex-end; }
+
+  @media(max-width:700px) {
+    .ht-grid { grid-template-columns:1fr; }
+    .ht-toolbar { gap:8px; }
+  }
+`;
+
+// ============================================================
 const BusquedaTablaHorarios = ({
   horarios,
   aulas,
@@ -15,622 +210,460 @@ const BusquedaTablaHorarios = ({
   onCrearHorario,
   onEliminarHorario,
 }) => {
-  const [filtros, setFiltros] = useState({
-    busqueda: "",
-    grado: "",
-    aula: ""
-  });
-
-  const [personal, setPersonal] = useState([]);
+  const [filtros, setFiltros]           = useState({ busqueda:"", grado:"", aula:"" });
+  const [personal, setPersonal]         = useState([]);
   const [loadingPersonal, setLoadingPersonal] = useState(false);
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
 
-  // Cargar personal desde la API
-  useEffect(() => {
-    cargarPersonal();
-  }, []);
+  useEffect(() => { cargarPersonal(); }, []);
 
   const cargarPersonal = async () => {
     try {
       setLoadingPersonal(true);
-      const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
-       const user = auth.currentUser;
-        const token = await user.getIdToken();
-      const res = await fetch(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`, 
-        },
+      const user  = auth.currentUser;
+      const token = await user.getIdToken();
+      const res = await fetch(process.env.REACT_APP_API_URL + "/api/personal", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) throw new Error("Error al cargar personal");
-
+      if (!res.ok) throw new Error();
       const data = await res.json();
-     
       setPersonal(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error al obtener el personal:", err);
-      setPersonal([]);
-    } finally {
-      setLoadingPersonal(false);
-    }
+    } catch { setPersonal([]); }
+    finally   { setLoadingPersonal(false); }
   };
 
-  // Función para normalizar IDs (maneja tanto string como objeto {$oid})
-  const normalizarId = (id) => {
+  const normId = (id) => {
     if (!id) return null;
     if (typeof id === "string") return id;
     if (id.$oid) return id.$oid;
     return String(id);
   };
 
-  // Obtener grados únicos para el filtro
-  const gradosUnicos = useMemo(() => {
-    const grados = horarios.map(horario => horario.grado).filter(Boolean);
-    return [...new Set(grados)].sort();
-  }, [horarios]);
+  const gradosUnicos = useMemo(() => (
+    [...new Set(horarios.map(h => h.grado).filter(Boolean))].sort()
+  ), [horarios]);
 
-  // Obtener aulas únicas para el filtro
-  const aulasUnicas = useMemo(() => {
-    return aulas.map(aula => ({
-      id: normalizarId(aula._id),
-      nombre: aula.grado
-    })).sort((a, b) => a.nombre.localeCompare(b.nombre));
-  }, [aulas]);
+  const aulasUnicas = useMemo(() => (
+    aulas.map(a => ({ id: normId(a._id), nombre: a.grado }))
+         .sort((a,b) => a.nombre.localeCompare(b.nombre))
+  ), [aulas]);
 
-  // Función para obtener nombre del docente
-  const obtenerNombreDocente = (docenteId) => {
-    if (!docenteId) return "Sin docente";
-
-    const idNormalizado = normalizarId(docenteId);
-
-    if (!personal.length) return "Cargando...";
-
-    const docente = personal.find(p => normalizarId(p._id) === idNormalizado);
-
-    return docente ? `${docente.nombres} ${docente.apellidos}` : "Docente no encontrado";
+  const nombreDocente = (docenteId) => {
+    if (!docenteId) return "Sin docente asignado";
+    const doc = personal.find(p => normId(p._id) === normId(docenteId));
+    return doc ? `${doc.nombres} ${doc.apellidos}` : "Docente no encontrado";
   };
 
-  // Filtrar horarios
-  const horariosFiltrados = useMemo(() => {
-    return horarios.filter(horario => {
-      const nombreDocente = obtenerNombreDocente(horario.docente_id);
-      
-      const coincideBusqueda = filtros.busqueda === "" || 
-        horario.asignatura?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
-        horario.grado?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
-        aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id))?.nombre?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
-        nombreDocente.toLowerCase().includes(filtros.busqueda.toLowerCase());
+  const horariosFiltrados = useMemo(() => (
+    horarios.filter(h => {
+      const nd      = nombreDocente(h.docente_id);
+      const aulaObj = aulas.find(a => normId(a._id) === normId(h.aula_id));
+      const bus     = filtros.busqueda.toLowerCase();
 
-      const coincideGrado = filtros.grado === "" || horario.grado === filtros.grado;
-      const coincideAula = filtros.aula === "" || normalizarId(horario.aula_id) === filtros.aula;
+      const coincBus = !bus ||
+        h.asignatura?.toLowerCase().includes(bus) ||
+        h.grado?.toLowerCase().includes(bus) ||
+        aulaObj?.nombre?.toLowerCase().includes(bus) ||
+        nd.toLowerCase().includes(bus);
 
-      return coincideBusqueda && coincideGrado && coincideAula;
-    });
-  }, [horarios, filtros, aulas, personal]);
+      const coincGrado = !filtros.grado || h.grado === filtros.grado;
+      const coincAula  = !filtros.aula  || normId(h.aula_id) === filtros.aula;
+      return coincBus && coincGrado && coincAula;
+    })
+  ), [horarios, filtros, aulas, personal]);
 
-  const getNombreGrado = (gradoId) => {
-    const grado = aulas.find(g => g._id === gradoId);
-    return grado ? grado.grado : gradoId; // Si no encuentra, devuelve el ID como fallback
-  };
-  // Función para descargar PDF
+  // ── PDF — una página por grado, grado visible en cada hoja ──
   const descargarPDF = () => {
-    const doc = new jsPDF("p", "mm", "a4");
-  
-    //  Logo institucional
+    const doc    = new jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
+    const pageW  = doc.internal.pageSize.getWidth();
+    const pageH  = doc.internal.pageSize.getHeight();
     const logoUrl = "/Logo1.png";
-    try {
-      doc.addImage(logoUrl, "PNG", 15, 10, 25, 25);
-    } catch (e) {
-      console.warn(" No se pudo cargar el logo. Verifica /public/Logo1.png");
-    }
-  
-    //  Encabezado institucional
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(0, 102, 204);
-    doc.text("Escuela Experimental de Niños para la Música", 105, 20, { align: "center" });
-  
-    //  Subtítulo del reporte
-    doc.setFontSize(14);
-    doc.setTextColor(60, 60, 60);
-    doc.text(" Reporte General de Horarios", 105, 28, { align: "center" });
-  
-    // Línea decorativa azul
-    doc.setDrawColor(0, 102, 204);
-    doc.line(14, 32, 196, 32);
-  
-    //  Información de filtros aplicados
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-  
-    let infoFiltros = `Total de horarios: ${horariosFiltrados.length}`;
-    if (filtros.grado) infoFiltros += ` | Grado: ${filtros.grado}`;
-    if (filtros.aula) {
-      const nombreAula = aulas.find(a => normalizarId(a._id) === filtros.aula)?.nombre;
-      infoFiltros += ` | Grado: ${getNombreGrado(nombreAula) || getNombreGrado(filtros.aula)}`;
-    }
-    if (filtros.busqueda) infoFiltros += ` | Búsqueda: ${filtros.busqueda}`;
-  
-    doc.text(infoFiltros, 14, 40);
-  
-    //  Fecha de generación
-    const fecha = new Date().toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
+    const anio    = new Date().getFullYear();
+
+    // Agrupar horarios por grado
+    const horariosPorGrado = {};
+    horariosFiltrados.forEach(h => {
+      const grado = h.grado || "Sin grado";
+      if (!horariosPorGrado[grado]) horariosPorGrado[grado] = [];
+      horariosPorGrado[grado].push(h);
     });
-    doc.text(`Generado: ${fecha}`, 14, 47);
-  
-    // Línea suave
-    doc.setDrawColor(220, 220, 220);
-    doc.line(14, 50, 196, 50);
-  
-    //  Preparar datos para la tabla
-    const tableData = horariosFiltrados.map((horario) => {
-      const nombreAula =  aulas.find((aula) => normalizarId(aula._id) === normalizarId(horario.aula_id))?.aula || "N/A";
-      const nombreGrado =  aulas.find((aula) => normalizarId(aula._id) === normalizarId(horario.aula_id))?.grado || "N/A";
-      const nombreDocente = obtenerNombreDocente(horario.docente_id);
-      return [
-        horario.dia.join(", "),
-        `${horario.inicio} - ${horario.fin}`,
-        horario.asignatura,
-        nombreAula,
-        nombreGrado,
-        nombreDocente
-      ];
+
+    const gradosList = Object.keys(horariosPorGrado).sort();
+    const diasOrden  = ["LUN","MAR","MIE","JUE","VIE","SAB"];
+    const diasNames  = { LUN:"Lunes", MAR:"Martes", MIE:"Miércoles", JUE:"Jueves", VIE:"Viernes", SAB:"Sábado" };
+
+    gradosList.forEach((grado, gi) => {
+      if (gi > 0) doc.addPage();
+
+      const horariosGrado = horariosPorGrado[grado];
+
+      // ── Encabezado ─────────────────────────────────────────
+      try { doc.addImage(logoUrl,"PNG",10,8,22,22); } catch(e){}
+
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(13);
+      doc.setTextColor(108,79,191);
+      doc.text("Escuela Experimental de Niños para la Música", pageW/2, 15, { align:"center" });
+
+      doc.setFontSize(10);
+      doc.setTextColor(80,80,80);
+      doc.setFont("helvetica","normal");
+      doc.text("Horario Académico", pageW/2, 21, { align:"center" });
+
+      // ── Banner con el nombre del GRADO — bien visible ───────
+      doc.setFillColor(108,79,191);
+      doc.roundedRect(10, 25, pageW-20, 12, 3, 3, "F");
+      doc.setFont("helvetica","bold");
+      doc.setFontSize(13);
+      doc.setTextColor(255,255,255);
+      doc.text(`Grado: ${grado}   |   Año Académico: ${anio}`, pageW/2, 33, { align:"center" });
+
+      doc.setDrawColor(200,190,230);
+      doc.setLineWidth(0.3);
+      doc.line(10, 39, pageW-10, 39);
+
+      doc.setFont("helvetica","normal");
+      doc.setFontSize(8);
+      doc.setTextColor(120);
+      const fecha = new Date().toLocaleDateString("es-ES",{year:"numeric",month:"long",day:"numeric"});
+      doc.text(`Generado: ${fecha}  |  ${horariosGrado.length} clases`, 10, 44);
+
+      // ── Recopilar franjas horarias del grado ───────────────
+      const franjasSet = new Set();
+      horariosGrado.forEach(h => {
+        if (h.inicio && h.fin) franjasSet.add(`${h.inicio}|${h.fin}`);
+      });
+      const franjas = [...franjasSet].sort((a,b) => a.localeCompare(b));
+
+      if (franjas.length === 0) {
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(10);
+        doc.setTextColor(150);
+        doc.text("Sin horarios registrados para este grado.", pageW/2, 60, { align:"center" });
+        return;
+      }
+
+      // ── Tabla grilla calendario ────────────────────────────
+      const head = [["Horario", ...diasOrden.map(d => diasNames[d])]];
+
+      const body = franjas.map(franja => {
+        const [inicio, fin] = franja.split("|");
+        const row = [`${inicio}\n${fin}`];
+
+        diasOrden.forEach(dia => {
+          const clases = horariosGrado.filter(h =>
+            (h.dia||[]).includes(dia) && h.inicio===inicio && h.fin===fin
+          );
+          if (clases.length === 0) {
+            row.push("");
+          } else {
+            row.push(clases.map(h => {
+              const nd     = nombreDocente(h.docente_id);
+              const partes = nd.split(" ").filter(Boolean);
+              const corto  = partes.length > 1 ? `${partes[0]} ${partes[partes.length-1]}` : nd;
+              return `${h.asignatura}\n${corto}`;
+            }).join("\n──\n"));
+          }
+        });
+
+        return row;
+      });
+
+      autoTable(doc, {
+        startY: 48,
+        head,
+        body,
+        theme: "grid",
+        styles: {
+          fontSize:    7.5,
+          cellPadding: 3,
+          valign:      "middle",
+          halign:      "center",
+          lineColor:   [210,200,235],
+          lineWidth:   0.3,
+          textColor:   [50,50,50],
+          overflow:    "linebreak",
+          minCellHeight: 14,
+          font:        "helvetica",
+        },
+        headStyles: {
+          fillColor:   [108,79,191],
+          textColor:   255,
+          fontStyle:   "bold",
+          fontSize:    8.5,
+          halign:      "center",
+          cellPadding: 4,
+        },
+        columnStyles: {
+          0: { cellWidth:24, fontStyle:"bold", fillColor:[240,236,255], textColor:[80,50,160] },
+          1: { cellWidth:34 },
+          2: { cellWidth:34 },
+          3: { cellWidth:34 },
+          4: { cellWidth:34 },
+          5: { cellWidth:34 },
+          6: { cellWidth:34 },
+        },
+        alternateRowStyles: { fillColor:[248,245,255] },
+        margin: { left:10, right:10 },
+
+        // ── Encabezado en páginas extras del mismo grado ──────
+        didDrawPage: (data) => {
+          const pgNum = doc.internal.getCurrentPageInfo().pageNumber;
+          // Si es una página de continuación dentro del mismo grado
+          if (data.pageNumber > 1) {
+            try { doc.addImage(logoUrl,"PNG",10,6,18,18); } catch(e){}
+            doc.setFont("helvetica","bold");
+            doc.setFontSize(10); doc.setTextColor(108,79,191);
+            doc.text("Escuela Experimental de Niños para la Música", pageW/2, 12, {align:"center"});
+
+            // Banner grado en continuación
+            doc.setFillColor(108,79,191);
+            doc.roundedRect(10, 16, pageW-20, 9, 2, 2, "F");
+            doc.setFontSize(9); doc.setTextColor(255,255,255);
+            doc.text(`Grado: ${grado}  |  Año: ${anio}  (continuación)`, pageW/2, 22, {align:"center"});
+            doc.setLineWidth(0.3); doc.setDrawColor(200,190,230);
+            doc.line(10,27,pageW-10,27);
+          }
+
+          // Footer con nombre del grado en TODAS las páginas
+          doc.setFont("helvetica","normal");
+          doc.setFontSize(7.5); doc.setTextColor(140);
+          doc.text(
+            `Grado: ${grado}  |  S.I.A.M. — Escuela Experimental de Niños para la Música`,
+            pageW/2, pageH-6, { align:"center" }
+          );
+          doc.setFontSize(7.5);
+          doc.text(`Pág. ${data.pageNumber}`, pageW-12, pageH-6);
+        },
+      });
     });
-  
-    //  Generar tabla con estilo
-    autoTable(doc, {
-      startY: 55,
-      head: [["Día", "Horario", "Asignatura", "Aula", "Grado", "Docente"]],
-      body: tableData,
-      theme: "striped",
-      styles: {
-        fontSize: 9,
-        cellPadding: 3,
-        textColor: [60, 60, 60],
-      },
-      headStyles: {
-        fillColor: [0, 102, 204],
-        textColor: 255,
-        fontStyle: "bold",
-      },
-      alternateRowStyles: { fillColor: [245, 248, 250] },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 35 },
-      },
-      didDrawPage: (data) => {
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const pageWidth = doc.internal.pageSize.getWidth();
-  
-        //  Encabezado (en cada página)
-        if (doc.internal.getNumberOfPages() > 1) {
-          doc.addImage(logoUrl, "PNG", 15, 10, 20, 20);
-          doc.setFontSize(14);
-          doc.setTextColor(0, 102, 204);
-          doc.text("Escuela Experimental de Niños para la Música", pageWidth / 2, 20, { align: "center" });
-          doc.setFontSize(11);
-          doc.setTextColor(60, 60, 60);
-          doc.text("Reporte General de Horarios", pageWidth / 2, 27, { align: "center" });
-          doc.line(14, 32, pageWidth - 14, 32);
-        }
-  
-        //  Footer institucional
-        doc.setFontSize(9);
-        doc.setTextColor(130, 130, 130);
-        doc.text(
-          "Documento generado automáticamente por la Escuela Experimental de Niños para la Música - S.I.A.M.",
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: "center" }
-        );
-  
-        //  Número de página
-        const pageNum = doc.internal.getNumberOfPages();
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(`Página ${pageNum}`, pageWidth - 20, pageHeight - 10);
-      },
-    });
-  
-    //  Guardar PDF
-    const nombreArchivo = `reporte_horarios_${new Date().toISOString().split("T")[0]}.pdf`;
-    doc.save(nombreArchivo);
+
+    // Nombre del archivo con el grado si hay filtro
+    const gradoSlug = filtros.grado
+      ? filtros.grado.replace(/\s+/g,"_").toLowerCase()
+      : "todos_los_grados";
+    doc.save(`horario_${gradoSlug}_${new Date().toISOString().split("T")[0]}.pdf`);
   };
 
-  const handleFiltroChange = (campo, valor) => {
-    setFiltros(prev => ({
-      ...prev,
-      [campo]: valor
-    }));
-  };
+  const setFiltro = (k, v) => setFiltros(p => ({ ...p, [k]: v }));
+  const limpiar   = () => setFiltros({ busqueda:"", grado:"", aula:"" });
+  const hayFiltro = filtros.busqueda || filtros.grado || filtros.aula;
 
-  const limpiarFiltros = () => {
-    setFiltros({
-      busqueda: "",
-      grado: "",
-      aula: ""
-    });
-  };
-
-  const generarTabla = () => {
-    return horariosFiltrados.map((horario, i) => {
-    const aulaEncontrada = aulas.find(aula => normalizarId(aula._id) === normalizarId(horario.aula_id));
-const nombreAula = aulaEncontrada ? `${aulaEncontrada.grado} | ${aulaEncontrada.aula}` : "N/A";
-
-
-      const nombreDocente = obtenerNombreDocente(horario.docente_id);
-      
-      return (
-        <tr key={i} className="table-row">
-          <td className="cell-autor text-center">
-            {horario.dia.map((dia, index) => (
-              <span key={index} className="estado-badge">
-                {dia}
-              </span>
-            ))}
-          </td>
-          <td className="cell-autor">
-            {horario.inicio} - {horario.fin}
-          </td>
-          <td className="cell-autor">{horario.asignatura}</td>
-          <td className="cell-autor">{nombreAula}</td>
-          
-          <td className="cell-autor">
-            {loadingPersonal ? (
-              <span className="text-muted">Cargando...</span>
-            ) : (
-              nombreDocente
-            )}
-          </td>
-          
-          <td className="cell-acciones justify-content-between">
-            <a
-              className="btn btn-outline-primary btn-sm"
-              style={{ minWidth: 30, margin: "5px" }}
-              onClick={() => onDetalleHorario(horario._id)}
-            >
-              <Edit />
-            </a>
-            <a
-              className="btn btn-outline-success btn-sm"
-              style={{ minWidth: 30, margin: "5px" }}
-              onClick={() => onDetalleAlumnos(horario._id)}
-            >
-              <Users />
-            </a>
-            <a
-              className="btn btn-outline-danger btn-sm"
-              style={{ minWidth: 30, margin: "5px" }}
-              onClick={() => onEliminarHorario(horario._id)}
-            >
-              <Trash />
-            </a>
-          </td>
-          
-        </tr>
-      );
-    });
-  };
-
+  // ── Render ────────────────────────────────────────────────
   return (
-    <>
-      {/* Barra de Filtros */}
-      <motion.div
-        className="donacion-busqueda-bar"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        style={{ marginTop: "2rem" }}
-      >
-        {/* Barra de Búsqueda */}
-        <div style={{ position: "relative", flex: 1 }}>
-          <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            style={{
-              position: "absolute",
-              left: "12px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#666",
-            }}
-          >
-            <Search size={18} />
-          </motion.div>
+    <div className="ht-wrap">
+      <style>{CSS}</style>
+
+      {/* Toolbar */}
+      <div className="ht-toolbar">
+        <div className="ht-search-box">
+          <Search size={16} color="#7A6FA0"/>
           <input
-            type="text"
-            className="donacion-busqueda"
             placeholder="Buscar por asignatura, aula, grado o docente..."
             value={filtros.busqueda}
-            onChange={(e) => handleFiltroChange("busqueda", e.target.value)}
+            onChange={e => setFiltro("busqueda", e.target.value)}
           />
+          {filtros.busqueda && (
+            <button style={{border:"none",background:"none",cursor:"pointer",color:"#7A6FA0",lineHeight:1}}
+              onClick={() => setFiltro("busqueda","")}>×</button>
+          )}
         </div>
 
-        {/* Filtro por Grado */}
-        
+        <select className="ht-select" value={filtros.grado} onChange={e => setFiltro("grado",e.target.value)}>
+          <option value="">Todos los grados</option>
+          {gradosUnicos.map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
 
-        {/* Filtro por Aula */}
-        <div style={{ position: "relative", minWidth: "150px" }}>
-          <select
-            className="donacion-busqueda"
-            value={filtros.aula}
-            onChange={(e) => handleFiltroChange("aula", e.target.value)}
-          >
-            <option value="">Todas las aulas</option>
-            {aulasUnicas.map((aula) => (
-              <option key={aula.id} value={aula.id}>
-                {aula.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select className="ht-select" value={filtros.aula} onChange={e => setFiltro("aula",e.target.value)}>
+          <option value="">Todas las aulas</option>
+          {aulasUnicas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+        </select>
 
-        {/* Botón Limpiar Filtros */}
-        {(filtros.grado || filtros.aula) && (
-          <motion.button
-            className="btn-ayuda"
-            onClick={limpiarFiltros}
-            title="Limpiar filtros"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Filter size={18} />
-            Limpiar
+        {hayFiltro && (
+          <button className="ht-btn ht-btn-ghost" onClick={limpiar}>
+            <Filter size={15}/> Limpiar
+          </button>
+        )}
+
+        {horariosFiltrados.length > 0 && (
+          <motion.button className="ht-btn ht-btn-green" onClick={descargarPDF}
+            whileHover={{scale:1.04}} whileTap={{scale:.96}}>
+            <Download size={15}/> PDF por Grado
           </motion.button>
         )}
 
-        {/* Botón Descargar PDF */}
-        {horariosFiltrados.length > 0 && (
-          <motion.button
-            className="btn-ayuda"
-            onClick={descargarPDF}
-            title="Descargar PDF"
-            whileHover={{
-              scale: 1.05,
-              boxShadow: "0 6px 20px rgba(46, 204, 113, 0.4)",
-            }}
-            whileTap={{ scale: 0.95 }}
-            style={{ background: "linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)" }}
-          >
-            <Download size={18} />
-            PDF
-          </motion.button>
-                      )}
-              <motion.button
-                className="btn-ayuda"
-                title="Ver ayuda"
-                onClick={() => setMostrarAyuda(true)}
-                whileHover={{
-                  scale: 1.08,
-                  boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-                }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <motion.div
-                  animate={{ rotate: [0, 15, -15, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-                >
-                  <HelpCircle size={18} />
-                </motion.div>
-                Ayuda
-              </motion.button>
-      
-        <motion.button
-          className="btn-ayuda"
-          onClick={onCrearHorario}
-          title="Registrar nuevo horario"
-          whileHover={{
-            scale: 1.08,
-            boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Plus size={18} />
-          </motion.div>
-          Nuevo Horario 
+        <motion.button className="ht-btn ht-btn-ghost" onClick={() => setMostrarAyuda(true)}
+          whileHover={{scale:1.04}} whileTap={{scale:.96}}>
+          <HelpCircle size={15}/> Ayuda
         </motion.button>
-        
-      </motion.div>
 
-      {/* Información de resultados */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="mt-3"
-      >
-        <small className="text-muted">
-          Mostrando {horariosFiltrados.length} de {horarios.length} horarios
-          {filtros.grado && ` • Grado: ${filtros.grado}`}
-          {filtros.aula && ` • Aula: ${aulas.find(a => normalizarId(a._id) === filtros.aula)?.nombre || filtros.aula}`}
-          {horariosFiltrados.length > 0 && (
-            <span> • <button 
-              onClick={descargarPDF} 
-              className="btn-link p-0 border-0 text-primary"
-              style={{ background: 'none', textDecoration: 'underline' }}
-            >
-              Descargar PDF
-            </button></span>
-          )}
-        </small>
-      </motion.div>
-
-      {/* Tabla de Horarios */}
-      <motion.div
-        className="row table-responsive mt-4"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <table className="biblioteca-table">
-          <thead>
-            <tr>
-              <th className="th-autor">Día</th>
-              <th className="th-autor">Horario</th>
-              <th className="th-autor">Asignatura</th>
-              <th className="th-autor">grado | Aula</th>
-             
-              <th className="th-autor">Docente</th>
-             
-              <th className="th-autor" style={{ minWidth: 30 }}>
-                Acciones
-              </th>
-             
-            </tr>
-          </thead>
-          <tbody>
-            {horariosFiltrados.length > 0 ? (
-              generarTabla()
-            ) : (
-              <tr>
-                <td colSpan="7" className="text-center py-4 text-muted">
-                  No se encontraron horarios con los filtros aplicados
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </motion.div>
-      {/* Barra de Filtros */}
-    <motion.div
-      className="donacion-busqueda-bar"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5, duration: 0.5 }}
-      style={{ marginTop: "2rem" }}
-    >
-      {/* ... otros elementos de la barra ... */}
-
-
-      {/* ... resto de botones ... */}
-    </motion.div>
-
-    {/* ... resto del componente ... */}
-
-    {/* Modal de Ayuda */}
-    {mostrarAyuda && (
-      <div className="horarios-modal-overlay horarios-modal-show">
-        <div className="horarios-modal-content">
-          <div className="horarios-modal-header">
-            <h3 className="horarios-modal-title">
-              <HelpCircle size={24} />
-              Ayuda - Gestión de Horarios
-            </h3>
-            <button 
-              className="horarios-modal-close"
-              onClick={() => setMostrarAyuda(false)}
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="horarios-modal-body">
-            <div className="horarios-help-section">
-              <h4 className="horarios-help-title">¿Cómo funciona el sistema de horarios?</h4>
-              <p className="horarios-help-text">
-                El módulo de horarios te permite gestionar las clases programadas, asignando 
-                docentes, aulas y horarios específicos para cada asignatura.
-              </p>
-            </div>
-
-            <div className="horarios-help-section">
-              <h4 className="horarios-help-title">Funcionalidades principales:</h4>
-              <ul className="horarios-help-list">
-                <li className="horarios-help-item">
-                  <strong>Búsqueda y filtros:</strong> Encuentra horarios por asignatura, aula, grado o docente
-                </li>
-                <li className="horarios-help-item">
-                  <strong>Gestión de clases:</strong> Crea, edita y elimina horarios según necesidades
-                </li>
-                <li className="horarios-help-item">
-                  <strong>Asignación de docentes:</strong> Vincula cada horario con un docente específico
-                </li>
-                <li className="horarios-help-item">
-                  <strong>Control de aulas:</strong> Asigna espacios físicos para cada clase
-                </li>
-                <li className="horarios-help-item">
-                  <strong>Reportes PDF:</strong> Descarga los horarios filtrados en formato PDF
-                </li>
-              </ul>
-            </div>
-
-            <div className="horarios-help-section">
-              <h4 className="horarios-help-title">Iconos y acciones:</h4>
-              <div className="horarios-icons-grid">
-                <div className="horarios-icon-item">
-                  <Edit size={16} className="horarios-icon-primary" />
-                  <span>Editar horario</span>
-                </div>
-                <div className="horarios-icon-item">
-                  <Users size={16} className="horarios-icon-success" />
-                  <span>Gestionar alumnos</span>
-                </div>
-                <div className="horarios-icon-item">
-                  <Trash size={16} className="horarios-icon-danger" />
-                  <span>Eliminar horario</span>
-                </div>
-                <div className="horarios-icon-item">
-                  <Download size={16} className="horarios-icon-info" />
-                  <span>Descargar PDF</span>
-                </div>
-                <div className="horarios-icon-item">
-                  <Plus size={16} className="horarios-icon-new" />
-                  <span>Nuevo horario</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="horarios-help-section">
-              <h4 className="horarios-help-title">Consejos de uso:</h4>
-              <div className="horarios-tips">
-                <div className="horarios-tip">
-                  <span className="horarios-tip-badge"></span>
-                  <span>Usa los filtros para encontrar horarios específicos rápidamente</span>
-                </div>
-                <div className="horarios-tip">
-                  <span className="horarios-tip-badge"></span>
-                  <span>Verifica que no haya conflictos de horarios para el mismo docente o aula</span>
-                </div>
-                <div className="horarios-tip">
-                  <span className="horarios-tip-badge"></span>
-                  <span>Gestiona los alumnos desde el icono de "Usuarios" en cada horario</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="horarios-modal-footer">
-            <button 
-              className="horarios-modal-btn-close"
-              onClick={() => setMostrarAyuda(false)}
-            >
-              Cerrar Ayuda
-            </button>
-          </div>
-        </div>
+        <motion.button className="ht-btn ht-btn-primary" onClick={onCrearHorario}
+          whileHover={{scale:1.04,y:-1}} whileTap={{scale:.96}}>
+          <Plus size={15}/> Nuevo Horario
+        </motion.button>
       </div>
-    )}
-  
-    </>
-  );
-  
-};
 
+      {/* Info row */}
+      <div className="ht-info-row">
+        <span>
+          Mostrando <strong>{horariosFiltrados.length}</strong> de {horarios.length} horarios
+          {filtros.grado  && <> · <strong>{filtros.grado}</strong></>}
+        </span>
+        {horariosFiltrados.length > 0 && (
+          <button onClick={descargarPDF}
+            style={{background:"none",border:"none",cursor:"pointer",color:"#6C4FBF",fontWeight:700,fontSize:".82rem",display:"flex",alignItems:"center",gap:5}}>
+            <Download size={13}/> Descargar PDF por Grado
+          </button>
+        )}
+      </div>
+
+      {/* Cards grid */}
+      {horariosFiltrados.length === 0 ? (
+        <div className="ht-empty">
+          <div className="ht-empty-icon"><BookOpen size={52}/></div>
+          <h4>No se encontraron horarios</h4>
+          <p>Intenta cambiar los filtros o registra un nuevo horario.</p>
+        </div>
+      ) : (
+        <motion.div className="ht-grid"
+          initial="hidden" animate="visible"
+          variants={{ hidden:{}, visible:{ transition:{ staggerChildren:.06 } } }}>
+
+          {horariosFiltrados.map((horario, i) => {
+            const aulaObj  = aulas.find(a => normId(a._id) === normId(horario.aula_id));
+            const aulaLabel = aulaObj ? `${aulaObj.grado} · Aula ${aulaObj.aula}` : "Sin aula";
+            const nd        = nombreDocente(horario.docente_id);
+            const dias      = horario.dia || [];
+            const primerDia = dias[0] || "LUN";
+            const accentColor = DIA_COLORS[primerDia]?.dot || "#6C4FBF";
+            const [asigText, asigBg] = asigColor(horario.asignatura);
+
+            return (
+              <motion.div key={horario._id || i} className="ht-card"
+                variants={{ hidden:{opacity:0,y:16}, visible:{opacity:1,y:0} }}
+                transition={{ type:"spring", stiffness:300, damping:24 }}>
+
+                {/* Accent bar */}
+                <div className="ht-card-accent"
+                  style={{ background:`linear-gradient(90deg, ${accentColor}, ${accentColor}88)` }}/>
+
+                <div className="ht-card-body">
+
+                  {/* Top: asignatura + horario */}
+                  <div className="ht-card-top">
+                    <span className="ht-asig-pill"
+                      style={{ background:asigBg, color:asigText }}>
+                      <BookOpen size={12}/> {horario.asignatura || "Sin asignatura"}
+                    </span>
+                    <span className="ht-time-chip">
+                      <Clock size={11}/> {horario.inicio} – {horario.fin}
+                    </span>
+                  </div>
+
+                  {/* Grado */}
+                  <div className="ht-card-grado">
+                    <GraduationCap size={14}/>
+                    <span>{aulaLabel}</span>
+                  </div>
+
+                  {/* Docente */}
+                  <div className="ht-card-docente">
+                    <div className="ht-avatar">{iniciales(nd)}</div>
+                    <div>
+                      <div className="ht-docente-name">{nd}</div>
+                      <div className="ht-docente-role">Docente</div>
+                    </div>
+                  </div>
+
+                  {/* Chips de días */}
+                  <div className="ht-dias">
+                    {dias.length > 0 ? dias.map(dia => (
+                      <span key={dia} className="ht-dia-chip"
+                        style={{
+                          background: DIA_COLORS[dia]?.bg  || "#F0EBF8",
+                          color:      DIA_COLORS[dia]?.text || "#6C4FBF",
+                        }}>
+                        {DIA_FULL[dia] || dia}
+                      </span>
+                    )) : (
+                      <span style={{fontSize:".78rem",color:"#7A6FA0"}}>Sin días asignados</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer acciones */}
+                <div className="ht-card-footer">
+                  <WithPermission requiredPermissions={["ACTUALIZAR_HORARIOS"]}>
+                    <button className="ht-action-btn edit" onClick={() => onDetalleHorario(horario._id)}>
+                      <Edit size={14}/> Editar
+                    </button>
+                  </WithPermission>
+                  <div className="ht-action-sep"/>
+                  <button className="ht-action-btn alumnos" onClick={() => onDetalleAlumnos(horario._id)}>
+                    <Users size={14}/> Alumnos
+                  </button>
+                  <div className="ht-action-sep"/>
+                  <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>
+                    <button className="ht-action-btn del" onClick={() => onEliminarHorario(horario._id)}>
+                      <Trash size={14}/> Eliminar
+                    </button>
+                  </WithPermission>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      )}
+
+      {/* Modal de ayuda */}
+      <AnimatePresence>
+        {mostrarAyuda && (
+          <motion.div className="ht-help-overlay"
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            onClick={() => setMostrarAyuda(false)}>
+            <motion.div className="ht-help-box"
+              initial={{scale:.9,y:20}} animate={{scale:1,y:0}} exit={{scale:.9,y:20}}
+              onClick={e => e.stopPropagation()}>
+              <div className="ht-help-header">
+                <h3><HelpCircle size={18}/> Ayuda — Gestión de Horarios</h3>
+                <button className="ht-help-close" onClick={() => setMostrarAyuda(false)}>
+                  <X size={16}/>
+                </button>
+              </div>
+              <div className="ht-help-body">
+                <div className="ht-help-section">
+                  <h4>¿Cómo funciona el módulo?</h4>
+                  <p>Gestiona clases programadas asignando docentes, aulas y franjas horarias por asignatura del catálogo.</p>
+                </div>
+                <div className="ht-help-section">
+                  <h4>Funcionalidades principales</h4>
+                  <ul>
+                    <li><strong>Catálogo de asignaturas:</strong> Selecciona del catálogo o agrega nuevas materias.</li>
+                    <li><strong>Horario manual/picker:</strong> Escribe la hora directamente o usa el selector.</li>
+                    <li><strong>PDF por Grado:</strong> Se genera una página por cada grado con su nombre visible en encabezado y pie de página.</li>
+                    <li><strong>Colores por día:</strong> Cada día de la semana tiene un color distintivo en las tarjetas.</li>
+                  </ul>
+                </div>
+                <div className="ht-help-section">
+                  <h4>Acciones en cada tarjeta</h4>
+                  <ul>
+                    <li><strong>Editar:</strong> Modifica asignatura, horario, docente o aula.</li>
+                    <li><strong>Alumnos:</strong> Gestiona los alumnos inscritos en ese horario.</li>
+                    <li><strong>Eliminar:</strong> Borra el horario permanentemente.</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="ht-help-footer">
+                <button className="ht-btn ht-btn-primary" onClick={() => setMostrarAyuda(false)}>
+                  Cerrar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 export default BusquedaTablaHorarios;

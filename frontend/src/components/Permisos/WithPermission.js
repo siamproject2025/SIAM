@@ -2,13 +2,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auth } from "../authentication/Auth";
 
-const WithPermission = ({ requiredPermissions, children, fallback = null }) => {
+const WithPermission = ({ 
+  requiredPermissions, 
+  children,
+  // Props específicos para cuando está deshabilitado
+  disableStyle = true, // Aplica estilos de deshabilitado
+  disableTooltip = "No tienes permisos para realizar esta acción"
+}) => {
   const [hasPermission, setHasPermission] = useState(false);
   const [loading, setLoading] = useState(true);
-  const verificacionRealizada = useRef(false); // Control para una sola verificación
+  const verificacionRealizada = useRef(false);
 
   useEffect(() => {
-    // Si ya verificamos, no repetir
     if (verificacionRealizada.current) {
       setLoading(false);
       return;
@@ -16,7 +21,6 @@ const WithPermission = ({ requiredPermissions, children, fallback = null }) => {
 
     const checkPermission = async () => {
       try {
-        // Marcar que ya estamos verificando
         verificacionRealizada.current = true;
         
         const user = auth.currentUser;
@@ -26,10 +30,8 @@ const WithPermission = ({ requiredPermissions, children, fallback = null }) => {
           return;
         }
 
-        // Obtener token
         const token = await user.getIdToken();
         
-        // Hacer SOLO UNA petición a mis-permisos
         const response = await fetch(
           `${process.env.REACT_APP_API_URL}/api/mis-permisos`,
           {
@@ -41,7 +43,6 @@ const WithPermission = ({ requiredPermissions, children, fallback = null }) => {
           const data = await response.json();
           const userPermissions = data.permisos || [];
           
-          // Verificar si tiene ALGUNO de los permisos requeridos
           const tienePermiso = requiredPermissions.some(permiso => 
             userPermissions.includes(permiso)
           );
@@ -59,13 +60,39 @@ const WithPermission = ({ requiredPermissions, children, fallback = null }) => {
     };
 
     checkPermission();
-  }, []); // 👈 IMPORTANTE: Array vacío = solo se ejecuta UNA VEZ
+  }, []);
 
-  // Mientras carga, no mostrar nada
-  if (loading) return null;
+  // Mientras carga, mostrar el botón deshabilitado
+  if (loading) {
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children, { 
+        disabled: true,
+        title: "Verificando permisos..."
+      });
+    }
+    return null;
+  }
   
-  // Si tiene permiso, mostrar children, si no, mostrar fallback
-  return hasPermission ? children : fallback;
+  // Si tiene permiso, mostrar el botón normalmente
+  if (hasPermission) return children;
+  
+  // Si no tiene permiso, mostrar el botón deshabilitado
+  if (React.isValidElement(children)) {
+    const disabledProps = {
+      disabled: true,
+      onClick: null, // Prevenir cualquier click
+      style: disableStyle ? { 
+        ...children.props.style,
+        opacity: 0.5,
+        cursor: 'not-allowed' 
+      } : children.props.style,
+      title: disableTooltip
+    };
+    
+    return React.cloneElement(children, disabledProps);
+  }
+  
+  return children;
 };
 
 export default WithPermission;

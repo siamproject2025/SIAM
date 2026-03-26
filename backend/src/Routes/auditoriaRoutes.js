@@ -3,55 +3,59 @@ const express = require('express');
 const router = express.Router();
 const auditoriaController = require('../Controllers/auditoriaController');
 const { authenticateUser } = require('../middleware/authMiddleWare');
-const { checkRole } = require('../middleware/checkRole');
+const { checkPermission } = require('../middleware/checkPermission');
 
 // Middleware de autenticación para todas las rutas
 router.use(authenticateUser);
 
 // Rutas principales
 router.get('/', 
-  checkRole(['ADMIN', 'DOCENTE']),
+
   auditoriaController.obtenerRegistros
 );
 
 router.get('/exportar',
-  checkRole(['ADMIN', 'DOCENTE']),
+
   auditoriaController.exportarRegistros
 );
 
 // Rutas de estadísticas
 router.get('/estadisticas',
-  checkRole(['ADMIN', 'DOCENTE']),
+
   auditoriaController.obtenerEstadisticas
 );
 
 router.get('/resumen',
-  checkRole(['ADMIN', 'DOCENTE']),
+
   auditoriaController.obtenerResumenPorPeriodo
 );
 
 // Rutas de usuario específico
 router.get('/usuario/:usuarioId',
-  checkRole(['ADMIN', 'DOCENTE']),
+
   auditoriaController.obtenerActividadUsuario
 );
 
 // Búsqueda avanzada
 router.post('/busqueda-avanzada',
-  checkRole(['ADMIN', 'DOCENTE']),
+  checkPermission('ACTUALIZAR_AUDITORIA'),
   auditoriaController.busquedaAvanzada
 );
 
 // Rutas de ADMINistración
 router.delete('/limpiar',
-  checkRole(['ADMIN']),
+  checkPermission('ELIMINAR_AUDITORIA'),
   auditoriaController.limpiarRegistrosAntiguos
 );
 
 // Ruta para registro específico
 router.get('/:id',
-  checkRole(['ADMIN', 'DOCENTE']),
   auditoriaController.obtenerRegistroPorId
+);
+
+router.get('/exportar',
+ 
+  auditoriaController.exportarRegistros
 );
 
 module.exports = router;

@@ -4,7 +4,7 @@ require("./config/firebaseAdmin");
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-const cors = require("cors");
+// NO importes cors - const cors = require("cors"); - COMENTADO
 
 // Rutas
 const horarios = require("./Routes/Horarios");
@@ -26,47 +26,54 @@ const Rol = require("./Models/Rol");
 const rolRoutes = require("./Routes/rol_routes"); 
 const authRoutes = require("./Routes/authRoutes");
 const audit = require("./Routes/auditControlRoutes");
+const resetRoutes = require('./Routes/reset_password_routes');
+
 
 const app = express();
+
 app.use(express.json());
 
-const allowedOrigins = [
-   "https://siam-production-cce4.up.railway.app", // URL exacta de la imagen
-  'http://localhost:3000',                       // Tu entorno local
-
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir requests sin origin (como Postman o apps móviles)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      // Aquí está el detalle: si el origen no coincide, lanza el error que ves
-      console.log("Origen bloqueado por CORS:", origin); // Agrega esto para debuguear
-      callback(new Error("No permitido por CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
+// MIDDLEWARE CORS MANUAL - SIN NINGUNA RESTRICCIÓN
+app.use((req, res, next) => {
+  // Permite absolutamente cualquier origen
+  const origin = req.headers.origin;
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  
+  // Manejar preflight requests (OPTIONS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
 
 // Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log(" Conectado a MongoDB"))
-  .catch(err => console.error(" Error MongoDB:", err));
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch(err => console.error("❌ Error MongoDB:", err));
 
+const cors = require("cors");
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permite requests sin origin (Postman, mobile apps)
+    if (!origin) return callback(null, true);
+
+    // Permite cualquier dominio
+    return callback(null, true);
+  },
+  credentials: true
+}));
 // Rutas API
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
 app.use("/api/", usuarios_route);
 app.use("/api/", dashboard_route);
 app.use("/api/horario", horarios);
-
 app.use("/api/directiva", directivaRoutes);
 app.use("/api/personal", personalRoutes);
 app.use("/api/proveedores", proveedoresRoutes);
@@ -80,8 +87,7 @@ app.use("/api/auditoria", bitacora);
 app.use("/api/", rolRoutes);
 app.use("/api/", authRoutes);
 app.use("/api/", audit);
-
-
+app.use('/api', resetRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Servir React build
@@ -89,9 +95,9 @@ app.use(express.static(path.join(__dirname, "../../frontend/build")));
 
 // Capturar cualquier ruta que no sea API
 app.get(/^\/(?!api).*/, (req, res) => {
-   res.send("¡Servidor funcionando correctamente! ");
+   res.send("¡Servidor funcionando correctamente!");
 });
 
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(` Servidor corriendo en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`));
