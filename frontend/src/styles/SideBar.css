@@ -2,20 +2,27 @@
   width: 260px;
   height: 100vh;
   background: #ffffff;
-  border-right: none; /* Quitamos la barra lateral derecha */
+  border-right: none;
   padding: 20px 15px;
   position: sticky;
   top: 0;
   transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.02); /* Sombra casi invisible para dar relieve */
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.02);
   z-index: 100;
+  overflow-y: auto;
+  overflow-x: visible;
+  position: relative; /* Asegurar que sea el contenedor de referencia */
+}
+
+/* Asegurar que el contenido no se desborde */
+.sidebar-nav-container {
+  overflow-x: visible;
 }
 
 .dashboard-sidebar.minimized {
   width: 85px;
 }
 
-/* Botón Flotante Morado estilo la imagen */
 .toggle-btn-floating {
   position: absolute;
   right: -15px;
@@ -31,7 +38,13 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(116, 104, 194, 0.4);
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, right 0.3s ease;
+  z-index: 101;
+}
+
+/* Cuando el sidebar está minimizado, el botón se ajusta */
+.dashboard-sidebar.minimized .toggle-btn-floating {
+  right: -15px; /* Mantiene la misma posición relativa */
 }
 
 .toggle-btn-floating:hover {
@@ -46,7 +59,6 @@
   padding-left: 10px;
 }
 
-/* Encabezados de Grupos */
 .group-header {
   display: flex;
   align-items: center;
@@ -72,7 +84,6 @@
   font-weight: 600;
 }
 
-/* Animación de Flecha */
 .arrow-icon {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -82,8 +93,8 @@
   color: #7468c2;
 }
 
-/* --- ANIMACIÓN DE SUBMENÚ (Slide + Fade) --- */
-.submenu-list {
+/* Contenedor del submenú */
+.submenu-container {
   max-height: 0;
   opacity: 0;
   transform: translateY(-10px);
@@ -92,42 +103,100 @@
     max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.3s ease,
     transform 0.3s ease;
-  list-style: none;
-  padding-left: 15px;
 }
 
-.submenu-list.show {
-  max-height: 500px;
+.submenu-container.show {
+  max-height: 1000px;
   opacity: 1;
   transform: translateY(0);
   margin-top: 5px;
   margin-bottom: 15px;
 }
 
-.submenu-list li {
+/* Estilo para cada grupo con su label */
+.grupo-label-container {
+  margin-bottom: 12px;
+}
+
+.grupo-label-container:last-child {
+  margin-bottom: 0;
+}
+
+/* Estilo del label */
+.grupo-label {
+  padding: 6px 12px;
+  margin: 8px 0 4px 0;
+  position: relative;
+}
+
+.grupo-label span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #7468c2;
+  background: #f0eeff;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+/* Lista de módulos */
+.modulos-list {
+  list-style: none;
+  padding-left: 15px;
+  margin: 0;
+}
+
+.modulos-list li {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 15px;
-  margin: 4px 0;
-  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 2px 0;
+  border-radius: 8px;
   cursor: pointer;
   color: #5a6a85;
   font-size: 14px;
   transition: all 0.2s ease;
 }
 
-.submenu-list li:hover {
+.modulos-list li:hover {
   background: #f0eeff;
   color: #7468c2;
   transform: translateX(5px);
 }
 
-/* Estilo para el Item Activo (Morado) */
 .active-item {
   background: #7468c2 !important;
   color: white !important;
   box-shadow: 0 4px 12px rgba(116, 104, 194, 0.25);
+}
+
+/* Separador entre categorías */
+.menu-group:not(:last-child) {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+/* Scrollbar */
+.dashboard-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.dashboard-sidebar::-webkit-scrollbar-thumb:hover {
+  background: #7468c2;
 }
 
 /* Responsive */
@@ -137,15 +206,126 @@
   top: 15px;
   left: 15px;
   z-index: 1001;
+  background: #7468c2;
+  color: white;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  transform: scale(1.05);
+  background: #5a4ca8;
 }
 
 @media (max-width: 768px) {
-  .mobile-menu-btn { display: block; }
+  .mobile-menu-btn { 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
   .dashboard-sidebar {
     position: fixed;
     left: -260px;
+    top: 0;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+    overflow-x: hidden;
   }
+  
   .dashboard-sidebar.mobile-open {
     left: 0;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
   }
+  
+  .toggle-btn-floating {
+    right: -12px;
+    top: 20px;
+    width: 28px;
+    height: 28px;
+  }
+  
+  .dashboard-sidebar {
+    padding: 15px 12px;
+  }
+  
+  .sidebar-logo {
+    font-size: 20px;
+    margin-bottom: 30px;
+    padding-left: 8px;
+  }
+  
+  .group-header {
+    padding: 10px 12px;
+  }
+  
+  .modulos-list li {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  
+  .grupo-label span {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dashboard-sidebar {
+    width: 240px;
+  }
+  
+  .dashboard-sidebar.minimized {
+    width: 80px;
+  }
+  
+  .group-info span {
+    font-size: 14px;
+  }
+  
+  .modulos-list li {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
+
+/* Estado minimizado */
+.dashboard-sidebar.minimized .grupo-label {
+  display: none;
+}
+
+.dashboard-sidebar.minimized .modulos-list {
+  padding-left: 0;
+}
+
+.dashboard-sidebar.minimized .modulos-list li {
+  justify-content: center;
+  padding: 8px;
+}
+
+.dashboard-sidebar.minimized .modulos-list li span {
+  display: none;
+}
+
+.dashboard-sidebar.minimized .group-info span {
+  display: none;
+}
+
+.dashboard-sidebar.minimized .group-header {
+  justify-content: center;
+  padding: 12px;
+}
+
+/* Asegurar que el botón sea visible */
+.dashboard-sidebar {
+  overflow: visible;
+}
+
+.dashboard-sidebar.minimized {
+  overflow: visible;
 }
