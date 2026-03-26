@@ -31,7 +31,7 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3 className="modal-title"> Detalle de Actividad</h3>
+        <h3 className="modal-title"> Editar Actividad</h3>
 
         <div className="modal-form-grid">
           <div className="form-group full-width">

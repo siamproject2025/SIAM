@@ -194,6 +194,11 @@ export default function GradosPage() {
   const [gradoAEliminar, setGradoAEliminar] = useState(null);
   const [showConfirm, setShowConfirm]       = useState(false);
 
+  const [notification, setNotification] = useState(null);
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+  };
+
   const params = useMemo(() => {
     const p = new URLSearchParams();
     p.set("page", String(page)); p.set("limit","10");
@@ -670,6 +675,17 @@ export default function GradosPage() {
         }}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+<AnimatePresence>
+      {notification && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+    </AnimatePresence>
+  </div>
+  
+      
   );
 }
