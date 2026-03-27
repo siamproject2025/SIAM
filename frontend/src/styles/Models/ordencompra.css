@@ -585,13 +585,15 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 6px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition);
   color: var(--gray-500);
+  width: 32px;
+  height: 32px;
 }
 
 .action-button:hover {
@@ -599,18 +601,78 @@
   color: var(--gray-700);
 }
 
+/* Estado activo cuando el menú está abierto */
+.action-button.active {
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
 .action-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 0.25rem);
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xl);
-  z-index: 50;
-  min-width: 180px;
-  overflow: hidden;
-  animation: dropdown-appear 0.2s ease-out;
+  position: fixed;
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  min-width: 160px;
+  z-index: 9999;
+  padding: 4px;
+  animation: menuIn 0.12s ease;
+}
+
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.action-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: background 0.1s ease;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.action-view {
+  color: var(--gray-800);
+}
+
+.action-view:hover {
+  background: var(--gray-100);
+}
+
+/* Separador entre acciones */
+.action-divider {
+  height: 0.5px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 4px 0;
+}
+
+.action-delete {
+  color: #c0392b;
+}
+
+.action-delete:hover {
+  background: #fdf0ef;
+  color: #a93226;
+}
+.action-menu {
+  position: fixed;        /* ← el cambio más importante */
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  min-width: 160px;
+  z-index: 9999;
+  padding: 4px;
+  animation: menuIn 0.12s ease;
 }
 
 .action-item {
@@ -964,4 +1026,46 @@
 
 .orden-compra-container::-webkit-scrollbar-thumb:hover {
   background: var(--gray-400);
+}
+
+.action-buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.action-btn-edit,
+.action-btn-delete {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.action-btn-edit {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.action-btn-edit:hover {
+  background: #e0e7ff;
+  color: #3730a3;
+  transform: scale(1.08);
+}
+
+.action-btn-delete {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.action-btn-delete:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  transform: scale(1.08);
 }

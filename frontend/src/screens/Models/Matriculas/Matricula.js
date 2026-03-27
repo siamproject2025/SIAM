@@ -53,7 +53,28 @@ const getToken = async () => {
 
 const buildFormData = (obj) => {
     const fd = new FormData();
-    Object.entries(obj).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v); });
+    const { _archivosDocumentos, ...rest } = obj;
+
+    Object.entries(rest).forEach(([k, v]) => {
+        if (v === null || v === undefined) return;
+        if (v instanceof File) {
+            // Imagen de perfil u otro archivo único
+            fd.append(k, v);
+        } else if (Array.isArray(v)) {
+            // Arrays que no son archivos (ya deben venir como JSON string desde el form)
+            fd.append(k, JSON.stringify(v));
+        } else {
+            fd.append(k, v);
+        }
+    });
+
+    // Archivos reales de documentos → campo 'documentos' múltiple
+    if (Array.isArray(_archivosDocumentos)) {
+        _archivosDocumentos.forEach((file) => {
+            if (file instanceof File) fd.append('documentos', file);
+        });
+    }
+
     return fd;
 };
 

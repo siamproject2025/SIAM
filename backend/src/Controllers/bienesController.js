@@ -1,14 +1,13 @@
 // Controllers/bienesController.js
 const Bien = require("../Models/Bien");
 const sharp = require('sharp');
-//const Auditoria = require('../Models/Auditoria'); // Importar modelo de auditoría
 
 // Función auxiliar para detectar cambios específicos
 const detectarCambiosEspecificos = (objetoAnterior, objetoNuevo) => {
   if (!objetoAnterior || !objetoNuevo) return { cambios: null, descripcion: '' };
   
   const cambios = {};
-  const camposIgnorar = ['_id', '__v', 'fecha_creacion', 'fecha_actualizacion', 'imagen', 'tipo_imagen'];
+  const camposIgnorar = ['_id', '__v', 'fecha_creacion', 'fecha_actualizacion', 'imagen', 'tipo_imagen', 'creado_por', 'creado_por_email', 'actualizado_por', 'actualizado_por_email'];
   
   // Obtener todos los campos únicos
   const todosLosCampos = new Set([
@@ -48,13 +47,25 @@ const detectarCambiosEspecificos = (objetoAnterior, objetoNuevo) => {
   return { cambios, descripcion };
 };
 
+// Función auxiliar para obtener datos del usuario desde el token
+const getUserInfo = (req) => {
+  const user = req.user;
+  if (!user) return { id: 'sistema', email: 'sistema@escuela.edu' };
+  
+  return {
+    id: user._id || user.id || user.sub,
+    email: user.email || 'sistema@escuela.edu'
+  };
+};
+
 // Obtener todos los bienes
 exports.getBienes = async (req, res) => {
   try {
     const bienes = await Bien.find();
     res.json(bienes);
   } catch (error) {
-    res.status(500).json({ message: "Error al obtener bienes", error });
+    console.error('❌ Error en getBienes:', error);
+    res.status(500).json({ message: "Error al obtener bienes", error: error.message });
   }
 };
 
@@ -65,7 +76,8 @@ exports.getBienById = async (req, res) => {
     if (!bien) return res.status(404).json({ message: "Bien no encontrado" });
     res.json(bien);
   } catch (error) {
-    res.status(500).json({ message: "Error al buscar el bien", error });
+    console.error('❌ Error en getBienById:', error);
+    res.status(500).json({ message: "Error al buscar el bien", error: error.message });
   }
 };
 
@@ -73,6 +85,10 @@ exports.getBienById = async (req, res) => {
 exports.createBien = async (req, res) => {
   try {
     console.log('🚀 Iniciando creación de bien...');
+    
+    // Obtener información del usuario que está creando
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email} (${usuario.id})`);
 
     // Procesar imagen (si viene en el FormData)
     let imagenBase64 = null;
@@ -106,13 +122,18 @@ exports.createBien = async (req, res) => {
       console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
     }
 
-    // Crear el objeto con los datos del bien
+    // Crear el objeto con los datos del bien y auditoría
     const bienData = {
       ...req.body,
       imagen: imagenBase64,
       tipo_imagen: tipoImagen,
-      creado_por: req.user?._id || req.user?.id, // Agregar quién crea el registro
-      fecha_creacion: new Date()
+      // Campos de auditoría
+      creado_por: usuario.id,
+      creado_por_email: usuario.email,
+      fecha_creacion: new Date(),
+      actualizado_por: usuario.id,
+      actualizado_por_email: usuario.email,
+      fecha_actualizacion: new Date()
     };
      
     // Guardar en la base de datos
@@ -124,27 +145,22 @@ exports.createBien = async (req, res) => {
       .map(c => `${c}=${bien[c]}`)
       .join(', ');
     
-    const descripcionDetallada = `Bien creado: ${camposPrincipales}`;
+    console.log(`✅ Bien creado exitosamente por ${usuario.email}: ${camposPrincipales}`);
 
     // RESPUESTA EXITOSA
     res.status(201).json({
       success: true,
       message: 'Bien creado exitosamente',
       data: bien,
+      audit: {
+        creado_por: usuario.email,
+        fecha_creacion: bien.fecha_creacion
+      }
     });
-     // Crear copia de bienData SIN imagen para auditoría
-    const bienDataParaAuditoria = { ...bienData };
-    delete bienDataParaAuditoria.imagen;
-    delete bienDataParaAuditoria.tipo_imagen;
-    // AUDITORÍA: Registrar después de enviar la respuesta (no bloquea)
-   
 
   } catch (error) {
     console.error('❌ Error en createBien:', error);
     
-    // AUDITORÍA DE ERROR
-    
-
     res.status(400).json({
       success: false,
       message: 'Error al crear el bien',
@@ -156,16 +172,22 @@ exports.createBien = async (req, res) => {
 // Actualizar bien
 exports.updateBien = async (req, res) => {
   try {
-    console.log('🔄 Iniciando actualización de bien...');
+    const { id } = req.params;
 
-    // Obtener el bien antes de actualizar (para auditoría)
-    const bienAnterior = await Bien.findById(req.params.id);
+    // Validaciones...
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email} (${usuario.id})`);
+
+    console.log('🔄 Iniciando actualización de bien...');
+    const bienAnterior = await Bien.findById(id);
     
     if (!bienAnterior) {
       return res.status(404).json({ message: "Bien no encontrado" });
     }
 
-    // Procesar imagen si viene en el FormData
+    console.log(`📋 Bien anterior: ${bienAnterior.nombre} (${bienAnterior.codigo})`);
+
+    // Procesar imagen SOLO si viene una nueva
     let imagenBase64 = null;
     let tipoImagen = null;
 
@@ -193,65 +215,98 @@ exports.updateBien = async (req, res) => {
       }
 
       console.log(`✅ Imagen procesada, tamaño aproximado: ${(imagenBase64.length / 1024 / 1024).toFixed(2)} MB`);
+    } else {
+      console.log('ℹ️ No hay archivo de imagen nuevo');
     }
 
     // Convertir tipos de datos del body
     if (req.body.valor !== undefined) req.body.valor = parseFloat(req.body.valor);
     if (req.body.fechaIngreso) req.body.fechaIngreso = new Date(req.body.fechaIngreso);
+    if (req.body.fecha_salida === 'null' || req.body.fecha_salida === '') req.body.fecha_salida = null;
+    if (req.body.fecha_salida) req.body.fecha_salida = new Date(req.body.fecha_salida);
 
     // Crear objeto final para actualizar
     const bienData = {
-      ...req.body,
+      ...(req.body.nombre !== undefined && { nombre: req.body.nombre }),
+      ...(req.body.descripcion !== undefined && { descripcion: req.body.descripcion }),
+      ...(req.body.categoria !== undefined && { categoria: req.body.categoria }),
+      ...(req.body.estado !== undefined && { estado: req.body.estado }),
+      ...(req.body.valor !== undefined && { valor: parseFloat(req.body.valor) }),
+      ...(req.body.fechaIngreso !== undefined && { fechaIngreso: new Date(req.body.fechaIngreso) }),
+      ...(req.body.fecha_salida !== undefined && { fecha_salida: req.body.fecha_salida }),
+      ...(req.body.tipo_asignacion !== undefined && req.body.tipo_asignacion !== 'null' && { tipo_asignacion: req.body.tipo_asignacion }),
+      ...(req.body.asignado_a !== undefined && req.body.asignado_a !== 'null' && { asignado_a: req.body.asignado_a }),
+      // ✅ SOLO incluir imagen si hay una nueva
       ...(imagenBase64 && { imagen: imagenBase64, tipo_imagen: tipoImagen }),
+      // Campos de auditoría
+      actualizado_por: usuario.id,
+      actualizado_por_email: usuario.email,
       fecha_actualizacion: new Date()
     };
 
+    // Eliminar campos undefined
+    Object.keys(bienData).forEach(key => bienData[key] === undefined && delete bienData[key]);
 
-    // ===== COLOCA EL CÓDIGO AQUÍ =====
+    // Preparar datos para detectar cambios
     const bienAnteriorObj = bienAnterior.toObject ? bienAnterior.toObject() : bienAnterior;
     
-    // Crear versiones modificadas para auditoría
     const datosPreviosLimpios = { ...bienAnteriorObj };
-    if (datosPreviosLimpios.imagen) {
-      datosPreviosLimpios.imagen = "imagen no disponible en auditoría";
-    }
-    if (datosPreviosLimpios.tipo_imagen) {
-      datosPreviosLimpios.tipo_imagen = "tipo no disponible";
-    }
+    delete datosPreviosLimpios.imagen;
+    delete datosPreviosLimpios.tipo_imagen;
+    delete datosPreviosLimpios.creado_por;
+    delete datosPreviosLimpios.creado_por_email;
+    delete datosPreviosLimpios.fecha_creacion;
+    delete datosPreviosLimpios.actualizado_por;
+    delete datosPreviosLimpios.actualizado_por_email;
+    delete datosPreviosLimpios.fecha_actualizacion;
+    delete datosPreviosLimpios.eliminado_por;
+    delete datosPreviosLimpios.eliminado_por_email;
+    delete datosPreviosLimpios.fecha_eliminacion;
+    delete datosPreviosLimpios.createdAt;
+    delete datosPreviosLimpios.updatedAt;
+    delete datosPreviosLimpios.__v;
 
     const datosNuevosLimpios = { ...bienData };
-    if (datosNuevosLimpios.imagen) {
-      datosNuevosLimpios.imagen = "imagen no disponible en auditoría";
-    }
-    if (datosNuevosLimpios.tipo_imagen) {
-      datosNuevosLimpios.tipo_imagen = "tipo no disponible";
-    }
-    // =================================
+    delete datosNuevosLimpios.actualizado_por;
+    delete datosNuevosLimpios.actualizado_por_email;
+    delete datosNuevosLimpios.fecha_actualizacion;
+    delete datosNuevosLimpios.imagen;
+    delete datosNuevosLimpios.tipo_imagen;
 
-    // Detectar cambios usando las versiones modificadas
+    // Detectar cambios
     const { cambios, descripcion } = detectarCambiosEspecificos(datosPreviosLimpios, datosNuevosLimpios);
 
-    // Actualizar en la base de datos (usando bienData original, NO las versiones limpias)
-    const bienActualizado = await Bien.findByIdAndUpdate(req.params.id, bienData, { new: true });
+    if (Object.keys(cambios).length > 0) {
+      console.log(`📝 Cambios detectados por ${usuario.email}:`, descripcion);
+    } else {
+      console.log(`ℹ️ No se detectaron cambios en la actualización por ${usuario.email}`);
+    }
+
+    // Actualizar en la base de datos
+    const bienActualizado = await Bien.findByIdAndUpdate(
+      req.params.id, 
+      bienData, 
+      { new: true, runValidators: true }
+    );
     
+    console.log(`✅ Bien actualizado exitosamente por ${usuario.email}: ${bienActualizado.nombre}`);
+
     // RESPUESTA EXITOSA
     res.status(200).json({
       success: true,
       message: 'Bien actualizado exitosamente',
       data: bienActualizado,
+      audit: {
+        actualizado_por: usuario.email,
+        fecha_actualizacion: bienActualizado.fecha_actualizacion,
+        cambios_realizados: Object.keys(cambios).length,
+        detalles_cambios: descripcion || 'Sin cambios significativos'
+      }
     });
-
-     
-
-    // AUDITORÍA: Registrar después de enviar la respuesta
-   
 
   } catch (error) {
     console.error('❌ Error en updateBien:', error);
     
-    // AUDITORÍA DE ERROR
-  
-
     res.status(400).json({
       success: false,
       message: 'Error al actualizar el bien',
@@ -259,10 +314,15 @@ exports.updateBien = async (req, res) => {
     });
   }
 };
-
 // Eliminar bien
 exports.deleteBien = async (req, res) => {
   try {
+    console.log('🗑️ Iniciando eliminación de bien...');
+    
+    // Obtener información del usuario que está eliminando
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email} (${usuario.id})`);
+
     // Obtener el bien antes de eliminar (para auditoría)
     const bienEliminado = await Bien.findById(req.params.id);
     
@@ -277,27 +337,93 @@ exports.deleteBien = async (req, res) => {
       nombre: bienEliminado.nombre,
       categoria: bienEliminado.categoria,
       valor: bienEliminado.valor,
-      estado: bienEliminado.estado
+      estado: bienEliminado.estado,
+      creado_por: bienEliminado.creado_por_email || bienEliminado.creado_por,
+      fecha_creacion: bienEliminado.fecha_creacion,
+      ultima_actualizacion: bienEliminado.fecha_actualizacion,
+      actualizado_por: bienEliminado.actualizado_por_email
     };
 
-    // Eliminar el bien
+    console.log(`📋 Bien a eliminar: ${datosEliminados.nombre} (${datosEliminados.codigo})`);
+    console.log(`👤 Creado por: ${datosEliminados.creado_por}`);
+    console.log(`🗑️ Eliminado por: ${usuario.email}`);
+
+    // Actualizar el bien con campos de eliminación (soft delete opcional)
+    // Si quieres soft delete, descomenta estas líneas y comenta la de abajo
+    /*
+    await Bien.findByIdAndUpdate(req.params.id, {
+      eliminado_por: usuario.id,
+      eliminado_por_email: usuario.email,
+      fecha_eliminacion: new Date(),
+      estado: "INACTIVO"
+    });
+    */
+    
+    // Eliminar el bien permanentemente
     await Bien.findByIdAndDelete(req.params.id);
+
+    console.log(`✅ Bien eliminado exitosamente por ${usuario.email}`);
 
     // RESPUESTA EXITOSA
     res.json({ 
+      success: true,
       message: "Bien eliminado correctamente",
-      data: { id: req.params.id }
+      data: { 
+        id: req.params.id,
+        nombre: datosEliminados.nombre,
+        codigo: datosEliminados.codigo
+      },
+      audit: {
+        eliminado_por: usuario.email,
+        fecha_eliminacion: new Date(),
+        bien_eliminado: datosEliminados
+      }
     });
-
-    // AUDITORÍA: Registrar después de enviar la respuesta
-    
 
   } catch (error) {
     console.error('❌ Error en deleteBien:', error);
     
-    // AUDITORÍA DE ERROR
-    
+    res.status(500).json({ 
+      success: false,
+      message: "Error al eliminar el bien", 
+      error: error.message 
+    });
+  }
+};
 
-    res.status(500).json({ message: "Error al eliminar el bien", error });
+// Obtener auditoría de un bien específico (historial de cambios)
+exports.getBienAuditoria = async (req, res) => {
+  try {
+    const bien = await Bien.findById(req.params.id);
+    
+    if (!bien) {
+      return res.status(404).json({ message: "Bien no encontrado" });
+    }
+
+    const auditoria = {
+      id: bien._id,
+      codigo: bien.codigo,
+      nombre: bien.nombre,
+      creado: {
+        por: bien.creado_por_email || bien.creado_por,
+        fecha: bien.fecha_creacion
+      },
+      ultima_actualizacion: {
+        por: bien.actualizado_por_email || bien.actualizado_por,
+        fecha: bien.fecha_actualizacion
+      },
+      historial: {
+        fecha_creacion: bien.fecha_creacion,
+        fecha_ultima_modificacion: bien.fecha_actualizacion || bien.fecha_creacion
+      }
+    };
+
+    res.json(auditoria);
+  } catch (error) {
+    console.error('❌ Error en getBienAuditoria:', error);
+    res.status(500).json({ 
+      message: "Error al obtener auditoría del bien", 
+      error: error.message 
+    });
   }
 };

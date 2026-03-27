@@ -1,1459 +1,745 @@
+// ============================================================
+// Bienes.js — Módulo de Gestión de Bienes / Activos
+// CORRECCIONES:
+// #1 — Campo asignado_a + tipo_asignacion
+// #2 — fecha_entrada y fecha_salida
+// #3 — Código autogenerado (sin campo manual)
+// #4 — Categorías paramétricas desde API
+// ============================================================
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from 'framer-motion';
-import ModalCrearBien from './ModalCrearBien';
-import ModalDetalleBien from './ModalDetalleBien';
-import Notification from '../../../components/Notification';
-import * as XLSX from 'xlsx';
-import '../../../styles/Models/Bienes.css';
+import ModalCrearBien from "./ModalCrearBien";
+import ModalDetalleBien from "./ModalDetalleBien";
+import Notification from "../../../components/Notification";
+import * as XLSX from "xlsx";
+import "../../../styles/Models/Bienes.css";
 import { auth } from "../../../components/authentication/Auth";
-import { Download } from "lucide-react";
-
 import { loadingController } from "../../../api/loadingController";
-
-
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Package,
-  DollarSign,
-  Calendar,
-  Shield,
-  Star,
-  Search,
-  HelpCircle,
-  Plus,
-  CheckCircle,
-  Wrench,
-  XCircle,
-  Share2,
-  Book,
-  Settings,
-  Edit,
-  Eye,
-  Trash2,
-  Filter,
-  Monitor,
-  Armchair,
-  Building, 
-} from "lucide-react";
+   DollarSign, Search, HelpCircle, Plus,
+  CheckCircle, Wrench, XCircle, Share2, Edit,
+  Filter, Download, Trash2,
+  Package, 
+  UserPlus
+} from 'lucide-react';
 
+const API_URL        = process.env.REACT_APP_API_URL + "/api/bienes";
+const API_CATEGORIAS = process.env.REACT_APP_API_URL + "/api/categorias-bienes";
 
-
-// Iconos svg
-const SearchIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="11" cy="11" r="8"/>
-    <path d="m21 21-4.35-4.35"/>
+const ChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="m6 9 6 6 6-6" />
   </svg>
 );
 
-const ChevronDownIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="m6 9 6 6 6-6"/>
-  </svg>
-);
+const columns = [
+  { name: "CÓDIGO",     uid: "codigo",        sortable: true  },
+  { name: "NOMBRE",     uid: "nombre",        sortable: true  },
+  { name: "CATEGORÍA",  uid: "categoria",     sortable: true  },
+  { name: "ASIGNADO A", uid: "asignado_a",    sortable: false },
+  { name: "VALOR",      uid: "valor",         sortable: true  },
+  { name: "F. ENTRADA", uid: "fecha_entrada", sortable: true  },
+  { name: "ESTADO",     uid: "estado",        sortable: true  },
+  { name: "ACCIONES",   uid: "acciones",      sortable: false },
+];
 
-const DotsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="5" r="1" fill="currentColor"/>
-    <circle cx="12" cy="12" r="1" fill="currentColor"/>
-    <circle cx="12" cy="19" r="1" fill="currentColor"/>
-  </svg>
-);
+const estadosOptions = [
+  { name: "Todos",         uid: "all"          },
+  { name: "Activo",        uid: "ACTIVO"       },
+  { name: "Mantenimiento", uid: "MANTENIMIENTO"},
+  { name: "Inactivo",      uid: "INACTIVO"     },
+  { name: "Préstamo",      uid: "PRESTAMO"     },
+];
 
-const DownloadIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
-  </svg>
-);
-
-const API_URL = process.env.REACT_APP_API_URL+"/api/bienes";
+const ROWS = 15;
 
 const Bienes = () => {
-  // Estados principales
-  const [bienes, setBienes] = useState([]);
-  const [bienSeleccionado, setBienSeleccionado] = useState(null);
-  const [filterValue, setFilterValue] = useState('');
-  const [estadoFiltro, setEstadoFiltro] = useState('all');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('all');
-  const [sortDescriptor, setSortDescriptor] = useState({ column: "codigo", direction: "ascending" });
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [showActionMenu, setShowActionMenu] = useState(null);
-  const [showEstadoMenu, setShowEstadoMenu] = useState(false);
-  const [showCategoriaMenu, setShowCategoriaMenu] = useState(false);
-  const [mostrarAyuda, setMostrarAyuda] = useState(false);
-  
-  
-  const actionMenuRef = useRef(null);
-  const estadoMenuRef = useRef(null);
+  const [bienes,               setBienes]               = useState([]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState([]);
+  const [bienSeleccionado,     setBienSeleccionado]     = useState(null);
+  const [filterValue,          setFilterValue]          = useState("");
+  const [estadoFiltro,         setEstadoFiltro]         = useState("all");
+  const [categoriaFiltro,      setCategoriaFiltro]      = useState("all");
+  const [sortDesc,             setSortDesc]             = useState({ column: "codigo", direction: "ascending" });
+  const [page,                 setPage]                 = useState(1);
+  const [mostrarModalCrear,    setMostrarModalCrear]    = useState(false);
+  const [notification,         setNotification]         = useState(null);
+  const [showEstadoMenu,       setShowEstadoMenu]       = useState(false);
+  const [showCategoriaMenu,    setShowCategoriaMenu]    = useState(false);
+  const [mostrarAyuda,         setMostrarAyuda]         = useState(false);
+  const [fechaDesde,           setFechaDesde]           = useState("");
+  const [fechaHasta,           setFechaHasta]           = useState("");
+  const [bienesSeleccionados,  setBienesSeleccionados]  = useState([]);
+
+  const estadoMenuRef    = useRef(null);
   const categoriaMenuRef = useRef(null);
 
-  const CATEGORIAS_BIENES = [
-  // Generales
-  'MOBILIARIO',
-  'EQUIPO_COMPUTO',
-  'ELECTRONICO',
-  'HERRAMIENTA',
-  'OTRO',
-
-  // Instrumentos musicales
-  'CUERDA',
-  'VIENTO_MADERA',
-  'VIENTO_METAL',
-  'PERCUSION',
-  'TECLADO',
-  'INSTRUMENTO_ELECTRONICO',
-  'ACCESORIO_MUSICAL'
-];
-
-
-  // Columnas de la tabla
-  const columns = [
-    { name: "CÓDIGO", uid: "codigo", sortable: true },
-    { name: "NOMBRE", uid: "nombre", sortable: true },
-    { name: "CATEGORÍA", uid: "categoria", sortable: true },
-    { name: "DESCRIPCIÓN", uid: "descripcion", sortable: false },
-    { name: "VALOR", uid: "valor", sortable: true },
-    { name: "ESTADO", uid: "estado", sortable: true },
-    { name: "ACCIONES", uid: "acciones", sortable: false }
-  ];
-
-  const estadosOptions = [
-    { name: "Todos", uid: "all" },
-    { name: "Activo", uid: "ACTIVO" },
-    { name: "Mantenimiento", uid: "MANTENIMIENTO" },
-    { name: "Inactivo", uid: "INACTIVO" },
-    { name: "Préstamo", uid: "PRESTAMO" }
-  ];
-
-  const categoriasOptions = [
-  { name: "Todas", uid: "all" },
-
-  // Generales
-  { name: "Mobiliario", uid: "MOBILIARIO" },
-  { name: "Equipo de Cómputo", uid: "EQUIPO_COMPUTO" },
-  { name: "Electrónico", uid: "ELECTRONICO" },
-  { name: "Herramienta", uid: "HERRAMIENTA" },
-  { name: "Otro", uid: "OTRO" },
-
-  // Instrumentos musicales
-  { name: "Cuerda", uid: "CUERDA" },
-  { name: "Viento Madera", uid: "VIENTO_MADERA" },
-  { name: "Viento Metal", uid: "VIENTO_METAL" },
-  { name: "Percusión", uid: "PERCUSION" },
-  { name: "Teclado", uid: "TECLADO" },
-  { name: "Instrumento Electrónico", uid: "INSTRUMENTO_ELECTRONICO" },
-  { name: "Accesorio Musical", uid: "ACCESORIO_MUSICAL" }
-];
-
-
-useEffect(() => {
-  const cargarBienes = async () => {
-    try {
-      loadingController.start();
-      const user = auth.currentUser;
-      if (!user) throw new Error('Usuario no autenticado');
-      const token = await user.getIdToken();
-
-      const res = await fetch(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!res.ok) throw new Error('Error al obtener los bienes');
-
-      const data = await res.json();
-      setBienes(data);
-    } catch (err) {
-      console.error('Error al obtener los bienes:', err);
-    }finally {
-      loadingController.stop(); //  detiene el loader
-    }
-  };
-
-  cargarBienes();
-}, []);
-  // Calcular todo en un solo useMemo
-const { filteredItems, metrics, categorias } = useMemo(() => {
-  // Filtrado
-  let filtered = [...bienes];
-  if (filterValue) {
-    filtered = filtered.filter(bien =>
-      bien.codigo?.toLowerCase().includes(filterValue.toLowerCase()) ||
-      bien.nombre?.toLowerCase().includes(filterValue.toLowerCase()) ||
-      bien.categoria?.toLowerCase().includes(filterValue.toLowerCase()) ||
-      bien.descripcion?.toLowerCase().includes(filterValue.toLowerCase())
-    );
-  }
-
-  // Filtros adicionales...
-  if (estadoFiltro !== 'all') {
-    filtered = filtered.filter(bien => {
-      const estadoBien = bien.estado?.toUpperCase().trim();
-      const filtroEstado = estadoFiltro?.toUpperCase().trim();
-      return estadoBien === filtroEstado;
-    });
-  }
-
-  if (categoriaFiltro !== 'all') {
-    filtered = filtered.filter(bien => bien.categoria === categoriaFiltro);
-  }
-
-  // Métricas
-  const metrics = {
-    activos: bienes.filter(b => b.estado?.toUpperCase() === "ACTIVO").length,
-    mantenimiento: bienes.filter(b => b.estado?.toUpperCase() === "MANTENIMIENTO").length,
-    inactivos: bienes.filter(b => b.estado?.toUpperCase() === "INACTIVO").length,
-    prestados: bienes.filter(b => b.estado?.toUpperCase() === "PRESTAMO").length,
-    total: bienes.length
-  };
-
-  // Categorías
-  const categorias = [...new Set(bienes.map(b => b.categoria).filter(Boolean))].sort();
-
-  return { filteredItems: filtered, metrics, categorias };
-}, [bienes, filterValue, estadoFiltro, categoriaFiltro]);
-
+  // ── Carga inicial ─────────────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (estadoMenuRef.current && !estadoMenuRef.current.contains(event.target)) {
-        setShowEstadoMenu(false);
-      }
-      if (categoriaMenuRef.current && !categoriaMenuRef.current.contains(event.target)) {
-        setShowCategoriaMenu(false);
-      }
+    const cargar = async () => {
+      try {
+        loadingController.start();
+        const token = await auth.currentUser?.getIdToken();
+        const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error("Error al obtener bienes");
+        setBienes(await res.json());
+      } catch (err) { console.error(err); }
+      finally { loadingController.stop(); }
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    cargar();
   }, []);
 
-  // Calcular estadísticas
-  const valorTotal = bienes.reduce((sum, b) => sum + (parseFloat(b.valor) || 0), 0);
-
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  // Calcular métricas - CORREGIDO
-
-
-  
-  // Handlers CRUD
-  const handleCrearBien = async (nuevoBien) => {
-  try {
-    loadingController.start();
-    if (!nuevoBien.codigo.trim()) {
-      showNotification('El código del bien es obligatorio', 'error');
-      return;
-    }
-    if (!nuevoBien.nombre.trim()) {
-      showNotification('El nombre del bien es obligatorio', 'error');
-      return;
-    }
-
-    if (!nuevoBien.categoria) {
-      showNotification('Debe seleccionar una categoría', 'error');
-      return;
-    }
-
-    if (!nuevoBien.estado) {
-      showNotification('Debe seleccionar un estado inicial', 'error');
-      return;
-    }
-    if (!nuevoBien.valor || nuevoBien.valor <= 0) {
-      showNotification('El valor debe ser mayor a 0', 'error');
-      return;
-    }
-
-    const codigoExistente = bienes.find(
-      (b) => b.codigo?.toLowerCase() === nuevoBien.codigo?.toLowerCase()
-    );
-    if (codigoExistente) {
-      showNotification('Ya existe un bien con este código', 'error');
-      return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const formData = new FormData();
-    for (const key in nuevoBien) {
-      if (key === 'imagen' && nuevoBien[key]) {
-        formData.append('imagen', nuevoBien[key]);
-      } else {
-        formData.append(key, nuevoBien[key]);
+  useEffect(() => {
+    const cargarCategorias = async () => {
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        const res   = await fetch(API_CATEGORIAS, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error();
+        setCategoriasDisponibles(await res.json());
+      } catch {
+        // Fallback
+        setCategoriasDisponibles([
+          { _id: "MOBILIARIO",              nombre: "Mobiliario",               grupo: "General"             },
+          { _id: "EQUIPO_COMPUTO",          nombre: "Equipo de Cómputo",        grupo: "General"             },
+          { _id: "ELECTRONICO",             nombre: "Electrónico",              grupo: "General"             },
+          { _id: "HERRAMIENTA",             nombre: "Herramienta",              grupo: "General"             },
+          { _id: "OTRO",                    nombre: "Otro",                     grupo: "General"             },
+          { _id: "CUERDA",                  nombre: "Cuerda",                   grupo: "Instrumento Musical" },
+          { _id: "VIENTO_MADERA",           nombre: "Viento Madera",            grupo: "Instrumento Musical" },
+          { _id: "VIENTO_METAL",            nombre: "Viento Metal",             grupo: "Instrumento Musical" },
+          { _id: "PERCUSION",               nombre: "Percusión",                grupo: "Instrumento Musical" },
+          { _id: "TECLADO",                 nombre: "Teclado",                  grupo: "Instrumento Musical" },
+          { _id: "INSTRUMENTO_ELECTRONICO", nombre: "Instrumento Electrónico",  grupo: "Instrumento Musical" },
+          { _id: "ACCESORIO_MUSICAL",       nombre: "Accesorio Musical",        grupo: "Instrumento Musical" },
+        ]);
       }
-    }
+    };
+    cargarCategorias();
+  }, []);
 
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`
+  // Cierre de dropdowns al click fuera
+  useEffect(() => {
+    const fn = (e) => {
+      if (estadoMenuRef.current    && !estadoMenuRef.current.contains(e.target))    setShowEstadoMenu(false);
+      if (categoriaMenuRef.current && !categoriaMenuRef.current.contains(e.target)) setShowCategoriaMenu(false);
+    };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
+
+  // ── Métricas + filtrado ───────────────────────────────────
+  const { filteredItems, metrics } = useMemo(() => {
+    let f = [...bienes];
+    if (filterValue) {
+      const q = filterValue.toLowerCase();
+      f = f.filter((b) =>
+        b.codigo?.toLowerCase().includes(q)      ||
+        b.nombre?.toLowerCase().includes(q)      ||
+        b.categoria?.toLowerCase().includes(q)   ||
+        b.descripcion?.toLowerCase().includes(q) ||
+        b.asignado_a?.toLowerCase().includes(q)
+      );
+    }
+    if (estadoFiltro !== "all") f = f.filter((b) => b.estado?.toUpperCase() === estadoFiltro);
+    if (categoriaFiltro !== "all") f = f.filter((b) => b.categoria === categoriaFiltro);
+    if (fechaDesde) f = f.filter((b) => { const s = (b.fechaIngreso || b.fecha_creacion || "").slice(0,10); return s >= fechaDesde; });
+    if (fechaHasta) f = f.filter((b) => { const s = (b.fechaIngreso || b.fecha_creacion || "").slice(0,10); return s <= fechaHasta; });
+
+    return {
+      filteredItems: f,
+      metrics: {
+        activos:      bienes.filter((b) => b.estado?.toUpperCase() === "ACTIVO").length,
+        mantenimiento:bienes.filter((b) => b.estado?.toUpperCase() === "MANTENIMIENTO").length,
+        inactivos:    bienes.filter((b) => b.estado?.toUpperCase() === "INACTIVO").length,
+        prestados:    bienes.filter((b) => b.estado?.toUpperCase() === "PRESTAMO").length,
+        total:        bienes.length,
       },
-      body: formData
+    };
+  }, [bienes, filterValue, estadoFiltro, categoriaFiltro, fechaDesde, fechaHasta]);
+
+  const valorTotal = bienes.reduce((s, b) => s + (parseFloat(b.valor) || 0), 0);
+
+  // ── Ordenamiento + paginación ─────────────────────────────
+  const sortedItems = useMemo(() => {
+    if (!sortDesc.column) return filteredItems;
+    return [...filteredItems].sort((a, b) => {
+      let x = sortDesc.column === "valor" ? Number(a.valor) || 0 : a[sortDesc.column];
+      let y = sortDesc.column === "valor" ? Number(b.valor) || 0 : b[sortDesc.column];
+      const c = x < y ? -1 : x > y ? 1 : 0;
+      return sortDesc.direction === "descending" ? -c : c;
     });
+  }, [filteredItems, sortDesc]);
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al crear el bien');
-    }
+  const pages        = Math.ceil(sortedItems.length / ROWS) || 1;
+  const currentItems = useMemo(() => {
+    const s = (page - 1) * ROWS;
+    return sortedItems.slice(s, s + ROWS);
+  }, [page, sortedItems]);
 
-    const bienCreado = await res.json();
-    setBienes([...bienes, bienCreado.data]);
-    setMostrarModalCrear(false);
-    showNotification(`Bien "${bienCreado.data.nombre}" creado exitosamente`, 'success');
-
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al crear el bien', 'error');
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
-};
-const handleExportarExcel = () => {
-  if (filteredItems.length === 0) {
-    showNotification("No hay bienes para exportar.", "error");
-    return;
-  }
-
-  //  Datos
-  const data = filteredItems.map((bien, index) => ({
-    "N°": index + 1,
-    "Código": bien.codigo,
-    "Nombre": bien.nombre,
-    "Categoría": bien.categoria,
-    "Descripción": bien.descripcion,
-    "Valor (Lps)": Number(bien.valor).toLocaleString("es-HN"),
-    "Estado": bien.estado,
-  }));
-
-  const ws = XLSX.utils.json_to_sheet(data, { origin: "A6" });
-  const wb = XLSX.utils.book_new();
-
-  //  Encabezado
-  XLSX.utils.sheet_add_aoa(
-    ws,
-    [
-      ["ESCUELA EXPERIMENTAL DE NIÑOS PARA LA MÚSICA"],
-      ["SISTEMA INTEGRADO ADMINISTRATIVO MUSICAL - S.I.A.M."],
-      [""],
-      ["LISTA DE BIENES"],
-      [""],
-    ],
-    { origin: "A1" }
-  );
-
-  //  Fusionar y centrar celdas de A1 a G1, A2 a G2, etc.
-  ws["!merges"] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-    { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-    { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } },
-  ];
-
-  //  Fecha de generación
-  const fecha = new Date().toLocaleDateString("es-HN");
-  XLSX.utils.sheet_add_aoa(ws, [["Fecha de generación:", fecha]], {
-    origin: `A${data.length + 8}`,
-  });
-
-  //  Ajustar ancho de columnas
-  ws["!cols"] = [
-    { wch: 5 },
-    { wch: 12 },
-    { wch: 25 },
-    { wch: 20 },
-    { wch: 40 },
-    { wch: 15 },
-    { wch: 15 },
-  ];
-
-  //  Aplicar estilos básicos a celdas (bordes y centrado)
-  const cellRange = XLSX.utils.decode_range(ws["!ref"]);
-  for (let R = 0; R <= cellRange.e.r; ++R) {
-    for (let C = 0; C <= cellRange.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellAddress]) continue;
-      ws[cellAddress].s = {
-        border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } },
-        },
-        alignment: {
-          vertical: "center",
-          horizontal: "center",
-          wrapText: true,
-        },
-      };
-    }
-  }
-
-  //  Encabezados centrados y en negrita
-  for (let C = 0; C <= 6; ++C) {
-    const headerCell = XLSX.utils.encode_cell({ r: 5, c: C });
-    if (ws[headerCell]) {
-      ws[headerCell].s = {
-        font: { bold: true },
-        fill: { fgColor: { rgb: "D9E1F2" } },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } },
-        },
-      };
-    }
-  }
-
-  // ️ Títulos del encabezado centrados y grandes
-  ["A1", "A2", "A4"].forEach((cell) => {
-    if (ws[cell]) {
-      ws[cell].s = {
-        font: { bold: true, sz: cell === "A4" ? 14 : 12 },
-        alignment: { horizontal: "center", vertical: "center" },
-      };
-    }
-  });
-
-  //  Exportar
-  XLSX.utils.book_append_sheet(wb, ws, "Bienes");
-  const nombreArchivo = `Lista_de_Bienes_${fecha.replace(/\//g, "-")}.xlsx`;
-  XLSX.writeFile(wb, nombreArchivo);
-};
-
-
-const handleEditarBien = async (bienActualizado) => {
-  try {
-    loadingController.start();
-    if (!bienActualizado.codigo.trim()) {
-      showNotification('El código del bien es obligatorio', 'error');
-      return;
-    }
-    if (!bienActualizado.nombre.trim()) {
-      showNotification('El nombre del bien es obligatorio', 'error');
-      return;
-    }
-
-    if (!bienActualizado.categoria) {
-      showNotification('Debe seleccionar una categoría', 'error');
-      return;
-    }
-
-    if (!bienActualizado.estado) {
-      showNotification('Debe seleccionar un estado', 'error');
-      return;
-    }
-    if (!bienActualizado.valor || bienActualizado.valor <= 0) {
-      showNotification('El valor debe ser mayor a 0', 'error');
-      return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const formData = new FormData();
-    for (const key in bienActualizado) {
-      if (key === 'imagen' && bienActualizado[key]) {
-        formData.append('imagen', bienActualizado[key]);
-      } else {
-        formData.append(key, bienActualizado[key]);
-      }
-    }
-
-    const res = await fetch(`${API_URL}/${bienActualizado._id}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al editar el bien');
-    }
-
-    const actualizada = await res.json();
-    setBienes(bienes.map(b => b._id === actualizada.data._id ? actualizada.data : b));
-    setBienSeleccionado(null);
-    showNotification(`Bien "${actualizada.data.nombre}" actualizado exitosamente`, 'success');
-
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al editar el bien', 'error');
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
-};
-
-
-const handleEliminarBien = async (id) => {
-  const bienAEliminar = bienes.find(b => b._id === id);
-  
-  try {
-    loadingController.start();
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const res = await fetch(`${API_URL}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al eliminar el bien');
-    }
-
-    setBienes(bienes.filter(b => b._id !== id));
-    setBienSeleccionado(null);
-    setShowActionMenu(null);
-    showNotification(`Bien "${bienAEliminar?.nombre}" eliminado exitosamente`, 'success');
-
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al eliminar el bien', 'error');
-  }finally {
-      loadingController.stop(); //  detiene el loader
-    }
-};
-
-
-  // Ordenamiento
- const sortedItems = useMemo(() => {
-  if (!sortDescriptor.column) return filteredItems;
-  
-  return [...filteredItems].sort((a, b) => {
-    let first = a[sortDescriptor.column];
-    let second = b[sortDescriptor.column];
-
-    if (sortDescriptor.column === "valor") {
-      first = Number(a.valor) || 0;
-      second = Number(b.valor) || 0;
-    }
-
-    const cmp = first < second ? -1 : first > second ? 1 : 0;
-    return sortDescriptor.direction === "descending" ? -cmp : cmp;
-  });
-}, [filteredItems, sortDescriptor]);
-
-  // Paginación
-  const pages = Math.ceil(sortedItems.length / rowsPerPage) || 1;
-  const items = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return sortedItems.slice(start, start + rowsPerPage);
-  }, [page, sortedItems, rowsPerPage]);
-
-  const handleSort = (columnKey) => {
-    const column = columns.find(c => c.uid === columnKey);
-    if (!column?.sortable) return;
-    
-    setSortDescriptor(prev => ({
-      column: columnKey,
-      direction: prev.column === columnKey && prev.direction === "ascending" ? "descending" : "ascending"
+  const handleSort = (uid) => {
+    const col = columns.find((c) => c.uid === uid);
+    if (!col?.sortable) return;
+    setSortDesc((p) => ({
+      column: uid,
+      direction: p.column === uid && p.direction === "ascending" ? "descending" : "ascending",
     }));
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-HN', {
-      style: 'currency',
-      currency: 'HNL',
-      minimumFractionDigits: 2
-    }).format(amount || 0);
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3500);
   };
 
-  const getEstadoBadgeClass = (estado) => {
-    const clases = {
-      'ACTIVO': 'estado-badge estado-activo',
-      'MANTENIMIENTO': 'estado-badge estado-mantenimiento',
-      'INACTIVO': 'estado-badge estado-inactivo',
-      'PRESTAMO': 'estado-badge estado-prestamo'
-    };
-    return clases[estado] || 'estado-badge';
+  // ── CRUD ──────────────────────────────────────────────────
+  const handleCrearBien = async (nuevo) => {
+    try {
+      loadingController.start();
+      if (!nuevo.nombre?.trim())             { showNotification("El nombre es obligatorio", "error");      return; }
+      if (!nuevo.categoria)                  { showNotification("Seleccione una categoría", "error");      return; }
+      if (!nuevo.estado)                     { showNotification("Seleccione un estado", "error");          return; }
+      if (!nuevo.valor || nuevo.valor <= 0)  { showNotification("El valor debe ser mayor a 0", "error");  return; }
+
+      const token = await auth.currentUser?.getIdToken();
+      const fd = new FormData();
+      for (const k in nuevo) {
+        if (k === "imagen" && nuevo[k]) fd.append("imagen", nuevo[k]);
+        else if (k !== "foto_preview")  fd.append(k, nuevo[k]);
+      }
+      const res = await fetch(API_URL, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      const { data } = await res.json();
+      setBienes((p) => [...p, data]);
+      setMostrarModalCrear(false);
+      showNotification(`Bien "${data.nombre}" creado exitosamente`, "success");
+    } catch (err) { showNotification(err.message || "Error al crear el bien", "error"); }
+    finally { loadingController.stop(); }
   };
 
+ const handleEditarBien = async (id, actualizado) => {
+  try {
+    loadingController.start();
+
+
+    let datosParaValidar = actualizado;
+    
+    if (actualizado instanceof FormData) {
+      datosParaValidar = Object.fromEntries(actualizado);
+    }
+
+    if (!datosParaValidar.nombre?.toString().trim()) {
+      showNotification("El nombre es obligatorio", "error");
+      loadingController.stop();
+      return;
+    }
+    if (!datosParaValidar.categoria) {
+      showNotification("Seleccione una categoría", "error");
+      loadingController.stop();
+      return;
+    }
+    if (!datosParaValidar.estado) {
+      showNotification("Seleccione un estado", "error");
+      loadingController.stop();
+      return;
+    }
+    if (!datosParaValidar.valor || parseFloat(datosParaValidar.valor) <= 0) {
+      showNotification("El valor debe ser mayor a 0", "error");
+      loadingController.stop();
+      return;
+    }
+
+    const token = await auth.currentUser?.getIdToken();
+    
+    // Determinar si es FormData o JSON
+    let body;
+    let headers = { Authorization: `Bearer ${token}` };
+
+    if (actualizado instanceof FormData) {
+      body = actualizado;
+    } else {
+      body = JSON.stringify(actualizado);
+      headers['Content-Type'] = 'application/json';
+    }
+
+
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: "PUT",
+      headers,
+      body
+    });
+
+    if (!res.ok) {
+      const e = await res.json();
+      throw new Error(e.message);
+    }
+
+    const { data } = await res.json();
+    setBienes((p) => p.map((b) => (b._id === data._id ? data : b)));
+    setBienSeleccionado(null);
+    showNotification(`Bien "${data.nombre}" actualizado exitosamente`, "success");
+  } catch (err) {
+    showNotification(err.message || "Error al editar el bien", "error");
+  } finally {
+    loadingController.stop();
+  }
+};
+
+  const handleEliminarBien = async (id) => {
+    const nombre = bienes.find((b) => b._id === id)?.nombre;
+    try {
+      loadingController.start();
+      const token = await auth.currentUser?.getIdToken();
+      const res   = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      setBienes((p) => p.filter((b) => b._id !== id));
+      setBienSeleccionado(null);
+      showNotification(`Bien "${nombre}" eliminado exitosamente`, "success");
+    } catch (err) { showNotification(err.message || "Error al eliminar el bien", "error"); }
+    finally { loadingController.stop(); }
+  };
+
+  // ── Excel ─────────────────────────────────────────────────
+  const handleExportarExcel = () => {
+    if (filteredItems.length === 0) { showNotification("No hay bienes para exportar.", "error"); return; }
+    const data = filteredItems.map((b, i) => ({
+      "N°": i + 1, Código: b.codigo, Nombre: b.nombre, Categoría: b.categoria,
+      "Asignado A": b.asignado_a || "—", Descripción: b.descripcion,
+      "Valor (Lps)": Number(b.valor).toLocaleString("es-HN"),
+      "Fecha Entrada": b.fecha_entrada ? fmtFechaLocal(b.fecha_entrada) : "—",
+      "Fecha Salida":  b.fecha_salida  ? fmtFechaLocal(b.fecha_salida)  : "—",
+      Estado: b.estado,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data, { origin: "A6" });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.sheet_add_aoa(ws, [
+      ["ESCUELA EXPERIMENTAL DE NIÑOS PARA LA MÚSICA"],
+      ["SISTEMA INTEGRADO ADMINISTRATIVO MUSICAL - S.I.A.M."],
+      [""], ["LISTA DE BIENES"], [""],
+    ], { origin: "A1" });
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 9 } },
+    ];
+    ws["!cols"] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 18 }, { wch: 20 }, { wch: 35 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+    const fecha = new Date().toLocaleDateString("es-HN");
+    XLSX.utils.book_append_sheet(wb, ws, "Bienes");
+    XLSX.writeFile(wb, `Lista_de_Bienes_${fecha.replace(/\//g, "-")}.xlsx`);
+  };
+
+  // ── Helpers UI ────────────────────────────────────────────
+  const fmtCurrency = (v) =>
+    new Intl.NumberFormat("es-HN", { style: "currency", currency: "HNL", minimumFractionDigits: 2 }).format(v || 0);
+
+  // Parsea fechas ISO sin desplazamiento de zona horaria (UTC-6 Honduras)
+  // "2026-03-12T00:00:00.000Z" -> toma solo YYYY-MM-DD y lo muestra tal cual
+  const fmtFechaLocal = (isoStr) => {
+    if (!isoStr || isoStr === "null") return "—";
+    const part = (typeof isoStr === "string" ? isoStr : new Date(isoStr).toISOString()).slice(0, 10);
+    const [y, m, d] = part.split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  const estadoBadgeClass = (e) => ({
+    ACTIVO: "estado-badge estado-activo",
+    MANTENIMIENTO: "estado-badge estado-mantenimiento",
+    INACTIVO: "estado-badge estado-inactivo",
+    PRESTAMO: "estado-badge estado-prestamo",
+  }[e] || "estado-badge");
+
+  const pageNums = () => {
+    const nums = [];
+    for (let i = Math.max(1, page - 2); i <= Math.min(pages, page + 2); i++) nums.push(i);
+    return nums;
+  };
+
+  const statPills = [
+    { label: "En Uso",        value: metrics.activos,       filter: "ACTIVO"        },
+    { label: "Mantenimiento", value: metrics.mantenimiento, filter: "MANTENIMIENTO" },
+    { label: "Inactivos",     value: metrics.inactivos,     filter: "INACTIVO"      },
+    { label: "Prestados",     value: metrics.prestados,     filter: "PRESTAMO"      },
+    { label: "Total",         value: metrics.total,         filter: "all"           },
+  ];
+
+  // ── Render ────────────────────────────────────────────────
   return (
-    <div className="bienes-container">
-      {/*  ENCABEZADO MEJORADO */}
-      <motion.div 
-        className="bien-header"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-      >
-        <motion.div
-          className="header-gradient"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-          style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            padding: "2.5rem",
-            borderRadius: "20px",
-            boxShadow: "0 10px 30px rgba(102, 126, 234, 0.3)",
-            position: "relative",
-            overflow: "hidden"
-          }}
+    <div className="bienes-app">
+
+     {/* HEADER - Estilo Gestión de Estudiantes */}
+      {/* HEADER - EXACTAMENTE IGUAL AL DE GESTIÓN DE ESTUDIANTES */}
+        <motion.div 
+    className="mm-header"
+    initial={{opacity:0, y:-20}} 
+    animate={{opacity:1, y:0}}
+    transition={{duration:0.5, type:'spring', stiffness:120}}
+  >
+    <div className="mm-hi">
+      <div className="mm-ht">
+        <motion.div 
+          className="mm-htitle"
+          initial={{opacity:0, x:-30}} 
+          animate={{opacity:1, x:0}} 
+          transition={{delay:0.15}}
         >
-          {/* Patrón de fondo */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-            opacity: 0.3
-          }} />
-
-          <div className="header-content" style={{ position: "relative", zIndex: 2 }}>
-            <motion.h2
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              style={{
-                fontSize: "2.8rem",
-                color: "white",
-                marginBottom: "0.5rem",
-                fontWeight: 800,
-                textShadow: "0 2px 10px rgba(0,0,0,0.2)",
-                letterSpacing: "-0.5px",
-                display: "flex",
-                alignItems: "center",
-                gap: "1rem"
-              }}
-            >
-              <motion.div
-                initial={{ rotate: -180, scale: 0 }}
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-              >
-                <Package size={36} fill="white" color="white" />
-              </motion.div>
-              Sistema de Bienes
-              <motion.div
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                style={{ marginLeft: 'auto' }}
-              >
-                <Building size={32} color="white" />
-              </motion.div>
-            </motion.h2>
-            
-            <motion.p
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              style={{
-                color: "rgba(255, 255, 255, 0.9)",
-                fontSize: "1.2rem",
-                marginBottom: 0,
-                fontWeight: 500,
-                textShadow: "0 1px 5px rgba(0,0,0,0.1)"
-              }}
-            >
-              Gestiona y controla todos tus bienes de manera eficiente y profesional
-            </motion.p>
-            <motion.div 
-              className="header-stats"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              style={{
-                display: "flex",
-                gap: "2rem",
-                marginTop: "1.5rem",
-                flexWrap: "wrap"
-              }}
-            >
+          <motion.span 
+            initial={{rotate:-180, scale:0}} 
+            animate={{rotate:0, scale:1}}
+            transition={{type:'spring', stiffness:200, delay:0.2}}
+          >
+            <Package size={34} color="white" fill="white"/>
+          </motion.span>
+          Sistema de Bienes
+        </motion.div>
         
-
-              
-              
-
-<motion.div
-  className={`stat-item ${estadoFiltro === 'ACTIVO' ? 'active' : ''}`}
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-  onClick={() => {
-    setEstadoFiltro(estadoFiltro === 'ACTIVO' ? 'all' : 'ACTIVO');
-    setPage(1);
-  }}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div
-    className="stat-icon"
-    style={{
-      background: "rgba(255, 255, 255, 0.2)",
-      padding: "0.5rem",
-      borderRadius: "10px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-  >
-    <span role="img" aria-label="activo"></span>
-  </div>
-  <div className="stat-text" style={{ color: "white" }}>
-    <div
-      className="stat-value"
-      style={{color:"white", fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
-    >
-      {metrics.activos}
-    </div>
-    <div
-      className="stat-label"
-      style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
-    >
-      En Uso
-    </div>
-  </div>
-</motion.div>
-<motion.div
-  className={`stat-item ${estadoFiltro === 'MANTENIMIENTO' ? 'active' : ''}`}
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-  onClick={() => {
-    setEstadoFiltro(estadoFiltro === 'MANTENIMIENTO' ? 'all' : 'MANTENIMIENTO');
-    setPage(1);
-  }}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div
-    style={{
-      background: "rgba(255, 255, 255, 0.2)",
-      padding: "0.5rem",
-      borderRadius: "10px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-  >
-    <span role="img" aria-label="mantenimiento"></span>
-  </div>
-  <div style={{ color: "white" }}>
-    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {metrics.mantenimiento}
-    </div>
-    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Mantenimiento
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className={`stat-item ${estadoFiltro === 'INACTIVO' ? 'active' : ''}`}
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-  onClick={() => {
-    setEstadoFiltro(estadoFiltro === 'INACTIVO' ? 'all' : 'INACTIVO');
-    setPage(1);
-  }}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div
-    style={{
-      background: "rgba(255, 255, 255, 0.2)",
-      padding: "0.5rem",
-      borderRadius: "10px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-  >
-    <span role="img" aria-label="inactivo"></span>
-  </div>
-  <div style={{ color: "white" }}>
-    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {metrics.inactivos}
-    </div>
-    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Inactivos
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className={`stat-item ${estadoFiltro === 'PRESTAMO' ? 'active' : ''}`}
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-  onClick={() => {
-    setEstadoFiltro(estadoFiltro === 'PRESTAMO' ? 'all' : 'PRESTAMO');
-    setPage(1);
-  }}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div
-    style={{
-      background: "rgba(255, 255, 255, 0.2)",
-      padding: "0.5rem",
-      borderRadius: "10px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-  >
-    <span role="img" aria-label="prestamo"></span>
-  </div>
-  <div style={{ color: "white" }}>
-    <div style={{ fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {metrics.prestados}
-    </div>
-    <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Prestados
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className={`stat-item ${estadoFiltro === 'all' ? 'active' : ''}`}
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-  onClick={() => {
-    setEstadoFiltro('all');
-    setPage(1);
-  }}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div
-    style={{
-      background: "rgba(255, 255, 255, 0.2)",
-      padding: "0.5rem",
-      borderRadius: "10px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-  >
-    <span role="img" aria-label="total"></span>
-  </div>
-  <div style={{ color: "white" }}>
-    <div style={{color:"white", fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {metrics.total}
-    </div>
-    <div style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Total Bienes
-    </div>
-  </div>
-</motion.div> 
-<motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <DollarSign size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    L. {valorTotal.toLocaleString()}
-                  </div>
-                  <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Valor Total
-                  </div>
-                </div>
-              </motion.div>
-
-            </motion.div> 
-           
-{/* Íconos flotantes decorativos*/}
-            <motion.div 
-              className="floating-icons"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              style={{
-                position: "absolute",
-                top: "20px",
-                right: "30px",
-                display: "flex",
-                gap: "15px",
-                zIndex: 3
-              }}
-            >
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "12px",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)"
-                }}
-              >
-                <Calendar size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0]
-                }}
-                transition={{ 
-                  duration: 3.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "12px",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)"
-                }}
-              >
-                <Shield size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ 
-                  duration: 4.2, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "12px",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)"
-                }}
-              >
-                <Star size={20} color="white" />
-              </motion.div>
+        {/* Botón Grados - si no lo necesitas, puedes comentarlo */}
+        {/* <motion.button className="mm-btn-grados" onClick={()=>navigate('/grados')}
+          initial={{opacity:0, x:30}} animate={{opacity:1, x:0}} transition={{delay:0.25}}
+          whileHover={{scale:1.04}} whileTap={{scale:0.96}}>
+          <IcoBooks/> Grados
+        </motion.button> */}
+      </div>
+      
+      <motion.p 
+        className="mm-sub" 
+        initial={{opacity:0}} 
+        animate={{opacity:1}} 
+        transition={{delay:0.3}}
+      >
+        Gestiona y controla todos tus bienes de manera eficiente
+      </motion.p>
+      
+      <motion.div 
+        className="mm-stats"
+        initial={{opacity:0, y:16}} 
+        animate={{opacity:1, y:0}} 
+        transition={{delay:0.35}}
+      >
+        {[
+          {ico:<Package size={18} color="white"/>, val:filteredItems.length, lbl: filteredItems.length === bienes.length ? 'Total Bienes' : `Bienes filtrados`},
+          {ico:<CheckCircle size={18} color="white"/>, val:filteredItems.filter(b => b.estado?.toUpperCase() === 'ACTIVO').length, lbl:'Activos'},
+          {ico:<UserPlus size={18} color="white"/>, val:filteredItems.filter(b => {
+            const treintaDias = new Date();
+            treintaDias.setDate(treintaDias.getDate() - 30);
+            return new Date(b.fecha_creacion || b.createdAt) > treintaDias;
+          }).length, lbl:'Nuevos (30 días)'},
+          {ico:<DollarSign size={18} color="white"/>, val:`L. ${filteredItems.reduce((total, b) => total + (parseFloat(b.valor) || 0), 0).toLocaleString('es-HN', {minimumFractionDigits:2, maximumFractionDigits:2})}`, lbl:'Valor Total'},
+        ].map((s,i)=>(
+          <motion.div key={i} className="mm-stat"
+            whileHover={{scale:1.04, y:-2}} transition={{type:'spring', stiffness:300}}>
+            <div className="mm-stat-ico">{s.ico}</div>
+            <div>
+              <div className="mm-stat-val">{s.val}</div>
+              <div className="mm-stat-lbl">{s.lbl}</div>
+            </div>
+          </motion.div>
+        ))}
             </motion.div>
           </div>
         </motion.div>
-      </motion.div>
+      {/* ── BARRA DE ACCIONES ── */}
+      <div className="bienes-action-area">
+        {/* Fila 1: búsqueda + botones principales */}
+        <div className="bienes-action-bar">
+          <div className="bienes-search-wrapper">
+            <span className="bienes-search-icon"><Search size={16} /></span>
+            <input
+              type="text"
+              className="bienes-search-input"
+              placeholder="Buscar por código, nombre, categoría, asignado a..."
+              value={filterValue}
+              onChange={(e) => { setFilterValue(e.target.value); setPage(1); }}
+            />
+            {filterValue && (
+              <button className="bienes-search-clear" onClick={() => setFilterValue("")}>×</button>
+            )}
+          </div>
+          <div className="bienes-bar-buttons">
+            {bienesSeleccionados.length > 0 && (
+              <button
+                className="bienes-btn bienes-btn-danger"
+                onClick={() => {
+                  if (window.confirm(`¿Eliminar ${bienesSeleccionados.length} bien(es) seleccionado(s)?`)) {
+                    bienesSeleccionados.forEach(id => handleEliminarBien(id));
+                    setBienesSeleccionados([]);
+                  }
+                }}
+              >
+                <Trash2 size={15} /> Eliminar ({bienesSeleccionados.length})
+              </button>
+            )}
+            <button className="bienes-btn bienes-btn-secondary" onClick={() => setMostrarAyuda(true)}>
+              <HelpCircle size={15} /> Ayuda
+            </button>
+            <button className="bienes-btn bienes-btn-excel" onClick={handleExportarExcel}>
+              <Download size={15} /> Excel
+            </button>
+            <button className="bienes-btn bienes-btn-primary" onClick={() => setMostrarModalCrear(true)}>
+              <Plus size={15} /> Nuevo Bien
+            </button>
+          </div>
+        </div>
 
-     
-      {/* BARRA DE BÚSQUEDA Y ACCIONES */}
-      <motion.div 
-        className="bien-busqueda-bar"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        style={{ 
-          marginTop: "2rem",
-          display: "flex",
-          gap: "1rem",
-          flexWrap: "wrap",
-          alignItems: "center"
-        }}
-      >
-        <div style={{ position: 'relative', flex: 1, minWidth: '300px' }}>
-          <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}
-          >
-            <Search size={18} />
-          </motion.div>
-          <input
-            type="text"
-            className="bien-busqueda"
-            placeholder="Buscar por código, nombre, categoría o descripción..."
-            value={filterValue}
-            onChange={(e) => {
-              setFilterValue(e.target.value);
-              setPage(1);
-            }}
-            style={{
-              width: '100%',
-              padding: '0.75rem 1rem 0.75rem 2.5rem',
-              border: '2px solid #e0e0e0',
-              borderRadius: '10px',
-              fontSize: '1rem',
-              transition: 'all 0.3s ease'
-            }}
-          />
-          {filterValue && (
-            <button 
-              className="search-clear"
-              onClick={() => setFilterValue('')}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '1.2rem',
-                color: '#999'
-              }}
+        {/* Fila 2: filtros de estado, categoría y fechas */}
+        <div className="bienes-filters-bar">
+          {/* Filtro Estado — pills */}
+          <div className="bienes-filter-group">
+            <span className="bienes-filter-label"><Filter size={13}/> Estado:</span>
+            <div className="bienes-filter-pills">
+              {estadosOptions.map((op) => (
+                <button
+                  key={op.uid}
+                  className={`bienes-pill${estadoFiltro === op.uid ? " active" : ""}`}
+                  onClick={() => { setEstadoFiltro(op.uid); setPage(1); }}
+                >
+                  {op.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Filtro Categoría — dropdown mejorado */}
+          <div className="bienes-filter-group">
+            <span className="bienes-filter-label">Categoría:</span>
+            <div className="bienes-dropdown-wrapper" ref={categoriaMenuRef}>
+              <button
+                className={`bienes-filter-select${categoriaFiltro !== "all" ? " has-value" : ""}`}
+                onClick={() => setShowCategoriaMenu(!showCategoriaMenu)}
+              >
+                {categoriaFiltro === "all"
+                  ? "Todas las categorías"
+                  : categoriasDisponibles.find(c => c._id === categoriaFiltro)?.nombre || categoriaFiltro}
+                <ChevronDown />
+              </button>
+              {showCategoriaMenu && (
+                <div className="bienes-dropdown-menu scrollable">
+                  <div
+                    className={`bienes-dropdown-item${categoriaFiltro === "all" ? " active" : ""}`}
+                    onClick={() => { setCategoriaFiltro("all"); setShowCategoriaMenu(false); setPage(1); }}
+                  >
+                    {categoriaFiltro === "all" && <span className="chk">✓</span>} Todas
+                  </div>
+                  {categoriasDisponibles.map((cat) => (
+                    <div
+                      key={cat._id}
+                      className={`bienes-dropdown-item${categoriaFiltro === cat._id ? " active" : ""}`}
+                      onClick={() => { setCategoriaFiltro(cat._id); setShowCategoriaMenu(false); setPage(1); }}
+                    >
+                      {categoriaFiltro === cat._id && <span className="chk">✓</span>} {cat.nombre}
+                      {cat.grupo && <span className="grupo-tag">{cat.grupo}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filtro de fechas */}
+          <div className="bienes-filter-group">
+            <span className="bienes-filter-label">Fecha entrada:</span>
+            <div className="bienes-date-range">
+              <input
+                type="date"
+                className="bienes-date-input"
+                value={fechaDesde}
+                onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }}
+                title="Desde"
+              />
+              <span className="bienes-date-sep">→</span>
+              <input
+                type="date"
+                className="bienes-date-input"
+                value={fechaHasta}
+                onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }}
+                title="Hasta"
+              />
+              {(fechaDesde || fechaHasta) && (
+                <button
+                  className="bienes-date-clear"
+                  onClick={() => { setFechaDesde(""); setFechaHasta(""); setPage(1); }}
+                  title="Limpiar fechas"
+                >×</button>
+              )}
+            </div>
+          </div>
+
+          {/* Contador activo de filtros */}
+          {(estadoFiltro !== "all" || categoriaFiltro !== "all" || fechaDesde || fechaHasta) && (
+            <button
+              className="bienes-clear-filters"
+              onClick={() => { setEstadoFiltro("all"); setCategoriaFiltro("all"); setFechaDesde(""); setFechaHasta(""); setPage(1); }}
             >
-              
+              ✕ Limpiar filtros
             </button>
           )}
         </div>
+      </div>
 
-        {/* Filtro Estado */}
-        <div className="dropdown-wrapper" ref={estadoMenuRef} style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowEstadoMenu(!showEstadoMenu)}
-            className="filter-button"
-            style={{
-              padding: '0.75rem 1.5rem',
-              border: '2px solid #667eea',
-              borderRadius: '10px',
-              background: 'white',
-              color: '#667eea',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            Estado <ChevronDownIcon />
-          </button>
-          {showEstadoMenu && (
-            <div className="dropdown-menu2" style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              marginTop: '0.5rem',
-              background: 'white',
-              border: '1px solid #e0e0e0',
-              borderRadius: '10px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              minWidth: '200px',
-              zIndex: 1000,
-            }}>
-              {estadosOptions.map(estado => (
-                <div
-                  key={estado.uid}
-                  onClick={() => {
-                    setEstadoFiltro(estado.uid);
-                    setShowEstadoMenu(false);
-                    setPage(1);
-                  }}
-                  className={`dropdown-item ${estadoFiltro === estado.uid ? 'active' : ''}`}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    background: estadoFiltro === estado.uid ? '#f0f0f0' : 'transparent',
-                    transition: 'background 0.2s ease'
-                  }}
-                >
-                  <span className="checkbox" style={{ width: '20px' }}>
-                    {estadoFiltro === estado.uid ? '' : ''}
-                  </span>
-                  {estado.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      {/* ── TABLA ── */}
+      <div className="bienes-container">
+        <div className="bienes-table-wrapper">
 
-        {/*Filtro categoria*/}
-        <div className="dropdown-wrapper" ref={categoriaMenuRef} style={{ position: 'relative' }}>
-          <button
-            onClick={() => setShowCategoriaMenu(!showCategoriaMenu)}
-            className="filter-button"
-            style={{
-              padding: '0.75rem 1.5rem',
-              border: '2px solid #667eea',
-              borderRadius: '10px',
-              background: 'white',
-              color: '#667eea',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            Categoría <ChevronDownIcon />
-          </button>
-          {showCategoriaMenu && (
-            <div className="dropdown-menu2" style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              marginTop: '0.5rem',
-              background: 'white',
-              border: '1px solid #e0e0e0',
-              borderRadius: '10px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              minWidth: '200px',
-              zIndex: 1000,
-            }}>
-              {categoriasOptions.map(categorias => (
-                <div
-                  key={categorias.uid}
-                  onClick={() => {
-                    setCategoriaFiltro(categorias.uid);
-                    setShowCategoriaMenu(false);
-                    setPage(1);
-                  }}
-                  className={`dropdown-item ${categoriaFiltro === categorias.uid ? 'active' : ''}`}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    background: categoriaFiltro === categorias.uid ? '#f0f0f0' : 'transparent',
-                    transition: 'background 0.2s ease'
-                  }}
-                >
-                  <span className="checkbox" style={{ width: '20px' }}>
-                    {categoriaFiltro === categorias.uid ? '' : ''}
-                  </span>
-                  {categorias.name}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        <motion.button 
-          className="btn-ayuda" 
-          onClick={() => setMostrarAyuda(true)} 
-          title="Ver ayuda"
-          whileHover={{ scale: 1.08, boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)" }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            padding: '0.75rem 1.5rem',
-            border: 'none',
-            borderRadius: '10px',
-           
-            color: 'white',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <motion.div
-            animate={{ rotate: [0, 15, -15, 0] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-          >
-            <HelpCircle size={18} />
-          </motion.div>
-          Ayuda
-        </motion.button>
-        <motion.button
-              className="btn-ayuda"
-              onClick={handleExportarExcel}
-              title="Exportar inventario a Excel"
-              whileHover={{ 
-                scale: 1.08, 
-                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-               
-              }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              style={{
-                padding: '0.75rem 1.5rem',
-                border: 'none',
-                borderRadius: '10px',
-              
-                color: 'white',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <motion.div
-                animate={{ rotate: [0, 15, -15, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
-              >
-                <Download size={18} />
-              </motion.div>
-              Exportar Excel
-            </motion.button>
+          <div className="bienes-results-info">
+            <span>
+              Mostrando <strong>{Math.min((page - 1) * ROWS + 1, sortedItems.length)}</strong>–<strong>{Math.min(page * ROWS, sortedItems.length)}</strong> de <strong>{sortedItems.length}</strong> bienes
+              {filterValue && <span className="filtrado-tag"> · filtrado de {bienes.length}</span>}
+            </span>
+            {bienesSeleccionados.length > 0 && (
+              <span className="seleccionados-info">{bienesSeleccionados.length} seleccionado(s)</span>
+            )}
+          </div>
 
-        <motion.button 
-          className="btn-ayuda" 
-          onClick={() => setMostrarModalCrear(true)} 
-          title="Crear nuevo bien"
-          whileHover={{ 
-            scale: 1.08, 
-            boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-           
-          }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          style={{
-            padding: '0.75rem 1.5rem',
-            border: 'none',
-            borderRadius: '10px',
-           
-            color: 'white',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Plus size={18} />
-          </motion.div>
-          Nuevo Bien
-        </motion.button>
-      </motion.div>
-
-
-
-      {/* TABLA DE BIENES */}
-      <div className="bienes-table-container" style={{ 
-        marginTop: '2rem',
-        background: 'white',
-        borderRadius: '15px',
-        padding: '1.5rem',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-      }}>
-       <div style={{ 
-       maxHeight: '600px', // ajusta según tu diseño
-        overflowY: 'auto',
-       overflowX: 'auto',
-       borderRadius: '10px'
-       }}>
-          <table className="bienes-table" style={{ 
-            width: '100%',
-            borderCollapse: 'collapse'
-          }}>
-            <thead>
-              <tr style={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white'
-              }}>
-                {columns.map(column => (
-                  <th 
-                    key={column.uid}
-                    onClick={() => handleSort(column.uid)}
-                    style={{ 
-                      padding: '1rem',
-                      textAlign: 'left',
-                      cursor: column.sortable ? 'pointer' : 'default',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {column.name}
-                    {column.sortable && sortDescriptor.column === column.uid && (
-                      <span style={{ marginLeft: '5px' }}>
-                        {sortDescriptor.direction === 'ascending' ? '↑' : '↓'}
-                      </span>
-                    )}
+          <div className="bienes-table-scroll">
+            <table className="bienes-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 44 }}>
+                    <input
+                      type="checkbox"
+                      className="bienes-checkbox"
+                      checked={currentItems.length > 0 && currentItems.every(b => bienesSeleccionados.includes(b._id))}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setBienesSeleccionados(prev => [...new Set([...prev, ...currentItems.map(b => b._id)])]);
+                        } else {
+                          setBienesSeleccionados(prev => prev.filter(id => !currentItems.map(b => b._id).includes(id)));
+                        }
+                      }}
+                    />
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems .length > 0 ? (
-                filteredItems .map((bien, index) => (
-                  <tr 
-                    key={bien._id}
-                    style={{ 
-                      borderBottom: '1px solid #f0f0f0',
-                      transition: 'background 0.2s ease',
-                      background: index % 2 === 0 ? 'white' : '#f9f9f9'
-                    }}
-                  >
-                    <td style={{ padding: '1rem', fontWeight: 600, color: '#667eea' }}>
-                      {bien.codigo}
-                    </td>
-                    <td style={{ padding: '1rem' }}>{bien.nombre}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{
-                        background: '#e8eaf6',
-                        color: '#667eea',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '20px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600
-                      }}>
-                        {bien.categoria}
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem', maxWidth: '300px' }}>
-                      {bien.descripcion}
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: 600 }}>
-                      {formatCurrency(bien.valor)}
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span className={getEstadoBadgeClass(bien.estado)} style={{
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '20px',
-                        fontSize: '0.85rem',
-                        fontWeight: 600
-                      }}>
-                        {bien.estado}
-                      </span>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <button 
-                        onClick={() => setBienSeleccionado(bien)}
-                        className="btn-action"
-                        style={{
-                          padding: '0.5rem 1rem',
-                          border: '2px solid #667eea',
-                          borderRadius: '8px',
-                          background: 'white',
-                          color: '#667eea',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        Ver detalles
-                      </button>
+                  {columns.map((col) => (
+                    <th
+                      key={col.uid}
+                      className={`${col.sortable ? "sortable" : ""}${col.uid === "valor" ? " th-right" : ""}`}
+                      onClick={() => handleSort(col.uid)}
+                    >
+                      {col.name}
+                      {col.sortable && sortDesc.column === col.uid && (
+                        <span className="sort-arrow">{sortDesc.direction === "ascending" ? " ↑" : " ↓"}</span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length + 1} className="bienes-no-results">
+                      <div className="bienes-empty-state">
+                        <Package size={40} color="#ccc" />
+                        <p>No se encontraron bienes con los filtros actuales</p>
+                      </div>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={columns.length} style={{ 
-                    padding: '3rem',
-                    textAlign: 'center',
-                    color: '#999',
-                    fontSize: '1.1rem'
-                  }}>
-                    No se encontraron bienes
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  currentItems.map((bien) => (
+                    <tr key={bien._id} className={bienesSeleccionados.includes(bien._id) ? "row-selected" : ""}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          className="bienes-checkbox"
+                          checked={bienesSeleccionados.includes(bien._id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setBienesSeleccionados(p => [...p, bien._id]);
+                            else setBienesSeleccionados(p => p.filter(id => id !== bien._id));
+                          }}
+                        />
+                      </td>
+                      <td className="bienes-td-codigo">
+                        <span className="codigo-chip">{bien.codigo}</span>
+                      </td>
 
-        
+                      <td>
+                        <div className="bienes-nombre-cell">
+                          <div className="nombre">{bien.nombre}</div>
+                          {bien.descripcion && (
+                            <div className="descripcion-preview">
+                              {bien.descripcion.slice(0, 45)}{bien.descripcion.length > 45 ? "…" : ""}
+                            </div>
+                          )}
+                        </div>
+                      </td>
 
-        {/* Información de resultados */}
-        <div style={{
-          marginTop: '1rem',
-          textAlign: 'center',
-          color: '#666',
-          fontSize: '0.9rem'
-        }}>
-          Mostrando bienes
-          {filterValue && ` (filtrado de ${bienes.length} total)`}
+                      <td>
+                        <span className="bienes-categoria-badge">{bien.categoria?.replace(/_/g, " ")}</span>
+                      </td>
+
+                      <td>
+                        {bien.asignado_a ? (
+                          <div className="bienes-asignado-cell">
+                            <div className="asignado-nombre">{bien.asignado_a}</div>
+                            {bien.tipo_asignacion && (
+                              <div className="asignado-tipo">{bien.tipo_asignacion}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="bienes-sin-asignar">—</span>
+                        )}
+                      </td>
+
+                      <td className="bienes-td-valor">{fmtCurrency(bien.valor)}</td>
+
+                      <td className="bienes-td-fecha">
+                        {bien.fechaIngreso
+                          ? fmtFechaLocal(bien.fechaIngreso)
+                          : bien.fecha_entrada
+                          ? fmtFechaLocal(bien.fecha_entrada)
+                          : "—"}
+                      </td>
+
+                      <td>
+                        <span className={estadoBadgeClass(bien.estado)}>{bien.estado}</span>
+                      </td>
+
+                      <td>
+                        <div className="bienes-action-buttons">
+                          
+                          <button
+                            className="bienes-btn-icon edit"
+                            title="Editar"
+                            onClick={() => setBienSeleccionado(bien)}
+                          >
+                            <Edit size={15} />
+                          </button>
+                          <button
+                            className="bienes-btn-icon delete"
+                            title="Eliminar"
+                            onClick={() => {
+                              if (window.confirm(`¿Eliminar "${bien.nombre}"?`)) handleEliminarBien(bien._id);
+                            }}
+                          >
+                            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginación */}
+          <div className="bienes-pagination">
+            <div className="bienes-pagination-info">Página <strong>{page}</strong> de <strong>{pages}</strong></div>
+            <div className="bienes-pagination-controls">
+              <button className="bienes-page-btn" onClick={() => setPage(1)} disabled={page === 1}>«</button>
+              <button className="bienes-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>‹</button>
+              {pageNums().map((n) => (
+                <button key={n} className={`bienes-page-btn${page === n ? " active" : ""}`} onClick={() => setPage(n)}>{n}</button>
+              ))}
+              <button className="bienes-page-btn" onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages}>›</button>
+              <button className="bienes-page-btn" onClick={() => setPage(pages)} disabled={page === pages}>»</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      {/* Modales */}
+      {/* ── Modales CRUD ── */}
       {mostrarModalCrear && (
         <ModalCrearBien
           onClose={() => setMostrarModalCrear(false)}
           onCreate={handleCrearBien}
+          categoriasDisponibles={categoriasDisponibles}
         />
       )}
 
@@ -1463,177 +749,60 @@ const handleEliminarBien = async (id) => {
           onClose={() => setBienSeleccionado(null)}
           onUpdate={handleEditarBien}
           onDelete={handleEliminarBien}
+          categoriasDisponibles={categoriasDisponibles}
         />
       )}
 
-      {/* Notification */}
       {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={() => setNotification(null)}
-        />
+        <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />
       )}
 
-      {/* Modal Ayuda */}
+      {/* ── Modal Ayuda ── */}
       {mostrarAyuda && (
-        <div className="horarios-modal-overlay horarios-modal-show">
-          <div className="horarios-modal-content">
-            <div className="horarios-modal-header">
-              <h3 className="horarios-modal-title">
-                <Package size={24} />
-                Ayuda - Sistema de Bienes
-              </h3>
-              <button 
-                className="horarios-modal-close"
-                onClick={() => setMostrarAyuda(false)}
-              >
-                <p size={20}>x</p>
-              </button>
+        <div className="bienes-modal-overlay">
+          <div className="bienes-modal sm">
+            <div className="bienes-modal-header">
+              <h3 className="bienes-modal-title"><Package size={20} /> Ayuda – Sistema de Bienes</h3>
+              <button className="bienes-modal-close" onClick={() => setMostrarAyuda(false)}>✕</button>
             </div>
+            <div className="bienes-modal-body">
 
-            <div className="horarios-modal-body">
-              <div className="horarios-help-section">
-                <h4 className="horarios-help-title">¿Cómo funciona el sistema de bienes?</h4>
-                <p className="horarios-help-text">
-                  El módulo de bienes te permite gestionar el inventario institucional, 
-                  controlando el estado, ubicación y mantenimiento de todos los activos.
-                </p>
-              </div>
-
-              <div className="horarios-help-section">
-                <h4 className="horarios-help-title">Funcionalidades principales:</h4>
-                <ul className="horarios-help-list">
-                  <li className="horarios-help-item">
-                    <strong>Búsqueda y filtros:</strong> Encuentra bienes por código, nombre, categoría o descripción
-                  </li>
-                  <li className="horarios-help-item">
-                    <strong>Gestión de inventario:</strong> Crea, edita y actualiza información de bienes
-                  </li>
-                  <li className="horarios-help-item">
-                    <strong>Estados de bienes:</strong> Controla el estado (Activo, Mantenimiento, Inactivo, Préstamo)
-                  </li>
-                  <li className="horarios-help-item">
-                    <strong>Categorización:</strong> Organiza bienes por categorías como Tecnología, Mobiliario, etc.
-                  </li>
-                  <li className="horarios-help-item">
-                    <strong>Seguimiento:</strong> Monitorea ubicación y condición de cada bien
-                  </li>
+              <div className="bienes-help-section">
+                <div className="bienes-help-title"> Funcionalidades principales</div>
+                <ul className="bienes-help-list">
+                  <li><strong>Código autogenerado:</strong> Formato BIEN-YYYY-XXXX, sin ingreso manual</li>
+                  <li><strong>Asignación:</strong> Registra persona, aula o departamento responsable</li>
+                  <li><strong>Fechas:</strong> Controla la antigüedad con fecha de entrada y salida</li>
+                  <li><strong>Categorías dinámicas:</strong> Administrables desde la API</li>
+                  <li><strong>Filtros:</strong> Por estado, categoría y búsqueda libre</li>
+                  <li><strong>Exportar Excel:</strong> Incluye todos los campos del inventario</li>
                 </ul>
               </div>
 
-              <div className="horarios-help-section">
-                <h4 className="horarios-help-title">Estados de bienes:</h4>
-                <div className="horarios-icons-grid">
-                  <div className="horarios-icon-item">
-                    <CheckCircle size={16} className="horarios-icon-success" />
-                    <span>ACTIVO - Bienes en uso y disponibles</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Wrench size={16} className="horarios-icon-warning" />
-                    <span>MANTENIMIENTO - Bienes en reparación</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <XCircle size={16} className="horarios-icon-danger" />
-                    <span>INACTIVO - Bienes no disponibles o retirados</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Share2 size={16} className="horarios-icon-info" />
-                    <span>PRÉSTAMO - Bienes prestados a terceros</span>
-                  </div>
+              <div className="bienes-help-section">
+                <div className="bienes-help-title"> Estados de bienes</div>
+                <div className="bienes-estados-grid">
+                  {[
+                    { icon: <CheckCircle size={14} color="var(--bienes-success)" />, label: "ACTIVO – En uso y disponible"    },
+                    { icon: <Wrench      size={14} color="var(--bienes-warning)" />, label: "MANTENIMIENTO – En reparación"   },
+                    { icon: <XCircle     size={14} color="var(--bienes-danger)"  />, label: "INACTIVO – No disponible"        },
+                    { icon: <Share2      size={14} color="var(--bienes-info)"    />, label: "PRÉSTAMO – Prestado a terceros"  },
+                  ].map((s, i) => (
+                    <div key={i} className="bienes-estado-item">{s.icon} {s.label}</div>
+                  ))}
                 </div>
               </div>
 
-              <div className="horarios-help-section">
-                <h4 className="horarios-help-title">Categorías comunes:</h4>
-                <div className="horarios-icons-grid">
-                  <div className="horarios-icon-item">
-                    <Monitor size={16} className="horarios-icon-primary" />
-                    <span>Tecnología - Computadoras, impresoras, equipos</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Armchair size={16} className="horarios-icon-info" />
-                    <span>Mobiliario - Mesas, sillas, escritorios</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Book size={16} className="horarios-icon-success" />
-                    <span>Material Educativo - Libros, recursos didácticos</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Settings size={16} className="horarios-icon-warning" />
-                    <span>Equipos Especializados - Laboratorios, talleres</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="horarios-help-section">
-                <h4 className="horarios-help-title">Iconos y acciones:</h4>
-                <div className="horarios-icons-grid">
-                  <div className="horarios-icon-item">
-                    <Plus size={16} className="horarios-icon-new" />
-                    <span>Crear nuevo bien en el inventario</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Edit size={16} className="horarios-icon-primary" />
-                    <span>Editar información del bien</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Eye size={16} className="horarios-icon-info" />
-                    <span>Ver detalles completos del bien</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Trash2 size={16} className="horarios-icon-danger" />
-                    <span>Eliminar bien del inventario</span>
-                  </div>
-                  <div className="horarios-icon-item">
-                    <Filter size={16} className="horarios-icon-success" />
-                    <span>Filtrar por estado y categoría</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="horarios-help-section">
-                <h4 className="horarios-help-title">Consejos de uso:</h4>
-                <div className="horarios-tips">
-                  <div className="horarios-tip">
-                    <span className="horarios-tip-badge"></span>
-                    <span>Usa la búsqueda para encontrar bienes rápidamente por código, nombre o descripción</span>
-                  </div>
-                  <div className="horarios-tip">
-                    <span className="horarios-tip-badge"></span>
-                    <span>Haz clic en "Ver detalles" para acceder a todas las opciones de edición</span>
-                  </div>
-                  <div className="horarios-tip">
-                    <span className="horarios-tip-badge"></span>
-                    <span>Actualiza regularmente los estados de los bienes según su condición actual</span>
-                  </div>
-                  <div className="horarios-tip">
-                    <span className="horarios-tip-badge"></span>
-                    <span>Utiliza los filtros para organizar la vista por estado o categoría</span>
-                  </div>
-                  <div className="horarios-tip">
-                    <span className="horarios-tip-badge">️</span>
-                    <span>Mantén un sistema de codificación consistente (BIEN-001, BIEN-002, etc.)</span>
-                  </div>
-                  <div className="horarios-tip">
-                    <span className="horarios-tip-badge"></span>
-                    <span>Proporciona descripciones detalladas para facilitar la identificación</span>
-                  </div>
-                </div>
-              </div>
             </div>
-
-            <div className="horarios-modal-footer">
-              <button 
-                className="horarios-modal-btn-close"
-                onClick={() => setMostrarAyuda(false)}
-              >
+            <div className="bienes-modal-footer">
+              <button className="bienes-btn bienes-btn-primary" onClick={() => setMostrarAyuda(false)}>
                 Cerrar Ayuda
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
