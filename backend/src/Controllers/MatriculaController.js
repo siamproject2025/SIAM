@@ -1,39 +1,48 @@
+// ============================================================
 // Controllers/MatriculaController.js
+//
+// CAMBIOS vs versión anterior:
+// - crearMatricula:  procesa encargados[], documentos[],
+//                    pediatra_nombre/telefono
+// - updateMatricula: sincroniza encargados[] y campos legacy
+// - agregarMatricula y editarEntradaHistorial: sin cambios
+// ============================================================
 const Estudiante = require('../Models/Estudiante');
 const mongoose   = require('mongoose');
 const sharp      = require('sharp');
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
 const procesarImagen = async (file) => {
     if (!file) return { imagen: null, tipo_imagen: null };
-
-    let imageSharp = sharp(file.buffer).resize(600, 600, { fit: 'inside' });
-
+    const imageSharp = sharp(file.buffer).resize(600, 600, { fit: 'inside' });
     if (['image/png', 'image/jpeg'].includes(file.mimetype)) {
         const buf = await imageSharp.jpeg({ quality: 60 }).toBuffer();
         return { imagen: buf.toString('base64'), tipo_imagen: 'image/jpeg' };
     } else if (file.mimetype === 'image/webp') {
         const buf = await imageSharp.webp({ quality: 60 }).toBuffer();
         return { imagen: buf.toString('base64'), tipo_imagen: 'image/webp' };
-    } else {
-        const buf = await imageSharp.jpeg({ quality: 60 }).toBuffer();
-        return { imagen: buf.toString('base64'), tipo_imagen: 'image/jpeg' };
     }
+    const buf = await imageSharp.jpeg({ quality: 60 }).toBuffer();
+    return { imagen: buf.toString('base64'), tipo_imagen: 'image/jpeg' };
+};
+
+// Parsea un valor JSON si viene como string (FormData envía todo como texto)
+const parsearJSON = (valor) => {
+    if (!valor) return null;
+    if (typeof valor === 'object') return valor;
+    try { return JSON.parse(valor); } catch { return null; }
 };
 
 // ─────────────────────────────────────────────
 // POST /api/matriculas
-// Crear nuevo alumno con su primera matrícula
+// Crear nuevo alumno con primera matrícula
 // ─────────────────────────────────────────────
 exports.crearMatricula = async (req, res) => {
     try {
-        const { id_documento, anio_matricula, grado_a_matricular,
-                estado_matricula, notas, creado_por } = req.body;
+        const body = req.body;
 
         // Verificar duplicado
-        const existe = await Estudiante.findOne({ id_documento });
+        const existe = await Estudiante.findOne({ id_documento: body.id_documento });
         if (existe) {
             return res.status(400).json({
                 success: false,
@@ -46,19 +55,53 @@ exports.crearMatricula = async (req, res) => {
 
         // Primera entrada del historial
         const primeraMatricula = {
-            anio_matricula:     parseInt(anio_matricula) || new Date().getFullYear(),
-            grado_a_matricular: grado_a_matricular,
+            anio_matricula:     parseInt(body.anio_matricula) || new Date().getFullYear(),
+            grado_a_matricular: body.grado_a_matricular,
             fecha_matricula:    new Date(),
-            estado_matricula:   estado_matricula || 'activa',
-            notas:              notas || '',
-            realizado_por:      creado_por || req.user?.email || 'sistema'
+            estado_matricula:   body.estado_matricula || 'activa',
+            notas:              body.notas || '',
+            realizado_por:      body.creado_por || req.user?.email || 'sistema'
         };
 
+        // ── Encargados — FIX #1 ─────────────────────────────
+        // El frontend puede enviar el array como JSON string (FormData)
+        let encargados = parsearJSON(body.encargados) || [];
+        // Si no viene el nuevo formato, construir desde campos legacy
+        if (!encargados.length) {
+            if (body.nombre_encargado) {
+                encargados = [{
+                    nombre_encargado:       body.nombre_encargado,
+                    parentesco_encargado:   body.parentesco_encargado   || 'Otro',
+                    id_documento_encargado: body.id_documento_encargado || '',
+                    telefono_encargado:     body.telefono_encargado     || '',
+                    email_encargado:        body.email_encargado        || '',
+                    es_principal:           true,
+                }];
+            }
+        }
+
+        // ── Documentos adjuntos — FIX #5 ────────────────────
+        // Los archivos de documentos se pueden recibir como base64
+        // en el body (campo documentos JSON) o como req.files
+        let documentos = parsearJSON(body.documentos) || [];
+
         const estudianteData = {
-            ...req.body,
+            ...body,
             ...imgData,
-            historial_matriculas: [primeraMatricula]
+            historial_matriculas: [primeraMatricula],
+            encargados,
+            documentos,
         };
+
+        // Remover campos string del encargado si encargados[] fue procesado
+        if (encargados.length > 0) {
+            const p = encargados.find(e => e.es_principal) || encargados[0];
+            estudianteData.nombre_encargado       = p.nombre_encargado;
+            estudianteData.parentesco_encargado   = p.parentesco_encargado;
+            estudianteData.id_documento_encargado = p.id_documento_encargado;
+            estudianteData.telefono_encargado     = p.telefono_encargado;
+            estudianteData.email_encargado        = p.email_encargado;
+        }
 
         const estudiante = await Estudiante.create(estudianteData);
 
@@ -76,41 +119,32 @@ exports.crearMatricula = async (req, res) => {
                 message: 'El número de identidad ya está registrado (duplicado).'
             });
         }
-        res.status(500).json({
-            success: false,
-            message: 'Error al crear la matrícula.',
-            error: error.message
-        });
+        if (error.name === 'ValidationError') {
+            const msgs = Object.values(error.errors).map(e => e.message);
+            return res.status(400).json({ success: false, message: 'Error de validación', errors: msgs });
+        }
+        res.status(500).json({ success: false, message: 'Error al crear la matrícula.', error: error.message });
     }
 };
 
 // ─────────────────────────────────────────────
 // POST /api/matriculas/:id/matricular
-// Agregar un nuevo año al historial del alumno
-// SIN sobreescribir los años anteriores.
+// Agregar un nuevo año al historial (usa $push)
 // ─────────────────────────────────────────────
 exports.agregarMatricula = async (req, res) => {
     try {
         const { id } = req.params;
-        const { anio_matricula, grado_a_matricular, estado_matricula,
-                notas, realizado_por } = req.body;
+        const { anio_matricula, grado_a_matricular, estado_matricula, notas, realizado_por } = req.body;
 
         if (!anio_matricula || !grado_a_matricular) {
-            return res.status(400).json({
-                success: false,
-                message: 'El año de matrícula y el grado son requeridos.'
-            });
+            return res.status(400).json({ success: false, message: 'El año de matrícula y el grado son requeridos.' });
         }
 
         const estudiante = await Estudiante.findById(id);
         if (!estudiante) {
-            return res.status(404).json({
-                success: false,
-                message: 'Estudiante no encontrado.'
-            });
+            return res.status(404).json({ success: false, message: 'Estudiante no encontrado.' });
         }
 
-        // Verificar si ya existe una matrícula para ese año
         const yaExiste = estudiante.historial_matriculas.some(
             m => m.anio_matricula === parseInt(anio_matricula)
         );
@@ -121,7 +155,6 @@ exports.agregarMatricula = async (req, res) => {
             });
         }
 
-        // Nueva entrada de historial
         const nuevaEntrada = {
             anio_matricula:     parseInt(anio_matricula),
             grado_a_matricular: grado_a_matricular,
@@ -131,8 +164,6 @@ exports.agregarMatricula = async (req, res) => {
             realizado_por:      realizado_por || req.user?.email || 'sistema'
         };
 
-        // $push agrega sin tocar los elementos existentes
-        // También actualizamos los campos "actuales" del alumno
         const actualizado = await Estudiante.findByIdAndUpdate(
             id,
             {
@@ -154,18 +185,13 @@ exports.agregarMatricula = async (req, res) => {
 
     } catch (error) {
         console.error('Error en agregarMatricula:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al registrar la matrícula.',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Error al registrar la matrícula.', error: error.message });
     }
 };
 
 // ─────────────────────────────────────────────
 // PUT /api/matriculas/:id/historial/:matriculaId
-// Editar UNA entrada específica del historial
-// (solo estado, notas — no cambia año ni grado)
+// Editar UNA entrada del historial
 // ─────────────────────────────────────────────
 exports.editarEntradaHistorial = async (req, res) => {
     try {
@@ -184,24 +210,13 @@ exports.editarEntradaHistorial = async (req, res) => {
         );
 
         if (!actualizado) {
-            return res.status(404).json({
-                success: false,
-                message: 'Entrada de historial no encontrada.'
-            });
+            return res.status(404).json({ success: false, message: 'Entrada de historial no encontrada.' });
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Entrada del historial actualizada.',
-            data: actualizado
-        });
+        res.status(200).json({ success: true, message: 'Entrada del historial actualizada.', data: actualizado });
 
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error al editar el historial.',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Error al editar el historial.', error: error.message });
     }
 };
 
@@ -222,12 +237,7 @@ exports.getAllMatriculas = async (req, res) => {
         }
 
         const estudiantes = await Estudiante.find(filtro).sort({ fecha_matricula: -1 });
-
-        res.status(200).json({
-            success: true,
-            count: estudiantes.length,
-            data: estudiantes
-        });
+        res.status(200).json({ success: true, count: estudiantes.length, data: estudiantes });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno', error: error.message });
     }
@@ -239,9 +249,7 @@ exports.getAllMatriculas = async (req, res) => {
 exports.getMatriculaById = async (req, res) => {
     try {
         const estudiante = await Estudiante.findById(req.params.id);
-        if (!estudiante) {
-            return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
-        }
+        if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
         res.status(200).json({ success: true, data: estudiante });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error al obtener la matrícula', error: error.message });
@@ -250,46 +258,50 @@ exports.getMatriculaById = async (req, res) => {
 
 // ─────────────────────────────────────────────
 // PUT /api/matriculas/:id
-// Actualizar expediente del alumno (datos personales,
-// médicos, encargado — NO toca el historial)
+// Actualizar expediente — NO toca el historial
 // ─────────────────────────────────────────────
 exports.updateMatricula = async (req, res) => {
     try {
-        const updateData = { ...req.body };
+        const body = { ...req.body };
 
-        // No permitir sobreescribir el historial por accidente
-        delete updateData.historial_matriculas;
+        // Proteger el historial
+        delete body.historial_matriculas;
 
+        // Procesar imagen si viene
         if (req.file) {
-            let imageSharp = sharp(req.file.buffer).resize({
-                width: 600, height: 600, fit: 'inside', withoutEnlargement: true
-            });
+            const imageSharp = sharp(req.file.buffer).resize({ width:600, height:600, fit:'inside', withoutEnlargement:true });
             const buf = await imageSharp.jpeg({ quality: 60 }).toBuffer();
-            updateData.imagen      = buf.toString('base64');
-            updateData.tipo_imagen = 'image/jpeg';
+            body.imagen      = buf.toString('base64');
+            body.tipo_imagen = 'image/jpeg';
         }
+
+        // ── Encargados — FIX #1 ─────────────────────────────
+        const encargados = parsearJSON(body.encargados) || [];
+        if (encargados.length > 0) {
+            body.encargados = encargados;
+            // Sincronizar campos legacy
+            const p = encargados.find(e => e.es_principal) || encargados[0];
+            body.nombre_encargado       = p.nombre_encargado;
+            body.parentesco_encargado   = p.parentesco_encargado;
+            body.id_documento_encargado = p.id_documento_encargado;
+            body.telefono_encargado     = p.telefono_encargado;
+            body.email_encargado        = p.email_encargado;
+        }
+
+        // ── Documentos — FIX #5 ─────────────────────────────
+        const documentos = parsearJSON(body.documentos);
+        if (documentos !== null) body.documentos = documentos;
 
         const estudiante = await Estudiante.findByIdAndUpdate(
-            req.params.id,
-            updateData,
-            { new: true, runValidators: true }
+            req.params.id, body, { new: true, runValidators: true }
         );
 
-        if (!estudiante) {
-            return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
-        }
+        if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
 
-        res.status(200).json({
-            success: true,
-            message: 'Datos del estudiante actualizados exitosamente.',
-            data: estudiante
-        });
+        res.status(200).json({ success: true, message: 'Datos del estudiante actualizados exitosamente.', data: estudiante });
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: 'Error al actualizar la matrícula.',
-            error: error.message
-        });
+        console.error('Error en updateMatricula:', error);
+        res.status(400).json({ success: false, message: 'Error al actualizar la matrícula.', error: error.message });
     }
 };
 
@@ -299,19 +311,9 @@ exports.updateMatricula = async (req, res) => {
 exports.deleteMatricula = async (req, res) => {
     try {
         const estudiante = await Estudiante.findByIdAndDelete(req.params.id);
-        if (!estudiante) {
-            return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
-        }
-        res.status(200).json({
-            success: true,
-            message: 'Matrícula eliminada exitosamente.',
-            data: estudiante
-        });
+        if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
+        res.status(200).json({ success: true, message: 'Matrícula eliminada exitosamente.', data: estudiante });
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Error al eliminar la matrícula.',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Error al eliminar la matrícula.', error: error.message });
     }
 };
