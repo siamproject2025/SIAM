@@ -1,15 +1,34 @@
 // ============================================================
 // Controllers/MatriculaController.js
 //
-// CAMBIOS vs versión anterior:
-// - crearMatricula:  procesa encargados[], documentos[],
-//                    pediatra_nombre/telefono
-// - updateMatricula: sincroniza encargados[] y campos legacy
-// - agregarMatricula y editarEntradaHistorial: sin cambios
+// CAMBIOS:
+// FIX #1 ALTO   — Documentos subidos a Google Drive (igual que biblioteca)
+//                 Los docs ya NO se guardan como base64 en MongoDB.
+//                 Se guarda: { tipo, nombre, archivoUrl, nombreArchivo }
+// FIX #2 ALTO   — deleteMatricula elimina también los archivos en Drive
+// FIX #3 MEDIO  — updateMatricula sube nuevos docs a Drive y elimina
+//                 los que el frontend ya no incluye en la lista
 // ============================================================
 const Estudiante = require('../Models/Estudiante');
 const mongoose   = require('mongoose');
 const sharp      = require('sharp');
+const { google } = require('googleapis');
+const { PassThrough } = require('stream');
+const path       = require('path');
+require('dotenv').config();
+
+// ── Google Drive auth (igual que bibliotecaController) ───────
+const oAuth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    'http://localhost:5000/oauth2callback'
+);
+oAuth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
+const drive = google.drive({ version: 'v3', auth: oAuth2Client });
+
+// Carpeta de Drive para documentos de matrícula
+// Puedes usar la misma que biblioteca o crear una distinta en .env
+const DOCS_FOLDER_ID = process.env.GOOGLE_DRIVE_DOCS_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID;
 
 // ── Helpers ──────────────────────────────────────────────────
 const procesarImagen = async (file) => {
@@ -33,6 +52,49 @@ const parsearJSON = (valor) => {
     try { return JSON.parse(valor); } catch { return null; }
 };
 
+/**
+ * Sube un archivo (multer file object) a Google Drive.
+ * Devuelve { archivoUrl, nombreArchivo }
+ */
+const subirDocADrive = async (file, tipo) => {
+    const { v4: uuidv4 } = await import('uuid');
+    const extension   = path.extname(file.originalname).toLowerCase();
+    const nombreUnico = `matricula_${tipo}_${uuidv4()}${extension}`;
+
+    const fileMetadata = {
+        name:    nombreUnico,
+        parents: [DOCS_FOLDER_ID],
+    };
+    const media = {
+        mimeType: file.mimetype,
+        body: (() => { const s = new PassThrough(); s.end(file.buffer); return s; })(),
+    };
+
+    const response = await drive.files.create({
+        requestBody: fileMetadata,
+        media,
+        fields: 'id, webViewLink',
+    });
+
+    return {
+        archivoUrl:    response.data.webViewLink,
+        nombreArchivo: nombreUnico,
+    };
+};
+
+/**
+ * Elimina un archivo de Drive a partir de su webViewLink.
+ * Falla silenciosamente si el archivo ya no existe.
+ */
+const eliminarDocDeDrive = async (archivoUrl) => {
+    if (!archivoUrl) return;
+    // El fileId está en la URL: /file/d/{fileId}/view
+    const match = archivoUrl.match(/\/d\/([\w-]+)/);
+    const fileId = match ? match[1] : archivoUrl.match(/[-\w]{25,}/)?.[0];
+    if (!fileId) return;
+    try { await drive.files.delete({ fileId }); } catch (_) { /* ignorar */ }
+};
+
 // ─────────────────────────────────────────────
 // POST /api/matriculas
 // Crear nuevo alumno con primera matrícula
@@ -50,8 +112,10 @@ exports.crearMatricula = async (req, res) => {
             });
         }
 
-        // Procesar imagen
-        const imgData = await procesarImagen(req.file);
+        // Procesar imagen de perfil
+        // Con upload.fields(), la imagen llega en req.files['imagen'][0]
+        const imagenFile = req.files && req.files['imagen'] ? req.files['imagen'][0] : null;
+        const imgData = await procesarImagen(imagenFile);
 
         // Primera entrada del historial
         const primeraMatricula = {
@@ -63,27 +127,45 @@ exports.crearMatricula = async (req, res) => {
             realizado_por:      body.creado_por || req.user?.email || 'sistema'
         };
 
-        // ── Encargados — FIX #1 ─────────────────────────────
-        // El frontend puede enviar el array como JSON string (FormData)
+        // ── Encargados ───────────────────────────────────────
+        // El frontend envía encargados como JSON string dentro de FormData
         let encargados = parsearJSON(body.encargados) || [];
-        // Si no viene el nuevo formato, construir desde campos legacy
-        if (!encargados.length) {
-            if (body.nombre_encargado) {
-                encargados = [{
-                    nombre_encargado:       body.nombre_encargado,
-                    parentesco_encargado:   body.parentesco_encargado   || 'Otro',
-                    id_documento_encargado: body.id_documento_encargado || '',
-                    telefono_encargado:     body.telefono_encargado     || '',
-                    email_encargado:        body.email_encargado        || '',
-                    es_principal:           true,
-                }];
-            }
+        if (!encargados.length && body.nombre_encargado) {
+            encargados = [{
+                nombre_encargado:       body.nombre_encargado,
+                parentesco_encargado:   body.parentesco_encargado   || 'Otro',
+                id_documento_encargado: body.id_documento_encargado || '',
+                telefono_encargado:     body.telefono_encargado     || '',
+                email_encargado:        body.email_encargado        || '',
+                es_principal:           true,
+            }];
         }
 
-        // ── Documentos adjuntos — FIX #5 ────────────────────
-        // Los archivos de documentos se pueden recibir como base64
-        // en el body (campo documentos JSON) o como req.files
-        let documentos = parsearJSON(body.documentos) || [];
+        // ── FIX #1: Documentos → subir a Google Drive ───────
+        // req.files['documentos'] contiene los archivos reales.
+        // body.documentosMeta contiene un JSON array con el tipo de cada doc
+        // (el índice coincide con el orden de req.files['documentos']).
+        const archivosDoc  = (req.files && req.files['documentos']) ? req.files['documentos'] : [];
+        const metaDocRaw   = parsearJSON(body.documentosMeta) || [];
+        // También soportamos documentos ya subidos (edición): vienen como JSON en body.documentos
+        const docsExistentes = parsearJSON(body.documentos) || [];
+
+        const documentosSubidos = [];
+
+        for (let i = 0; i < archivosDoc.length; i++) {
+            const file = archivosDoc[i];
+            const tipo = metaDocRaw[i]?.tipo || 'otro';
+            const driveData = await subirDocADrive(file, tipo);
+            documentosSubidos.push({
+                tipo,
+                nombre:       file.originalname,
+                archivoUrl:   driveData.archivoUrl,
+                nombreArchivo: driveData.nombreArchivo,
+            });
+        }
+
+        // Combinar los existentes (sin archivo nuevo) + los recién subidos
+        const documentos = [...docsExistentes, ...documentosSubidos];
 
         const estudianteData = {
             ...body,
@@ -93,7 +175,7 @@ exports.crearMatricula = async (req, res) => {
             documentos,
         };
 
-        // Remover campos string del encargado si encargados[] fue procesado
+        // Sincronizar campos legacy con el encargado principal
         if (encargados.length > 0) {
             const p = encargados.find(e => e.es_principal) || encargados[0];
             estudianteData.nombre_encargado       = p.nombre_encargado;
@@ -259,6 +341,7 @@ exports.getMatriculaById = async (req, res) => {
 // ─────────────────────────────────────────────
 // PUT /api/matriculas/:id
 // Actualizar expediente — NO toca el historial
+// FIX #3: sube nuevos documentos a Drive y elimina los removidos
 // ─────────────────────────────────────────────
 exports.updateMatricula = async (req, res) => {
     try {
@@ -267,19 +350,20 @@ exports.updateMatricula = async (req, res) => {
         // Proteger el historial
         delete body.historial_matriculas;
 
-        // Procesar imagen si viene
-        if (req.file) {
-            const imageSharp = sharp(req.file.buffer).resize({ width:600, height:600, fit:'inside', withoutEnlargement:true });
+        // Procesar imagen de perfil si viene
+        // Con upload.fields(), la imagen llega en req.files['imagen'][0]
+        const imagenFile = req.files && req.files['imagen'] ? req.files['imagen'][0] : null;
+        if (imagenFile) {
+            const imageSharp = sharp(imagenFile.buffer).resize({ width: 600, height: 600, fit: 'inside', withoutEnlargement: true });
             const buf = await imageSharp.jpeg({ quality: 60 }).toBuffer();
             body.imagen      = buf.toString('base64');
             body.tipo_imagen = 'image/jpeg';
         }
 
-        // ── Encargados — FIX #1 ─────────────────────────────
+        // ── Encargados ───────────────────────────────────────
         const encargados = parsearJSON(body.encargados) || [];
         if (encargados.length > 0) {
             body.encargados = encargados;
-            // Sincronizar campos legacy
             const p = encargados.find(e => e.es_principal) || encargados[0];
             body.nombre_encargado       = p.nombre_encargado;
             body.parentesco_encargado   = p.parentesco_encargado;
@@ -288,9 +372,39 @@ exports.updateMatricula = async (req, res) => {
             body.email_encargado        = p.email_encargado;
         }
 
-        // ── Documentos — FIX #5 ─────────────────────────────
-        const documentos = parsearJSON(body.documentos);
-        if (documentos !== null) body.documentos = documentos;
+        // ── FIX #3: Documentos → Drive ───────────────────────
+        // docsExistentes: documentos que el usuario NO eliminó (ya tienen archivoUrl)
+        // archivosDoc:    archivos nuevos que el usuario adjuntó en esta edición
+        const docsExistentes = parsearJSON(body.documentos) || [];
+        const archivosDoc    = (req.files && req.files['documentos']) ? req.files['documentos'] : [];
+        const metaDocRaw     = parsearJSON(body.documentosMeta) || [];
+
+        // Subir los archivos nuevos a Drive
+        const docsNuevos = [];
+        for (let i = 0; i < archivosDoc.length; i++) {
+            const file = archivosDoc[i];
+            const tipo = metaDocRaw[i]?.tipo || 'otro';
+            const driveData = await subirDocADrive(file, tipo);
+            docsNuevos.push({
+                tipo,
+                nombre:        file.originalname,
+                archivoUrl:    driveData.archivoUrl,
+                nombreArchivo: driveData.nombreArchivo,
+            });
+        }
+
+        // Detectar documentos eliminados por el usuario y borrarlos de Drive
+        const estudianteActual = await Estudiante.findById(req.params.id).lean();
+        if (estudianteActual) {
+            const urlsExistentes = new Set(docsExistentes.map(d => d.archivoUrl).filter(Boolean));
+            for (const docAntiguo of (estudianteActual.documentos || [])) {
+                if (docAntiguo.archivoUrl && !urlsExistentes.has(docAntiguo.archivoUrl)) {
+                    await eliminarDocDeDrive(docAntiguo.archivoUrl);
+                }
+            }
+        }
+
+        body.documentos = [...docsExistentes, ...docsNuevos];
 
         const estudiante = await Estudiante.findByIdAndUpdate(
             req.params.id, body, { new: true, runValidators: true }
@@ -299,6 +413,7 @@ exports.updateMatricula = async (req, res) => {
         if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
 
         res.status(200).json({ success: true, message: 'Datos del estudiante actualizados exitosamente.', data: estudiante });
+
     } catch (error) {
         console.error('Error en updateMatricula:', error);
         res.status(400).json({ success: false, message: 'Error al actualizar la matrícula.', error: error.message });
@@ -307,11 +422,18 @@ exports.updateMatricula = async (req, res) => {
 
 // ─────────────────────────────────────────────
 // DELETE /api/matriculas/:id
+// FIX #2: también elimina los archivos en Drive
 // ─────────────────────────────────────────────
 exports.deleteMatricula = async (req, res) => {
     try {
         const estudiante = await Estudiante.findByIdAndDelete(req.params.id);
         if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
+
+        // Eliminar todos los documentos del alumno en Drive
+        for (const doc of (estudiante.documentos || [])) {
+            await eliminarDocDeDrive(doc.archivoUrl);
+        }
+
         res.status(200).json({ success: true, message: 'Matrícula eliminada exitosamente.', data: estudiante });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error al eliminar la matrícula.', error: error.message });

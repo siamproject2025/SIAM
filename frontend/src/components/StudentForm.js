@@ -118,6 +118,17 @@ const TIPOS_DOC = [
   { value:'otro',               label:'Otro Documento' },
 ];
 
+// Devuelve el nombre legible para mostrar en pantalla.
+// Extrae la extensión del nombreArchivo real y la combina con el tipo seleccionado.
+// El nombreArchivo completo (con UUID) se conserva intacto en Drive.
+const nombreVisual = (doc) => {
+  // Obtener extensión del archivo real (nombreArchivo o nombre)
+  const fuente = doc.nombreArchivo || doc.nombre || '';
+  const ext    = fuente.includes('.') ? fuente.split('.').pop().toLowerCase() : '';
+  const label  = TIPOS_DOC.find(t => t.value === doc.tipo)?.label || doc.tipo || 'Documento';
+  return ext ? `${label}.${ext}` : label;
+};
+
 // ============================================================
 const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) => {
   const [formData, setFormData]   = useState({ ...INIT });
@@ -310,15 +321,31 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     const clean = { ...formData };
     delete clean.foto_preview;
     if (isEdit && !(clean.imagen instanceof File)) delete clean.imagen;
-    // Compatibilidad: también enviar el primer encargado en los campos legacy
-    if (clean.encargados.length > 0) {
+
+    // ── Encargados: serializar a JSON string ─────────────────
+    // FormData no puede serializar arrays — sin esto llega "[object Object]" al backend
+    if (clean.encargados && clean.encargados.length > 0) {
       const principal = clean.encargados.find(e => e.es_principal) || clean.encargados[0];
+      // Campos legacy para compatibilidad con código anterior
       clean.nombre_encargado       = principal.nombre_encargado;
       clean.parentesco_encargado   = principal.parentesco_encargado;
       clean.id_documento_encargado = principal.id_documento_encargado;
       clean.telefono_encargado     = principal.telefono_encargado;
       clean.email_encargado        = principal.email_encargado;
     }
+    // El array completo viaja como JSON string — el backend lo parsea con JSON.parse()
+    clean.encargados = JSON.stringify(clean.encargados || []);
+
+    // ── Documentos: separar archivos nuevos de los ya guardados en Drive ─────
+    const archivosNuevos = (clean.documentos || []).filter(d => d.nuevo && d.file instanceof File);
+    const docsExistentes = (clean.documentos || [])
+      .filter(d => !d.nuevo)
+      .map(({ file, nuevo, tamano, ...rest }) => rest); // quitar campos del frontend
+
+    clean.documentos     = JSON.stringify(docsExistentes); // docs ya en Drive (JSON)
+    clean.documentosMeta = JSON.stringify(archivosNuevos.map(d => ({ tipo: d.tipo }))); // tipo de cada archivo nuevo
+    clean._archivosDocumentos = archivosNuevos.map(d => d.file); // File objects reales
+
     onSubmit(clean);
   };
 
@@ -527,10 +554,10 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
             </>
           )}
 
-          {/* ── Tab: Documentos — FIX #5 ── */}
+          {/* ── Tab: Documentos ── */}
           {tabActivo === 'documentos' && (
             <>
-              <div style={S.info}>ℹ Adjunta documentos requeridos para la matrícula. Formatos aceptados: PDF, JPG, PNG. Máx. 10MB por archivo.</div>
+              <div style={S.info}>ℹ Adjunta documentos requeridos para la matrícula. Los archivos se guardan en Google Drive. Formatos: PDF, JPG, PNG · Máx. 10MB.</div>
               {formData.documentos.map((doc, i) => (
                 <div key={i} style={{...S.card, display:'flex', alignItems:'center', gap:12}}>
                   <FileText size={20} color="#6C4FBF" style={{flexShrink:0}}/>
@@ -538,7 +565,24 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                     <select style={{...S.sel(false), marginBottom:4}} value={doc.tipo} onChange={e=>updateDocTipo(i,e.target.value)}>
                       {TIPOS_DOC.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
-                    <div style={{fontSize:'.8rem',color:'#7A6FA0'}}>{doc.nombre} — {doc.tamaño}</div>
+                    {doc.archivoUrl ? (
+                      /* Documento ya guardado en Drive */
+                      <div style={{fontSize:'.8rem',display:'flex',alignItems:'center',gap:6}}>
+                        <span style={{color:'#27AE60',fontWeight:700}}>✓ Guardado en Drive</span>
+                        <span style={{color:'#aaa'}}>—</span>
+                        {/* nombreVisual() muestra solo "Tipo.ext" — el UUID queda en Drive */}
+                        <a href={doc.archivoUrl} target="_blank" rel="noopener noreferrer"
+                           style={{color:'#6C4FBF',fontWeight:700,textDecoration:'none'}}>
+                          {nombreVisual(doc)}
+                        </a>
+                      </div>
+                    ) : (
+                      /* Archivo nuevo pendiente de subir */
+                      <div style={{fontSize:'.8rem',color:'#7A6FA0',display:'flex',alignItems:'center',gap:6}}>
+                        <span style={{color:'#F39C12',fontWeight:700}}>⏳ Pendiente de subir</span>
+                        <span>— {doc.nombre} ({doc.tamaño})</span>
+                      </div>
+                    )}
                   </div>
                   <button type="button" style={S.delBtn} onClick={()=>removeDocumento(i)}><X size={12}/>Quitar</button>
                 </div>
@@ -546,7 +590,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               {formData.documentos.length < 6 && (
                 <div style={S.upload}>
                   <FileText size={32} color="#8B6FDF" style={{marginBottom:6}}/>
-                  <p style={{color:'#7A6FA0',marginBottom:10,fontSize:'.88rem'}}>Adjunta documentos de matrícula</p>
+                  <p style={{color:'#7A6FA0',marginBottom:10,fontSize:'.88rem'}}>Los documentos se guardan automáticamente en Google Drive</p>
                   <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={addDocumento} style={{display:'none'}} id="sf-doc-new"/>
                   <label htmlFor="sf-doc-new" style={{...S.btn('#6C4FBF'),cursor:'pointer'}}><Upload size={14}/> Seleccionar documento</label>
                   <small style={{display:'block',marginTop:10,color:'#aaa',fontSize:'.8rem'}}>PDF, JPG, PNG · Máx. 10MB · Máx. 6 documentos</small>
