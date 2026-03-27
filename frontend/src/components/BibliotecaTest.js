@@ -1,937 +1,462 @@
-// src/components/BibliotecaTest.jsx
-
+// ============================================================
+// BibliotecaTest.jsx
+// FIX #1 ALTO   — Campos APA: autor corporativo, año publicación,
+//                 ciudad, editorial, ISBN/ISSN, edición
+// FIX #2 ALTO   — Filtros avanzados: grado, clase, autor, editorial
+// FIX #3 MEDIO  — Edición de metadatos de libros ya cargados
+// ============================================================
 import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from "axios";
-import useUserRole from "./hooks/useUserRole"; 
+import useUserRole from "./hooks/useUserRole";
 import "../styles/Models/Biblioteca.css";
 import { auth } from "../components/authentication/Auth";
 import ConfirmDialog from "./ConfirmDialog/ConfirmDialog";
 import { loadingController } from "../api/loadingController";
-import { 
-  FiSearch,
-  FiUpload,
-  FiDownload,
-  FiBook,
-  FiX,
-  FiFilter,
-  FiUsers,
-  FiAward,
-  FiFileText,
-  FiStar,
-  FiCalendar,
-  FiBookOpen,
-  FiTrash2, 
-  FiFile,
-  FiArrowUp,
-  FiArrowDown,
-  FiChevronLeft,
-  FiChevronRight,
-  FiChevronsLeft,
-  FiChevronsRight,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiInfo,
-  FiUser,
-  FiLock
+import {
+  FiSearch, FiUpload, FiDownload, FiBook, FiX, FiFilter,
+  FiUsers, FiAward, FiFileText, FiStar, FiCalendar, FiBookOpen,
+  FiTrash2, FiFile, FiArrowUp, FiArrowDown, FiChevronLeft, FiChevronRight,
+  FiChevronsLeft, FiChevronsRight, FiAlertCircle, FiCheckCircle, FiInfo,
+  FiUser, FiEdit2
 } from 'react-icons/fi';
 import WithPermission from "./Permisos/WithPermission";
 
 export default function BibliotecaTest() {
-  
   const { userRole, cargando } = useUserRole();
 
-  const [libros, setLibros] = useState([]);
-  const [titulo, setTitulo] = useState("");
-  const [autor, setAutor] = useState("");
-  const [grado, setGrado] = useState("");
-  const [clase, setClase] = useState("");
-  const [observacion, setObservacion] = useState("");
-  const [archivo, setArchivo] = useState(null);
-  const [filterValue, setFilterValue] = useState("");
-  const [tipoFiltro, setTipoFiltro] = useState("todos");
-  const [sortDescriptor, setSortDescriptor] = useState({ column: "fecha", direction: "descending" });
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [libros, setLibros]             = useState([]);
+  const [filterValue, setFilterValue]   = useState("");
+  const [tipoFiltro, setTipoFiltro]     = useState("todos");
+  // FIX #2: filtros avanzados
+  const [filtroGrado, setFiltroGrado]   = useState("");
+  const [filtroClase, setFiltroClase]   = useState("");
+  const [filtroAutor, setFiltroAutor]   = useState("");
+  const [filtroEdit, setFiltroEdit]     = useState("");
+  const [mostrarFiltrosAvanzados, setMostrarFiltrosAvanzados] = useState(false);
+  const [sortDescriptor, setSortDescriptor] = useState({ column:"fecha", direction:"descending" });
+  const [page, setPage]                 = useState(1);
+  const [rowsPerPage, setRowsPerPage]   = useState(10);
   const [mostrarModal, setMostrarModal] = useState(false);
+  // FIX #3: modo edición
+  const [libroEditando, setLibroEditando] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef(null);
+  const [loading, setLoading]           = useState(false);
+  const fileInputRef                    = useRef(null);
 
-  const API_URL = process.env.REACT_APP_API_URL+"/api/biblioteca";
-  // Permisos basados en rol
+  // FIX #1: campos del formulario extendidos con APA
+  const formVacio = () => ({
+    titulo:'', autor:'', autor_corporativo:'', anio_publicacion:'',
+    ciudad:'', editorial:'', edicion:'', isbn:'',
+    grado:'', clase:'', observacion:'', archivo:null,
+  });
+  const [form, setForm] = useState(formVacio());
+
+  const API_URL = process.env.REACT_APP_API_URL + "/api/biblioteca";
 
   const cargarLibros = async () => {
     setLoading(true);
     try {
       loadingController.start();
-      const user = auth.currentUser;
-      if (!user) throw new Error("Usuario no autenticado");
+      const user  = auth.currentUser;
+      if (!user) throw new Error("No autenticado");
       const token = await user.getIdToken();
-
-      const res = await axios.get(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}` //  Token agregado
-        }
-      });
-
+      const res   = await axios.get(API_URL, { headers:{ Authorization:`Bearer ${token}` } });
       setLibros(res.data);
-    } catch (error) {
-      console.error(error);
-      showNotification(error.message || "Error al cargar libros", "error");
-    } finally {
-      setLoading(false);
-      loadingController.stop();
-    }
+    } catch (err) {
+      showNotification(err.message || "Error al cargar libros", "error");
+    } finally { setLoading(false); loadingController.stop(); }
   };
 
-  useEffect(() => {
-    if (!cargando) { 
-      cargarLibros();
-    }
-  }, [cargando]);
+  useEffect(() => { if (!cargando) cargarLibros(); }, [cargando]);
 
-  // Calcular estadísticas
-  const totalLibros = libros.length;
-  const librosPDF = libros.filter(libro => libro.archivoUrl?.endsWith('.pdf')).length;
-  const librosEPUB = libros.filter(libro => libro.archivoUrl?.endsWith('.epub')).length;
-  const librosRecientes = libros.filter(libro => {
-    const fechaLibro = new Date(libro.fechaCreacion);
-    const hace30Dias = new Date();
-    hace30Dias.setDate(hace30Dias.getDate() - 30);
-    return fechaLibro > hace30Dias;
-  }).length;
+  // Estadísticas
+  const totalLibros    = libros.length;
+  const librosPDF      = libros.filter(l => l.archivoUrl?.endsWith('.pdf')).length;
+  const librosRecientes = libros.filter(l => new Date(l.fechaCreacion) > new Date(Date.now()-30*24*60*60*1000)).length;
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 3500);
   };
 
+  // ── SUBMIT (crear o editar) ──────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    if (!form.titulo?.trim())  { showNotification("El título es obligatorio", "error"); return; }
+    if (!form.autor?.trim())   { showNotification("El autor es obligatorio", "error"); return; }
+    if (!form.grado?.trim())   { showNotification("El grado es obligatorio", "error"); return; }
+    if (!form.clase?.trim())   { showNotification("La clase es obligatoria", "error"); return; }
+    if (!libroEditando && !form.archivo) { showNotification("Selecciona un archivo", "error"); return; }
 
-    if (!titulo.trim()) {
-      showNotification("El título es obligatorio", "error");
-      return;
-    }
-    
-    if (!autor.trim()) {
-      showNotification("El autor es obligatorio", "error");
-      return;
-    }
-    
-    if (!grado.trim()) {
-      showNotification("El grado es obligatorio", "error");
-      return;
-    }
-
-    if (!clase.trim()) {
-      showNotification("La clase es obligatoria", "error");
-      return;
-    }
-
-    if (!archivo) {
-      showNotification("Debes seleccionar un archivo", "error");
-      return;
-    }
-
-    // Validar tipo de archivo
-    const fileExtension = archivo.name.split('.').pop().toLowerCase();
-    if (!['pdf', 'epub'].includes(fileExtension)) {
-      showNotification("Solo se permiten archivos PDF y EPUB", "error");
-      return;
-    }
+    const ext = form.archivo?.name.split('.').pop().toLowerCase();
+    if (form.archivo && !['pdf','epub'].includes(ext)) { showNotification("Solo PDF o EPUB", "error"); return; }
 
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("Usuario no autenticado");
+      const user  = auth.currentUser;
+      if (!user) throw new Error("No autenticado");
       const token = await user.getIdToken();
+      const fd    = new FormData();
 
-      const formData = new FormData();
-      formData.append("titulo", titulo);
-      formData.append("autor", autor);
-      formData.append("grado", grado);
-      formData.append("clase", clase);
-      formData.append("observacion", observacion);
-      formData.append("archivo", archivo);
-
-      await axios.post(API_URL, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}` //  Token agregado
-        },
+      // FIX #1: todos los campos APA
+      ['titulo','autor','autor_corporativo','anio_publicacion','ciudad','editorial','edicion','isbn','grado','clase','observacion'].forEach(k => {
+        if (form[k]) fd.append(k, form[k]);
       });
+      if (form.archivo) fd.append("archivo", form.archivo);
 
-      setTitulo("");
-      setAutor("");
-      setGrado("");
-      setClase("");
-      setObservacion("");
-      setArchivo(null);
-      setMostrarModal(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      cargarLibros();
-      showNotification("Libro subido exitosamente", "success");
+      if (libroEditando) {
+        // FIX #3: editar metadatos
+        await axios.put(`${API_URL}/${libroEditando._id}`, fd, { headers:{ "Content-Type":"multipart/form-data", Authorization:`Bearer ${token}` } });
+        showNotification("Libro actualizado exitosamente", "success");
+      } else {
+        await axios.post(API_URL, fd, { headers:{ "Content-Type":"multipart/form-data", Authorization:`Bearer ${token}` } });
+        showNotification("Libro subido exitosamente", "success");
+      }
 
-    } catch (error) {
-      console.error(error);
-      showNotification(error.message || "Error al subir el libro", "error");
+      resetModal(); cargarLibros();
+    } catch (err) {
+      showNotification(err.message || "Error al guardar", "error");
     }
   };
 
-  //Borrar
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [libroAEliminar, setLibroAEliminar] = useState(null);
-  const prepararEliminacion = (libro) => {
-   
-
-    setLibroAEliminar(libro);
-    setShowConfirm(true);
+  const resetModal = () => {
+    setForm(formVacio());
+    setLibroEditando(null);
+    setMostrarModal(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  // FIX #3: abrir modal en modo edición
+  const abrirEdicion = (libro) => {
+    setLibroEditando(libro);
+    setForm({
+      titulo:            libro.titulo            || '',
+      autor:             libro.autor             || '',
+      autor_corporativo: libro.autor_corporativo || '',
+      anio_publicacion:  libro.anio_publicacion  || '',
+      ciudad:            libro.ciudad            || '',
+      editorial:         libro.editorial         || '',
+      edicion:           libro.edicion           || '',
+      isbn:              libro.isbn              || '',
+      grado:             libro.grado             || '',
+      clase:             libro.clase             || '',
+      observacion:       libro.observacion       || '',
+      archivo: null,
+    });
+    setMostrarModal(true);
+  };
+
+  // Eliminar
+  const [showConfirm, setShowConfirm]       = useState(false);
+  const [libroAEliminar, setLibroAEliminar] = useState(null);
 
   const confirmarEliminacion = async () => {
     setShowConfirm(false);
     if (!libroAEliminar) return;
-
     try {
       loadingController.start();
-      const user = auth.currentUser;
-      if (!user) throw new Error("Usuario no autenticado");
-      const token = await user.getIdToken();
-
-      await axios.delete(`${API_URL}/${libroAEliminar._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const token = await (await auth.currentUser).getIdToken();
+      await axios.delete(`${API_URL}/${libroAEliminar._id}`, { headers:{ Authorization:`Bearer ${token}` } });
       cargarLibros();
-      showNotification(` Libro "${libroAEliminar.titulo}" eliminado correctamente`, "success");
-      // Aquí puedes actualizar el estado de libros si lo tienes
+      showNotification(`"${libroAEliminar.titulo}" eliminado`, "success");
       setLibroAEliminar(null);
-    } catch (error) {
-      console.error("Error al eliminar libro:", error);
-      showNotification(" No se pudo eliminar el libro.", "error");
-    } finally {
-      loadingController.stop(); //  detiene el loader
-    }
+    } catch (err) { showNotification("No se pudo eliminar", "error"); }
+    finally { loadingController.stop(); }
   };
 
-  // Filtrado
+  // FIX #2: valores únicos para los filtros desplegables
+  const gradosUnicos    = useMemo(() => [...new Set(libros.map(l=>l.grado).filter(Boolean))].sort(), [libros]);
+  const clasesUnicas    = useMemo(() => [...new Set(libros.map(l=>l.clase).filter(Boolean))].sort(), [libros]);
+  const editorialesUnicas = useMemo(() => [...new Set(libros.map(l=>l.editorial).filter(Boolean))].sort(), [libros]);
+
+  // Filtrado con todos los filtros activos — FIX #2
   const filteredItems = useMemo(() => {
-    let filtered = [...libros];
-
+    let r = [...libros];
     if (filterValue) {
-      filtered = filtered.filter(libro =>
-        libro.titulo?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        libro.autor?.toLowerCase().includes(filterValue.toLowerCase())  ||
-        libro.grado?.toLowerCase().includes(filterValue.toLowerCase())  ||
-        libro.clase?.toLowerCase().includes(filterValue.toLowerCase())
-      );
+      const t = filterValue.toLowerCase();
+      r = r.filter(l => l.titulo?.toLowerCase().includes(t) || l.autor?.toLowerCase().includes(t) || l.autor_corporativo?.toLowerCase().includes(t) || l.grado?.toLowerCase().includes(t) || l.clase?.toLowerCase().includes(t) || l.editorial?.toLowerCase().includes(t));
     }
+    if (tipoFiltro !== "todos") r = r.filter(l => l.archivoUrl?.split('.').pop().toLowerCase() === tipoFiltro);
+    // FIX #2: filtros avanzados
+    if (filtroGrado)  r = r.filter(l => l.grado    === filtroGrado);
+    if (filtroClase)  r = r.filter(l => l.clase    === filtroClase);
+    if (filtroAutor)  r = r.filter(l => l.autor?.toLowerCase().includes(filtroAutor.toLowerCase()) || l.autor_corporativo?.toLowerCase().includes(filtroAutor.toLowerCase()));
+    if (filtroEdit)   r = r.filter(l => l.editorial?.toLowerCase().includes(filtroEdit.toLowerCase()));
+    return r;
+  }, [libros, filterValue, tipoFiltro, filtroGrado, filtroClase, filtroAutor, filtroEdit]);
 
-    if (tipoFiltro !== "todos") {
-      filtered = filtered.filter(libro => {
-        if (!libro.archivoUrl) return false;
-        const extension = libro.archivoUrl.split('.').pop().toLowerCase();
-        return extension === tipoFiltro;
-      });
-    }
+  const sortedItems = useMemo(() => (
+    [...filteredItems].sort((a,b) => {
+      let fa = sortDescriptor.column==='fecha' ? new Date(a.fechaCreacion) : a[sortDescriptor.column];
+      let fb = sortDescriptor.column==='fecha' ? new Date(b.fechaCreacion) : b[sortDescriptor.column];
+      const cmp = fa<fb?-1:fa>fb?1:0;
+      return sortDescriptor.direction==='descending'?-cmp:cmp;
+    })
+  ), [filteredItems, sortDescriptor]);
 
-    return filtered;
-  }, [libros, filterValue, tipoFiltro]);
-
-  // Ordenamiento
-  const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      let first = a[sortDescriptor.column];
-      let second = b[sortDescriptor.column];
-
-      if (sortDescriptor.column === "fecha") {
-        first = new Date(a.fechaCreacion);
-        second = new Date(b.fechaCreacion);
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-  }, [filteredItems, sortDescriptor]);
-
-  // Paginación
   const pages = Math.ceil(sortedItems.length / rowsPerPage) || 1;
-  const items = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return sortedItems.slice(start, start + rowsPerPage);
-  }, [page, sortedItems, rowsPerPage]);
+  const items = useMemo(() => sortedItems.slice((page-1)*rowsPerPage, page*rowsPerPage), [page, sortedItems, rowsPerPage]);
 
-  const handleSort = (columnKey) => {
-    setSortDescriptor(prev => ({
-      column: columnKey,
-      direction: prev.column === columnKey && prev.direction === "ascending" ? "descending" : "ascending"
-    }));
-  };
+  const handleSort = (col) => setSortDescriptor(p => ({ column:col, direction: p.column===col&&p.direction==='ascending'?'descending':'ascending' }));
+  const getSortIcon = (col) => sortDescriptor.column!==col?null:sortDescriptor.direction==='ascending'?<FiArrowUp className="sort-icon"/>:<FiArrowDown className="sort-icon"/>;
+  const hayFiltrosActivos = filtroGrado||filtroClase||filtroAutor||filtroEdit;
 
-  const getFileIcon = (url) => {
-    if (!url) return <FiFile className="file-icon-default" />;
-    const ext = url.split('.').pop().toLowerCase();
-    if (ext === 'pdf') return <FiFileText className="file-icon-pdf" />;
-    if (ext === 'epub') return <FiBook className="file-icon-epub" />;
-    return <FiFile className="file-icon-default" />;
-  };
+  // ── Campos de formulario ─────────────────────────────────
+  const fInp = { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.87rem', color:'#2D2250', outline:'none', width:'100%', background:'#FAF9FF' };
 
-  const getSortIcon = (columnKey) => {
-    if (sortDescriptor.column !== columnKey) return null;
-    return sortDescriptor.direction === "ascending" ? 
-      <FiArrowUp className="sort-icon" /> : 
-      <FiArrowDown className="sort-icon" />;
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setArchivo(file);
-    }
-  };
-
-  const resetForm = () => {
-    setTitulo("");
-    setAutor("");
-    setGrado("");
-    setClase("");
-    setObservacion("");
-    setArchivo(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleModalClose = () => {
-    setMostrarModal(false);
-    resetForm();
-  };
-
-  if (cargando) {
-    return (
-      <div className="biblioteca-loading">
-        <motion.div
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <FiBook size={40} />
-        </motion.div>
-        <p>Cargando permisos y biblioteca...</p>
-      </div>
-    );
-  }
+  if (cargando) return <div className="biblioteca-loading"><FiBook size={40}/><p>Cargando...</p></div>;
 
   return (
     <div className="biblioteca-container">
-      {/* ENCABEZADO */}
-      <motion.div 
-        className="biblioteca-header"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-      >
-        <motion.div
-          className="header-gradient"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-        >
+      {/* Encabezado */}
+      <motion.div className="biblioteca-header" initial={{opacity:0,y:-30}} animate={{opacity:1,y:0}} transition={{duration:.7,type:"spring",stiffness:100}}>
+        <motion.div className="header-gradient" initial={{opacity:0,scale:.9}} animate={{opacity:1,scale:1}} transition={{delay:.1,duration:.6}}>
           <div className="header-content">
-            <motion.h2
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <motion.div
-                animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-              >
-                <FiBook size={36} className="header-main-icon" />
-              </motion.div>
+            <motion.h2 initial={{opacity:0,x:-50}} animate={{opacity:1,x:0}} transition={{delay:.2,duration:.5}}>
+              <FiBook size={36} className="header-main-icon"/>
               Biblioteca Digital
-              <motion.div
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                className="floating-main-icon"
-              >
-                <FiBookOpen size={32} />
+              <motion.div animate={{rotate:[0,10,-10,0],scale:[1,1.1,1]}} transition={{duration:2,repeat:Infinity,repeatDelay:5}} className="floating-main-icon">
+                <FiBookOpen size={32}/>
               </motion.div>
             </motion.h2>
-            
-            <motion.p
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="header-subtitle"
-            >
-              Gestiona tu colección de libros digitales de manera profesional
-              <span className="user-role-badge">
-                <FiUser size={12} />
-                {userRole}
-              </span>
+            <motion.p initial={{opacity:0,x:-50}} animate={{opacity:1,x:0}} transition={{delay:.3,duration:.5}} className="header-subtitle">
+              Gestiona tu colección de libros con formato de referencia APA
             </motion.p>
-
-            <motion.div 
-              className="header-stats"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <div className="stat-icon">
-                  <FiBook size={20} />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{totalLibros}</div>
-                  <div className="stat-label" style={{color:"white"}}>Total Libros</div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-              >
-                <div className="stat-icon">
-                  <FiFileText size={20} />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{librosPDF}</div>
-                  <div className="stat-label" style={{color:"white"}}>Libros PDF</div>
-                </div>
-              </motion.div>
-
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-              >
-                <div className="stat-icon">
-                  <FiAward size={20} />
-                </div>
-                <div className="stat-text">
-                  <div className="stat-value" style={{color:"white"}}>{librosRecientes}</div>
-                  <div className="stat-label" style={{color:"white"}}>Recientes</div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div 
-              className="floating-icons"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-            >
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <FiFileText size={20} />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0]
-                }}
-                transition={{ 
-                  duration: 3.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-              >
-                <FiCalendar size={20} />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ 
-                  duration: 4.2, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-              >
-                <FiStar size={20} />
-              </motion.div>
+            <motion.div className="header-stats" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.4,duration:.5}}>
+              {[{ico:<FiBook size={20}/>,val:totalLibros,lbl:'Total Libros'},{ico:<FiFileText size={20}/>,val:librosPDF,lbl:'Libros PDF'},{ico:<FiAward size={20}/>,val:librosRecientes,lbl:'Recientes'}].map((s,i)=>(
+                <motion.div key={i} className="stat-item" whileHover={{scale:1.05,y:-2}} transition={{type:"spring",stiffness:300}}>
+                  <div className="stat-icon">{s.ico}</div>
+                  <div className="stat-text"><div className="stat-value" style={{color:"white"}}>{s.val}</div><div className="stat-label" style={{color:"white"}}>{s.lbl}</div></div>
+                </motion.div>
+              ))}
             </motion.div>
           </div>
         </motion.div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS */}
-        <motion.div 
-          className="biblioteca-top-content"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-        >
+        {/* Barra de búsqueda y filtros */}
+        <motion.div className="biblioteca-top-content" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:.5,duration:.5}}>
           <div className="biblioteca-filters-row">
             <div className="search-container">
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="search-icon-animated"
-              >
-                <FiSearch size={18} />
-              </motion.div>
-              <input
-                type="text"
-                placeholder="Buscar por título, grado, clase y autor..."
-                value={filterValue}
-                onChange={(e) => setFilterValue(e.target.value)}
-                className="search-input"
-              />
-              {filterValue && (
-                <button 
-                  className="search-clear"
-                  onClick={() => setFilterValue('')}
-                >
-                  <FiX size={14} />
-                </button>
-              )}
+              <FiSearch size={18}/>
+              <input type="text" placeholder="Buscar por título, autor, editorial, grado, clase..." value={filterValue} onChange={e=>setFilterValue(e.target.value)} className="search-input"/>
+              {filterValue&&<button className="search-clear" onClick={()=>setFilterValue('')}><FiX size={14}/></button>}
             </div>
-
             <div className="filter-tipo-wrapper">
-              <FiFilter size={18} />
-              <select
-                value={tipoFiltro}
-                onChange={(e) => setTipoFiltro(e.target.value)}
-                className="filter-select"
-              >
+              <FiFilter size={18}/>
+              <select value={tipoFiltro} onChange={e=>setTipoFiltro(e.target.value)} className="filter-select">
                 <option value="todos">Todos los formatos</option>
                 <option value="pdf">PDF</option>
                 <option value="epub">EPUB</option>
               </select>
             </div>
-
-               <WithPermission requiredPermissions={["CREAR_BIBLIOTECA"]}>
-              <motion.button
-                className="btn-subir-libro"
-                onClick={() => setMostrarModal(true)}
-                whileHover={{ 
-                  scale: 1.08, 
-                  boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)"
-                }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                >
-                  <FiUpload size={18} />
-                </motion.div>
-                Subir Libro
+            {/* FIX #2: botón filtros avanzados */}
+            <button className="filter-select" style={{background:mostrarFiltrosAvanzados||hayFiltrosActivos?'#EDE9FF':'',color:hayFiltrosActivos?'#6C4FBF':'',cursor:'pointer',border:'2px solid #E0D9F5'}} onClick={()=>setMostrarFiltrosAvanzados(p=>!p)}>
+              <FiFilter size={14} style={{marginRight:4}}/> Filtros {hayFiltrosActivos&&`(${[filtroGrado,filtroClase,filtroAutor,filtroEdit].filter(Boolean).length})`}
+            </button>
+            <WithPermission requiredPermissions={["CREAR_BIBLIOTECA"]}>
+              <motion.button className="btn-subir-libro" onClick={()=>{setLibroEditando(null);setForm(formVacio());setMostrarModal(true);}} whileHover={{scale:1.08}} whileTap={{scale:.95}} transition={{type:"spring",stiffness:300}}>
+                <FiUpload size={18}/> Subir Libro
               </motion.button>
-              </WithPermission>
+            </WithPermission>
           </div>
 
+          {/* FIX #2: panel de filtros avanzados */}
+          <AnimatePresence>
+            {mostrarFiltrosAvanzados && (
+              <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} style={{overflow:'hidden',marginTop:8}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,padding:'12px 0'}}>
+                  {[
+                    {label:'Grado', value:filtroGrado, setter:setFiltroGrado, options:gradosUnicos},
+                    {label:'Clase', value:filtroClase, setter:setFiltroClase, options:clasesUnicas},
+                    {label:'Editorial', value:filtroEdit, setter:setFiltroEdit, options:editorialesUnicas},
+                  ].map(({label,value,setter,options})=>(
+                    <div key={label}>
+                      <label style={{fontSize:'.75rem',fontWeight:700,color:'#7A6FA0',textTransform:'uppercase',display:'block',marginBottom:4}}>{label}</label>
+                      <select className="filter-select" style={{width:'100%'}} value={value} onChange={e=>setter(e.target.value)}>
+                        <option value="">Todos</option>
+                        {options.map(o=><option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                  <div>
+                    <label style={{fontSize:'.75rem',fontWeight:700,color:'#7A6FA0',textTransform:'uppercase',display:'block',marginBottom:4}}>Autor</label>
+                    <input style={{...fInp,fontSize:'.85rem'}} placeholder="Buscar autor..." value={filtroAutor} onChange={e=>setFiltroAutor(e.target.value)}/>
+                  </div>
+                  {hayFiltrosActivos&&<button onClick={()=>{setFiltroGrado('');setFiltroClase('');setFiltroAutor('');setFiltroEdit('');}} style={{gridColumn:'1/-1',border:'2px dashed #C4B5E8',background:'none',borderRadius:8,color:'#6C4FBF',fontWeight:700,padding:'6px',cursor:'pointer',fontSize:'.84rem'}}>× Limpiar filtros avanzados</button>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <div className="biblioteca-meta-row">
-            <span className="libro-count">
-              <FiBook size={14} />
-              Total: {sortedItems.length} {sortedItems.length === 1 ? 'libro' : 'libros'}
-            </span>
+            <span className="libro-count"><FiBook size={14}/> Total: {sortedItems.length} {sortedItems.length===1?'libro':'libros'}{hayFiltrosActivos?` (filtrados de ${libros.length})`:''}</span>
             <div className="rows-per-page">
               <span>Filas por página:</span>
-              <select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="rows-select"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
+              <select value={rowsPerPage} onChange={e=>{setRowsPerPage(Number(e.target.value));setPage(1);}} className="rows-select">
+                <option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option>
               </select>
             </div>
           </div>
         </motion.div>
       </motion.div>
 
-      {/* TABLA PRINCIPAL - COLUMNAS CORREGIDAS */}
+      {/* Tabla */}
       <div className="table-container">
         <div className="table-wrapper">
           {loading ? (
-            <div className="loading-state">
-              <motion.div
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              >
-                <FiBook size={40} className="loading-spinner" />
-              </motion.div>
-              <p>Cargando libros...</p>
-            </div>
+            <div className="loading-state"><FiBook size={40} className="loading-spinner"/><p>Cargando libros...</p></div>
           ) : (
             <table className="biblioteca-table">
               <thead>
                 <tr>
-                  <th onClick={() => handleSort("titulo")} className="sortable th-titulo">
-                    <div className="th-content">
-                      TÍTULO
-                      {getSortIcon("titulo")}
-                    </div>
-                  </th>
-                  
-                  <th onClick={() => handleSort("grado")} className="sortable th-grado">
-                    <div className="th-content">
-                      GRADO
-                      {getSortIcon("grado")}
-                    </div>
-                  </th>
-                  
-                  <th onClick={() => handleSort("clase")} className="sortable th-clase">
-                    <div className="th-content">
-                      CLASE
-                      {getSortIcon("clase")}
-                    </div>
-                  </th>
-                  
-                  <th onClick={() => handleSort("observacion")} className="sortable th-observacion">
-                    <div className="th-content">
-                      OBSERVACIÓN
-                      {getSortIcon("observacion")}
-                    </div>
-                  </th>
-                  
-                  <th className="th-formato">
-                    <div className="th-content">
-                      <FiFileText size={14} />
-                      FORMATO
-                    </div>
-                  </th>
-                  
-                  <th className="th-acciones">
-                    <div className="th-content">
-                      <FiUsers size={14} />
-                      ACCIONES
-                    </div>
-                  </th>
+                  <th onClick={()=>handleSort("titulo")} className="sortable th-titulo"><div className="th-content">TÍTULO {getSortIcon("titulo")}</div></th>
+                  {/* FIX #1: columna autor con autor corporativo */}
+                  <th onClick={()=>handleSort("autor")} className="sortable"><div className="th-content">AUTOR {getSortIcon("autor")}</div></th>
+                  {/* FIX #1: año de publicación */}
+                  <th onClick={()=>handleSort("anio_publicacion")} className="sortable"><div className="th-content">AÑO {getSortIcon("anio_publicacion")}</div></th>
+                  {/* FIX #1: editorial */}
+                  <th onClick={()=>handleSort("editorial")} className="sortable"><div className="th-content">EDITORIAL {getSortIcon("editorial")}</div></th>
+                  <th onClick={()=>handleSort("grado")} className="sortable th-grado"><div className="th-content">GRADO {getSortIcon("grado")}</div></th>
+                  <th onClick={()=>handleSort("clase")} className="sortable th-clase"><div className="th-content">CLASE {getSortIcon("clase")}</div></th>
+                  <th className="th-formato"><div className="th-content"><FiFileText size={14}/> FORMATO</div></th>
+                  <th className="th-acciones"><div className="th-content"><FiUsers size={14}/> ACCIONES</div></th>
                 </tr>
               </thead>
               <tbody>
                 {items.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="empty-state">
-                      <div className="empty-content">
-                        <FiBook size={40} className="empty-icon" />
-                        <p>No se encontraron libros</p>
-                        <small>Intenta ajustar los filtros o sube un nuevo libro</small>
+                  <tr><td colSpan="8" className="empty-state"><div className="empty-content"><FiBook size={40} className="empty-icon"/><p>No se encontraron libros</p><small>Ajusta los filtros o sube un nuevo libro</small></div></td></tr>
+                ) : items.map(libro => (
+                  <tr key={libro._id} className="table-row">
+                    <td className="cell-titulo">
+                      <div className="titulo-wrapper">
+                        <span className="file-icon">{libro.archivoUrl ? <FiFileText className="file-icon-pdf"/> : <FiFile/>}</span>
+                        <div>
+                          <span className="titulo-text">{libro.titulo}</span>
+                          {libro.isbn&&<div style={{fontSize:'.72rem',color:'#7A6FA0'}}>ISBN: {libro.isbn}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    {/* FIX #1: autor + autor corporativo */}
+                    <td><div style={{fontWeight:600,fontSize:'.85rem'}}>{libro.autor}</div>{libro.autor_corporativo&&<div style={{fontSize:'.75rem',color:'#7A6FA0'}}>{libro.autor_corporativo}</div>}</td>
+                    <td>{libro.anio_publicacion||<span style={{color:'#aaa',fontSize:'.8rem'}}>—</span>}</td>
+                    {/* FIX #1: editorial + ciudad */}
+                    <td><div style={{fontSize:'.85rem'}}>{libro.editorial||'—'}</div>{libro.ciudad&&<div style={{fontSize:'.75rem',color:'#7A6FA0'}}>{libro.ciudad}</div>}</td>
+                    <td className="cell-grado">{libro.grado}</td>
+                    <td className="cell-clase">{libro.clase}</td>
+                    <td className="cell-formato">
+                      {libro.archivoUrl ? <span className="formato-badge pdf">PDF</span> : <span className="formato-badge sin-archivo"><FiAlertCircle size={10}/> N/A</span>}
+                    </td>
+                    <td className="cell-acciones">
+                      <div className="action-buttons">
+                        {libro.archivoUrl&&<motion.a href={libro.archivoUrl} download target="_blank" rel="noopener noreferrer" className="btn-descargar" title="Descargar" whileHover={{scale:1.05}} whileTap={{scale:.95}}><FiDownload size={14}/> Descargar</motion.a>}
+                        {/* FIX #3: botón editar metadatos */}
+                        <WithPermission requiredPermissions={["CREAR_BIBLIOTECA"]}>
+                          <motion.button onClick={()=>abrirEdicion(libro)} className="btn-descargar" title="Editar metadatos" style={{background:'#EDE9FF',color:'#6C4FBF',border:'none'}} whileHover={{scale:1.05}} whileTap={{scale:.95}}><FiEdit2 size={14}/></motion.button>
+                        </WithPermission>
+                        <WithPermission requiredPermissions={["ELIMINAR_BIBLIOTECA"]}>
+                          <motion.button onClick={()=>{setLibroAEliminar(libro);setShowConfirm(true);}} className="btn btn-danger" title="Eliminar" whileHover={{scale:1.1}} whileTap={{scale:.9}} style={{border:'2px solid red',color:'white',padding:'8px',display:'flex',alignItems:'center',gap:'4px'}}><FiTrash2 size={16}/></motion.button>
+                        </WithPermission>
                       </div>
                     </td>
                   </tr>
-                ) : (
-                  items.map((libro) => (
-                    <tr key={libro._id} className="table-row">
-                      <td className="cell-titulo">
-                        <div className="titulo-wrapper">
-                          <span className="file-icon">{getFileIcon(libro.archivoUrl)}</span>
-                          <span className="titulo-text">{libro.titulo}</span>
-                        </div>
-                      </td>
-                      
-                      <td className="cell-grado">{libro.grado}</td>
-                      
-                      <td className="cell-clase">{libro.clase}</td>
-                      
-                      <td className="cell-observacion">
-                        {libro.observacion || <span className="sin-observacion">Sin observación</span>}
-                      </td>
-                      
-                      <td className="cell-formato">
-  {libro.archivoUrl ? (
-    <span className="formato-badge pdf">
-      PDF
-    </span>
-  ) : (
-    <span className="formato-badge sin-archivo">
-      <FiAlertCircle size={10} />
-      N/A
-    </span>
-  )}
-</td>
-                      
-                      <td className="cell-acciones">
-                        <div className="action-buttons">
-                          {libro.archivoUrl ? (
-                            <motion.a
-                              href={libro.archivoUrl}
-                              download
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn-descargar"
-                              title="Descargar libro"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              <FiDownload size={14} />
-                              Descargar
-                            </motion.a>
-                          ) : (
-                            <span className="sin-archivo-text">
-                              <FiAlertCircle size={12} />
-                              Sin archivo
-                            </span>
-                          )}
-
-                           <WithPermission requiredPermissions={["ELIMINAR_BIBLIOTECA"]}>
-                            <motion.button
-                              onClick={() => prepararEliminacion(libro)}
-                              className="btn btn-danger"
-                              title="Eliminar libro"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              style={{
-                                border: '2px solid red',
-                                color: 'white',
-                                padding: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
-                            >
-                              <FiTrash2 size={16} />
-                            </motion.button>
-                              </WithPermission>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           )}
         </div>
 
-        {/* PAGINACIÓN */}
-        {items.length > 0 && (
+        {items.length>0&&(
           <div className="pagination-container">
-            <div className="pagination-info">
-              <FiInfo size={14} />
-              Mostrando {((page - 1) * rowsPerPage) + 1} - {Math.min(page * rowsPerPage, sortedItems.length)} de {sortedItems.length}
-            </div>
-            
+            <div className="pagination-info"><FiInfo size={14}/> Mostrando {(page-1)*rowsPerPage+1} - {Math.min(page*rowsPerPage,sortedItems.length)} de {sortedItems.length}</div>
             <div className="pagination-controls">
-              <motion.button
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-                className="pagination-button"
-                title="Primera página"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiChevronsLeft size={14} />
-              </motion.button>
-              <motion.button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="pagination-button"
-                title="Página anterior"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiChevronLeft size={14} />
-                Anterior
-              </motion.button>
-              
-              <span className="pagination-pages">
-                Página {page} de {pages}
-              </span>
-              
-              <motion.button
-                onClick={() => setPage(Math.min(pages, page + 1))}
-                disabled={page === pages}
-                className="pagination-button"
-                title="Siguiente página"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Siguiente
-                <FiChevronRight size={14} />
-              </motion.button>
-              <motion.button
-                onClick={() => setPage(pages)}
-                disabled={page === pages}
-                className="pagination-button"
-                title="Última página"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FiChevronsRight size={14} />
-              </motion.button>
+              <motion.button onClick={()=>setPage(1)} disabled={page===1} className="pagination-button" whileHover={{scale:1.05}} whileTap={{scale:.95}}><FiChevronsLeft size={14}/></motion.button>
+              <motion.button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} className="pagination-button" whileHover={{scale:1.05}} whileTap={{scale:.95}}><FiChevronLeft size={14}/> Anterior</motion.button>
+              <span className="pagination-pages">Página {page} de {pages}</span>
+              <motion.button onClick={()=>setPage(p=>Math.min(pages,p+1))} disabled={page===pages} className="pagination-button" whileHover={{scale:1.05}} whileTap={{scale:.95}}>Siguiente <FiChevronRight size={14}/></motion.button>
+              <motion.button onClick={()=>setPage(pages)} disabled={page===pages} className="pagination-button" whileHover={{scale:1.05}} whileTap={{scale:.95}}><FiChevronsRight size={14}/></motion.button>
             </div>
           </div>
         )}
       </div>
 
-      {/* MODAL SUBIR LIBRO */}
+      {/* Modal subir / editar libro */}
       <AnimatePresence>
-        {mostrarModal  && (
-          <motion.div 
-            className="modal-overlay" 
-            onClick={handleModalClose}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="modal-content" 
-              onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              transition={{ type: "spring", damping: 20 }}
-            >
+        {mostrarModal && (
+          <motion.div className="modal-overlay" onClick={resetModal} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+            <motion.div className="modal-content" onClick={e=>e.stopPropagation()} style={{maxWidth:620,maxHeight:'92vh',overflow:'auto'}} initial={{scale:.8,y:50}} animate={{scale:1,y:0}} exit={{scale:.8,y:50}} transition={{type:"spring",damping:20}}>
               <div className="modal-header">
-                <h3>
-                  <FiUpload />
-                  Subir Nuevo Libro
-                </h3>
-                <button onClick={handleModalClose} className="modal-close">
-                  <FiX size={20} />
-                </button>
+                <h3>{libroEditando?<><FiEdit2/> Editar Metadatos</>:<><FiUpload/> Subir Nuevo Libro</>}</h3>
+                <button onClick={resetModal} className="modal-close"><FiX size={20}/></button>
               </div>
-              
               <form onSubmit={handleSubmit} className="modal-form">
+                {/* FIX #1: título de sección APA */}
+                <p style={{fontSize:'.78rem',fontWeight:700,color:'#6C4FBF',textTransform:'uppercase',letterSpacing:'.05em',margin:'0 0 10px',paddingBottom:4,borderBottom:'2px solid #EDE9FF'}}>📚 Identificación del recurso</p>
                 <div className="form-group">
-                  <label>
-                    <FiBook size={14} />
-                    Título del Libro *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Introducción a MongoDB"
-                    value={titulo}
-                    onChange={(e) => setTitulo(e.target.value)}
-                    className="form-input"
-                    required
-                  />
+                  <label><FiBook size={14}/> Título *</label>
+                  <input type="text" value={form.titulo} onChange={e=>setForm(p=>({...p,titulo:e.target.value}))} className="form-input" required placeholder="Título completo de la obra"/>
                 </div>
-
-                <div className="form-group">
-                  <label>
-                    <FiUsers size={14} />
-                    Autor *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ej: John Doe"
-                    value={autor}
-                    onChange={(e) => setAutor(e.target.value)}
-                    className="form-input"
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>
-                    <FiUsers size={14} />
-                    Grado *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Primero, Segundo, etc."
-                    value={grado}
-                    onChange={(e) => setGrado(e.target.value)}
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FiBookOpen size={14} />
-                    Clase *
-                  </label>
-                  <input
-                    type="text"
-                    value={clase}
-                    onChange={(e) => setClase(e.target.value)}
-                    placeholder="Ej: Matemática, Ciencias, etc."
-                    className="form-input"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FiInfo size={14} />
-                    Observación
-                  </label>
-                  <textarea
-                    value={observacion}
-                    onChange={(e) => setObservacion(e.target.value)}
-                    placeholder="Observaciones adicionales sobre el libro"
-                    className="form-textarea"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>
-                    <FiFileText size={14} />
-                    Archivo (PDF o EPUB) *
-                  </label>
-                  <div className="file-input-wrapper">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".pdf,.epub"
-                      onChange={handleFileChange}
-                      className="file-input"
-                      required
-                    />
-                    {archivo && (
-                      <div className="file-selected">
-                        <FiCheckCircle size={14} />
-                        {archivo.name}
-                      </div>
-                    )}
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div className="form-group">
+                    <label><FiUsers size={14}/> Autor(es) *</label>
+                    <input type="text" value={form.autor} onChange={e=>setForm(p=>({...p,autor:e.target.value}))} className="form-input" required placeholder="Apellido, N."/>
                   </div>
-                  <small className="file-hint">
-                    Formatos aceptados: PDF, EPUB
-                  </small>
+                  {/* FIX #1: autor corporativo */}
+                  <div className="form-group">
+                    <label><FiUsers size={14}/> Autor corporativo</label>
+                    <input type="text" value={form.autor_corporativo} onChange={e=>setForm(p=>({...p,autor_corporativo:e.target.value}))} className="form-input" placeholder="Ej: UNESCO, OPS"/>
+                  </div>
+                  {/* FIX #1: año de publicación */}
+                  <div className="form-group">
+                    <label><FiCalendar size={14}/> Año de publicación</label>
+                    <input type="number" min="1800" max={new Date().getFullYear()+1} value={form.anio_publicacion} onChange={e=>setForm(p=>({...p,anio_publicacion:e.target.value}))} className="form-input" placeholder="Ej: 2023"/>
+                  </div>
+                  {/* FIX #1: edición */}
+                  <div className="form-group">
+                    <label>Edición</label>
+                    <input type="text" value={form.edicion} onChange={e=>setForm(p=>({...p,edicion:e.target.value}))} className="form-input" placeholder="Ej: 3ra edición"/>
+                  </div>
+                  {/* FIX #1: editorial */}
+                  <div className="form-group">
+                    <label>Editorial</label>
+                    <input type="text" value={form.editorial} onChange={e=>setForm(p=>({...p,editorial:e.target.value}))} className="form-input" placeholder="Nombre de la editorial"/>
+                  </div>
+                  {/* FIX #1: ciudad */}
+                  <div className="form-group">
+                    <label>Ciudad de publicación</label>
+                    <input type="text" value={form.ciudad} onChange={e=>setForm(p=>({...p,ciudad:e.target.value}))} className="form-input" placeholder="Ej: Bogotá, Colombia"/>
+                  </div>
+                  {/* FIX #1: ISBN */}
+                  <div className="form-group">
+                    <label>ISBN / ISSN</label>
+                    <input type="text" value={form.isbn} onChange={e=>setForm(p=>({...p,isbn:e.target.value}))} className="form-input" placeholder="978-..."/>
+                  </div>
                 </div>
-
+                <p style={{fontSize:'.78rem',fontWeight:700,color:'#6C4FBF',textTransform:'uppercase',letterSpacing:'.05em',margin:'14px 0 10px',paddingBottom:4,borderBottom:'2px solid #EDE9FF'}}>📖 Clasificación académica</p>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                  <div className="form-group">
+                    <label>Grado *</label>
+                    <input type="text" value={form.grado} onChange={e=>setForm(p=>({...p,grado:e.target.value}))} className="form-input" required placeholder="Ej: Primero, Segundo…"/>
+                  </div>
+                  <div className="form-group">
+                    <label>Clase *</label>
+                    <input type="text" value={form.clase} onChange={e=>setForm(p=>({...p,clase:e.target.value}))} className="form-input" required placeholder="Ej: Matemática"/>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label><FiInfo size={14}/> Observación</label>
+                  <textarea value={form.observacion} onChange={e=>setForm(p=>({...p,observacion:e.target.value}))} className="form-textarea" placeholder="Notas adicionales (resumen, recomendaciones, etc.)"/>
+                </div>
+                <div className="form-group">
+                  <label><FiFileText size={14}/> Archivo (PDF o EPUB){!libroEditando&&' *'}</label>
+                  {libroEditando&&<p style={{fontSize:'.78rem',color:'#7A6FA0',marginBottom:6}}>Deja en blanco para conservar el archivo actual.</p>}
+                  <div className="file-input-wrapper">
+                    <input ref={fileInputRef} type="file" accept=".pdf,.epub" onChange={e=>setForm(p=>({...p,archivo:e.target.files[0]||null}))} className="file-input" required={!libroEditando}/>
+                    {form.archivo&&<div className="file-selected"><FiCheckCircle size={14}/> {form.archivo.name}</div>}
+                  </div>
+                </div>
                 <div className="modal-actions">
-                  <motion.button
-                    type="button"
-                    onClick={handleModalClose}
-                    className="btn-cancelar"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FiX size={14} />
-                    Cancelar
-                  </motion.button>
-                  <motion.button 
-                    type="submit" 
-                    className="btn-guardar"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <FiUpload size={14} />
-                    Subir Libro
-                  </motion.button>
+                  <motion.button type="button" onClick={resetModal} className="btn-cancelar" whileHover={{scale:1.05}} whileTap={{scale:.95}}><FiX size={14}/> Cancelar</motion.button>
+                  <motion.button type="submit" className="btn-guardar" whileHover={{scale:1.05}} whileTap={{scale:.95}}>{libroEditando?<><FiCheckCircle size={14}/> Guardar Cambios</>:<><FiUpload size={14}/> Subir Libro</>}</motion.button>
                 </div>
               </form>
             </motion.div>
@@ -939,44 +464,18 @@ export default function BibliotecaTest() {
         )}
       </AnimatePresence>
 
-      {/* NOTIFICATION */}
+      {/* Notification */}
       <AnimatePresence>
-        {notification && (
-          <motion.div
-            className={`notification notification-${notification.type}`}
-            initial={{ opacity: 0, y: -50, x: 100 }}
-            animate={{ opacity: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, y: -50, x: 100 }}
-            transition={{ type: "spring", damping: 20 }}
-          >
-            <span className="notification-icon">
-              {notification.type === 'success' ? 
-                <FiCheckCircle size={20} /> : 
-                notification.type === 'error' ? 
-                <FiAlertCircle size={20} /> : 
-                <FiInfo size={20} />
-              }
-            </span>
+        {notification&&(
+          <motion.div className={`notification notification-${notification.type}`} initial={{opacity:0,y:-50,x:100}} animate={{opacity:1,y:0,x:0}} exit={{opacity:0,y:-50,x:100}} transition={{type:"spring",damping:20}}>
+            <span className="notification-icon">{notification.type==='success'?<FiCheckCircle size={20}/>:notification.type==='error'?<FiAlertCircle size={20}/>:<FiInfo size={20}/>}</span>
             <span className="notification-message">{notification.message}</span>
-            <button 
-              onClick={() => setNotification(null)}
-              className="notification-close"
-            >
-              <FiX size={14} />
-            </button>
+            <button onClick={()=>setNotification(null)} className="notification-close"><FiX size={14}/></button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* CONFIRM DIALOG */}
-      {showConfirm && (
-        <ConfirmDialog
-          message={`¿Seguro que deseas eliminar "${libroAEliminar?.titulo}"?`}
-          onConfirm={confirmarEliminacion}
-          onCancel={() => setShowConfirm(false)}
-          visible={showConfirm}
-        />
-      )}
+      {showConfirm&&<ConfirmDialog message={`¿Seguro que deseas eliminar "${libroAEliminar?.titulo}"?`} onConfirm={confirmarEliminacion} onCancel={()=>setShowConfirm(false)} visible={showConfirm}/>}
     </div>
   );
 }
