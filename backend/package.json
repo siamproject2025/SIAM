@@ -1,9 +1,11 @@
 {
   "dependencies": {
+    "archiver": "^7.0.1",
     "argon2": "^0.44.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "express-fileupload": "^1.5.2",
     "firebase": "^12.3.0",
     "firebase-admin": "^13.5.0",
     "googleapis": "^165.0.0",

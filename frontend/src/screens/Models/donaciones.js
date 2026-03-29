@@ -2,42 +2,109 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Donaciones.css"
 import { auth } from "..//../components/authentication/Auth";
-import { 
-  Heart, ShoppingCart, Music, PlusCircle, Home, Music2, BookOpen, Video,
-  Camera, Apple, Shirt, Pill, Armchair, Wine, Book, Droplet, Package,
-  Search, HelpCircle, Plus, Warehouse, Calendar, Hash, Edit, Trash2, Users,
-  X, Eye, Save, ImagePlus, Upload, AlertCircle, CheckCircle, Gift,
+import {
+  Heart, Music, Music2, BookOpen, Video,
+  Apple, Shirt, Pill, Armchair, Wine, Book, Droplet, Package,
+  Search, HelpCircle, Plus, Warehouse, Calendar, Hash, Edit, Trash2,
+  X, Save, ImagePlus, Upload, AlertCircle, CheckCircle, Ban,
+  FileText, Paperclip, Clock, UserCheck, FileCheck,
+  DollarSign,
 } from 'lucide-react';
 
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 
 const API_URL = process.env.REACT_APP_API_URL + '/api/donaciones';
 
+// ─── Constantes ──────────────────────────────────────────────────────────────
+const ESTADOS = ['Recibida', 'Pendiente', 'Procesada', 'Anulada'];
+
+const estadoConfig = {
+  Recibida:  { color: '#27ae60', bg: '#eafaf1', label: 'RECIBIDA'  },
+  Pendiente: { color: '#f39c12', bg: '#fef9e7', label: 'PENDIENTE' },
+  Procesada: { color: '#2980b9', bg: '#ebf5fb', label: 'PROCESADA' },
+  Anulada:   { color: '#e74c3c', bg: '#fdedec', label: 'ANULADA'   },
+};
+
+const fmt    = (n) => Number(n || 0).toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = (n) => Number(n || 0).toLocaleString('es-HN');
+
+const valorDonacion = (don) =>
+  parseFloat(don.valor_total) ||
+  (parseFloat(don.precio_unitario || 0) * parseFloat(don.cantidad_donacion || 0));
+
+// ─── Stats del header — se calculan sobre la lista YA FILTRADA ───────────────
+// Recibe: lista filtrada, lista total (para el label), filtros activos
+const getHeaderStats = (filtradas, hayFiltro) => {
+  const hoy      = new Date();
+  const mes      = hoy.getMonth();
+  const anio     = hoy.getFullYear();
+  const mesLabel = hoy.toLocaleString('es-HN', { month: 'long' });
+
+  // "Nuevas este mes" = registradas (fecha_ingreso) en el mes/año actual
+  // fecha_ingreso viene como string ISO del JSON de Mongo
+  const nuevasMes = filtradas.filter(d => {
+    const raw = d.fecha_ingreso || d.createdAt;
+    if (!raw) return false;
+    const f = new Date(raw);
+    return !isNaN(f) && f.getMonth() === mes && f.getFullYear() === anio;
+  }).length;
+
+  const activas    = filtradas.filter(d => ['Recibida','Pendiente','Procesada'].includes(d.estado)).length;
+  const valorTotal = filtradas.filter(d => d.estado !== 'Anulada').reduce((s,d) => s + valorDonacion(d), 0);
+  const totalLbl   = hayFiltro ? 'Filtradas' : 'Total Donaciones';
+
+  return [
+    { ico: <Package size={18} color="white"/>,     val: filtradas.length,        lbl: totalLbl                      },
+    { ico: <CheckCircle size={18} color="white"/>, val: activas,                 lbl: 'Activas'                     },
+    { ico: <UserCheck size={18} color="white"/>,   val: nuevasMes,               lbl: `Nuevas (${mesLabel} ${anio})` },
+    { ico: <DollarSign size={18} color="white"/>,  val: `L. ${fmt(valorTotal)}`, lbl: 'Valor Total Activos'         },
+  ];
+};
+
+// ─── Componente ───────────────────────────────────────────────────────────────
 const Donaciones = () => {
-  const [donaciones, setDonaciones] = useState([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [mostrarModal, setMostrarModal] = useState(false);
-  const [mostrarModalEditar, setMostrarModalEditar] = useState(false);
-  const [mostrarAyuda, setMostrarAyuda] = useState(false);
+  const [donaciones,           setDonaciones]           = useState([]);
+  const [busqueda,             setBusqueda]             = useState('');
+  const [filtroEstado,         setFiltroEstado]         = useState('Todos');
+  const [fechaDesde,           setFechaDesde]           = useState('');
+  const [fechaHasta,           setFechaHasta]           = useState('');
+  const [mostrarModal,         setMostrarModal]         = useState(false);
+  const [mostrarModalEditar,   setMostrarModalEditar]   = useState(false);
+  const [mostrarAyuda,         setMostrarAyuda]         = useState(false);
   const [donacionSeleccionada, setDonacionSeleccionada] = useState(null);
-  const [notification, setNotification] = useState(null);
+  const [donEliminarDirecto,   setDonEliminarDirecto]   = useState(null);
+  const [notification,         setNotification]         = useState(null);
+  const [tabActiva,            setTabActiva]            = useState('datos');
+  const [hasUnsavedChanges,    setHasUnsavedChanges]    = useState(false);
+  const [showConfirm,          setShowConfirm]          = useState(false);
+  const [showConfirmClose,     setShowConfirmClose]     = useState(false);
+  const [showConfirmAnular,    setShowConfirmAnular]    = useState(false);
+  const [paginaActual,         setPaginaActual]         = useState(1);
+  const [seleccionados,        setSeleccionados]        = useState([]);
+  const [erroresCampos,        setErroresCampos]        = useState({});
+  const [intentoGuardar,       setIntentoGuardar]       = useState(false);
+  const POR_PAGINA = 10;
 
-  // ─── Estados de cambios y confirmaciones (FUERA de los modales) ───────────
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [showConfirmClose, setShowConfirmClose] = useState(false);
-
-  const [formData, setFormData] = useState({
-    tipo_donacion: '',
+  const emptyForm = () => ({
+    tipo_donacion:     '',
     cantidad_donacion: '',
-    descripcion: '',
-    observaciones: '',
-    id_almacen: '',
-    fecha: new Date().toISOString().split('T')[0],
-    imagen: null,
-    foto_preview: null
+    precio_unitario:   '',
+    descripcion:       '',
+    observaciones:     '',
+    id_almacen:        '',
+    fecha:             new Date().toISOString().split('T')[0],
+    estado:            'Recibida',
+    imagen:            null,
+    foto_preview:      null,
+    documento:         null,
+    documento_nombre:  '',
   });
 
+  const [formData, setFormData] = useState(emptyForm());
+
+  const valorCalculado = (parseFloat(formData.precio_unitario) || 0) * (parseFloat(formData.cantidad_donacion) || 0);
+
+  // ── Carga ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     cargarDonaciones();
     const interval = setInterval(cargarDonaciones, 30000);
@@ -45,654 +112,743 @@ const Donaciones = () => {
   }, []);
 
   useEffect(() => {
-    return () => {
-      if (formData.foto_preview && formData.foto_preview.startsWith('blob:')) {
-        URL.revokeObjectURL(formData.foto_preview);
-      }
-    };
+    return () => { if (formData.foto_preview?.startsWith('blob:')) URL.revokeObjectURL(formData.foto_preview); };
   }, [formData.foto_preview]);
+
+  const getToken = async () => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('No estás autenticado');
+    return user.getIdToken();
+  };
 
   const cargarDonaciones = async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        mostrarNotificacion('No estás autenticado. Por favor inicia sesión.', 'error');
-        return;
-      }
-      const token = await user.getIdToken();
-      const response = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Error al cargar donaciones');
-      const result = await response.json();
-      if (result.success && Array.isArray(result.data)) {
-        setDonaciones(result.data);
-      } else if (Array.isArray(result)) {
-        setDonaciones(result);
-      } else {
-        setDonaciones([]);
-      }
-    } catch (error) {
-      console.error('Error:', error);
+      const token = await getToken();
+      const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Error al cargar donaciones');
+      const result = await res.json();
+      setDonaciones(Array.isArray(result.data) ? result.data : Array.isArray(result) ? result : []);
+    } catch (err) {
+      console.error(err);
       mostrarNotificacion('Error al cargar las donaciones', 'error');
       setDonaciones([]);
     }
   };
-
-  const totalDonaciones = donaciones.length;
-  const totalCantidad = donaciones.reduce((sum, d) => sum + (parseFloat(d.cantidad_donacion) || 0), 0);
-  const tiposUnicos = [...new Set(donaciones.map(d => d.tipo_donacion))].length;
 
   const mostrarNotificacion = (mensaje, tipo = 'success') => {
     setNotification({ message: mensaje, type: tipo });
     setTimeout(() => setNotification(null), 4000);
   };
 
-  // ─── Solo marca cambios cuando el usuario escribe (no en carga inicial) ───
+  // ── Validación campo a campo ──────────────────────────────────────────────
+  const validarCampos = (data) => {
+    const errs = {};
+    if (!data.tipo_donacion)
+      errs.tipo_donacion = 'Selecciona un tipo de donación';
+    if (!data.cantidad_donacion || Number(data.cantidad_donacion) <= 0)
+      errs.cantidad_donacion = 'Ingresa una cantidad válida (> 0)';
+    if (!data.id_almacen)
+      errs.id_almacen = 'Selecciona un almacén';
+    if (!data.fecha)
+      errs.fecha = 'Selecciona la fecha de donación';
+    else {
+      const f = new Date(data.fecha); const hoy = new Date(); hoy.setHours(0,0,0,0);
+      if (f > hoy) errs.fecha = 'La fecha no puede ser futura';
+    }
+    return errs;
+  };
+
+  // Mapa campo → pestaña donde vive
+  const tabDeCampo = {
+    tipo_donacion: 'datos', cantidad_donacion: 'datos',
+    id_almacen: 'datos', fecha: 'datos',
+  };
+
+  // ¿La pestaña tiene al menos un error?
+  const tabTieneError = (tabKey) =>
+    Object.keys(erroresCampos).some(c => tabDeCampo[c] === tabKey);
+
+  // ── Form ───────────────────────────────────────────────────────────────────
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setHasUnsavedChanges(true);
+    // Limpiar error individual al corregir el campo
+    if (intentoGuardar && erroresCampos[name]) {
+      setErroresCampos(prev => { const n = {...prev}; delete n[name]; return n; });
+    }
   };
 
   const handleFotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        mostrarNotificacion('La imagen no debe superar 5MB', 'error');
-        return;
-      }
-      if (!file.type.startsWith('image/')) {
-        mostrarNotificacion('Solo se permiten imágenes', 'error');
-        return;
-      }
-      if (formData.foto_preview && formData.foto_preview.startsWith('blob:')) {
-        URL.revokeObjectURL(formData.foto_preview);
-      }
-      setFormData(prev => ({
-        ...prev,
-        imagen: file,
-        foto_preview: URL.createObjectURL(file)
-      }));
-      setHasUnsavedChanges(true);
-    }
+    const file = e.target.files[0]; if (!file) return;
+    if (file.size > 5*1024*1024) { mostrarNotificacion('La imagen no debe superar 5MB','error'); return; }
+    if (!file.type.startsWith('image/')) { mostrarNotificacion('Solo imágenes','error'); return; }
+    if (formData.foto_preview?.startsWith('blob:')) URL.revokeObjectURL(formData.foto_preview);
+    setFormData(prev => ({ ...prev, imagen: file, foto_preview: URL.createObjectURL(file) }));
+    setHasUnsavedChanges(true);
+  };
+
+  const handleDocumentoChange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const ok = ['application/pdf','image/jpeg','image/png','application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!ok.includes(file.type)) { mostrarNotificacion('Formatos: PDF, JPG, PNG, DOC, DOCX','error'); return; }
+    if (file.size > 10*1024*1024) { mostrarNotificacion('El documento no debe superar 10MB','error'); return; }
+    setFormData(prev => ({ ...prev, documento: file, documento_nombre: file.name }));
+    setHasUnsavedChanges(true);
   };
 
   const eliminarFoto = () => {
-    if (formData.foto_preview && formData.foto_preview.startsWith('blob:')) {
-      URL.revokeObjectURL(formData.foto_preview);
-    }
+    if (formData.foto_preview?.startsWith('blob:')) URL.revokeObjectURL(formData.foto_preview);
     setFormData(prev => ({ ...prev, imagen: null, foto_preview: null }));
     setHasUnsavedChanges(true);
   };
 
-  // ─── Cerrar modales con verificación ──────────────────────────────────────
-  const handleCloseModals = () => {
-    if (hasUnsavedChanges) {
-      setShowConfirmClose(true);
-    } else {
-      closeModals();
-    }
-  };
+  // ── Modales ────────────────────────────────────────────────────────────────
+  const handleCloseModals = () => { hasUnsavedChanges ? setShowConfirmClose(true) : closeModals(); };
 
   const closeModals = () => {
-    setMostrarModal(false);
-    setMostrarModalEditar(false);
-    setDonacionSeleccionada(null);
-    setHasUnsavedChanges(false);
-    setShowConfirmClose(false);
-    setShowConfirm(false);
-    if (formData.foto_preview && formData.foto_preview.startsWith('blob:')) {
-      URL.revokeObjectURL(formData.foto_preview);
-    }
-    setFormData({
-      tipo_donacion: '',
-      cantidad_donacion: '',
-      descripcion: '',
-      observaciones: '',
-      id_almacen: '',
-      fecha: new Date().toISOString().split('T')[0],
-      imagen: null,
-      foto_preview: null
-    });
+    setMostrarModal(false); setMostrarModalEditar(false);
+    setDonacionSeleccionada(null); setHasUnsavedChanges(false);
+    setShowConfirmClose(false); setShowConfirm(false); setShowConfirmAnular(false);
+    setErroresCampos({}); setIntentoGuardar(false);
+    setTabActiva('datos');
+    if (formData.foto_preview?.startsWith('blob:')) URL.revokeObjectURL(formData.foto_preview);
+    setFormData(emptyForm());
   };
 
-  // ─── Abrir modal nueva donación ───────────────────────────────────────────
-  const handleNuevaDonacion = () => {
+  const handleNuevaDonacion = () => { setFormData(emptyForm()); setHasUnsavedChanges(false); setTabActiva('datos'); setMostrarModal(true); };
+
+  const handleFilaClick = (don) => {
+    setDonacionSeleccionada(don);
     setFormData({
-      tipo_donacion: '',
-      cantidad_donacion: '',
-      descripcion: '',
-      observaciones: '',
-      id_almacen: '',
-      fecha: new Date().toISOString().split('T')[0],
-      imagen: null,
-      foto_preview: null
+      tipo_donacion:     don.tipo_donacion     || '',
+      cantidad_donacion: don.cantidad_donacion || '',
+      precio_unitario:   don.precio_unitario   || '',
+      descripcion:       don.descripcion       || '',
+      observaciones:     don.observaciones     || '',
+      id_almacen:        don.id_almacen        || '',
+      fecha:             don.fecha ? new Date(don.fecha).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      estado:            don.estado            || 'Recibida',
+      imagen:            null,
+      foto_preview:      don.imagen ? `data:image/jpeg;base64,${don.imagen}` : null,
+      documento:         null,
+      documento_nombre:  don.documento_nombre  || '',
     });
-    setHasUnsavedChanges(false); // ← limpia antes de abrir
-    setMostrarModal(true);
+    setHasUnsavedChanges(false); setTabActiva('datos'); setMostrarModalEditar(true);
   };
 
-  // ─── Abrir modal editar ───────────────────────────────────────────────────
-  const handleFilaClick = (donacion) => {
-    setDonacionSeleccionada(donacion);
-    // Cargar datos SIN disparar hasUnsavedChanges
-    setFormData({
-      tipo_donacion: donacion.tipo_donacion || '',
-      cantidad_donacion: donacion.cantidad_donacion || '',
-      descripcion: donacion.descripcion || '',
-      observaciones: donacion.observaciones || '',
-      id_almacen: donacion.id_almacen || '',
-      fecha: donacion.fecha
-        ? new Date(donacion.fecha).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0],
-      imagen: null,
-      foto_preview: donacion.imagen ? `data:image/png;base64,${donacion.imagen}` : null
-    });
-    setHasUnsavedChanges(false); // ← limpia al cargar datos iniciales
-    setMostrarModalEditar(true);
+  const buildFd = (data) => {
+    const fd = new FormData();
+    fd.append('tipo_donacion',     data.tipo_donacion);
+    fd.append('cantidad_donacion', data.cantidad_donacion);
+    fd.append('precio_unitario',   data.precio_unitario || 0);
+    fd.append('valor_total',       ((parseFloat(data.precio_unitario)||0)*(parseFloat(data.cantidad_donacion)||0)).toFixed(2));
+    fd.append('descripcion',       data.descripcion  || '');
+    fd.append('observaciones',     data.observaciones || '');
+    fd.append('id_almacen',        data.id_almacen);
+    fd.append('fecha',             data.fecha);
+    fd.append('estado',            data.estado || 'Recibida');
+    if (data.imagen)    fd.append('imagen',    data.imagen);
+    if (data.documento) fd.append('documento', data.documento);
+    return fd;
   };
 
-  // ─── Guardar nueva donación ───────────────────────────────────────────────
+  // ── CRUD ───────────────────────────────────────────────────────────────────
   const handleSubmitNueva = async (e) => {
     e.preventDefault();
-
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen ||
-      !formData.descripcion.trim() || !formData.observaciones.trim()) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    setIntentoGuardar(true);
+    const errs = validarCampos(formData);
+    if (Object.keys(errs).length > 0) {
+      setErroresCampos(errs);
+      // Ir a la pestaña que tiene el primer error
+      const primerCampo = Object.keys(errs)[0];
+      if (tabDeCampo[primerCampo]) setTabActiva(tabDeCampo[primerCampo]);
+      mostrarNotificacion('Revisa los campos marcados en rojo','error');
       return;
     }
-    if (formData.descripcion.length > 500) {
-      mostrarNotificacion('La descripción no puede superar 500 caracteres', 'error');
-      return;
-    }
-    if (formData.observaciones.length > 1000) {
-      mostrarNotificacion('Las observaciones no pueden superar 1000 caracteres', 'error');
-      return;
-    }
-    const fechaSeleccionada = new Date(formData.fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    if (fechaSeleccionada > hoy) {
-      mostrarNotificacion('La fecha no puede ser futura', 'error');
-      return;
-    }
-
+    setErroresCampos({});
     try {
-      const user = auth.currentUser;
-      if (!user) { mostrarNotificacion('No estás autenticado.', 'error'); return; }
-      const token = await user.getIdToken();
-
-      const formDataToSend = new FormData();
-      formDataToSend.append('tipo_donacion', formData.tipo_donacion);
-      formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
-      formDataToSend.append('descripcion', formData.descripcion || '');
-      formDataToSend.append('observaciones', formData.observaciones || '');
-      formDataToSend.append('id_almacen', formData.id_almacen);
-      formDataToSend.append('fecha', new Date().toISOString());
-      if (formData.imagen) formDataToSend.append('imagen', formData.imagen);
-
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        body: formDataToSend,
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      const responseData = await response.json();
-      if (!response.ok) throw new Error(responseData.message || `Error ${response.status}`);
-
-      setHasUnsavedChanges(false); // ← limpiar antes de cerrar para no disparar confirmación
-      mostrarNotificacion('¡Donación registrada exitosamente!', 'success');
-      closeModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al guardar la donación', 'error');
-    }
+      const token = await getToken();
+      const res   = await fetch(API_URL, { method:'POST', body:buildFd(formData), headers:{Authorization:`Bearer ${token}`} });
+      const data  = await res.json();
+      if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
+      setHasUnsavedChanges(false);
+      mostrarNotificacion('¡Donación registrada exitosamente!','success');
+      closeModals(); await cargarDonaciones();
+    } catch (err) { mostrarNotificacion(err.message||'Error al guardar','error'); }
   };
 
-  // ─── Guardar edición ──────────────────────────────────────────────────────
   const handleSubmitEditar = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
-
     if (!donacionSeleccionada) return;
-
-    if (!formData.tipo_donacion || !formData.cantidad_donacion || !formData.id_almacen ||
-      !formData.descripcion.trim() || !formData.observaciones.trim()) {
-      mostrarNotificacion('Por favor completa todos los campos requeridos', 'error');
+    if (donacionSeleccionada.estado === 'Anulada') { mostrarNotificacion('No se puede editar una donación anulada','error'); return; }
+    setIntentoGuardar(true);
+    const errs = validarCampos(formData);
+    if (Object.keys(errs).length > 0) {
+      setErroresCampos(errs);
+      const primerCampo = Object.keys(errs)[0];
+      if (tabDeCampo[primerCampo]) setTabActiva(tabDeCampo[primerCampo]);
+      mostrarNotificacion('Revisa los campos marcados en rojo','error');
       return;
     }
-    if (formData.descripcion.length > 500) {
-      mostrarNotificacion('La descripción no puede superar 500 caracteres', 'error');
-      return;
-    }
-    if (formData.observaciones.length > 1000) {
-      mostrarNotificacion('Las observaciones no pueden superar 1000 caracteres', 'error');
-      return;
-    }
-    const fechaSeleccionada = new Date(formData.fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    if (fechaSeleccionada > hoy) {
-      mostrarNotificacion('La fecha no puede ser futura', 'error');
-      return;
-    }
-
+    setErroresCampos({});
     try {
-      const user = auth.currentUser;
-      if (!user) { mostrarNotificacion('No estás autenticado.', 'error'); return; }
-      const token = await user.getIdToken();
-
-      const formDataToSend = new FormData();
-      formDataToSend.append('tipo_donacion', formData.tipo_donacion);
-      formDataToSend.append('cantidad_donacion', formData.cantidad_donacion);
-      formDataToSend.append('descripcion', formData.descripcion || '');
-      formDataToSend.append('observaciones', formData.observaciones || '');
-      formDataToSend.append('id_almacen', formData.id_almacen);
-      formDataToSend.append('fecha', formData.fecha || new Date().toISOString());
-      if (formData.imagen) formDataToSend.append('imagen', formData.imagen);
-
-      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
-        method: 'PUT',
-        body: formDataToSend,
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al actualizar donación');
-      }
-
-      setHasUnsavedChanges(false); // ← limpiar antes de cerrar
-      mostrarNotificacion('¡Donación actualizada exitosamente!', 'success');
-      closeModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al actualizar la donación', 'error');
-    }
+      const token = await getToken();
+      const res   = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, { method:'PUT', body:buildFd(formData), headers:{Authorization:`Bearer ${token}`} });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      setHasUnsavedChanges(false);
+      mostrarNotificacion('¡Donación actualizada exitosamente!','success');
+      closeModals(); await cargarDonaciones();
+    } catch (err) { mostrarNotificacion(err.message||'Error al actualizar','error'); }
   };
 
-  // ─── Eliminar ─────────────────────────────────────────────────────────────
-  const prepararEliminacionDonacion = () => {
-    if (!donacionSeleccionada) return;
+  const prepararEliminacion = (don = null) => {
+    if (don) setDonEliminarDirecto(don);
     setShowConfirm(true);
   };
 
-  const confirmarEliminacionDonacion = async () => {
+  const confirmarEliminacion = async () => {
     setShowConfirm(false);
-    if (!donacionSeleccionada) return;
-
+    const target = donEliminarDirecto || donacionSeleccionada;
+    if (!target) return;
     try {
-      const user = auth.currentUser;
-      if (!user) { mostrarNotificacion('No estás autenticado.', 'error'); return; }
-      const token = await user.getIdToken();
-
-      const response = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al eliminar donación');
-      }
-
+      const token = await getToken();
+      const res   = await fetch(`${API_URL}/${target.id_donacion}`, { method:'DELETE', headers:{Authorization:`Bearer ${token}`} });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setHasUnsavedChanges(false);
-      mostrarNotificacion('Donación eliminada exitosamente', 'success');
-      closeModals();
-      await cargarDonaciones();
-    } catch (error) {
-      console.error('Error:', error);
-      mostrarNotificacion(error.message || 'Error al eliminar la donación', 'error');
-    }
+      mostrarNotificacion('Donación eliminada exitosamente','success');
+      setDonEliminarDirecto(null); closeModals(); await cargarDonaciones();
+    } catch (err) { mostrarNotificacion(err.message||'Error al eliminar','error'); }
   };
 
-  const getIconoTipo = (tipo_donacion) => {
-    const iconos = {
-      'Alimentos': <Apple size={20} />,
-      'Vestimenta': <Shirt size={20} />,
-      'Medicina': <Pill size={20} />,
-      'Enseres': <Armchair size={20} />,
-      'Bebidas': <Wine size={20} />,
-      'Útiles escolares': <Book size={20} />,
-      'Productos de higiene': <Droplet size={20} />,
-      'Otro': <Package size={20} />
-    };
-    return iconos[tipo_donacion] || <Package size={20} />;
+  const prepararAnulacion = () => { if (donacionSeleccionada) setShowConfirmAnular(true); };
+
+  const confirmarAnulacion = async () => {
+    setShowConfirmAnular(false);
+    if (!donacionSeleccionada) return;
+    try {
+      const token = await getToken();
+      const fd = new FormData();
+      Object.entries({
+        tipo_donacion: donacionSeleccionada.tipo_donacion,
+        cantidad_donacion: donacionSeleccionada.cantidad_donacion,
+        precio_unitario: donacionSeleccionada.precio_unitario || 0,
+        valor_total: donacionSeleccionada.valor_total || 0,
+        descripcion: donacionSeleccionada.descripcion || '',
+        observaciones: donacionSeleccionada.observaciones || '',
+        id_almacen: donacionSeleccionada.id_almacen,
+        fecha: donacionSeleccionada.fecha || new Date().toISOString(),
+        estado: 'Anulada',
+      }).forEach(([k,v]) => fd.append(k,v));
+      const res = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, { method:'PUT', body:fd, headers:{Authorization:`Bearer ${token}`} });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      mostrarNotificacion('Donación anulada. El registro se conserva.','success');
+      closeModals(); await cargarDonaciones();
+    } catch (err) { mostrarNotificacion(err.message||'Error al anular','error'); }
   };
 
-  const getColorAlmacen = (id_almacen) => {
-    const colores = { 1: '#FF6B6B', 2: '#4ECDC4', 12: '#45B7D1', 23: '#FFA07A', 40: '#98D8C8' };
-    return colores[id_almacen] || '#95A5A6';
-  };
+  // ── Helpers visuales ───────────────────────────────────────────────────────
+  const getIconoTipo = (tipo) => ({
+    'Alimentos':<Apple size={18}/>, 'Vestimenta':<Shirt size={18}/>, 'Medicina':<Pill size={18}/>,
+    'Enseres':<Armchair size={18}/>, 'Bebidas':<Wine size={18}/>, 'Útiles escolares':<Book size={18}/>,
+    'Productos de higiene':<Droplet size={18}/>, 'Instrumentos musicales':<Music size={18}/>,
+    'Accesorios musicales':<Music2 size={18}/>, 'Material Audiovisual':<Video size={18}/>,
+    'Material didactico':<BookOpen size={18}/>, 'Otro':<Package size={18}/>,
+  }[tipo] || <Package size={18}/>);
 
-  const getNombreAlmacen = (id_almacen) => {
-    const nombres = { 1: 'Almacén 1', 2: 'Almacén 2', 3: 'Almacén 3', 4: 'Almacén 4', 5: 'Almacén 5' };
-    return nombres[id_almacen] || `Almacén ${id_almacen}`;
-  };
+  const getNombreAlmacen = (id) => ({1:'Almacén 1',2:'Almacén 2',3:'Almacén 3',4:'Almacén 4',5:'Almacén 5'}[id]||`Almacén ${id}`);
+  const getColorAlmacen  = (id) => ({1:'#e74c3c',2:'#27ae60',3:'#2980b9',4:'#f39c12',5:'#8e44ad'}[id]||'#95a5a6');
 
-  const donacionesFiltradas = Array.isArray(donaciones) ? donaciones.filter(donacion => {
-    const searchLower = busqueda.toLowerCase();
-    return (
-      donacion.tipo_donacion?.toLowerCase().includes(searchLower) ||
-      donacion.descripcion?.toLowerCase().includes(searchLower) ||
-      getNombreAlmacen(donacion.id_almacen).toLowerCase().includes(searchLower)
-    );
-  }) : [];
+  // ── Filtrado ───────────────────────────────────────────────────────────────
+  const donacionesFiltradas = donaciones.filter(d => {
+    const q      = busqueda.toLowerCase();
+    const matchQ = !q || d.tipo_donacion?.toLowerCase().includes(q) || d.descripcion?.toLowerCase().includes(q) || getNombreAlmacen(d.id_almacen).toLowerCase().includes(q);
+    const matchE = filtroEstado === 'Todos' || d.estado === filtroEstado;
+    const fech   = d.fecha ? new Date(d.fecha) : null;
+    const matchD = !fechaDesde || (fech && fech >= new Date(fechaDesde));
+    const matchH = !fechaHasta || (fech && fech <= new Date(fechaHasta + 'T23:59:59'));
+    return matchQ && matchE && matchD && matchH;
+  });
 
-  // ─── Campos del formulario (reutilizables) ────────────────────────────────
-  const renderCamposFormulario = () => (
-    <div className="form-grid">
-      <div className="form-group">
-        <label>Tipo de Donación <span>*</span></label>
-        <select name="tipo_donacion" value={formData.tipo_donacion} onChange={handleInputChange} required>
-          <option value="">Seleccionar tipo</option>
-          <option value="Alimentos">Alimentos</option>
-          <option value="Instrumentos musicales">Instrumentos Musicales</option>
-          <option value="Medicina">Medicina</option>
-          <option value="Enseres">Enseres</option>
-          <option value="Bebidas">Bebidas</option>
-          <option value="Vestimenta">Vestimenta</option>
-          <option value="Accesorios musicales">Accesorios Musicales</option>
-          <option value="Útiles escolares">Útiles Escolares</option>
-          <option value="Material Audiovisual">Material Audiovisual</option>
-          <option value="Material didactico">Material Didáctico</option>
-          <option value="Productos de higiene">Productos de Higiene</option>
-          <option value="Otro">Otro</option>
-        </select>
+  const hayFiltro = !!(fechaDesde || fechaHasta || filtroEstado !== 'Todos' || busqueda);
+  const stats = getHeaderStats(donacionesFiltradas, hayFiltro);
+  const limpiarFechas = () => { setFechaDesde(''); setFechaHasta(''); setPaginaActual(1); };
+
+  const valorFiltrados = donacionesFiltradas.filter(d=>d.estado!=='Anulada').reduce((s,d)=>s+valorDonacion(d),0);
+
+  const totalPaginas = Math.max(1, Math.ceil(donacionesFiltradas.length / POR_PAGINA));
+  const paginaSegura = Math.min(paginaActual, totalPaginas);
+  const paginados    = donacionesFiltradas.slice((paginaSegura-1)*POR_PAGINA, paginaSegura*POR_PAGINA);
+
+  // ── Helper: clase CSS de campo con error ─────────────────────────────────
+  const clsField = (campo) => erroresCampos[campo] ? ' dn-field-error' : '';
+
+  // ── Tabs formulario ────────────────────────────────────────────────────────
+  const renderFormTabs = () => (
+    <>
+      <div className="dn-modal-tabs">
+        {[
+          {key:'datos',     label:'Datos',      ico:<FileText size={14}/>  },
+          {key:'imagen',    label:'Fotografía', ico:<ImagePlus size={14}/> },
+          {key:'docs',      label:'Documentos', ico:<Paperclip size={14}/> },
+          {key:'auditoria', label:'Auditoría',  ico:<Clock size={14}/>     },
+        ].map(t => (
+          <button key={t.key} type="button"
+            className={`dn-tab-btn${tabActiva===t.key?' active':''}${tabTieneError(t.key)?' has-error':''}`}
+            onClick={()=>setTabActiva(t.key)}>
+            {t.ico} {t.label}
+            {tabTieneError(t.key) && <span className="dn-tab-error-dot" aria-label="campos requeridos"/>}
+          </button>
+        ))}
       </div>
 
-      <div className="form-group">
-        <label>Cantidad <span>*</span></label>
-        <input
-          type="number"
-          name="cantidad_donacion"
-          value={formData.cantidad_donacion}
-          onChange={handleInputChange}
-          min="1"
-          placeholder="Ingrese la cantidad"
-          required
-        />
-      </div>
-
-      <div className="form-group form-grid-full">
-        <label>Descripción <span>*</span></label>
-        <textarea
-          name="descripcion"
-          value={formData.descripcion}
-          onChange={handleInputChange}
-          placeholder="Describe la donación..."
-          maxLength="500"
-          required
-        />
-      </div>
-
-      <div className="form-group form-grid-full">
-        <label>Observaciones <span>*</span></label>
-        <textarea
-          name="observaciones"
-          value={formData.observaciones}
-          onChange={handleInputChange}
-          placeholder="Notas adicionales..."
-          maxLength="1000"
-          required
-        />
-      </div>
-
-      <div className="form-group">
-        <label>Almacén <span>*</span></label>
-        <select name="id_almacen" value={formData.id_almacen} onChange={handleInputChange} required>
-          <option value="">Seleccionar almacén</option>
-          <option value="1">Almacén 1</option>
-          <option value="2">Almacén 2</option>
-          <option value="3">Almacén 3</option>
-          <option value="4">Almacén 4</option>
-          <option value="5">Almacén 5</option>
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label>Fecha <span>*</span></label>
-        <input
-          type="date"
-          name="fecha"
-          value={formData.fecha}
-          onChange={handleInputChange}
-          required
-        />
-      </div>
-
-      <div className="form-group form-grid-full">
-        <label><ImagePlus size={16} /> Foto de la Donación</label>
-        <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
-          {formData.foto_preview ? (
-            <div>
-              <img src={formData.foto_preview} alt="Preview" className="foto-preview" />
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg"
-                  onChange={handleFotoChange}
-                  style={{ display: 'none' }}
-                  id="foto-upload-replace"
-                />
-                <label htmlFor="foto-upload-replace" className="btn-upload-label">
-                  <Upload size={16} /> Cambiar foto
-                </label>
-                <button
-                  type="button"
-                  onClick={eliminarFoto}
-                  className="btn btn-danger"
-                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
-                >
-                  Eliminar foto
-                </button>
+      {/* Datos */}
+      {tabActiva==='datos' && (
+        <div className="dn-tab-content">
+          <div className="dn-form-section-title">Identificación de la Donación</div>
+          <div className="dn-form-grid">
+            <div className={`dn-form-group${clsField('tipo_donacion')}`}>
+              <label>Tipo de Donación <span className="req">*</span></label>
+              <select name="tipo_donacion" value={formData.tipo_donacion} onChange={handleInputChange} required
+                className={erroresCampos.tipo_donacion ? 'dn-input-err' : ''}>
+                <option value="">Seleccionar tipo</option>
+                {['Alimentos','Instrumentos musicales','Accesorios musicales','Vestimenta','Medicina',
+                  'Enseres','Bebidas','Útiles escolares','Productos de higiene','Material Audiovisual',
+                  'Material didactico','Otro'].map(t=><option key={t} value={t}>{t}</option>)}
+              </select>
+              {erroresCampos.tipo_donacion && <span className="dn-err-msg">{erroresCampos.tipo_donacion}</span>}
+            </div>
+            <div className="dn-form-group">
+              <label>Estado <span className="req">*</span></label>
+              <select name="estado" value={formData.estado} onChange={handleInputChange} required>
+                {ESTADOS.map(s=><option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div className={`dn-form-group${clsField('cantidad_donacion')}`}>
+              <label>Cantidad <span className="req">*</span></label>
+              <input type="number" name="cantidad_donacion" value={formData.cantidad_donacion}
+                onChange={handleInputChange} min="1" placeholder="Ej. 100" required
+                className={erroresCampos.cantidad_donacion ? 'dn-input-err' : ''}/>
+              {erroresCampos.cantidad_donacion && <span className="dn-err-msg">{erroresCampos.cantidad_donacion}</span>}
+            </div>
+            <div className="dn-form-group">
+              <label>Precio Unitario (L.) <span className="req">*</span></label>
+              <input type="number" name="precio_unitario" value={formData.precio_unitario}
+                onChange={handleInputChange} min="0" step="0.01" placeholder="0.00"/>
+            </div>
+            {/* Valor calculado */}
+            <div className="dn-form-group dn-full">
+              <div className="dn-valor-total-box">
+                <span className="dn-vt-label"><DollarSign size={14}/> Valor Total Calculado</span>
+                <span className="dn-vt-value">L. {fmt(valorCalculado)}</span>
+                <span className="dn-vt-hint">{fmtInt(formData.cantidad_donacion||0)} unid. × L. {fmt(formData.precio_unitario||0)}</span>
               </div>
             </div>
-          ) : (
-            <div>
-              <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
-              <p style={{ color: '#666', marginBottom: '1rem' }}>
-                Arrastra una imagen o haz clic para seleccionar
-              </p>
-              <input
-                type="file"
-                accept=".jpg,.jpeg"
-                onChange={handleFotoChange}
-                style={{ display: 'none' }}
-                id="foto-upload-nueva"
-              />
-              <label htmlFor="foto-upload-nueva" className="btn-upload-label">
-                <ImagePlus size={18} /> Seleccionar imagen
-              </label>
-              <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                Formatos: JPG, JPEG
-              </small>
+            <div className={`dn-form-group${clsField('id_almacen')}`}>
+              <label>Almacén <span className="req">*</span></label>
+              <select name="id_almacen" value={formData.id_almacen} onChange={handleInputChange} required
+                className={erroresCampos.id_almacen ? 'dn-input-err' : ''}>
+                <option value="">Seleccionar almacén</option>
+                {[1,2,3,4,5].map(n=><option key={n} value={n}>Almacén {n}</option>)}
+              </select>
+              {erroresCampos.id_almacen && <span className="dn-err-msg">{erroresCampos.id_almacen}</span>}
             </div>
-          )}
+            <div className={`dn-form-group${clsField('fecha')}`}>
+              <label>Fecha de Donación <span className="req">*</span></label>
+              <input type="date" name="fecha" value={formData.fecha}
+                onChange={handleInputChange} max={new Date().toISOString().split('T')[0]} required
+                className={erroresCampos.fecha ? 'dn-input-err' : ''}/>
+              {erroresCampos.fecha
+                ? <span className="dn-err-msg">{erroresCampos.fecha}</span>
+                : <small className="dn-hint">Fecha real de recepción</small>}
+            </div>
+            <div className="dn-form-group dn-full">
+              <label>Descripción</label>
+              <textarea name="descripcion" value={formData.descripcion} onChange={handleInputChange}
+                placeholder="Describe la donación..." maxLength="1000" rows={3}/>
+              <small className="dn-char">{formData.descripcion.length}/1000</small>
+            </div>
+            <div className="dn-form-group dn-full">
+              <label>Observaciones</label>
+              <textarea name="observaciones" value={formData.observaciones} onChange={handleInputChange}
+                placeholder="Notas adicionales..." maxLength="500" rows={2}/>
+              <small className="dn-char">{formData.observaciones.length}/500</small>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+
+      {/* Imagen */}
+      {tabActiva==='imagen' && (
+        <div className="dn-tab-content">
+          <div className="dn-form-section-title">Fotografía de la Donación</div>
+          <div className="dn-upload-area">
+            {formData.foto_preview ? (
+              <div className="dn-preview-wrap">
+                <img src={formData.foto_preview} alt="Preview" className="dn-img-preview"/>
+                <div className="dn-preview-actions">
+                  <input type="file" accept="image/*" onChange={handleFotoChange} style={{display:'none'}} id="foto-replace"/>
+                  <label htmlFor="foto-replace" className="dn-btn-secondary"><Upload size={15}/> Cambiar foto</label>
+                  <button type="button" className="dn-btn-danger-sm" onClick={eliminarFoto}><X size={15}/> Eliminar</button>
+                </div>
+              </div>
+            ) : (
+              <div className="dn-upload-empty">
+                <Upload size={42} color="#9b59b6" style={{marginBottom:'0.75rem'}}/>
+                <p>Arrastra una imagen o haz clic para seleccionar</p>
+                <input type="file" accept="image/*" onChange={handleFotoChange} style={{display:'none'}} id="foto-upload"/>
+                <label htmlFor="foto-upload" className="dn-btn-primary-sm"><ImagePlus size={16}/> Seleccionar imagen</label>
+                <small>JPG, PNG, WEBP — máx. 5 MB</small>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Documentos */}
+      {tabActiva==='docs' && (
+        <div className="dn-tab-content">
+          <div className="dn-form-section-title">Documentos Adjuntos (Google Drive)</div>
+          <p className="dn-docs-hint">Adjunta el acta de recepción, la firma del donante u otro respaldo oficial.</p>
+          <div className="dn-upload-area">
+            {formData.documento_nombre ? (
+              <div className="dn-doc-preview">
+                <FileCheck size={36} color="#27ae60"/>
+                <div className="dn-doc-info">
+                  <strong>{formData.documento_nombre}</strong>
+                  {formData.documento && <span>{(formData.documento.size/1024).toFixed(1)} KB</span>}
+                </div>
+                <div style={{display:'flex',gap:'0.5rem',marginTop:'0.75rem'}}>
+                  {donacionSeleccionada?.documento_url && (
+                    <a href={donacionSeleccionada.documento_url} target="_blank" rel="noreferrer" className="dn-btn-secondary">Ver en Drive</a>
+                  )}
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={handleDocumentoChange} style={{display:'none'}} id="doc-replace"/>
+                  <label htmlFor="doc-replace" className="dn-btn-secondary"><Upload size={14}/> Reemplazar</label>
+                </div>
+              </div>
+            ) : (
+              <div className="dn-upload-empty">
+                <Paperclip size={42} color="#9b59b6" style={{marginBottom:'0.75rem'}}/>
+                <p>Adjunta el acta de recepción o firma del donante</p>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={handleDocumentoChange} style={{display:'none'}} id="doc-upload"/>
+                <label htmlFor="doc-upload" className="dn-btn-primary-sm"><Paperclip size={16}/> Seleccionar documento</label>
+                <small>PDF, JPG, PNG, DOC, DOCX — máx. 10 MB</small>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Auditoría */}
+      {tabActiva==='auditoria' && donacionSeleccionada && (
+        <div className="dn-tab-content">
+          <div className="dn-form-section-title">Auditoría del Bien</div>
+          <div className="dn-audit-card">
+            <div className="dn-audit-row">
+              <UserCheck size={16} className="dn-audit-ico"/>
+              <div>
+                <div className="dn-audit-label">Creación</div>
+                <div className="dn-audit-val">
+                  Creado por: <strong>{donacionSeleccionada.creado_por_email||donacionSeleccionada.creado_por||'N/D'}</strong>
+                  &nbsp;·&nbsp;
+                  Fecha registro: <strong>{donacionSeleccionada.fecha_ingreso ? new Date(donacionSeleccionada.fecha_ingreso).toLocaleString('es-HN') : donacionSeleccionada.createdAt ? new Date(donacionSeleccionada.createdAt).toLocaleString('es-HN') : 'N/D'}</strong>
+                </div>
+              </div>
+            </div>
+            {donacionSeleccionada.updatedAt && (
+              <div className="dn-audit-row">
+                <Clock size={16} className="dn-audit-ico"/>
+                <div>
+                  <div className="dn-audit-label">Última Actualización</div>
+                  <div className="dn-audit-val">
+                    Por: <strong>{donacionSeleccionada.actualizado_por_email||donacionSeleccionada.actualizado_por||'N/D'}</strong>
+                    &nbsp;·&nbsp;
+                    <strong>{new Date(donacionSeleccionada.updatedAt).toLocaleString('es-HN')}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="dn-audit-ids">
+              <small>ID: <strong>#{donacionSeleccionada.id_donacion}</strong></small>
+              <small>Estado: <strong>{donacionSeleccionada.estado||'N/D'}</strong></small>
+              {donacionSeleccionada.precio_unitario && <small>Precio unit.: <strong>L. {fmt(donacionSeleccionada.precio_unitario)}</strong></small>}
+              {donacionSeleccionada.valor_total     && <small>Valor total: <strong>L. {fmt(donacionSeleccionada.valor_total)}</strong></small>}
+            </div>
+          </div>
+        </div>
+      )}
+      {tabActiva==='auditoria' && !donacionSeleccionada && (
+        <div className="dn-tab-content">
+          <p style={{color:'#999',textAlign:'center',padding:'2rem'}}>La auditoría estará disponible luego de guardar la donación.</p>
+        </div>
+      )}
+    </>
   );
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="donacion-container">
-        {/* ENCABEZADO */}
-        <motion.div
-          className="donacion-header"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-        >
-          <motion.div className="header-gradient" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.6 }}>
-            <div className="header-content">
-              <motion.h2 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }}>
-                <motion.div initial={{ rotate: -180, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}>
-                  <Heart size={36} fill="white" color="white" />
-                </motion.div>
+      <div className="dn-root">
+
+        {/* ══ HEADER ══ */}
+        <motion.div className="mm-header"
+          initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}}
+          transition={{duration:0.5,type:'spring',stiffness:120}}>
+          <div className="mm-hi">
+            <div className="mm-ht">
+              <motion.div className="mm-htitle"
+                initial={{opacity:0,x:-30}} animate={{opacity:1,x:0}} transition={{delay:0.15}}>
+                <motion.span initial={{rotate:-180,scale:0}} animate={{rotate:0,scale:1}}
+                  transition={{type:'spring',stiffness:200,delay:0.2}}>
+                  <Heart size={34} color="white" fill="white"/>
+                </motion.span>
                 Sistema de Donaciones
-                <motion.div animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }} style={{ marginLeft: 'auto' }}>
-                  <Gift size={32} color="white" />
+              </motion.div>
+            </div>
+            <motion.p className="mm-sub" initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.3}}>
+              Gestiona y controla todas las donaciones recibidas con eficiencia
+            </motion.p>
+            <motion.div className="mm-stats" initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.35}}>
+              {stats.map((s,i)=>(
+                <motion.div key={i} className="mm-stat"
+                  whileHover={{scale:1.04,y:-2}} transition={{type:'spring',stiffness:300}}>
+                  <div className="mm-stat-ico">{s.ico}</div>
+                  <div>
+                    <div className="mm-stat-val">{s.val}</div>
+                    <div className="mm-stat-lbl">{s.lbl}</div>
+                  </div>
                 </motion.div>
-              </motion.h2>
-
-              <motion.p initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.5 }}>
-                Gestiona y controla todas las donaciones recibidas con amor y eficiencia
-              </motion.p>
-
-              <motion.div className="header-stats" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
-                {[
-                  { icon: <Package size={20} color="white" />, value: totalDonaciones, label: 'Total Donaciones' },
-                  { icon: <Users size={20} color="white" />, value: totalCantidad, label: 'Cantidad Total' },
-                  { icon: <Hash size={20} color="white" />, value: tiposUnicos, label: 'Tipos Diferentes' },
-                ].map((stat, i) => (
-                  <motion.div key={i} className="stat-item" whileHover={{ scale: 1.05, y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
-                    <div className="stat-icon">{stat.icon}</div>
-                    <div className="stat-text">
-                      <div className="stat-value" style={{ color: "white" }}>{stat.value}</div>
-                      <div className="stat-label" style={{ color: "white" }}>{stat.label}</div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <motion.div className="floating-icons" initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.5 }}>
-                {[
-                  { icon: <Shirt size={20} color="white" />, duration: 4 },
-                  { icon: <Apple size={20} color="white" />, duration: 3.5, delay: 0.5 },
-                  { icon: <Book size={20} color="white" />, duration: 4.2, delay: 1 },
-                ].map((item, i) => (
-                  <motion.div key={i} className="floating-icon"
-                    animate={{ y: [0, -10, 0], rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: item.duration, repeat: Infinity, ease: "easeInOut", delay: item.delay || 0 }}>
-                    {item.icon}
-                  </motion.div>
-                ))}
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* BARRA DE BÚSQUEDA */}
-          <motion.div className="donacion-busqueda-bar" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.5 }} style={{ marginTop: '2rem' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }}>
-                <Search size={18} />
-              </div>
-              <input
-                type="text"
-                className="donacion-busqueda"
-                placeholder="Buscar por tipo, descripción o almacén..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-              />
-            </div>
-            <motion.button className="btn-ayuda" onClick={() => setMostrarAyuda(true)} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}>
-              <HelpCircle size={18} /> Ayuda
-            </motion.button>
-            <motion.button className="btn-ayuda" onClick={handleNuevaDonacion} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}>
-              <Plus size={18} /> Nueva Donación
-            </motion.button>
-          </motion.div>
+              ))}
+            </motion.div>
+          </div>
         </motion.div>
 
-        {/* TABLA */}
-        <div className="donacion-categorias-container">
+        {/* ══ BARRA ACCIONES ══ */}
+        <motion.div className="dn-action-bar"
+          initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.45}}>
+
+          <div className="dn-search-wrap">
+            <Search size={16} className="dn-search-ico"/>
+            <input type="text" className="dn-search"
+              placeholder="Buscar por tipo, descripción o almacén..."
+              value={busqueda} onChange={e=>{setBusqueda(e.target.value);setPaginaActual(1);}}/>
+          </div>
+
+          <div className="dn-filtros">
+            <span className="dn-filtros-label">ESTADO:</span>
+            {['Todos',...ESTADOS].map(est=>(
+              <button key={est} className={`dn-filtro-btn${filtroEstado===est?' active':''}`}
+                onClick={()=>{setFiltroEstado(est);setPaginaActual(1);}}>{ est}</button>
+            ))}
+          </div>
+
+          {/* Rango de fechas */}
+          <div className="dn-fecha-rango">
+            <span className="dn-filtros-label"><Calendar size={12}/> FECHA:</span>
+            <input type="date" className="dn-fecha-input" value={fechaDesde}
+              onChange={e=>setFechaDesde(e.target.value)} title="Desde"/>
+            <span className="dn-fecha-sep">→</span>
+            <input type="date" className="dn-fecha-input" value={fechaHasta}
+              onChange={e=>setFechaHasta(e.target.value)} title="Hasta"/>
+            {(fechaDesde||fechaHasta) && (
+              <button className="dn-fecha-clear" onClick={limpiarFechas} title="Limpiar">
+                <X size={12}/>
+              </button>
+            )}
+          </div>
+
+          <div className="dn-bar-actions">
+            <motion.button className="dn-btn-help" onClick={()=>setMostrarAyuda(true)}
+              whileHover={{scale:1.05}} whileTap={{scale:0.96}}>
+              <HelpCircle size={16}/> Ayuda
+            </motion.button>
+            <motion.button className="dn-btn-new" onClick={handleNuevaDonacion}
+              whileHover={{scale:1.05}} whileTap={{scale:0.96}}>
+              <Plus size={16}/> Nueva Donación
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* ══ TABLA ══ */}
+        <div className="dn-table-wrap">
           {donacionesFiltradas.length === 0 ? (
-            <motion.div className="donacion-categorias-container" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <Package size={60} color="#ccc" style={{ marginBottom: '1rem' }} />
+            <motion.div className="dn-empty" initial={{opacity:0}} animate={{opacity:1}}>
+              <Package size={56} color="#ccc"/>
               <p>No se encontraron donaciones</p>
             </motion.div>
           ) : (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <div className="donacion-categoria-header">
-                <h3 className="donacion-subtitulo">
-                  <Package size={24} />
-                  <span>Todas las Donaciones ({donacionesFiltradas.length})</span>
-                </h3>
+            <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.1}}>
+              {/* Tarjeta contenedora igual a Bienes */}
+              <div className="dn-card">
+                {/* Meta */}
+                <div className="dn-card-meta">
+                  Mostrando <strong>{Math.min((paginaActual-1)*POR_PAGINA+1, donacionesFiltradas.length)}–{Math.min(paginaActual*POR_PAGINA, donacionesFiltradas.length)}</strong> de <strong>{donacionesFiltradas.length}</strong> donaciones
+                  {hayFiltro && <span className="dn-meta-badge">filtrado</span>}
+                </div>
+
+                {/* Tabla */}
+                <table className="dn-bienes-table">
+                  <thead>
+                    <tr>
+                      <th className="dn-th-check">
+                        <input type="checkbox"
+                          checked={seleccionados.length === paginados.length && paginados.length > 0}
+                          onChange={e => setSeleccionados(e.target.checked ? paginados.map(d=>d._id||d.id_donacion) : [])}
+                          className="dn-checkbox"/>
+                      </th>
+                      <th>ID ↑</th>
+                      <th>TIPO &amp; DESCRIPCIÓN</th>
+                      <th>ALMACÉN</th>
+                      <th>F. DONACIÓN</th>
+                      <th style={{textAlign:'right'}}>CANTIDAD</th>
+                      <th style={{textAlign:'right'}}>VALOR</th>
+                      <th style={{textAlign:'center'}}>ESTADO</th>
+                      <th style={{textAlign:'center'}}>ACCIONES</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <AnimatePresence>
+                      {paginados.map((don,idx) => {
+                        const est    = estadoConfig[don.estado] || estadoConfig.Recibida;
+                        const valor  = valorDonacion(don);
+                        const selId  = don._id || don.id_donacion;
+                        const selec  = seleccionados.includes(selId);
+                        return (
+                          <motion.tr key={selId}
+                            className={`dn-bienes-tr${don.estado==='Anulada'?' anulada':''}${selec?' selected':''}`}
+                            initial={{opacity:0,x:-12}} animate={{opacity:1,x:0}}
+                            exit={{opacity:0}} transition={{delay:idx*0.02}}
+                            onClick={()=>handleFilaClick(don)}
+                            style={{cursor:'pointer'}}>
+                            <td className="dn-td-check" onClick={e=>e.stopPropagation()}>
+                              <input type="checkbox" className="dn-checkbox"
+                                checked={selec}
+                                onChange={e=>{
+                                  e.stopPropagation();
+                                  setSeleccionados(prev => e.target.checked ? [...prev,selId] : prev.filter(s=>s!==selId));
+                                }}/>
+                            </td>
+                            {/* ID badge igual a BIEN-XXXX-XXXX */}
+                            <td>
+                              <span className="dn-id-badge">DON-{String(don.id_donacion||idx+1).padStart(4,'0')}</span>
+                            </td>
+                            {/* Tipo + descripción */}
+                            <td>
+                              <div className="dn-tipo-cell">
+                                <span className="dn-tipo-ico">{getIconoTipo(don.tipo_donacion)}</span>
+                                <div>
+                                  <div className="dn-tipo-name">{don.tipo_donacion}</div>
+                                  <div className="dn-tipo-desc">{don.descripcion||'Sin descripción'}</div>
+                                </div>
+                              </div>
+                            </td>
+                            {/* Almacén como badge */}
+                            <td>
+                              <span className="dn-badge-almacen" style={{background:getColorAlmacen(don.id_almacen)}}>
+                                {getNombreAlmacen(don.id_almacen)}
+                              </span>
+                            </td>
+                            {/* Fecha */}
+                            <td className="dn-td-fecha">
+                              {don.fecha ? new Date(don.fecha).toLocaleDateString('es-HN') : '—'}
+                            </td>
+                            {/* Cantidad */}
+                            <td style={{textAlign:'right',fontWeight:600,color:'#2d3436'}}>
+                              {fmtInt(don.cantidad_donacion)}
+                            </td>
+                            {/* Valor — verde como en Bienes */}
+                            <td style={{textAlign:'right',fontWeight:700,color:'#27ae60',fontSize:'0.97rem'}}>
+                              L {fmt(valor)}
+                            </td>
+                            {/* Estado badge */}
+                            <td style={{textAlign:'center'}}>
+                              <span className="dn-estado-pill"
+                                style={{color:est.color,background:est.bg,border:`1px solid ${est.color}44`}}>
+                                {est.label}
+                              </span>
+                            </td>
+                            {/* Acciones — iconos SVG sin texto, igual a Bienes */}
+                            <td style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}>
+                              <div className="dn-acciones-cell">
+                                <motion.button className="dn-icon-btn edit" title="Editar"
+                                  onClick={()=>handleFilaClick(don)}
+                                  whileHover={{scale:1.15}} whileTap={{scale:0.92}}>
+                                  {/* ícono lápiz SVG (mismo que en Bienes) */}
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                  </svg>
+                                </motion.button>
+                                <motion.button className="dn-icon-btn delete" title="Eliminar"
+                                  onClick={()=>prepararEliminacion(don)}
+                                  whileHover={{scale:1.15}} whileTap={{scale:0.92}}>
+                                  {/* ícono basura SVG */}
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                    <path d="M10 11v6M14 11v6"/>
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                  </svg>
+                                </motion.button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+
+                {/* Pie: valor total + paginación */}
+                <div className="dn-card-footer">
+                  <div className="dn-footer-valor">
+                    Página <strong>{paginaActual}</strong> de <strong>{totalPaginas}</strong>
+                    &nbsp;·&nbsp;
+                    Valor visible (activas): <strong style={{color:'#6C4FBF'}}>L. {fmt(valorFiltrados)}</strong>
+                  </div>
+
+                  {/* Paginación igual a Bienes */}
+                  <div className="dn-pagination">
+                    <button className="dn-page-btn" onClick={()=>setPaginaActual(1)}        disabled={paginaActual===1}>«</button>
+                    <button className="dn-page-btn" onClick={()=>setPaginaActual(p=>p-1)}   disabled={paginaActual===1}>‹</button>
+                    {Array.from({length:totalPaginas},(_,i)=>i+1)
+                      .filter(p=> p===1 || p===totalPaginas || Math.abs(p-paginaActual)<=1)
+                      .reduce((acc,p,i,arr)=>{
+                        if(i>0 && arr[i-1]!==p-1) acc.push('...');
+                        acc.push(p); return acc;
+                      },[])
+                      .map((p,i)=> p==='...'
+                        ? <span key={`e${i}`} className="dn-page-ellipsis">…</span>
+                        : <button key={p} className={`dn-page-btn${paginaActual===p?' active':''}`} onClick={()=>setPaginaActual(p)}>{p}</button>
+                      )
+                    }
+                    <button className="dn-page-btn" onClick={()=>setPaginaActual(p=>p+1)}       disabled={paginaActual===totalPaginas}>›</button>
+                    <button className="dn-page-btn" onClick={()=>setPaginaActual(totalPaginas)} disabled={paginaActual===totalPaginas}>»</button>
+                  </div>
+                </div>
               </div>
-
-              <motion.div className="tabla-donaciones" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-                <div className="tabla-header-donaciones">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Hash size={14} /> ID</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Package size={14} /> TIPO & DESCRIPCIÓN</div>
-                  <div style={{ display: 'flex', alignItems: 'left', gap: '5px' }}><Warehouse size={14} /> ALMACÉN</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Calendar size={14} /> FECHA</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Hash size={14} /> CANTIDAD</div>
-                  <div style={{ textAlign: 'center' }}><Edit size={14} style={{ display: 'inline' }} /></div>
-                </div>
-
-                <div className="tabla-body-donaciones">
-                  <AnimatePresence>
-                    {donacionesFiltradas.map((donacion, idx) => (
-                      <motion.div
-                        key={donacion._id || donacion.id_donacion}
-                        className="tabla-fila-donaciones"
-                        onClick={() => handleFilaClick(donacion)}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 20 }}
-                        transition={{ delay: idx * 0.02 }}
-                        whileHover={{ scale: 1.01 }}
-                      >
-                        <div style={{ fontWeight: '700', color: '#667eea', fontSize: '0.9rem' }}>
-                          #{donacion.id_donacion || idx + 1}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem' }}>
-                            {getIconoTipo(donacion.tipo_donacion)}
-                            {donacion.tipo_donacion}
-                          </div>
-                          <div style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic' }}>
-                            {donacion.descripcion || 'Sin descripción'}
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
-                          <span className="badge-almacen" style={{ background: getColorAlmacen(donacion.id_almacen), color: 'white', textAlign: "center" }}>
-                            {getNombreAlmacen(donacion.id_almacen)}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '0.9rem', color: '#555', textAlign: "center" }}>
-                          {new Date(donacion.fecha).toLocaleDateString('es-ES')}
-                        </div>
-                        <div className="badge-cantidad">{donacion.cantidad_donacion}</div>
-                        <div style={{ textAlign: 'center' }}>
-                          <motion.div whileHover={{ scale: 1.2, rotate: 15 }} style={{ display: 'inline-block' }}>
-                            <Edit size={18} color="#667eea" />
-                          </motion.div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
             </motion.div>
           )}
         </div>
 
-        {/* MODAL NUEVA DONACIÓN */}
+        {/* ══ MODAL NUEVA ══ */}
         <AnimatePresence>
           {mostrarModal && (
-            <motion.div className="modal-overlay-donaciones" onClick={handleCloseModals} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div
-                className="modal-content-donaciones"
-                style={{ minWidth: '520px', maxWidth: '550px' }}
-                onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.8, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, y: 50 }}
-                transition={{ type: "spring", damping: 20 }}
-              >
-                <h3 className="modal-title"><Plus size={24} /> Nueva Donación</h3>
+            <motion.div className="dn-overlay" onClick={handleCloseModals}
+              initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              <motion.div className="dn-modal" onClick={e=>e.stopPropagation()}
+                initial={{scale:0.85,y:40}} animate={{scale:1,y:0}} exit={{scale:0.85,y:40}}
+                transition={{type:'spring',damping:22}}>
+                <div className="dn-modal-header">
+                  <h3><Plus size={20}/> Nueva Donación</h3>
+                  <button className="dn-modal-close" onClick={handleCloseModals}><X size={18}/></button>
+                </div>
                 <form onSubmit={handleSubmitNueva} noValidate>
-                  {renderCamposFormulario()}
-                  <div className="modal-actions-donaciones">
-                    <motion.button type="button" className="btn-cancelar-donaciones" onClick={handleCloseModals} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <X size={16} /> Cancelar
-                    </motion.button>
-                    <motion.button type="submit" className="btn-guardar-donaciones" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Save size={16} /> Guardar Donación
-                    </motion.button>
+                  {renderFormTabs()}
+                  <div className="dn-modal-footer">
+                    <button type="button" className="dn-btn-cancel" onClick={handleCloseModals}><X size={15}/> Cancelar</button>
+                    <button type="submit" className="dn-btn-save"><Save size={15}/> Guardar Donación</button>
                   </div>
                 </form>
               </motion.div>
@@ -700,42 +856,33 @@ const Donaciones = () => {
           )}
         </AnimatePresence>
 
-        {/* MODAL EDITAR DONACIÓN */}
+        {/* ══ MODAL EDITAR ══ */}
         <AnimatePresence>
           {mostrarModalEditar && donacionSeleccionada && (
-            <motion.div className="modal-overlay-donaciones" onClick={handleCloseModals} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <motion.div
-                className="modal-content-donaciones"
-                style={{ minWidth: '520px', maxWidth: '550px' }}
-                onClick={(e) => e.stopPropagation()}
-                initial={{ scale: 0.8, y: 50 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, y: 50 }}
-                transition={{ type: "spring", damping: 20 }}
-              >
-                <h3 className="modal-title"><Edit size={24} /> Editar Donación</h3>
-
-                {/* Indicador de cambios sin guardar */}
-                {hasUnsavedChanges && (
-                  <div style={{
-                    background: '#fff8e1', border: '1px solid #ffc107', borderRadius: '8px',
-                    padding: '0.6rem 1rem', marginBottom: '1rem', fontSize: '0.9rem',
-                    color: '#856404', display: 'flex', alignItems: 'center', gap: '0.5rem'
-                  }}>
-                    ⚠️ Tienes cambios sin guardar
-                  </div>
+            <motion.div className="dn-overlay" onClick={handleCloseModals}
+              initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              <motion.div className="dn-modal" onClick={e=>e.stopPropagation()}
+                initial={{scale:0.85,y:40}} animate={{scale:1,y:0}} exit={{scale:0.85,y:40}}
+                transition={{type:'spring',damping:22}}>
+                <div className="dn-modal-header">
+                  <h3><Edit size={20}/> Editar Donación</h3>
+                  <button className="dn-modal-close" onClick={handleCloseModals}><X size={18}/></button>
+                </div>
+                {hasUnsavedChanges && <div className="dn-unsaved-banner">⚠️ Tienes cambios sin guardar</div>}
+                {donacionSeleccionada.estado==='Anulada' && (
+                  <div className="dn-anulada-banner"><Ban size={15}/> Esta donación está anulada y no puede editarse.</div>
                 )}
-
                 <form onSubmit={handleSubmitEditar} noValidate>
-                  {renderCamposFormulario()}
-                  <div className="modal-actions-donaciones">
-                    <motion.button type="button" className="btn btn-danger" onClick={prepararEliminacionDonacion} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      Eliminar
-                    </motion.button>
-                    <motion.button type="button" className="btn-cancelar-donaciones" onClick={handleCloseModals} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      Cancelar
-                    </motion.button>
-                    <motion.button type="submit" className="btn-guardar-donaciones" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      Guardar Cambios
-                    </motion.button>
+                  {renderFormTabs()}
+                  <div className="dn-modal-footer">
+                    {donacionSeleccionada.estado!=='Anulada' && (
+                      <button type="button" className="dn-btn-anular" onClick={prepararAnulacion}><Ban size={15}/> Anular</button>
+                    )}
+                    <button type="button" className="dn-btn-delete" onClick={()=>prepararEliminacion()}><Trash2 size={15}/> Eliminar</button>
+                    <button type="button" className="dn-btn-cancel" onClick={handleCloseModals}>Cancelar</button>
+                    {donacionSeleccionada.estado!=='Anulada' && (
+                      <button type="submit" className="dn-btn-save"><Save size={15}/> Guardar Cambios</button>
+                    )}
                   </div>
                 </form>
               </motion.div>
@@ -743,88 +890,84 @@ const Donaciones = () => {
           )}
         </AnimatePresence>
 
-        {/* ─── CONFIRM DIALOGS FUERA DE LOS MODALES ─────────────────────────── */}
-        {/* Confirmar eliminación — muestra tipo y cantidad */}
-        {showConfirm && donacionSeleccionada && (
+        {/* ══ CONFIRMS ══ */}
+        {showConfirm && (donEliminarDirecto||donacionSeleccionada) && (
           <ConfirmDialog
-            message={`¿Seguro que deseas eliminar la donación de "${donacionSeleccionada.tipo_donacion}" con cantidad ${donacionSeleccionada.cantidad_donacion}?`}
-            onConfirm={confirmarEliminacionDonacion}
-            onCancel={() => setShowConfirm(false)}
+            message={`¿Seguro que deseas eliminar la donación de "${(donEliminarDirecto||donacionSeleccionada).tipo_donacion}" (Cant: ${(donEliminarDirecto||donacionSeleccionada).cantidad_donacion})?`}
+            onConfirm={confirmarEliminacion}
+            onCancel={()=>{setShowConfirm(false);setDonEliminarDirecto(null);}}
             visible={showConfirm}
           />
         )}
-
-        {/* Confirmar cierre con cambios sin guardar */}
+        {showConfirmAnular && donacionSeleccionada && (
+          <ConfirmDialog
+            message={`¿Deseas anular la donación #${donacionSeleccionada.id_donacion}? El registro se conservará.`}
+            onConfirm={confirmarAnulacion}
+            onCancel={()=>setShowConfirmAnular(false)}
+            visible={showConfirmAnular}
+          />
+        )}
         {showConfirmClose && (
           <ConfirmDialog
-            message="Tienes cambios sin guardar. ¿Seguro que deseas cerrar sin guardar?"
+            message="Tienes cambios sin guardar. ¿Cerrar sin guardar?"
             onConfirm={closeModals}
-            onCancel={() => setShowConfirmClose(false)}
+            onCancel={()=>setShowConfirmClose(false)}
             visible={showConfirmClose}
           />
         )}
 
-        {/* NOTIFICACIONES */}
+        {/* ══ NOTIFICACIONES ══ */}
         <AnimatePresence>
           {notification && (
-            <motion.div
-              className={`notification ${notification.type}`}
-              initial={{ opacity: 0, y: -50, x: 100 }}
-              animate={{ opacity: 1, y: 0, x: 0 }}
-              exit={{ opacity: 0, y: -50, x: 100 }}
-              transition={{ type: "spring", damping: 20 }}
-            >
-              {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertCircle size={24} />}
+            <motion.div className={`dn-notification ${notification.type}`}
+              initial={{opacity:0,y:-50,x:100}} animate={{opacity:1,y:0,x:0}}
+              exit={{opacity:0,y:-50,x:100}} transition={{type:'spring',damping:20}}>
+              {notification.type==='success' ? <CheckCircle size={20}/> : <AlertCircle size={20}/>}
               <span>{notification.message}</span>
-              <button onClick={() => setNotification(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}>
-                <X size={18} />
-              </button>
+              <button onClick={()=>setNotification(null)}><X size={16}/></button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* MODAL AYUDA */}
+        {/* ══ AYUDA ══ */}
         <AnimatePresence>
           {mostrarAyuda && (
-            <div className="horarios-modal-overlay horarios-modal-show">
-              <div className="horarios-modal-content">
-                <div className="horarios-modal-header">
-                  <h3 className="horarios-modal-title"><Heart size={24} /> Ayuda - Sistema de Donaciones</h3>
-                  <button className="horarios-modal-close" onClick={() => setMostrarAyuda(false)}><X size={20} /></button>
+            <motion.div className="dn-overlay" onClick={()=>setMostrarAyuda(false)}
+              initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
+              <motion.div className="dn-modal dn-modal-sm" onClick={e=>e.stopPropagation()}
+                initial={{scale:0.85}} animate={{scale:1}} exit={{scale:0.85}}>
+                <div className="dn-modal-header">
+                  <h3><Heart size={18}/> Ayuda — Donaciones</h3>
+                  <button className="dn-modal-close" onClick={()=>setMostrarAyuda(false)}><X size={18}/></button>
                 </div>
-                <div className="horarios-modal-body">
-                  <div className="horarios-help-section">
-                    <h4 className="horarios-help-title">¿Cómo funciona el sistema de donaciones?</h4>
-                    <p className="horarios-help-text">El módulo de donaciones te permite gestionar todas las donaciones recibidas, clasificándolas por tipo, almacén y estado para un control eficiente del inventario.</p>
+                <div className="dn-help-body">
+                  <h4>Estados del ciclo de vida</h4>
+                  <div className="dn-help-estados">
+                    {ESTADOS.map(s=>{const c=estadoConfig[s]; return (
+                      <div key={s} className="dn-help-estado-item" style={{borderLeft:`3px solid ${c.color}`}}>
+                        <strong style={{color:c.color}}>{s}</strong>
+                        <span>{{Recibida:'Recibida físicamente.',Pendiente:'Pendiente de verificación.',Procesada:'Ingresada al inventario.',Anulada:'Anulada; conservada para trazabilidad.'}[s]}</span>
+                      </div>
+                    );})}
                   </div>
-                  <div className="horarios-help-section">
-                    <h4 className="horarios-help-title">Tipos de donación:</h4>
-                    <div className="horarios-icons-grid">
-                      <div className="horarios-icon-item"><ShoppingCart size={16} className="horarios-icon-primary" /><span>Alimentos - Productos alimenticios</span></div>
-                      <div className="horarios-icon-item"><Music size={16} className="horarios-icon-info" /><span>Instrumentos musicales</span></div>
-                      <div className="horarios-icon-item"><PlusCircle size={16} className="horarios-icon-success" /><span>Medicina - Productos médicos</span></div>
-                      <div className="horarios-icon-item"><Home size={16} className="horarios-icon-warning" /><span>Enseres - Artículos para el hogar</span></div>
-                      <div className="horarios-icon-item"><Droplet size={16} className="horarios-icon-info" /><span>Productos de higiene</span></div>
-                      <div className="horarios-icon-item"><Package size={16} className="horarios-icon-new" /><span>Otro - Otras categorías</span></div>
-                    </div>
-                  </div>
-                  <div className="horarios-help-section">
-                    <h4 className="horarios-help-title">Consejos de uso:</h4>
-                    <div className="horarios-tips">
-                      <div className="horarios-tip"><span className="horarios-tip-badge"></span><span>Usa la búsqueda para encontrar donaciones rápidamente</span></div>
-                      <div className="horarios-tip"><span className="horarios-tip-badge"></span><span>Haz clic en cualquier fila para editar los detalles</span></div>
-                      <div className="horarios-tip"><span className="horarios-tip-badge"></span><span>Los datos se sincronizan automáticamente cada 30 segundos</span></div>
-                      <div className="horarios-tip"><span className="horarios-tip-badge"></span><span>Adjunta fotos de las donaciones para mejor identificación (JPG, máx 5MB)</span></div>
-                    </div>
-                  </div>
+                  <h4 style={{marginTop:'1rem'}}>Valor de activos</h4>
+                  <p style={{fontSize:'0.85rem',color:'#555'}}>El valor se calcula automáticamente: <strong>Cantidad × Precio Unitario</strong>. El encabezado muestra el total de donaciones activas.</p>
+                  <h4 style={{marginTop:'1rem'}}>Filtro de fechas</h4>
+                  <p style={{fontSize:'0.85rem',color:'#555'}}>Selecciona un rango "Desde → Hasta" en la barra de acciones para filtrar por fecha de donación.</p>
+                  <ul className="dn-help-tips" style={{marginTop:'0.5rem'}}>
+                    <li>El botón <strong>🗑</strong> en cada fila elimina directamente sin abrir el modal.</li>
+                    <li>Usa <strong>Anular</strong> (no Eliminar) para conservar trazabilidad histórica.</li>
+                    <li>Datos sincronizados automáticamente cada 30 segundos.</li>
+                  </ul>
                 </div>
-                <div className="horarios-modal-footer">
-                  <button className="horarios-modal-btn-close" onClick={() => setMostrarAyuda(false)}>Cerrar Ayuda</button>
+                <div className="dn-modal-footer">
+                  <button className="dn-btn-save" onClick={()=>setMostrarAyuda(false)}>Cerrar</button>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </>
   );

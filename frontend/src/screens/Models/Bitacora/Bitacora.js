@@ -919,55 +919,63 @@ const handleExport = async () => {
               </div>
 
 
-              {/* ── Comparación visual de cambios ── */}
-              {(selectedRegistro.entidad?.datos_previos || selectedRegistro.entidad?.datos_nuevos) && (
-                <div className="modal-section">
-                  <h3 className="modal-section-title">
-                    {selectedRegistro.entidad?.datos_previos && selectedRegistro.entidad?.datos_nuevos
-                      ? '🔄 Cambios realizados'
-                      : selectedRegistro.entidad?.datos_nuevos
-                        ? '➕ Datos creados'
-                        : '🗑️ Datos eliminados'}
-                  </h3>
+              {/* ── Comparación visual de cambios ──
+                  Solo se muestra si hay al menos un lado con datos reales.
+                  Para VIEW/LOGIN sin datos, la sección no se renderiza. */}
+              {(() => {
+                const prev = selectedRegistro.entidad?.datos_previos;
+                const next = selectedRegistro.entidad?.datos_nuevos;
+                const hasPrev = prev && typeof prev === 'object' && Object.keys(prev).length > 0;
+                const hasNext = next && typeof next === 'object' && Object.keys(next).length > 0;
 
-                  {/* Leyenda visual */}
-                  {selectedRegistro.entidad?.datos_previos && selectedRegistro.entidad?.datos_nuevos && (
-                    <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: 12, height: 12, background: '#fff5f5', border: '1px solid #fc8181', borderRadius: 2, display: 'inline-block' }}></span>
-                        Valor anterior
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: 12, height: 12, background: '#f0fff4', border: '1px solid #68d391', borderRadius: 2, display: 'inline-block' }}></span>
-                        Valor nuevo
-                      </span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ color: '#dd6b20' }}>●</span>
-                        Campo modificado
-                      </span>
-                    </div>
-                  )}
+                if (!hasPrev && !hasNext) {
+                  // No hay datos que mostrar (VIEW, LOGIN, LOGOUT sin entidad)
+                  return null;
+                }
 
-                  <DataComparator
-                    datosPrevios={selectedRegistro.entidad?.datos_previos}
-                    datosNuevos={selectedRegistro.entidad?.datos_nuevos}
-                  />
-                </div>
-              )}
+                const titulo = hasPrev && hasNext
+                  ? '🔄 Cambios realizados'
+                  : hasNext
+                    ? '➕ Datos creados'
+                    : '🗑️ Datos eliminados';
 
-              {/* Solo datos nuevos (CREATE sin estructura entidad) */}
-              {!selectedRegistro.entidad?.datos_previos && !selectedRegistro.entidad?.datos_nuevos &&
-               selectedRegistro.accion === 'CREATE' &&
-               selectedRegistro.entidad &&
-               typeof selectedRegistro.entidad === 'object' && (
-                <div className="modal-section">
-                  <h3 className="modal-section-title">➕ Datos registrados</h3>
-                  <DataComparator
-                    datosPrevios={null}
-                    datosNuevos={selectedRegistro.entidad}
-                  />
-                </div>
-              )}
+                return (
+                  <div className="modal-section">
+                    <h3 className="modal-section-title">{titulo}</h3>
+
+                    {/* Leyenda — solo cuando hay ambos lados para comparar */}
+                    {hasPrev && hasNext && (
+                      <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', fontSize: '12px', flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: 12, height: 12, background: '#fff5f5', border: '1px solid #fc8181', borderRadius: 2, display: 'inline-block' }}></span>
+                          Valor anterior
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ width: 12, height: 12, background: '#f0fff4', border: '1px solid #68d391', borderRadius: 2, display: 'inline-block' }}></span>
+                          Valor nuevo
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ color: '#dd6b20' }}>●</span>
+                          Campo modificado
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Aviso cuando hay UPDATE pero faltan datos previos (registros históricos sin captura) */}
+                    {selectedRegistro.accion === 'UPDATE' && !hasPrev && hasNext && (
+                      <div className="alert alert-warning" style={{ marginBottom: '12px', fontSize: '13px' }}>
+                        <span>⚠️</span>
+                        <span>Los datos anteriores no fueron capturados para este registro. Solo se muestran los datos guardados.</span>
+                      </div>
+                    )}
+
+                    <DataComparator
+                      datosPrevios={hasPrev ? prev : null}
+                      datosNuevos={hasNext ? next : null}
+                    />
+                  </div>
+                );
+              })()}
 
               {/* Error message */}
               {selectedRegistro.error_message && (

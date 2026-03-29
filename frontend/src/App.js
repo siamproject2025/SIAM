@@ -42,6 +42,7 @@ import CambiarPasswordObligatorio from './components/authentication/CambiarPassw
 
 // ── NUEVO: Módulo de Parámetros del Sistema ──────────────────
 import Parametros from './screens/Parametros';
+import BackupRestore from './components/BackupRestore';
 
 const auth = getAuth(appFirebase);
 const API_URL = process.env.REACT_APP_API_URL;
@@ -211,6 +212,11 @@ function App() {
             {/* ==================== MÓDULO DASHBOARD ==================== */}
             <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
               <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+
+            {/* ==================== MÓDULO DASHBOARD ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
+              <Route path="/backup" element={<BackupRestore />} />
             </Route>
 
             {/* ==================== MÓDULO ROLES ==================== */}
