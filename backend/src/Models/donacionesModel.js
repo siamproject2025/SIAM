@@ -12,15 +12,39 @@ const donacionSchema = new mongoose.Schema({
     required: [true, 'El ID de almacén es obligatorio'],
     min: [1, 'El ID de almacén debe ser mayor a 0']
   },
+
+  // Fecha real de recepción (la ingresa el usuario, no puede ser futura)
   fecha: {
     type: Date,
-    required: [false, 'La fecha de donación es obligatoria']
+    required: false
   },
+
+  // Fecha de registro en el sistema (automática, inmutable)
+  fecha_ingreso: {
+    type: Date,
+    required: false,
+    default: Date.now,
+    immutable: true
+  },
+
   cantidad_donacion: {
     type: Number,
     required: [true, 'La cantidad de donación es obligatoria'],
     min: [0, 'La cantidad no puede ser negativa']
   },
+
+  // ── Campos de valor ──────────────────────────────────────────────────────
+  precio_unitario: {
+    type: Number,
+    default: 0,
+    min: [0, 'El precio unitario no puede ser negativo']
+  },
+  valor_total: {
+    type: Number,
+    default: 0,
+    min: [0, 'El valor total no puede ser negativo']
+  },
+
   descripcion: {
     type: String,
     maxlength: [1000, 'La descripción no puede exceder 1000 caracteres'],
@@ -47,40 +71,108 @@ const donacionSchema = new mongoose.Schema({
       message: '{VALUE} no es un tipo de donación válido'
     }
   },
-  fecha_ingreso: {
-    type: Date,
-    required: [false, 'La fecha de ingreso es obligatoria'],
-    default: Date.now
+
+  // ── Estado del ciclo de vida ─────────────────────────────────────────────
+  estado: {
+    type: String,
+    required: [true, 'El estado es obligatorio'],
+    enum: {
+      values: ['Recibida', 'Pendiente', 'Procesada', 'Anulada'],
+      message: '{VALUE} no es un estado válido'
+    },
+    default: 'Recibida'
   },
+
   observaciones: {
     type: String,
     maxlength: [500, 'Las observaciones no pueden exceder 500 caracteres'],
     trim: true
   },
-  // CAMPOS PARA IMAGEN
+
+  // ── Imagen (Base64) ──────────────────────────────────────────────────────
   imagen: {
-    type: String, // Guardará la imagen en Base64
+    type: String,
     default: null
   },
   tipo_imagen: {
-    type: String, // Guardará el tipo MIME, ej. image/png
+    type: String,
+    default: null
+  },
+
+  // ── Documento adjunto → Google Drive ────────────────────────────────────
+  documento_url: {
+    type: String,
+    default: null
+  },
+  documento_nombre: {
+    type: String,
+    default: null
+  },
+
+  // ── Auditoría ────────────────────────────────────────────────────────────
+  creado_por: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  creado_por_email: {
+    type: String,
+    default: null
+  },
+  fecha_creacion: {
+    type: Date,
+    default: Date.now,
+    immutable: true
+  },
+  actualizado_por: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+  actualizado_por_email: {
+    type: String,
+    default: null
+  },
+  fecha_actualizacion: {
+    type: Date,
     default: null
   }
+
 }, {
   timestamps: true,
   versionKey: false
 });
 
-// Índices para mejorar el rendimiento
+// ── Pre-save: calcular valor_total automáticamente ───────────────────────────
+donacionSchema.pre('save', function (next) {
+  if (this.precio_unitario != null && this.cantidad_donacion != null) {
+    this.valor_total = parseFloat((this.precio_unitario * this.cantidad_donacion).toFixed(2));
+  }
+  next();
+});
+
+donacionSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  const precio = parseFloat(update.precio_unitario ?? update.$set?.precio_unitario ?? 0);
+  const cantidad = parseFloat(update.cantidad_donacion ?? update.$set?.cantidad_donacion ?? 0);
+  if (precio && cantidad) {
+    const total = parseFloat((precio * cantidad).toFixed(2));
+    if (update.$set) update.$set.valor_total = total;
+    else update.valor_total = total;
+  }
+  next();
+});
+
+// ── Índices ──────────────────────────────────────────────────────────────────
 donacionSchema.index({ id_donacion: 1 });
 donacionSchema.index({ id_almacen: 1 });
 donacionSchema.index({ tipo_donacion: 1 });
+donacionSchema.index({ estado: 1 });
 donacionSchema.index({ fecha: -1 });
+donacionSchema.index({ fecha_ingreso: -1 });
 
-// Método para obtener el próximo ID disponible
-donacionSchema.statics.getNextId = async function() {
-  const lastDonacion = await this.findOne().sort({ id_donacion: -1 });
-  return lastDonacion ? lastDonacion.id_donacion + 1 : 1;
+// ── Próximo ID disponible ────────────────────────────────────────────────────
+donacionSchema.statics.getNextId = async function () {
+  const last = await this.findOne().sort({ id_donacion: -1 });
+  return last ? last.id_donacion + 1 : 1;
 };
 
 module.exports = mongoose.model('Donacion', donacionSchema, 'donaciones');

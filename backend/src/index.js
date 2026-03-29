@@ -4,9 +4,9 @@ require("./config/firebaseAdmin");
 const express = require("express");
 const mongoose = require("mongoose");
 const path = require("path");
-// NO importes cors - const cors = require("cors"); - COMENTADO
+const cors = require("cors");
 
-// Rutas
+// ========== IMPORTAR TODAS LAS RUTAS ==========
 const horarios = require("./Routes/Horarios");
 const ordencompra = require('./Routes/ordenCompra'); 
 const bienesRoutes = require("./Routes/bienesRoutes");
@@ -22,20 +22,21 @@ const question = require("./Routes/questionRoutes");
 const matriculas = require("./Routes/matriculas");
 const gradosRoutes = require("./Routes/gradosRoutes");
 const bitacora = require("./Routes/auditoriaRoutes");
-const Rol = require("./Models/Rol");
 const rolRoutes = require("./Routes/rol_routes"); 
 const authRoutes = require("./Routes/authRoutes");
 const audit = require("./Routes/auditControlRoutes");
 const resetRoutes = require('./Routes/reset_password_routes');
-
+const backupRoutes = require("./Routes/backup");
 
 const app = express();
 
-app.use(express.json());
+// ========== MIDDLEWARE: CONEXIÓN MONGODB ==========
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch(err => console.error("❌ Error MongoDB:", err));
 
-// MIDDLEWARE CORS MANUAL - SIN NINGUNA RESTRICCIÓN
+// ========== MIDDLEWARE CORS ==========
 app.use((req, res, next) => {
-  // Permite absolutamente cualquier origen
   const origin = req.headers.origin;
   res.setHeader('Access-Control-Allow-Origin', origin || '*');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -43,7 +44,6 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
   
-  // Manejar preflight requests (OPTIONS)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -51,24 +51,44 @@ app.use((req, res, next) => {
   next();
 });
 
-// Conexión MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Conectado a MongoDB"))
-  .catch(err => console.error("❌ Error MongoDB:", err));
+// ========== MIDDLEWARE: JSON PARSER (EXCLUYE RUTAS DE UPLOAD) ==========
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/backup/restaurar')) {
+    console.log(`⏭️  Saltando JSON parser para: ${req.method} ${req.path}`);
+    return next();
+  }
+  express.json({ limit: '500mb' })(req, res, next);
+});
 
-const cors = require("cors");
+// ========== MIDDLEWARE: URL ENCODED (EXCLUYE RUTAS DE UPLOAD) ==========
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/backup/restaurar')) {
+    return next();
+  }
+  express.urlencoded({ limit: '500mb', extended: true })(req, res, next);
+});
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permite requests sin origin (Postman, mobile apps)
-    if (!origin) return callback(null, true);
+// ========== MIDDLEWARE: FILE UPLOAD (EXCLUYE RUTAS DE BACKUP) ==========
+// express-fileupload NO debe procesar /api/backup porque esa ruta usa multer.
+// Si ambos middlewares intentan consumir el stream multipart al mismo tiempo,
+// multer recibe el stream vacío y lanza "Unexpected end of form".
+const fileUpload = require("express-fileupload");
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/backup')) {
+    return next();
+  }
+  fileUpload({
+    limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+    useTempFiles: true,
+    tempFileDir: '/tmp/'
+  })(req, res, next);
+});
 
-    // Permite cualquier dominio
-    return callback(null, true);
-  },
-  credentials: true
-}));
-// Rutas API
+// ========== RUTAS API ==========
+// ⭐ RUTA DE BACKUP PRIMERO (antes de cualquier otro middleware)
+app.use("/api/backup", backupRoutes);
+
+// Resto de rutas
 app.use("/api/compras", ordencompra);
 app.use("/api/bienes", bienesRoutes);
 app.use("/api/", usuarios_route);
@@ -88,16 +108,18 @@ app.use("/api/", rolRoutes);
 app.use("/api/", authRoutes);
 app.use("/api/", audit);
 app.use('/api', resetRoutes);
+
+// ========== ARCHIVOS ESTÁTICOS ==========
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Servir React build
 app.use(express.static(path.join(__dirname, "../../frontend/build")));
 
-// Capturar cualquier ruta que no sea API
+// ========== RUTA FALLBACK ==========
 app.get(/^\/(?!api).*/, (req, res) => {
    res.send("¡Servidor funcionando correctamente!");
 });
 
-// Iniciar servidor
+// ========== INICIAR SERVIDOR ==========
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`));

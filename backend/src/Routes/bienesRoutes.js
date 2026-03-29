@@ -1,59 +1,42 @@
 // routes/bienesRoutes.js
-const express = require("express");
-const { upload } = require('../middleware/uploadImage'); // Multer en memoria
+const express = require('express');
+const { upload } = require('../middleware/uploadImage');
 const { authenticateUser } = require('../middleware/authMiddleWare');
 const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
-const Bien = require("../Models/Bien"); // Importar modelo para capturar datos previos
+const Bien = require('../Models/Bien');
 
-const  {
-  getBienes,
-  getBienById,
-  createBien,
-  updateBien,
-  deleteBien
-} = require( "../Controllers/bienesController");
+const { getBienes, getBienById, createBien, updateBien, deleteBien } =
+  require('../Controllers/bienesController');
 
 const router = express.Router();
 
-// Middleware para medir tiempo de respuesta (opcional pero útil para auditoría)
-router.use((req, res, next) => {
-  req.requestStartTime = Date.now();
-  next();
-});
-
-// Middleware de autenticación para todas las rutas
 router.use(authenticateUser);
 
-// GET /api/bienes - Listar todos los bienes
-router.get("/", 
-  
-  getBienes
-);
+// GET — sin auditoría (lecturas, no críticas)
+router.get('/', getBienes);
+router.get('/:id', getBienById);
 
-router.get("/:id",
-  
-  getBienById
-);
-
-// POST /api/bienes - Crear nuevo bien
-router.post("/", 
+// POST — crear bien
+router.post(
+  '/',
   upload.single('imagen'),
   registrarAuditoria('BIENES'),
   createBien
 );
 
-// PUT /api/bienes/:id - Actualizar bien
-router.put("/:id",  
+// PUT — actualizar bien (captura datos previos ANTES de modificar)
+router.put(
+  '/:id',
   upload.single('imagen'),
-  authenticateUser, // Este podría ser redundante pero lo dejamos
-  capturarDatosPrevios(Bien), // Captura datos antes de actualizar
+  capturarDatosPrevios(Bien),   // ← pasa el modelo Mongoose directamente
   registrarAuditoria('BIENES'),
   updateBien
 );
 
-// DELETE /api/bienes/:id - Eliminar bien
-router.delete("/:id", 
-  capturarDatosPrevios(Bien), // Captura datos antes de eliminar
+// DELETE — eliminar bien
+router.delete(
+  '/:id',
+  capturarDatosPrevios(Bien),
   registrarAuditoria('BIENES'),
   deleteBien
 );

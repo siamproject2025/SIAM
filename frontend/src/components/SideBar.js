@@ -76,7 +76,7 @@ const estructuraSidebar = [
     grupos: [
       {
         label: "Control de accesos",
-        modulos: ["Usuarios", "Roles", "Solicitudes"]
+        modulos: ["Usuarios", "Roles", "Solicitudes", "Backup y restore"]
       },
       {
         label: "Historial de acciones",
@@ -125,6 +125,7 @@ const moduloAPermiso = {
   "Dashboard": "VISUALIZAR_DASHBOARD",
   "Roles": "VISUALIZAR_ROLES",
   "Pagina principal": "VISUALIZAR_SEGURIDAD",
+  "Backup y restore": "VISUALIZAR_SEGURIDAD",
 };
 
 const SideBar = () => {
