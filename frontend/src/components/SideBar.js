@@ -76,7 +76,11 @@ const estructuraSidebar = [
     grupos: [
       {
         label: "Control de accesos",
-        modulos: ["Usuarios", "Roles", "Solicitudes", "Backup y restore"]
+        modulos: ["Usuarios", "Roles", "Solicitudes"]
+      },
+      {
+        label: "Respaldo y recuperación",
+        modulos: ["Backup y restore"]
       },
       {
         label: "Historial de acciones",
