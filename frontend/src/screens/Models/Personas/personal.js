@@ -1,1999 +1,589 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import "..//..//../styles/Personal.css"
+// ============================================================
+// Personal.jsx — Gestión de Personal
+// Diseño alineado a Sistema de Bienes
+// Incluye: código autogenerado, docs en Drive, tabla estilizada
+// ============================================================
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import * as XLSX from "xlsx";
+import {
+  Users, Search, Plus, Download, HelpCircle,
+  CheckCircle, XCircle, Edit, Trash2, Eye,
+  Filter, UserPlus, Upload, X, FileText, AlertCircle
+} from "lucide-react";
 import { auth } from "../../../components/authentication/Auth";
-import { 
-Sun,           // Para Vacaciones
-  UserX,         // Para Temporal
-  GraduationCap, // Para Practicante
-  Eye , UserCheck,
-  Mail,
-  Phone,
-  Upload,
-  Heart,
-  Gift,
-  Package,
-  Shirt,
-  Apple,
-  Book,
-  ImagePlus,
-  Briefcase,
-  Calendar,
-  Hash,
-  Search,
-  HelpCircle,
-  Plus,
-  Edit,
-  Trash2,
-  X,
-  Save,
-  Check,
-  Users,
-  Clock,
-  DollarSign,
-  FileText,
-  Award,
- 
-  Shield
-} from 'lucide-react';
+import { loadingController } from "../../../api/loadingController";
+import Notification from "../../../components/Notification";
+import ModalCrearPersonal from "./Modalcrearpersonal";
+import ModalDetallePersonal from "./Modaldetallepersonal";
+import "../../../styles/Personal.css";
 
-import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
+const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
 
-const API_URL = process.env.REACT_APP_API_URL+"/api/personal";
+const COLS = [
+  { uid: "codigo",           name: "CÓDIGO",       sortable: true  },
+  { uid: "nombre",           name: "EMPLEADO",      sortable: true  },
+  { uid: "cargo",            name: "CARGO",         sortable: true  },
+  { uid: "area_trabajo",     name: "ÁREA",          sortable: true  },
+  { uid: "tipo_contrato",    name: "CONTRATO",      sortable: false },
+  { uid: "fecha_ingreso",    name: "F. INGRESO",    sortable: true  },
+  { uid: "estado",           name: "ESTADO",        sortable: true  },
+  { uid: "acciones",         name: "ACCIONES",      sortable: false },
+];
 
-const Personal = () => {
-  const [personal, setPersonal] = useState([]);
-  const [personalSeleccionado, setPersonalSeleccionado] = useState(null);
-  const [busqueda, setBusqueda] = useState('');
-  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [mostrarAyuda, setMostrarAyuda] = useState(false);
-  const [Loading, setLoading] = useState(false);
-  const [filtroOrden, setFiltroOrden] = useState('ninguno');
-  const [mostrarMenuFiltros, setMostrarMenuFiltros] = useState(false);
+const ESTADO_OPTS = [
+  { uid: "all",       name: "Todos"      },
+  { uid: "ACTIVO",    name: "Activo"     },
+  { uid: "VACACIONES",name: "Vacaciones" },
+  { uid: "LICENCIA",  name: "Licencia"   },
+  { uid: "INACTIVO",  name: "Inactivo"   },
+];
 
-  const [formData, setFormData] = useState({
-    codigo: '',
-    nombres: '',
-    apellidos: '',
-    numero_identidad: '',
-    tipo_contrato: 'TIEMPO_COMPLETO',
-    estado: 'ACTIVO',
-    telefono: '',
-    direccion_correo: '',
-    cargo: '',
-    horario_preferido: 'MATUTINO',
-    fecha_asignacion: new Date().toISOString().split('T')[0],
-    area_trabajo: '',
-    especialidades: '',
-    salario: '',
-    fecha_ingreso: new Date().toISOString().split('T')[0],
-    imagen: null,
-    foto_preview: null
-  });
+const CARGO_OPTS = [
+  { uid: "all",           name: "Todos los cargos" },
+  { uid: "DOCENTE",       name: "Docente"          },
+  { uid: "DIRECTOR",      name: "Director"         },
+  { uid: "LIMPIEZA",      name: "Limpieza"         },
+  { uid: "GUARDIA",       name: "Guardia"          },
+  { uid: "SERVICIO_SOCIAL", name: "Servicio Social"},
+];
 
-useEffect(() => {
-  cargarPersonal();
-}, []); 
+const ROWS = 15;
 
-  useEffect(() => {
-    return () => {
-      if (formData.foto_preview) URL.revokeObjectURL(formData.foto_preview);
-    };
-  }, [formData.foto_preview]);
-
-  const cargarPersonal = async () => {
-  try {
-    setLoading(true);
-
-    //  Obtener el token del usuario autenticado (Firebase o Auth0)
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    //  Petición con token incluido
-    const res = await fetch(API_URL, {
-      headers: {
-        Authorization: `Bearer ${token}`, //  Token JWT
-      },
-    });
-
-    if (!res.ok) throw new Error("Error al cargar personal");
-
-    const data = await res.json();
-    setPersonal(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error("Error al obtener el personal:", err);
-    showNotification("Error al cargar el personal", "error");
-    setPersonal([]);
-  } finally {
-    setLoading(false);
-  }
+const fmtFechaLocal = (iso) => {
+  if (!iso || iso === "null") return "—";
+  const part = (typeof iso === "string" ? iso : new Date(iso).toISOString()).slice(0, 10);
+  const [y, m, d] = part.split("-");
+  return `${d}/${m}/${y}`;
 };
 
+const ChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
-  // Calcular estadísticas
-  const totalPersonal = personal.length;
-  const personalActivo = personal.filter(p => p.estado === "ACTIVO").length;
-  const personalVacaciones = personal.filter(p => p.estado === "VACACIONES").length;
-  const personalLicencia = personal.filter(p => p.estado === "LICENCIA").length;
+// ── Estado badge class ─────────────────────────────────────
+const estadoBadge = (e) => ({
+  ACTIVO:     "per-estado-badge per-activo",
+  VACACIONES: "per-estado-badge per-vacaciones",
+  LICENCIA:   "per-estado-badge per-licencia",
+  INACTIVO:   "per-estado-badge per-inactivo",
+}[e] || "per-estado-badge");
+
+// ══════════════════════════════════════════════════════════
+//  COMPONENTE PRINCIPAL
+// ══════════════════════════════════════════════════════════
+const Personal = () => {
+  const [personal,          setPersonal]          = useState([]);
+  const [filterValue,       setFilterValue]       = useState("");
+  const [estadoFiltro,      setEstadoFiltro]      = useState("all");
+  const [cargoFiltro,       setCargoFiltro]       = useState("all");
+  const [especialFiltro,    setEspecialFiltro]    = useState("");
+  const [sortDesc,          setSortDesc]          = useState({ column: "codigo", direction: "ascending" });
+  const [page,              setPage]              = useState(1);
+  const [seleccionados,     setSeleccionados]     = useState([]);
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [empleadoSelec,     setEmpleadoSelec]     = useState(null);
+  const [notification,      setNotification]      = useState(null);
+  const [showCargoMenu,     setShowCargoMenu]     = useState(false);
+  const [mostrarAyuda,      setMostrarAyuda]      = useState(false);
+  const [fechaDesde,        setFechaDesde]        = useState("");
+  const [fechaHasta,        setFechaHasta]        = useState("");
+
+  const cargoMenuRef = useRef(null);
+
+  // ── Carga inicial ──────────────────────────────────────
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        loadingController.start();
+        const token = await auth.currentUser?.getIdToken();
+        const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error("Error al obtener personal");
+        setPersonal(await res.json());
+      } catch (err) { console.error(err); }
+      finally { loadingController.stop(); }
+    };
+    cargar();
+  }, []);
+
+  useEffect(() => {
+    const fn = (e) => {
+      if (cargoMenuRef.current && !cargoMenuRef.current.contains(e.target)) setShowCargoMenu(false);
+    };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
+
+  // ── Métricas + filtrado ────────────────────────────────
+  const { filteredItems, metrics } = useMemo(() => {
+    let f = [...personal];
+    if (filterValue) {
+      const q = filterValue.toLowerCase();
+      f = f.filter(p =>
+        p.codigo?.toLowerCase().includes(q)       ||
+        p.nombres?.toLowerCase().includes(q)      ||
+        p.apellidos?.toLowerCase().includes(q)    ||
+        p.area_trabajo?.toLowerCase().includes(q) ||
+        p.direccion_correo?.toLowerCase().includes(q)
+      );
+    }
+    if (estadoFiltro !== "all") f = f.filter(p => p.estado === estadoFiltro);
+    if (cargoFiltro  !== "all") f = f.filter(p => p.cargo_asignacion?.cargo === cargoFiltro);
+    if (especialFiltro) {
+      const q = especialFiltro.toLowerCase();
+      f = f.filter(p => p.especialidades?.some(e => e.nombre?.toLowerCase().includes(q)));
+    }
+    if (fechaDesde) f = f.filter(p => { const s = (p.fecha_ingreso || "").slice(0,10); return s >= fechaDesde; });
+    if (fechaHasta) f = f.filter(p => { const s = (p.fecha_ingreso || "").slice(0,10); return s <= fechaHasta; });
+    return {
+      filteredItems: f,
+      metrics: {
+        total:      personal.length,
+        activos:    personal.filter(p => p.estado === "ACTIVO").length,
+        inactivos:  personal.filter(p => p.estado === "INACTIVO").length,
+        docentes:   personal.filter(p => p.cargo_asignacion?.cargo === "DOCENTE").length,
+      }
+    };
+  }, [personal, filterValue, estadoFiltro, cargoFiltro, especialFiltro, fechaDesde, fechaHasta]);
+
+  // ── Ordenamiento + paginación ──────────────────────────
+  const sortedItems = useMemo(() => {
+    if (!sortDesc.column) return filteredItems;
+    return [...filteredItems].sort((a, b) => {
+      const va = sortDesc.column === "nombre" ? `${a.apellidos} ${a.nombres}` : a[sortDesc.column];
+      const vb = sortDesc.column === "nombre" ? `${b.apellidos} ${b.nombres}` : b[sortDesc.column];
+      const c  = (va ?? "") < (vb ?? "") ? -1 : (va ?? "") > (vb ?? "") ? 1 : 0;
+      return sortDesc.direction === "descending" ? -c : c;
+    });
+  }, [filteredItems, sortDesc]);
+
+  const pages        = Math.ceil(sortedItems.length / ROWS) || 1;
+  const currentItems = useMemo(() => sortedItems.slice((page-1)*ROWS, page*ROWS), [page, sortedItems]);
+
+  const handleSort = (uid) => {
+    const col = COLS.find(c => c.uid === uid);
+    if (!col?.sortable) return;
+    setSortDesc(p => ({ column: uid, direction: p.column === uid && p.direction === "ascending" ? "descending" : "ascending" }));
+  };
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
-    setTimeout(() => setNotification(null), 4000);
+    setTimeout(() => setNotification(null), 3500);
   };
 
-  const resetForm = () => {
-    setFormData({
-      codigo: '',
-      nombres: '',
-      apellidos: '',
-      numero_identidad: '',
-      tipo_contrato: 'TIEMPO_COMPLETO',
-      estado: 'ACTIVO',
-      telefono: '',
-      direccion_correo: '',
-      cargo: '',
-      horario_preferido: 'MATUTINO',
-      fecha_asignacion: new Date().toISOString().split('T')[0],
-      area_trabajo: '',
-      especialidades: '',
-      cargo_asignacion: '',
-      salario: '',
-      fecha_ingreso: new Date().toISOString().split('T')[0]
-    });
-  };
-const handleFotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validar tamaño (5MB máximo)
-      if (file.size > 5 * 1024 * 1024) {
-        showNotification('La imagen no debe superar 5MB', 'error');
-        return;
-      }
-
-      // Validar tipo
-      if (!file.type.startsWith('image/')) {
-        showNotification('Solo se permiten imágenes', 'error');
-        return;
-      }
-
-      setFormData(prev => ({
-        ...prev,
-        imagen: file,
-        foto_preview: URL.createObjectURL(file)
-      }));
-    }
+  // ── CRUD ───────────────────────────────────────────────
+  const handleCrear = async (fd) => {
+    try {
+      loadingController.start();
+      const token = await auth.currentUser?.getIdToken();
+      const res   = await fetch(API_URL, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      const { data } = await res.json();
+      setPersonal(p => [data, ...p]);
+      setMostrarModalCrear(false);
+      showNotification(`Empleado "${data.nombres} ${data.apellidos}" creado. Código: ${data.codigo}`, "success");
+    } catch (err) { showNotification(err.message || "Error al crear el empleado", "error"); }
+    finally { loadingController.stop(); }
   };
 
-  const eliminarFoto = () => {
-    if (formData.foto_preview) {
-      URL.revokeObjectURL(formData.foto_preview);
-    }
-    setFormData(prev => ({
-      ...prev,
-      imagen: null,
-      foto_preview: null
+  const handleActualizar = async (id, fd) => {
+    try {
+      loadingController.start();
+      const token = await auth.currentUser?.getIdToken();
+      const res   = await fetch(`${API_URL}/${id}`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      const { data } = await res.json();
+      setPersonal(p => p.map(e => e._id === data._id ? data : e));
+      setEmpleadoSelec(null);
+      showNotification(`Empleado actualizado correctamente`, "success");
+    } catch (err) { showNotification(err.message || "Error al actualizar", "error"); }
+    finally { loadingController.stop(); }
+  };
+
+  const handleEliminar = async (id) => {
+    const emp = personal.find(p => p._id === id);
+    try {
+      loadingController.start();
+      const token = await auth.currentUser?.getIdToken();
+      const res   = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      setPersonal(p => p.filter(e => e._id !== id));
+      setEmpleadoSelec(null);
+      showNotification(`Empleado "${emp?.nombres} ${emp?.apellidos}" eliminado`, "success");
+    } catch (err) { showNotification(err.message || "Error al eliminar", "error"); }
+    finally { loadingController.stop(); }
+  };
+
+  // ── Excel ──────────────────────────────────────────────
+  const handleExcel = () => {
+    if (filteredItems.length === 0) { showNotification("No hay datos para exportar.", "error"); return; }
+    const data = filteredItems.map((p, i) => ({
+      "N°": i+1,
+      "Código":         p.codigo,
+      "Nombres":        p.nombres,
+      "Apellidos":      p.apellidos,
+      "Identidad":      p.numero_identidad,
+      "Cargo":          p.cargo_asignacion?.cargo || "—",
+      "Área":           p.area_trabajo || "—",
+      "Contrato":       p.tipo_contrato,
+      "Estado":         p.estado,
+      "Teléfono":       p.telefono,
+      "Correo":         p.direccion_correo,
+      "Salario (Lps)":  p.salario || 0,
+      "F. Ingreso":     fmtFechaLocal(p.fecha_ingreso),
+      "Especialidades": (p.especialidades || []).map(e => e.nombre).join(", "),
     }));
+    const ws = XLSX.utils.json_to_sheet(data, { origin: "A6" });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.sheet_add_aoa(ws, [
+      ["ESCUELA EXPERIMENTAL DE NIÑOS PARA LA MÚSICA"],
+      ["SISTEMA INTEGRADO ADMINISTRATIVO MUSICAL - S.I.A.M."],
+      [""], ["LISTA DE PERSONAL"], [""],
+    ], { origin: "A1" });
+    ws["!cols"] = [{ wch:4 },{ wch:14 },{ wch:18 },{ wch:18 },{ wch:14 },{ wch:16 },{ wch:16 },{ wch:14 },{ wch:12 },{ wch:14 },{ wch:28 },{ wch:14 },{ wch:12 },{ wch:30 }];
+    XLSX.utils.book_append_sheet(wb, ws, "Personal");
+    const fecha = new Date().toLocaleDateString("es-HN").replace(/\//g,"-");
+    XLSX.writeFile(wb, `Lista_Personal_${fecha}.xlsx`);
   };
 
-  const handleCrearPersonal = async (e) => {
-  e.preventDefault();
-
-  try {
-    // --- NUEVAS VALIDACIONES ---
-    
-    // 1. Código de empleado: Tamaño mín 3, máx 10
-    if (!formData.codigo.trim() || formData.codigo.trim().length < 3 || formData.codigo.trim().length > 10) {
-      showNotification('El código debe tener entre 3 y 10 caracteres', 'error');
-      return;
-    }
-
-    // 2. Nombres: Solo letras (incluye tildes y ñ)
-    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    if (!formData.nombres.trim()) {
-      showNotification('Los nombres son obligatorios', 'error');
-      return;
-    }
-    if (!regexLetras.test(formData.nombres.trim())) {
-      showNotification('El campo nombres solo permite letras', 'error');
-      return;
-    }
-    if (formData.nombres.trim().length < 2 || formData.nombres.trim().length > 100) {
-      showNotification('Los nombres deben tener entre 2 y 100 caracteres', 'error');
-      return;
-    }
-
-    // 3. Documento de Identidad: Solo números
-    const regexNumeros = /^\d+$/;
-    if (!formData.numero_identidad.trim()) {
-      showNotification('El documento de identidad es obligatorio', 'error');
-      return;
-    }
-    if (!regexNumeros.test(formData.numero_identidad.trim())) {
-      showNotification('El documento de identidad solo acepta números', 'error');
-      return;
-    }
-    if (formData.numero_identidad.trim().length < 5 || formData.numero_identidad.trim().length > 20) {
-      showNotification('El número de identidad debe tener entre 5 y 20 caracteres', 'error');
-      return;
-    }
-
-    // --- CONTINUACIÓN DE VALIDACIONES EXISTENTES ---
-    if (!formData.apellidos.trim() || !regexLetras.test(formData.apellidos.trim())) {
-        showNotification('Los apellidos son obligatorios y solo deben contener letras', 'error');
-        return;
-    }
-
-      // Validación tipo_contrato
-      const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
-      if (!tiposContrato.includes(formData.tipo_contrato)) {
-        showNotification('Tipo de contrato inválido', 'error');
-        return;
-      }
-
-      // Validación estado
-      const estados = ['ACTIVO', 'VACACIONES', 'LICENCIA', 'INACTIVO'];
-      if (!estados.includes(formData.estado)) {
-        showNotification('Estado inválido', 'error');
-        return;
-      }
-
-      // Teléfono
-      if (!formData.telefono.trim() || formData.telefono.trim().length < 8 || formData.telefono.trim().length > 20) {
-        showNotification('El teléfono debe tener entre 8 y 20 caracteres', 'error');
-        return;
-      }
-
-      // Correo
-      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!formData.direccion_correo.trim() || !emailRegex.test(formData.direccion_correo.trim())) {
-        showNotification('Correo electrónico inválido', 'error');
-        return;
-      }
-
-      // Cargo y fecha de asignación
-      if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
-        showNotification('Cargo del empleado - obligatorio', 'error');
-        return;
-      }
-
-      if (!formData.fecha_asignacion) {
-        showNotification('La fecha de asignación es obligatoria', 'error');
-        return;
-      }
-
-      // Horario preferido (opcional, pero debe ser válido si existe)
-      const horarios = ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE'];
-      if (formData.horario_preferido && !horarios.includes(formData.horario_preferido)) {
-        showNotification('Horario preferido inválido', 'error');
-        return;
-      }
-
-      // Área de trabajo (opcional)
-      if (formData.area_trabajo && formData.area_trabajo.trim().length > 100) {
-        showNotification('El área de trabajo no puede exceder 100 caracteres', 'error');
-        return;
-      }
-
-      // Salario (opcional)
-      if (formData.salario && parseFloat(formData.salario) < 0) {
-        showNotification('El salario no puede ser negativo', 'error');
-        return;
-      }
-
-
-    //  Crear objeto FormData
-    const formDataSend = new FormData();
-    formDataSend.append('codigo', formData.codigo.trim());
-    formDataSend.append('nombres', formData.nombres.trim());
-    formDataSend.append('apellidos', formData.apellidos.trim());
-    formDataSend.append('numero_identidad', formData.numero_identidad.trim());
-    formDataSend.append('tipo_contrato', formData.tipo_contrato);
-    formDataSend.append('estado', formData.estado);
-    formDataSend.append('telefono', formData.telefono.trim());
-    formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
-    const cargoAsignacion = {
-    cargo: formData.cargo,
-    horario_preferido: formData.horario_preferido,
-    fecha_asignacion: formData.fecha_asignacion
-    };
-    // Solo adjuntar foto si existe
-    if (formData.imagen) {
-      formDataSend.append('imagen', formData.imagen);
-    }
-    formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
-
-    formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
-    formDataSend.append(
-      'especialidades',
-      formData.especialidades
-        ? formData.especialidades
-            .split(',')
-            .map(e => e.trim())
-            .filter(e => e)
-            .join(',')
-        : ''
-    );
-
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-    if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
-    if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
-
-    //  Enviar al backend
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`, //  se agrega aquí
-        //  No agregar 'Content-Type'
-      },
-      body: formDataSend,
-    });
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-
-    //  Si se guarda correctamente
-    await cargarPersonal();
-    setMostrarModalCrear(false);
-    resetForm();
-    showNotification(
-      `Empleado "${formData.nombres} ${formData.apellidos}" creado exitosamente`,
-      'success'
-    );
-
-  } catch (error) {
-    console.error('Error al crear el empleado:', error);
-    showNotification(error.message || 'Error al crear el empleado', 'error');
-  }
-};
-
-
- const handleEditarPersonal = async (e) => {
-  e.preventDefault();
-
-  try {
-    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
-    const regexNumeros = /^\d+$/;
-
-    // Validación Código (Mín 3, Máx 10)
-    if (!formData.codigo.trim() || formData.codigo.trim().length < 3 || formData.codigo.trim().length > 10) {
-      showNotification('El código debe tener entre 3 y 10 caracteres', 'error');
-      return;
-    }
-
-    // Validación Nombres (Solo letras)
-    if (!formData.nombres.trim() || !regexLetras.test(formData.nombres.trim())) {
-      showNotification('Los nombres son obligatorios y solo deben contener letras', 'error');
-      return;
-    }
-
-    // Validación Identidad (Solo números)
-    if (!formData.numero_identidad.trim() || !regexNumeros.test(formData.numero_identidad.trim())) {
-      showNotification('El documento de identidad debe contener solo números', 'error');
-      return;
-    }
-    const tiposContrato = ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'];
-    if (!tiposContrato.includes(formData.tipo_contrato)) {
-      showNotification('Tipo de contrato inválido', 'error');
-      return;
-    }
-
-    const estados = ['ACTIVO', 'VACACIONES', 'LICENCIA', 'INACTIVO'];
-    if (!estados.includes(formData.estado)) {
-      showNotification('Estado inválido', 'error');
-      return;
-    }
-
-    if (!formData.telefono.trim() || formData.telefono.trim().length < 8 || formData.telefono.trim().length > 20) {
-      showNotification('El teléfono debe tener entre 8 y 20 caracteres', 'error');
-      return;
-    }
-
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!formData.direccion_correo.trim() || !emailRegex.test(formData.direccion_correo.trim())) {
-      showNotification('Correo electrónico inválido', 'error');
-      return;
-    }
-
-    if (!formData.cargo.trim() || formData.cargo.trim().length < 2 || formData.cargo.trim().length > 100) {
-      showNotification('Cargo del empleado - obligatorio', 'error');
-      return;
-    }
-
-    if (!formData.fecha_asignacion) {
-      showNotification('La fecha de asignación es obligatoria', 'error');
-      return;
-    }
-
-    const horarios = ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE'];
-    if (formData.horario_preferido && !horarios.includes(formData.horario_preferido)) {
-      showNotification('Horario preferido inválido', 'error');
-      return;
-    }
-
-    if (formData.area_trabajo && formData.area_trabajo.trim().length > 100) {
-      showNotification('El área de trabajo no puede exceder 100 caracteres', 'error');
-      return;
-    }
-
-    if (formData.salario && parseFloat(formData.salario) < 0) {
-      showNotification('El salario no puede ser negativo', 'error');
-      return;
-    }
-
-    //  Crear FormData igual que handleCrearPersonal
-    const formDataSend = new FormData();
-    formDataSend.append('codigo', formData.codigo.trim());
-    formDataSend.append('nombres', formData.nombres.trim());
-    formDataSend.append('apellidos', formData.apellidos.trim());
-    formDataSend.append('numero_identidad', formData.numero_identidad.trim());
-    formDataSend.append('tipo_contrato', formData.tipo_contrato);
-    formDataSend.append('estado', formData.estado);
-    formDataSend.append('telefono', formData.telefono.trim());
-    formDataSend.append('direccion_correo', formData.direccion_correo.trim().toLowerCase());
-
-    const cargoAsignacion = {
-      cargo: formData.cargo.trim(),
-      horario_preferido: formData.horario_preferido,
-      fecha_asignacion: formData.fecha_asignacion
-    };
-    formDataSend.append('cargo_asignacion', JSON.stringify(cargoAsignacion));
-
-    formDataSend.append('area_trabajo', formData.area_trabajo.trim() || '');
-    formDataSend.append(
-      'especialidades',
-      formData.especialidades
-        ? formData.especialidades.split(',').map(e => e.trim()).filter(e => e).join(',')
-        : ''
-    );
-
-    if (formData.salario) formDataSend.append('salario', parseFloat(formData.salario));
-    if (formData.fecha_ingreso) formDataSend.append('fecha_ingreso', formData.fecha_ingreso);
-
-    // Solo adjuntar imagen si se modificó
-    if (formData.imagen) {
-      formDataSend.append('imagen', formData.imagen);
-    }
-     const user = auth.currentUser;
-    const token = await user.getIdToken();
-    //  Enviar al backend
-    const response = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
-      method: 'PUT',
-       headers: {
-        Authorization: `Bearer ${token}`, //  se agrega aquí
-        
-      },
-      body: formDataSend,
-    });
-
-    const responseData = await response.json();
-
-    if (!response.ok) {
-      throw new Error(responseData.message || `Error ${response.status}: ${response.statusText}`);
-    }
-
-    //  Si se guarda correctamente
-    await cargarPersonal();
-    setPersonalSeleccionado(null);
-    resetForm();
-    showNotification(`Empleado "${formData.nombres} ${formData.apellidos}" actualizado exitosamente`, 'success');
-
-  } catch (error) {
-    console.error('Error al editar el empleado:', error);
-    showNotification(error.message || 'Error al editar el empleado', 'error');
-  }
-};
-
-
-//Eliminar personal
-const [showConfirm, setShowConfirm] = useState(false);
-const [personalAEliminar, setPersonalAEliminar] = useState(null);
-
-const prepararEliminacionPersonal = () => {
-  if (!personalSeleccionado) return;
-  setPersonalAEliminar(personalSeleccionado);
-  setShowConfirm(true);
-};
-
-const confirmarEliminacionPersonal = async () => {
-  setShowConfirm(false);
-  if (!personalAEliminar) return;
-
-  try {
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    const res = await fetch(`${API_URL}/${personalAEliminar._id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Error al eliminar el empleado");
-    }
-
-    await cargarPersonal();
-    setPersonalSeleccionado(null);
-    resetForm();
-
-    showNotification(
-      `Empleado "${personalAEliminar.nombres} ${personalAEliminar.apellidos}" eliminado exitosamente`,
-      "success"
-    );
-    setPersonalAEliminar(null);
-  } catch (err) {
-    console.error(" Error eliminando personal:", err);
-    showNotification(err.message || "Error al eliminar el empleado", "error");
-  }
-};
-
-const cancelarEliminacionPersonal = () => {
-  setShowConfirm(false);
-  setPersonalAEliminar(null);
-};
-
-
-  const handleEliminarPersonal = async () => {
-  const personalAEliminar = personal.find(p => p._id === personalSeleccionado._id);
-  
-  try {
-    //  Obtener token del usuario autenticado (Firebase o Auth0)
-    const user = auth.currentUser;
-    const token = await user.getIdToken();
-
-    // ️ Petición DELETE con token
-    const res = await fetch(`${API_URL}/${personalSeleccionado._id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`, //  se agrega el token
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "Error al eliminar el empleado");
-    }
-
-    //  Actualizar lista tras eliminación
-    await cargarPersonal();
-    setPersonalSeleccionado(null);
-    resetForm();
-
-    showNotification(
-      `Empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}" eliminado exitosamente`,
-      "success"
-    );
-  } catch (err) {
-    console.error(" Error eliminando personal:", err);
-    showNotification(err.message || "Error al eliminar el empleado", "error");
-  }
-};
-
-
-  const personalFiltrado = personal.filter(p => {
-    const terminoBusqueda = busqueda.toLowerCase();
-    return (
-      p.codigo?.toLowerCase().includes(terminoBusqueda) ||
-      p.nombres?.toLowerCase().includes(terminoBusqueda) ||
-      p.apellidos?.toLowerCase().includes(terminoBusqueda) ||
-      p.numero_identidad?.toLowerCase().includes(terminoBusqueda) ||
-      p.cargo_asignacion?.cargo?.toLowerCase().includes(terminoBusqueda) ||
-      p.area_trabajo?.toLowerCase().includes(terminoBusqueda) ||
-      p.direccion_correo?.toLowerCase().includes(terminoBusqueda)
-    );
-  });
-
-  const personalOrdenado = [...personalFiltrado].sort((a, b) => {
-    switch(filtroOrden) {
-      case 'nombre-asc':
-        return (a.nombres || '').localeCompare(b.nombres || '');
-      case 'nombre-desc':
-        return (b.nombres || '').localeCompare(a.nombres || '');
-      case 'salario-asc':
-        return (a.salario || 0) - (b.salario || 0);
-      case 'salario-desc':
-        return (b.salario || 0) - (a.salario || 0);
-      case 'estado-activo':
-        const estadoOrden = { 'ACTIVO': 1, 'VACACIONES': 2, 'LICENCIA': 3, 'INACTIVO': 4 };
-        return (estadoOrden[a.estado] || 999) - (estadoOrden[b.estado] || 999);
-      case 'estado-inactivo':
-        const estadoOrdenInv = { 'INACTIVO': 1, 'LICENCIA': 2, 'VACACIONES': 3, 'ACTIVO': 4 };
-        return (estadoOrdenInv[a.estado] || 999) - (estadoOrdenInv[b.estado] || 999);
-      default:
-        return 0;
-    }
-  });
-
-  const getTipoIcon = (tipo) => {
-    const icons = {
-      'TIEMPO_COMPLETO': <Briefcase size={18} />,
-      'MEDIO_TIEMPO': <Clock size={18} />,
-      'TEMPORAL': <Calendar size={18} />,
-      'HONORARIOS': <DollarSign size={18} />,
-      'PRACTICANTE': <Award size={18} />
-    };
-    return icons[tipo] || <Briefcase size={18} />;
+  const pageNums = () => {
+    const nums = [];
+    for (let i = Math.max(1, page-2); i <= Math.min(pages, page+2); i++) nums.push(i);
+    return nums;
   };
 
-const handleOpenEditModal = (empleado) => {
-  setPersonalSeleccionado(empleado);
+  const hayFiltros = estadoFiltro !== "all" || cargoFiltro !== "all" || especialFiltro || fechaDesde || fechaHasta;
 
-  //  Preparar los datos del empleado para edición
-  const formDataSend = {
-    codigo: empleado.codigo || '',
-    nombres: empleado.nombres || '',
-    apellidos: empleado.apellidos || '',
-    numero_identidad: empleado.numero_identidad || '',
-    tipo_contrato: empleado.tipo_contrato || 'TIEMPO_COMPLETO',
-    estado: empleado.estado || 'ACTIVO',
-    telefono: empleado.telefono || '',
-    direccion_correo: empleado.direccion_correo || '',
-    cargo: empleado.cargo_asignacion?.cargo || '',
-    horario_preferido: empleado.cargo_asignacion?.horario_preferido || 'MATUTINO',
-    fecha_asignacion: empleado.cargo_asignacion?.fecha_asignacion
-      ? new Date(empleado.cargo_asignacion.fecha_asignacion).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    area_trabajo: empleado.area_trabajo || '',
-    especialidades: empleado.especialidades?.join(', ') || '',
-    salario: empleado.salario || '',
-    fecha_ingreso: empleado.fecha_ingreso
-      ? new Date(empleado.fecha_ingreso).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0],
-    foto_preview: empleado.imagen
-      ? `data:image/png;base64,${empleado.imagen}`
-      : null,
-    imagen: null // 
-  };
-
-
-  setFormData(formDataSend);
-};
-;
-
-  const handleCloseModals = () => {
-    setMostrarModalCrear(false);
-    setPersonalSeleccionado(null);
-    resetForm();
-    // Limpiar preview
-    if (formData.foto_preview) {
-      URL.revokeObjectURL(formData.foto_preview);
-    }
-  };
-
-  const formatearSalario = (salario) => {
-    if (!salario) return '—';
-    return new Intl.NumberFormat('es-HN', {
-      style: 'currency',
-      currency: 'HNL'
-    }).format(salario);
-  };
-
+  // ── Render ─────────────────────────────────────────────
   return (
-    <>
-      <div className="personal-container">
-        {/* Header con estadísticas */}
-         <motion.div 
-          className="donacion-header"
-          style={{marginBottom:'0'}}
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-        >
-          <motion.div
-            className="header-gradient"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.6 }}
-          >
-            <div className="header-content">
-              <motion.h2
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-              >
-                <motion.div
-                  initial={{ rotate: -180, scale: 0 }}
-                  animate={{ rotate: 0, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
-                >
-                  <Heart size={36} fill="white" color="white" />
-                </motion.div>
-                Sistema de Gestión de Personal
-                <motion.div
-                  animate={{ 
-                    rotate: [0, 10, -10, 0],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                  style={{ marginLeft: 'auto' }}
-                >
-                  <Gift size={32} color="white" />
-                </motion.div>
-              </motion.h2>
-              
-              <motion.p
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-              >
-                Administra tu equipo de trabajo de manera eficiente
-              </motion.p>
+    <div className="per-app">
 
-              <motion.div 
-                className="header-stats"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-              >
-            
-                
-              </motion.div>
-
-              <motion.div 
-                className="floating-icons"
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-              >
-                <motion.div 
-                  className="floating-icon"
-                  animate={{ 
-                    y: [0, -10, 0],
-                    rotate: [0, 5, -5, 0]
-                  }}
-                  transition={{ 
-                    duration: 4, 
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <Shirt size={20} color="white" />
-                </motion.div>
-                <motion.div 
-                  className="floating-icon"
-                  animate={{ 
-                    y: [0, -15, 0],
-                    rotate: [0, -8, 8, 0]
-                  }}
-                  transition={{ 
-                    duration: 3.5, 
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.5
-                  }}
-                >
-                  <Apple size={20} color="white" />
-                </motion.div>
-                <motion.div 
-                  className="floating-icon"
-                  animate={{ 
-                    y: [0, -12, 0],
-                    rotate: [0, 10, -10, 0]
-                  }}
-                  transition={{ 
-                    duration: 4.2, 
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 1
-                  }}
-                >
-                  <Book size={20} color="white" />
-                </motion.div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          <motion.div 
-            className="donacion-busqueda-bar"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            style={{ marginTop: '2rem' }}
-          >
-           
-           
-            
-          </motion.div> 
-        </motion.div>
-        <motion.div 
-          className="personal-header"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          
-          {/* Tarjetas de estadísticas */}
-          <div className="personal-stats">
-            <motion.div 
-              className="stat-card-personal"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Users size={24} />
-              <div className="stat-info">
-                <span className="stat-value-personal">{totalPersonal}</span>
-                <span className="stat-label">Total</span>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="stat-card-personal active"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Check size={24} />
-              <div className="stat-info">
-                <span className="stat-value-personal">{personalActivo}</span>
-                <span className="stat-label">Activos</span>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="stat-card-personal vacaciones"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <Calendar size={24} />
-              <div className="stat-info">
-                <span className="stat-value-personal">{personalVacaciones}</span>
-                <span className="stat-label">Vacaciones</span>
-              </div>
-            </motion.div>
-            <motion.div 
-              className="stat-card-personal licencia"
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
-              <FileText size={24} />
-              <div className="stat-info">
-                <span className="stat-value-personal">{personalLicencia}</span>
-                <span className="stat-label">Licencia</span>
-              </div>
+      {/* ── HEADER ── */}
+      <motion.div
+        className="per-header"
+        initial={{ opacity:0, y:-20 }}
+        animate={{ opacity:1, y:0 }}
+        transition={{ duration:0.5, type:"spring", stiffness:120 }}
+      >
+        <div className="per-hi">
+          <div className="per-ht">
+            <motion.div className="per-htitle" initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15 }}>
+              <motion.span initial={{ rotate:-180, scale:0 }} animate={{ rotate:0, scale:1 }} transition={{ type:"spring", stiffness:200, delay:0.2 }}>
+                <Users size={34} color="white" fill="white" />
+              </motion.span>
+              Sistema de Personal
             </motion.div>
           </div>
-
-          <div className="personal-busqueda-bar">
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search 
-                size={20} 
-                style={{ 
-                  position: 'absolute', 
-                  left: '12px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  color: '#999' 
-                }} 
-              />
-              <input
-                type="text"
-                className="personal-busqueda"
-                placeholder="Buscar por código, nombre, identidad, cargo, área o email..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                style={{ paddingLeft: '45px' }}
-              />
-            </div>
-            
-            <div style={{ position: 'relative' }}>
-              <motion.button 
-                className="btn-ayuda" 
-                onClick={() => setMostrarMenuFiltros(!mostrarMenuFiltros)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Shield size={16} />
-                Ordenar
-              </motion.button>
-              
-              <AnimatePresence>
-                {mostrarMenuFiltros && (
-                  <motion.div 
-                    className="filtros-menu"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'ninguno' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('ninguno'); setMostrarMenuFiltros(false); }}
-                    >
-                      Sin orden
-                    </div>
-                    <div className="filtro-separador"></div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'nombre-asc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('nombre-asc'); setMostrarMenuFiltros(false); }}
-                    >
-                      Nombre A-Z
-                    </div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'nombre-desc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('nombre-desc'); setMostrarMenuFiltros(false); }}
-                    >
-                      Nombre Z-A
-                    </div>
-                    <div className="filtro-separador"></div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'salario-asc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('salario-asc'); setMostrarMenuFiltros(false); }}
-                    >
-                      Salario menor-mayor
-                    </div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'salario-desc' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('salario-desc'); setMostrarMenuFiltros(false); }}
-                    >
-                      Salario mayor-menor
-                    </div>
-                    <div className="filtro-separador"></div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'estado-activo' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('estado-activo'); setMostrarMenuFiltros(false); }}
-                    >
-                      Estado: Activo primero
-                    </div>
-                    <div 
-                      className={`filtro-opcion ${filtroOrden === 'estado-inactivo' ? 'active' : ''}`}
-                      onClick={() => { setFiltroOrden('estado-inactivo'); setMostrarMenuFiltros(false); }}
-                    >
-                      Estado: Inactivo primero
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <motion.button 
-              className="btn-ayuda" 
-              onClick={() => setMostrarAyuda(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <HelpCircle size={16} />
-              Ayuda
-            </motion.button>
-            <motion.button 
-              className="btn-ayuda" 
-              onClick={() => {
-                resetForm();
-                setMostrarModalCrear(true);
-              }}
-              style={{ background: '#4CAF50' }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Plus size={16} />
-              Nuevo Empleado
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* UNA SOLA TABLA con TODO el personal */}
-        <motion.div 
-          className="personal-categoria-section"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
-          <motion.div 
-            className="personal-categoria-header"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            
-          </motion.div>
-
-          {personalOrdenado.length === 0 ? (
-            <motion.p 
-              className="personal-vacio"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              No hay empleados registrados.
-            </motion.p>
-          ) : (
-            <motion.div 
-              className="tabla-personal"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              <motion.div 
-                className="tabla-header-personal"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '100px 1fr 200px 180px 150px 120px 100px 120px',
-                  gap: '10px',
-                  padding: '12px 20px',
-                  fontWeight: '600',
-                  fontSize: '0.85rem',
-                  background: '#667eea',
-                  color: 'white',
-                  borderRadius: '8px 8px 0 0'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <motion.div
-                    animate={{ rotate: [0, 360] }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Hash size={14} />
-                  </motion.div>
-                  CÓDIGO
+          <motion.p className="per-sub" initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.3 }}>
+            Gestión completa del expediente de empleados de la institución
+          </motion.p>
+          <motion.div className="per-stats" initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.35 }}>
+            {[
+              { ico: <Users size={18} color="white"/>,       val: filteredItems.length, lbl: filteredItems.length === personal.length ? "Total Personal" : "Filtrados" },
+              { ico: <CheckCircle size={18} color="white"/>, val: metrics.activos,      lbl: "Activos"   },
+              { ico: <XCircle size={18} color="white"/>,     val: metrics.inactivos,    lbl: "Inactivos" },
+              { ico: <UserPlus size={18} color="white"/>,    val: metrics.docentes,     lbl: "Docentes"  },
+            ].map((s, i) => (
+              <motion.div key={i} className="per-stat" whileHover={{ scale:1.04, y:-2 }} transition={{ type:"spring", stiffness:300 }}>
+                <div className="per-stat-ico">{s.ico}</div>
+                <div>
+                  <div className="per-stat-val">{s.val}</div>
+                  <div className="per-stat-lbl">{s.lbl}</div>
                 </div>
-                <div>NOMBRE & APELLIDO</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Mail size={14} />
-                  CONTACTO
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  <Briefcase size={14} />
-                  AREA
-                </div>
-                <div style={{ textAlign: 'center' }}>TIPO</div>
-                <div style={{ textAlign: 'center' }}>SALARIO</div>
-                <div style={{ textAlign: 'center' }}>ESTADO</div>
-                <div style={{ textAlign: 'center' }}>ACCIONES</div>
               </motion.div>
-
-              <div className="tabla-body-personal">
-                {personalOrdenado.map((empleado, index) => (
-                  <motion.div
-                    key={empleado._id}
-                    className="tabla-fila-personal"
-                    initial={{ opacity: 0, x: -50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ 
-                      delay: Math.min(index * 0.05, 1),
-                      duration: 0.4,
-                      type: "spring",
-                      stiffness: 100
-                    }}
-                    whileHover={{ 
-                      scale: 1.01,
-                      transition: { duration: 0.2 }
-                    }}
-                    onClick={() => handleOpenEditModal(empleado)}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '100px 1fr 200px 180px 150px 120px 100px 120px',
-                      gap: '10px',
-                      alignItems: 'center',
-                      padding: '15px 20px',
-                      background: 'white',
-                      borderBottom: '1px solid #eee',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <motion.div 
-                      style={{ 
-                        fontWeight: 'bold', 
-                        color: '#667eea',
-                        fontSize: '0.95rem'
-                      }}
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      {empleado.codigo}
-                    </motion.div>
-
-                    <div>
-                      <motion.div 
-                        style={{ 
-                          fontWeight: '600',
-                          fontSize: '1rem',
-                          color: '#333',
-                          marginBottom: '3px',
-                          textAlign: 'left'
-                        }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.05 + 0.2 }}
-                      >
-                        {empleado.nombres} {empleado.apellidos}
-                      </motion.div>
-                      
-                    </div>
-
-                    <div>
-                      <motion.div 
-                        style={{ 
-                          fontSize: '0.85rem',
-                          color: '#555',
-                          marginBottom: '3px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                        whileHover={{ x: 5 }}
-                      >
-                        <Mail size={14} />
-                        {empleado.direccion_correo}
-                      </motion.div>
-                      <motion.div 
-                        style={{ 
-                          fontSize: '0.85rem',
-                          color: '#555',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '5px'
-                        }}
-                        whileHover={{ x: 5 }}
-                      >
-                        <Phone size={14} />
-                        {empleado.telefono}
-                      </motion.div>
-                    </div>
-
-                    <motion.div 
-                      style={{ fontSize: '0.9rem', color: '#555', textAlign:'left' }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 + 0.25 }}
-                    >
-                     
-                      {empleado.area_trabajo}
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ 
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                      whileHover={{ scale: 1.1 }}
-                      transition={{ type: "spring", stiffness: 300 }}
-                    >
-                      {getTipoIcon(empleado.tipo_contrato)}
-                      <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>
-                        {empleado.tipo_contrato?.replace(/_/g, ' ')}
-                      </span>
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ 
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '0.95rem',
-                        color: '#4CAF50'
-                      }}
-                      whileHover={{ scale: 1.1, color: '#45a049' }}
-                    >
-                      {formatearSalario(empleado.salario)}
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ textAlign: 'center' }}
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <span className={`estado-badge ${empleado.estado?.toLowerCase()}`}>
-                        {empleado.estado}
-                      </span>
-                    </motion.div>
-
-                    <motion.div 
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        gap: '8px' 
-                      }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: index * 0.05 + 0.3 }}
-                    >
-                      <motion.button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenEditModal(empleado);
-                        }}
-                        style={{
-                          background: '#667eea',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '0.85rem'
-                        }}
-                        whileHover={{ scale: 1.1, backgroundColor: '#5568d3' }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Edit size={14} />
-                      </motion.button>
-                    </motion.div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
-
-      {/* Modal Crear Empleado */}
-      <AnimatePresence>
-        {mostrarModalCrear && (
-          <motion.div 
-            className="modal-overlay" 
-            onClick={handleCloseModals}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="modal-content" 
-              style={{ maxWidth: '900px', maxHeight: '85vh', overflow: 'auto' }}
-              onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              transition={{ type: "spring", damping: 25 }}
-            >
-              <h3 className="modal-title">
-                <Plus size={20} />
-                Crear Nuevo Empleado
-              </h3>
-              <form onSubmit={handleCrearPersonal}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Código *</label>
-                    <input
-                      type="text"
-                      value={formData.codigo}
-                      onChange={(e) => setFormData({...formData, codigo: e.target.value})}
-                      placeholder="EMP-001"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Número de Identidad *</label>
-                    <input
-                      type="text"
-                      value={formData.numero_identidad}
-                      onChange={(e) => setFormData({...formData, numero_identidad: e.target.value})}
-                      placeholder="0801-1990-12345"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Nombres *</label>
-                    <input
-                      type="text"
-                      value={formData.nombres}
-                      onChange={(e) => setFormData({...formData, nombres: e.target.value})}
-                      placeholder="Juan Carlos"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Apellidos *</label>
-                    <input
-                      type="text"
-                      value={formData.apellidos}
-                      onChange={(e) => setFormData({...formData, apellidos: e.target.value})}
-                      placeholder="Pérez López"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Teléfono *</label>
-                    <input
-                      type="tel"
-                      value={formData.telefono}
-                      onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                      placeholder="9876-5432"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Email *</label>
-                    <input
-                      type="email"
-                      value={formData.direccion_correo}
-                      onChange={(e) => setFormData({...formData, direccion_correo: e.target.value})}
-                      placeholder="empleado@empresa.com"
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Cargo *</label>
-                    <select
-  value={formData.cargo}
-  onChange={(e) =>
-    setFormData({ ...formData, cargo: e.target.value })
-  }
-  required
->
-  <option value="">Seleccione un cargo</option>
-  <option value="DOCENTE">Docente</option>
-  <option value="DIRECTOR">Director(a)</option>
-  <option value="LIMPIEZA">Limpieza</option>
-  <option value="GUARDIA">Guardia</option>
-  <option value="SERVICIO_SOCIAL">Servicio Social</option>
-</select>
-
-                  </div>
-                  <div className="form-group">
-                    <label>Área de Trabajo</label>
-                    <input
-                      type="text"
-                      value={formData.area_trabajo}
-                      onChange={(e) => setFormData({...formData, area_trabajo: e.target.value})}
-                      placeholder="Tecnología"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Tipo de Contrato *</label>
-                    <select
-                      value={formData.tipo_contrato}
-                      onChange={(e) => setFormData({...formData, tipo_contrato: e.target.value})}
-                      required
-                    >
-                      <option value="TIEMPO_COMPLETO">Tiempo Completo</option>
-                      <option value="MEDIO_TIEMPO">Medio Tiempo</option>
-                      <option value="TEMPORAL">Temporal</option>
-                      <option value="HONORARIOS">Honorarios</option>
-                      <option value="PRACTICANTE">Practicante</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Horario Preferido</label>
-                    <select
-                      value={formData.horario_preferido}
-                      onChange={(e) => setFormData({...formData, horario_preferido: e.target.value})}
-                    >
-                      <option value="MATUTINO">Matutino</option>
-                      <option value="VESPERTINO">Vespertino</option>
-                      <option value="NOCTURNO">Nocturno</option>
-                      <option value="ROTATIVO">Rotativo</option>
-                      <option value="FLEXIBLE">Flexible</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Estado *</label>
-                    <select
-                      value={formData.estado}
-                      onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                      required
-                    >
-                      <option value="ACTIVO">Activo</option>
-                      <option value="VACACIONES">Vacaciones</option>
-                      <option value="LICENCIA">Licencia</option>
-                      <option value="INACTIVO">Inactivo</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Salario</label>
-                    <input
-                      type="number"
-                      value={formData.salario}
-                      onChange={(e) => setFormData({...formData, salario: e.target.value})}
-                      placeholder="15000"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Fecha de Ingreso</label>
-                    <input
-                      type="date"
-                      value={formData.fecha_ingreso}
-                      onChange={(e) => setFormData({...formData, fecha_ingreso: e.target.value})}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Fecha de Asignación *</label>
-                    <input
-                      type="date"
-                      value={formData.fecha_asignacion}
-                      onChange={(e) => setFormData({...formData, fecha_asignacion: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group full-width">
-                    <label>Especialidades (separadas por comas)</label>
-                    <input
-                      type="text"
-                      value={formData.especialidades}
-                      onChange={(e) => setFormData({...formData, especialidades: e.target.value})}
-                      placeholder="Matematicas,Violin,etc"
-                    />
-                  </div>
-                <div className="form-group form-grid-full">
-                      <label>
-                        <ImagePlus size={16} />
-                        Foto del empleado
-                      </label>
-                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
-                        {formData.foto_preview ? (
-                          <div>
-                            <img 
-                              src={formData.foto_preview} 
-                              alt="Preview" 
-                              className="foto-preview"
-                            />
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                              <motion.button
-                                type="button"
-                                onClick={eliminarFoto}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
-                              >
-                                <Trash2 size={16} />
-                                Eliminar foto
-                              </motion.button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
-                            <p style={{ color: '#666', marginBottom: '1rem', fontSize: '1rem' }}>
-                              Arrastra una imagen o haz clic para seleccionar
-                            </p>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFotoChange}
-                              style={{ display: 'none' }}
-                              id="foto-upload-nueva"
-                            />
-                            <label htmlFor="foto-upload-nueva" className="btn-upload-label">
-                              <ImagePlus size={18} />
-                              Seleccionar imagen
-                            </label>
-                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                              Formatos: JPG, JPEG
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                </div>
-
-                <div className="modal-actions">
-                  <motion.button 
-                    type="button" 
-                    className="btn-cancelar" 
-                    onClick={handleCloseModals}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <X size={16} />
-                    Cancelar
-                  </motion.button>
-                  <motion.button 
-                    type="submit" 
-                    className="btn-guardar"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Save size={16} />
-                    Guardar Empleado
-                  </motion.button>
-                </div>
-              </form>
-            </motion.div>
+            ))}
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </motion.div>
 
-      {/* Modal Editar Empleado */}
-      <AnimatePresence>
-        {personalSeleccionado && (
-          <motion.div 
-            className="modal-overlay" 
-            onClick={handleCloseModals}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="modal-content" 
-              style={{ maxWidth: '900px', maxHeight: '85vh', overflow: 'auto' }}
-              onClick={(e) => e.stopPropagation()}
-              initial={{ scale: 0.9, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 50 }}
-              transition={{ type: "spring", damping: 25 }}
-            >
-              <h3 className="modal-title">
-                <Edit size={20} />
-                Editar Empleado
-              </h3>
-              <form onSubmit={handleEditarPersonal}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Código *</label>
-                    <input
-                      type="text"
-                      value={formData.codigo}
-                      onChange={(e) => setFormData({...formData, codigo: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Número de Identidad *</label>
-                    <input
-                      type="text"
-                      value={formData.numero_identidad}
-                      onChange={(e) => setFormData({...formData, numero_identidad: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Nombres *</label>
-                    <input
-                      type="text"
-                      value={formData.nombres}
-                      onChange={(e) => setFormData({...formData, nombres: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Apellidos *</label>
-                    <input
-                      type="text"
-                      value={formData.apellidos}
-                      onChange={(e) => setFormData({...formData, apellidos: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Teléfono *</label>
-                    <input
-                      type="tel"
-                      value={formData.telefono}
-                      onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Email *</label>
-                    <input
-                      type="email"
-                      value={formData.direccion_correo}
-                      onChange={(e) => setFormData({...formData, direccion_correo: e.target.value})}
-                      required
-                    />
-                  </div>
-                 <div className="form-group">
-                  <label>Cargo *</label>
-                    <select
-  value={formData.cargo}
-  onChange={(e) =>
-    setFormData({ ...formData, cargo: e.target.value })
-  }
-  required
->
-  <option value="">Seleccione un cargo</option>
-  <option value="DOCENTE">Docente</option>
-  <option value="DIRECTOR">Director(a)</option>
-  <option value="LIMPIEZA">Limpieza</option>
-  <option value="GUARDIA">Guardia</option>
-  <option value="SERVICIO_SOCIAL">Servicio Social</option>
-</select>
+      {/* ── BARRA DE ACCIONES ── */}
+      <div className="per-action-area">
+        <div className="per-action-bar">
+          <div className="per-search-wrapper">
+            <span className="per-search-icon"><Search size={16}/></span>
+            <input
+              type="text"
+              className="per-search-input"
+              placeholder="Buscar por código, nombre, área, correo..."
+              value={filterValue}
+              onChange={e => { setFilterValue(e.target.value); setPage(1); }}
+            />
+            {filterValue && <button className="per-search-clear" onClick={() => setFilterValue("")}>×</button>}
+          </div>
+          <div className="per-bar-buttons">
+            {seleccionados.length > 0 && (
+              <button className="per-btn per-btn-danger" >
+                <Trash2 size={15}/> Eliminar ({seleccionados.length})
+              </button>
+            )}
+            <button className="per-btn per-btn-help"  onClick={() => setMostrarAyuda(true)}><HelpCircle size={15}/> Ayuda</button>
+            <button className="per-btn per-btn-excel" onClick={handleExcel}><Download size={15}/> Excel</button>
+            <button className="per-btn per-btn-primary" onClick={() => setMostrarModalCrear(true)}><Plus size={15}/> Agregar empleado</button>
+          </div>
+        </div>
 
-                  </div>
-                  <div className="form-group">
-                    <label>Área de Trabajo</label>
-                    <input
-                      type="text"
-                      value={formData.area_trabajo}
-                      onChange={(e) => setFormData({...formData, area_trabajo: e.target.value})}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Tipo de Contrato *</label>
-                    <select
-                      value={formData.tipo_contrato}
-                      onChange={(e) => setFormData({...formData, tipo_contrato: e.target.value})}
-                      required
-                    >
-                      <option value="TIEMPO_COMPLETO">Tiempo Completo</option>
-                      <option value="MEDIO_TIEMPO">Medio Tiempo</option>
-                      <option value="TEMPORAL">Temporal</option>
-                      <option value="HONORARIOS">Honorarios</option>
-                      <option value="PRACTICANTE">Practicante</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Horario Preferido</label>
-                    <select
-                      value={formData.horario_preferido}
-                      onChange={(e) => setFormData({...formData, horario_preferido: e.target.value})}
-                    >
-                      <option value="MATUTINO">Matutino</option>
-                      <option value="VESPERTINO">Vespertino</option>
-                      <option value="NOCTURNO">Nocturno</option>
-                      <option value="ROTATIVO">Rotativo</option>
-                      <option value="FLEXIBLE">Flexible</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Estado *</label>
-                    <select
-                      value={formData.estado}
-                      onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                      required
-                    >
-                      <option value="ACTIVO">Activo</option>
-                      <option value="VACACIONES">Vacaciones</option>
-                      <option value="LICENCIA">Licencia</option>
-                      <option value="INACTIVO">Inactivo</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Salario</label>
-                    <input
-                      type="number"
-                      value={formData.salario}
-                      onChange={(e) => setFormData({...formData, salario: e.target.value})}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Fecha de Ingreso</label>
-                    <input
-                      type="date"
-                      value={formData.fecha_ingreso}
-                      onChange={(e) => setFormData({...formData, fecha_ingreso: e.target.value})}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Fecha de Asignación *</label>
-                    <input
-                      type="date"
-                      value={formData.fecha_asignacion}
-                      onChange={(e) => setFormData({...formData, fecha_asignacion: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="form-group full-width">
-                    <label>Especialidades (separadas por comas)</label>
-                    <input
-                      type="text"
-                      value={formData.especialidades}
-                      onChange={(e) => setFormData({...formData, especialidades: e.target.value})}
-                      placeholder="React, Node.js, MongoDB"
-                    />
-                  </div>
-<div className="form-group form-grid-full">
-                      <label>
-                        <ImagePlus size={16} />
-                        Foto del personal
-                      </label>
-                      <div className={`foto-upload-area ${formData.foto_preview ? 'has-image' : ''}`}>
-                        {formData.foto_preview ? (
-                          <div>
-                            <img 
-                              src={formData.foto_preview} 
-                              alt="Preview" 
-                              className="foto-preview"
-                            />
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                              <motion.button
-                                type="button"
-                                onClick={eliminarFoto}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="btn btn-danger"
-                              >
-                                <Trash2 size={16} />
-                                Eliminar foto
-                              </motion.button>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFotoChange}
-                                style={{ display: 'none' }}
-                                id="foto-upload-editar-replace"
-                              />
-                              <label 
-                                htmlFor="foto-upload-editar-replace"
-                                className="btn-upload-label"
-                              >
-                                <Upload size={16} />
-                                Cambiar foto
-                              </label>
-                            </div>
-                          </div>
-                        ) : (
-                          <div>
-                            <Upload size={40} color="#667eea" style={{ marginBottom: '1rem' }} />
-                            <p style={{ color: '#666', marginBottom: '1rem' }}>
-                              Arrastra una imagen o haz clic para seleccionar
-                            </p>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFotoChange}
-                              style={{ display: 'none' }}
-                              id="foto-upload-editar"
-                            />
-                            <label 
-                              htmlFor="foto-upload-editar"
-                              className="btn-upload-label"
-                            >
-                              <ImagePlus size={18} />
-                              Seleccionar imagen
-                            </label>
-                            <small style={{ display: 'block', marginTop: '1rem', color: '#999', fontSize: '0.85rem' }}>
-                              Formatos: JPG, JPEG
-                            </small>
-                          </div>
-                        )}
-                      </div>
-                    </div>                  
+        {/* Filtros */}
+        <div className="per-filters-bar">
+          {/* Estado pills */}
+          <div className="per-filter-group">
+            <span className="per-filter-label"><Filter size={13}/> Estado:</span>
+            <div className="per-filter-pills">
+              {ESTADO_OPTS.map(op => (
+                <button key={op.uid} className={`per-pill${estadoFiltro === op.uid ? " active" : ""}`}
+                  onClick={() => { setEstadoFiltro(op.uid); setPage(1); }}>
+                  {op.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cargo dropdown */}
+          <div className="per-filter-group">
+            <span className="per-filter-label">Cargo:</span>
+            <div className="per-dropdown-wrapper" ref={cargoMenuRef}>
+              <button className={`per-filter-select${cargoFiltro !== "all" ? " has-value" : ""}`}
+                onClick={() => setShowCargoMenu(!showCargoMenu)}>
+                {CARGO_OPTS.find(c => c.uid === cargoFiltro)?.name || "Todos los cargos"}<ChevronDown/>
+              </button>
+              {showCargoMenu && (
+                <div className="per-dropdown-menu">
+                  {CARGO_OPTS.map(op => (
+                    <div key={op.uid} className={`per-dropdown-item${cargoFiltro === op.uid ? " active" : ""}`}
+                      onClick={() => { setCargoFiltro(op.uid); setShowCargoMenu(false); setPage(1); }}>
+                      {cargoFiltro === op.uid && <span className="chk">✓</span>} {op.name}
+                    </div>
+                  ))}
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div className="modal-actions">
-                  <motion.button 
-                    type="button" 
-                    className="btn btn-danger" 
-                    onClick={prepararEliminacionPersonal}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Trash2 size={16} />
-                    Eliminar
-                  </motion.button>
-                  {showConfirm && (
-                    <ConfirmDialog
-                      message={`¿Seguro que deseas eliminar al empleado "${personalAEliminar?.nombres} ${personalAEliminar?.apellidos}"?`}
-                      onConfirm={confirmarEliminacionPersonal}
-                      onCancel={cancelarEliminacionPersonal}
-                      visible={showConfirm}
-                    />
-                  )}
+          {/* Especialidad — fix #7 */}
+          <div className="per-filter-group">
+            <span className="per-filter-label">Especialidad:</span>
+            <div className="per-search-wrapper" style={{ minWidth:180, maxWidth:220 }}>
+              <span className="per-search-icon"><Search size={13}/></span>
+              <input type="text" className="per-search-input" placeholder="Filtrar especialidad..."
+                value={especialFiltro}
+                onChange={e => { setEspecialFiltro(e.target.value); setPage(1); }}
+                style={{ paddingLeft:"2rem", paddingRight: especialFiltro ? "2rem" : "0.75rem" }}
+              />
+              {especialFiltro && <button className="per-search-clear" onClick={() => setEspecialFiltro("")}>×</button>}
+            </div>
+          </div>
 
-                  <motion.button 
-                    type="button" 
-                    className="btn btn-dark" 
-                    onClick={handleCloseModals}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <X size={16} />
-                    Cancelar
-                  </motion.button>
-                  <motion.button 
-                    type="submit" 
-                    className="btn btn-guardar-donaciones"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Save size={16} />
-                    Guardar Cambios
-                  </motion.button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {/* Rango fechas */}
+          <div className="per-filter-group">
+            <span className="per-filter-label">Ingreso:</span>
+            <div className="per-date-range">
+              <input type="date" className="per-date-input" value={fechaDesde} onChange={e => { setFechaDesde(e.target.value); setPage(1); }} title="Desde"/>
+              <span className="per-date-sep">→</span>
+              <input type="date" className="per-date-input" value={fechaHasta} onChange={e => { setFechaHasta(e.target.value); setPage(1); }} title="Hasta"/>
+              {(fechaDesde || fechaHasta) && <button className="per-date-clear" onClick={() => { setFechaDesde(""); setFechaHasta(""); }}>×</button>}
+            </div>
+          </div>
 
-      {/* Notificaciones */}
-      <AnimatePresence>
-        {notification && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            style={{
-              position: 'fixed',
-              top: '20px',
-              right: '20px',
-              zIndex: 10000,
-              background: notification.type === 'success' ? '#4CAF50' : '#f44336',
-              color: 'white',
-              padding: '1rem 1.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}
-          >
-            {notification.message}
-            <button
-              onClick={() => setNotification(null)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'white',
-                cursor: 'pointer',
-                padding: '2px',
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
-              <X size={18} />
+          {hayFiltros && (
+            <button className="per-clear-filters" onClick={() => { setEstadoFiltro("all"); setCargoFiltro("all"); setEspecialFiltro(""); setFechaDesde(""); setFechaHasta(""); setPage(1); }}>
+              ✕ Limpiar filtros
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modal Ayuda */}
-      <AnimatePresence>
-        {mostrarAyuda && (
-  <div className="horarios-modal-overlay horarios-modal-show">
-    <div className="horarios-modal-content">
-      <div className="horarios-modal-header">
-        <h3 className="horarios-modal-title">
-          <Users size={24} />
-          Ayuda - Sistema de Personal
-        </h3>
-        <button 
-          className="horarios-modal-close"
-          onClick={() => setMostrarAyuda(false)}
-        >
-          <X size={20} />
-        </button>
+          )}
+        </div>
       </div>
 
-      <div className="horarios-modal-body">
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">¿Cómo funciona el sistema de personal?</h4>
-          <p className="horarios-help-text">
-            El módulo de personal te permite gestionar toda la información del personal académico y administrativo, 
-            incluyendo datos personales, contratos, estados laborales y documentación relevante.
-          </p>
-        </div>
-
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Funcionalidades principales:</h4>
-          <ul className="horarios-help-list">
-            <li className="horarios-help-item">
-              <strong>Búsqueda y filtros:</strong> Encuentra personal por código, nombre, identidad, cargo, área o email
-            </li>
-            <li className="horarios-help-item">
-              <strong>Gestión de personal:</strong> Crea, edita y actualiza información del personal
-            </li>
-            <li className="horarios-help-item">
-              <strong>Estados laborales:</strong> Controla el estado (Activo, Vacaciones, Licencia, Inactivo) de cada empleado
-            </li>
-            <li className="horarios-help-item">
-              <strong>Tipos de contrato:</strong> Gestiona diferentes modalidades contractuales
-            </li>
-            <li className="horarios-help-item">
-              <strong>Documentación:</strong> Adjunta documentos importantes como contratos, identificaciones, etc.
-            </li>
-          </ul>
-        </div>
-
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Estados laborales:</h4>
-          <div className="horarios-icons-grid">
-            <div className="horarios-icon-item">
-              <UserCheck size={16} className="horarios-icon-success" />
-              <span>ACTIVO - Personal trabajando normalmente</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Sun size={16} className="horarios-icon-warning" />
-              <span>VACACIONES - Personal en vacaciones</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Clock size={16} className="horarios-icon-orange" />
-              <span>LICENCIA - Personal con licencia</span>
-            </div>
-            <div className="horarios-icon-item">
-              <UserX size={16} className="horarios-icon-danger" />
-              <span>INACTIVO - Personal retirado</span>
-            </div>
+      {/* ── TABLA ── */}
+      <div className="per-container">
+        <div className="per-table-wrapper">
+          <div className="per-results-info">
+            <span>
+              Mostrando <strong>{Math.min((page-1)*ROWS+1, sortedItems.length)}</strong>–<strong>{Math.min(page*ROWS, sortedItems.length)}</strong> de <strong>{sortedItems.length}</strong> empleados
+              {filterValue && <span className="per-filtrado-tag"> · filtrado de {personal.length}</span>}
+            </span>
+            {seleccionados.length > 0 && <span className="per-seleccionados-info">{seleccionados.length} seleccionado(s)</span>}
           </div>
-        </div>
 
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Tipos de contrato:</h4>
-          <div className="horarios-icons-grid">
-            <div className="horarios-icon-item">
-              <Briefcase size={16} className="horarios-icon-primary" />
-              <span>TIEMPO COMPLETO - 40 horas semanales</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Briefcase size={16} className="horarios-icon-info" />
-              <span>MEDIO TIEMPO - 20 horas semanales</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Calendar size={16} className="horarios-icon-warning" />
-              <span>TEMPORAL - Tiempo definido</span>
-            </div>
-            <div className="horarios-icon-item">
-              <FileText size={16} className="horarios-icon-success" />
-              <span>HONORARIOS - Servicios profesionales</span>
-            </div>
-            <div className="horarios-icon-item">
-              <GraduationCap size={16} className="horarios-icon-new" />
-              <span>PRACTICANTE - En formación</span>
-            </div>
+          <div className="per-table-scroll">
+            <table className="per-table">
+              <thead>
+                <tr>
+                  <th style={{ width:44 }}>
+                    <input type="checkbox" className="per-checkbox"
+                      checked={currentItems.length > 0 && currentItems.every(p => seleccionados.includes(p._id))}
+                      onChange={e => {
+                        if (e.target.checked) setSeleccionados(prev => [...new Set([...prev, ...currentItems.map(p => p._id)])]);
+                        else setSeleccionados(prev => prev.filter(id => !currentItems.map(p => p._id).includes(id)));
+                      }}
+                    />
+                  </th>
+                  {COLS.map(col => (
+                    <th key={col.uid} className={col.sortable ? "sortable" : ""} onClick={() => handleSort(col.uid)}>
+                      {col.name}
+                      {col.sortable && sortDesc.column === col.uid && (
+                        <span className="per-sort-arrow">{sortDesc.direction === "ascending" ? " ↑" : " ↓"}</span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={COLS.length + 1}>
+                      <div className="per-empty-state">
+                        <Users size={40} color="#ccc"/>
+                        <p>No se encontraron empleados con los filtros actuales</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentItems.map(emp => (
+                  <tr key={emp._id} className={seleccionados.includes(emp._id) ? "row-selected" : ""}>
+                    <td>
+                      <input type="checkbox" className="per-checkbox"
+                        checked={seleccionados.includes(emp._id)}
+                        onChange={e => {
+                          if (e.target.checked) setSeleccionados(p => [...p, emp._id]);
+                          else setSeleccionados(p => p.filter(id => id !== emp._id));
+                        }}
+                      />
+                    </td>
+
+                    {/* Código chip */}
+                    <td className="per-td-codigo">
+                      <span className="per-codigo-chip">{emp.codigo}</span>
+                    </td>
+
+                    {/* Empleado */}
+                    <td>
+                      <div className="per-nombre-cell">
+                        {emp.imagen ? (
+                          <img src={`data:${emp.tipo_imagen};base64,${emp.imagen}`} alt="" className="per-avatar"/>
+                        ) : (
+                          <div className="per-avatar-placeholder">
+                            {(emp.nombres?.[0] || "")}{(emp.apellidos?.[0] || "")}
+                          </div>
+                        )}
+                        <div>
+                          <div className="per-nombre">{emp.apellidos}, {emp.nombres}</div>
+                          <div className="per-correo">{emp.direccion_correo}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Cargo */}
+                    <td>
+                      <span className="per-cargo-badge">{emp.cargo_asignacion?.cargo?.replace(/_/g," ") || "—"}</span>
+                    </td>
+
+                    {/* Área */}
+                    <td className="per-td-area">{emp.area_trabajo || <span className="per-sin">—</span>}</td>
+
+                    {/* Contrato */}
+                    <td><span className="per-contrato-chip">{emp.tipo_contrato?.replace(/_/g," ") || "—"}</span></td>
+
+                    {/* Fecha ingreso */}
+                    <td className="per-td-fecha">{fmtFechaLocal(emp.fecha_ingreso)}</td>
+
+                    {/* Estado */}
+                    <td><span className={estadoBadge(emp.estado)}>{emp.estado}</span></td>
+
+                    {/* Acciones */}
+                    <td>
+                      <div className="per-action-buttons">
+                        <button className="per-btn-icon edit" title="Editar" onClick={() => setEmpleadoSelec(emp)}>
+                          <Edit size={15}/>
+                        </button>
+                        <button className="per-btn-icon delete" title="Eliminar" onClick={() => {
+                          if (window.confirm(`¿Eliminar a "${emp.nombres} ${emp.apellidos}"?`)) handleEliminar(emp._id);
+                        }}>
+                          <Trash2 size={15}/>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
 
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Iconos y acciones:</h4>
-          <div className="horarios-icons-grid">
-            <div className="horarios-icon-item">
-              <Edit size={16} className="horarios-icon-primary" />
-              <span>Editar información del personal</span>
-            </div>
-            <div className="horarios-icon-item">
-              <FileText size={16} className="horarios-icon-success" />
-              <span>Gestionar documentos del empleado</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Trash2 size={16} className="horarios-icon-danger" />
-              <span>Eliminar registro de personal</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Eye size={16} className="horarios-icon-info" />
-              <span>Ver detalles completos</span>
-            </div>
-            <div className="horarios-icon-item">
-              <Plus size={16} className="horarios-icon-new" />
-              <span>Nuevo empleado</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="horarios-help-section">
-          <h4 className="horarios-help-title">Consejos de uso:</h4>
-          <div className="horarios-tips">
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Usa la búsqueda para encontrar personal rápidamente por cualquier campo</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Clic en cualquier fila para ver y editar los detalles del personal</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Actualiza regularmente los estados laborales según la situación actual</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Utiliza los filtros para organizar la vista por estado o tipo de contrato</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Mantén actualizada la documentación de cada empleado</span>
-            </div>
-            <div className="horarios-tip">
-              <span className="horarios-tip-badge"></span>
-              <span>Ordena por nombre o salario para análisis rápidos</span>
+          {/* Paginación */}
+          <div className="per-pagination">
+            <div className="per-pagination-info">Página <strong>{page}</strong> de <strong>{pages}</strong></div>
+            <div className="per-pagination-controls">
+              <button className="per-page-btn" onClick={() => setPage(1)} disabled={page===1}>«</button>
+              <button className="per-page-btn" onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}>‹</button>
+              {pageNums().map(n => (
+                <button key={n} className={`per-page-btn${page===n?" active":""}`} onClick={() => setPage(n)}>{n}</button>
+              ))}
+              <button className="per-page-btn" onClick={() => setPage(p => Math.min(pages,p+1))} disabled={page===pages}>›</button>
+              <button className="per-page-btn" onClick={() => setPage(pages)} disabled={page===pages}>»</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="horarios-modal-footer">
-        <button 
-          className="horarios-modal-btn-close"
-          onClick={() => setMostrarAyuda(false)}
-        >
-          Cerrar Ayuda
-        </button>
-      </div>
+      {/* ── Modales ── */}
+      {mostrarModalCrear && (
+        <ModalCrearPersonal onClose={() => setMostrarModalCrear(false)} onCreate={handleCrear}/>
+      )}
+      {empleadoSelec && (
+        <ModalDetallePersonal
+          empleado={empleadoSelec}
+          onClose={() => setEmpleadoSelec(null)}
+          onUpdate={handleActualizar}
+          onDelete={handleEliminar}
+        />
+      )}
+
+      {notification && (
+        <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)}/>
+      )}
+
+      {/* ── Modal Ayuda ── */}
+      {mostrarAyuda && (
+        <div className="per-modal-overlay">
+          <div className="per-modal sm">
+            <div className="per-modal-header">
+              <h3 className="per-modal-title"><Users size={20}/> Ayuda – Gestión de Personal</h3>
+              <button className="per-modal-close" onClick={() => setMostrarAyuda(false)}>✕</button>
+            </div>
+            <div className="per-modal-body">
+              <div className="per-help-section">
+                <div className="per-help-title">Funcionalidades principales</div>
+                <ul className="per-help-list">
+                  <li><strong>Código autogenerado:</strong> Formato EMP-YYYY-XXXX, sin ingreso manual</li>
+                  <li><strong>Documentos en Drive:</strong> DPI, pasaporte, antecedentes, títulos, etc.</li>
+                  <li><strong>Especialidades:</strong> Registra múltiples especialidades con nivel</li>
+                  <li><strong>Filtro por especialidad:</strong> Búsqueda específica en el campo de especialidad</li>
+                  <li><strong>Ciclo laboral:</strong> Fecha de ingreso, salida y motivo de egreso</li>
+                  <li><strong>Auditoría:</strong> Registro de quién creó/actualizó cada empleado</li>
+                </ul>
+              </div>
+              <div className="per-help-section">
+                <div className="per-help-title">Estados del empleado</div>
+                <div className="per-estados-grid">
+                  {[
+                    { lbl: "ACTIVO – Actualmente laborando",         cls: "per-activo"     },
+                    { lbl: "VACACIONES – En período vacacional",     cls: "per-vacaciones" },
+                    { lbl: "LICENCIA – Con licencia aprobada",       cls: "per-licencia"   },
+                    { lbl: "INACTIVO – Ya no labora",                cls: "per-inactivo"   },
+                  ].map((s, i) => (
+                    <div key={i} className="per-estado-item">
+                      <span className={`per-estado-badge ${s.cls}`}>{s.lbl.split("–")[0].trim()}</span>
+                      {s.lbl}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="per-modal-footer">
+              <button className="per-btn per-btn-primary" onClick={() => setMostrarAyuda(false)}>Cerrar Ayuda</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-)}
-      </AnimatePresence>
-    </>
   );
 };
 

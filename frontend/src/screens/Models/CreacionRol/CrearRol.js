@@ -239,11 +239,7 @@ function App() {
   const rolesFiltrados   = roles.filter(r => !filtros.busqueda || r.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()));
 
   return (
-    <div className="rols-css-app">
-      {notification.show && (
-        <div className={`rols-css-notification rols-css-notification-${notification.type}`}>{notification.message}</div>
-      )}
-
+    <div>
       {/* HEADER */}
       <motion.div className="mm-header" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, type: 'spring', stiffness: 120 }}>
         <div className="mm-hi">
@@ -276,6 +272,12 @@ function App() {
         </div>
       </motion.div>
 
+    <div className="rols-css-app">
+      {notification.show && (
+        <div className={`rols-css-notification rols-css-notification-${notification.type}`}>{notification.message}</div>
+      )}
+
+      
       {/* FILTROS */}
       <div className="rols-css-filtros-container">
         <div className="rols-css-filtros-grid">
@@ -362,6 +364,7 @@ function App() {
           loading={loading}
         />
       )}
+    </div>
     </div>
   );
 }

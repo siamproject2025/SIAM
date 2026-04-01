@@ -32,6 +32,29 @@ const ChevronDown = () => (
   </svg>
 );
 
+const S = {
+  sec:   { marginBottom: 24 },
+  title: { display:'flex', alignItems:'center', gap:8, fontFamily:'Poppins,sans-serif', fontSize:'.88rem', fontWeight:700, color:'#6C4FBF', marginBottom:12, paddingBottom:8, borderBottom:'2px solid #E0D9F5' },
+  grid:  { display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:13 },
+  full:  { gridColumn:'1/-1' },
+  field: { display:'flex', flexDirection:'column', gap:4 },
+  label: { fontSize:'.77rem', fontWeight:700, color:'#7A6FA0', textTransform:'uppercase', letterSpacing:'.04em' },
+  req:   { color:'#E74C3C' },
+  inp:   (e) => ({ padding:'9px 12px', border:`2px solid ${e?'#E74C3C':'#E0D9F5'}`, borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:e?'#FFF8F8':'#FAF9FF', outline:'none', width:'100%', transition:'border-color .2s' }),
+  inpRO: { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#6C4FBF', fontWeight:700, background:'#F0ECFF', outline:'none', width:'100%' },
+  sel:   (e) => ({ padding:'9px 12px', border:`2px solid ${e?'#E74C3C':'#E0D9F5'}`, borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%' }),
+  ta:    { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%', resize:'vertical', minHeight:90 },
+  errMsg:{ fontSize:'.73rem', color:'#E74C3C', fontWeight:600 },
+  banner:{ display:'flex', gap:10, alignItems:'flex-start', padding:'11px 14px', borderRadius:10, marginBottom:14, fontSize:'.85rem', background:'#FDE8E8', borderLeft:'4px solid #E74C3C', color:'#7a1010' },
+  info:  { display:'flex', gap:10, alignItems:'flex-start', padding:'10px 14px', borderRadius:9, marginBottom:12, fontSize:'.84rem', background:'#E8F4FD', borderLeft:'4px solid #2980B9', color:'#0c4a6e' },
+  foot:  { display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:16, borderTop:'1px solid #E0D9F5', marginTop:8 },
+  btn:   (bg, col='#fff') => ({ display:'inline-flex', alignItems:'center', gap:7, padding:'10px 20px', borderRadius:10, fontSize:'.86rem', fontWeight:700, border:'none', cursor:'pointer', background:bg, color:col, fontFamily:'inherit', transition:'all .18s' }),
+  upload:{ border:'2px dashed #C4B5E8', borderRadius:12, padding:'26px 20px', textAlign:'center', background:'#FAF9FF' },
+  card:  { background:'#F4F3FB', border:'1px solid #E0D9F5', borderRadius:12, padding:'14px 16px', marginBottom:12, position:'relative' },
+  cardTitle: { fontFamily:'Poppins,sans-serif', fontSize:'.82rem', fontWeight:700, color:'#6C4FBF', marginBottom:10, display:'flex', alignItems:'center', gap:6 },
+  delBtn:{ position:'absolute', top:10, right:10, background:'#FDE8E8', color:'#E74C3C', border:'none', borderRadius:7, padding:'5px 8px', cursor:'pointer', fontSize:'.8rem', fontWeight:700, display:'flex', alignItems:'center', gap:4 },
+};
+
 const columns = [
   { name: "CÓDIGO",     uid: "codigo",        sortable: true  },
   { name: "NOMBRE",     uid: "nombre",        sortable: true  },
@@ -455,7 +478,7 @@ const Bienes = () => {
           <div className="bienes-bar-buttons">
             {bienesSeleccionados.length > 0 && (
               <button
-                className="bienes-btn bienes-btn-danger"
+               type="button" style={S.btn('#E74C3C')}
                 onClick={() => {
                   if (window.confirm(`¿Eliminar ${bienesSeleccionados.length} bien(es) seleccionado(s)?`)) {
                     bienesSeleccionados.forEach(id => handleEliminarBien(id));
@@ -466,14 +489,14 @@ const Bienes = () => {
                 <Trash2 size={15} /> Eliminar ({bienesSeleccionados.length})
               </button>
             )}
-            <button className="bienes-btn bienes-btn-secondary" onClick={() => setMostrarAyuda(true)}>
+            <button style={S.btn('#E0D9F5','#6C4FBF')} onClick={() => setMostrarAyuda(true)}>
               <HelpCircle size={15} /> Ayuda
             </button>
-            <button className="bienes-btn bienes-btn-excel" onClick={handleExportarExcel}>
+            <button style={S.btn('#27AE60')} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
-            <button className="bienes-btn bienes-btn-primary" onClick={() => setMostrarModalCrear(true)}>
-              <Plus size={15} /> Nuevo Bien
+            <button style={S.btn('#6C4FBF')} onClick={() => setMostrarModalCrear(true)}>
+              <Plus size={15} /> Agregar ítem
             </button>
           </div>
         </div>

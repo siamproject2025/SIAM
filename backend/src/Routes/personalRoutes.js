@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../middleware/uploadImage');
+
 const { authenticateUser } = require('../middleware/authMiddleWare');
-const { checkRole } = require('../middleware/checkRole');
 const { capturarDatosPrevios, registrarAuditoria } = require('../middleware/auditoriaMiddleware');
 const Personal = require('../Models/personalModel');
+const { uploadMatricula } = require('../middleware/uploadImage');
 
 const {
   obtenerPersonal,
@@ -36,13 +36,13 @@ router.get('/:id',
 );
 
 router.post('/', 
-  upload.single('imagen'),
+  uploadMatricula,
   registrarAuditoria('PERSONAL'),
   crearPersonal
 );
 
 router.put('/:id', 
-  upload.single('imagen'),
+  uploadMatricula,
   capturarDatosPrevios(Personal),
   registrarAuditoria('PERSONAL'),
   actualizarPersonal

@@ -8,8 +8,6 @@
   padding: 28px 36px 36px;
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
-  margin-bottom: 32px;
 }
 .mm-header::before {
   content: '';
@@ -56,12 +54,12 @@
   background: white; padding: 28px; border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); margin-bottom: 32px; border: 1px solid #e2e8f0;
 }
-.rols-css-filtros-grid        { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+.rols-css-filtros-grid        { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom:0px; }
 .rols-css-filtro-item         { position: relative; display: flex; align-items: center; }
 .rols-css-filtro-icon         { position: absolute; left: 14px; color: #94a3b8; font-size: 18px; width: 18px; height: 18px; }
 .rols-css-filtro-item input   { width: 100%; padding: 14px 14px 14px 44px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; transition: all .2s; background: white; }
 .rols-css-filtro-item input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 4px rgba(102,126,234,.1); }
-.rols-css-filtros-actions     { display: flex; gap: 12px; justify-content: space-between; border-top: 2px solid #e2e8f0; padding-top: 24px; }
+.rols-css-filtros-actions     { display: flex; gap: 12px; justify-content: space-between; padding-top: 24px; }
 
 /* ══════════════════════════════════════════════════════════
    BOTONES GENERALES
