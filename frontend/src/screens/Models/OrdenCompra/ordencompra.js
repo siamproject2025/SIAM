@@ -6,6 +6,8 @@ import '../../../styles/Models/ordencompra.css';
 import { auth } from "../../../components/authentication/Auth";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import { loadingController } from "../../../api/loadingController";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { 
   Search,
   Plus,
@@ -49,7 +51,9 @@ const OrdenCompra = () => {
    const [notification, setNotification] = useState(null);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
-const [showStatusMenu, setShowStatusMenu] = useState(false); // ← AGREGAR
+const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState(new Date(new Date().setDate(1)));
+  const [fechaFin, setFechaFin] = useState(new Date());
 
   //Dialogo de eliminación
   const [ordenAEliminar, setOrdenAEliminar] = useState(null);
@@ -241,8 +245,19 @@ useEffect(() => {
       filtered = filtered.filter(orden => statusFilter.has(orden.estado));
     }
 
+    // Filtrado por rango de fechas
+    filtered = filtered.filter(orden => {
+      if (!orden.fecha) return false;
+      const fecha = new Date(orden.fecha);
+      const inicio = new Date(fechaInicio);
+      const fin = new Date(fechaFin);
+      // Ajustar fin a fin del día
+      fin.setHours(23, 59, 59, 999);
+      return fecha >= inicio && fecha <= fin;
+    });
+
     return filtered;
-  }, [ordenes, filterValue, statusFilter]);
+  }, [ordenes, filterValue, statusFilter, fechaInicio, fechaFin]);
 
   // Ordenamiento
   const sortedItems = useMemo(() => {
@@ -289,24 +304,33 @@ useEffect(() => {
     }
   };
 
-  const handleCrearOrden = async (nuevaOrden) => {
+  const handleCrearOrden = async (formDataOAdjuntos, datosOrden) => {
   try {
-    if (!nuevaOrden.numero.trim()) {
-      showNotification('El número de orden es obligatorio', 'error');
-      return;
+    // Manejar dos formatos:
+    // 1. formDataOAdjuntos es FormData (con archivos), datosOrden es el objeto
+    // 2. formDataOAdjuntos es null (sin archivos), datosOrden es el objeto
+    
+    let nuevaOrden;
+    let tieneAdjuntos = false;
+    
+    if (formDataOAdjuntos === null) {
+      // Sin adjuntos - usar JSON directo
+      console.log('📊 Sin adjuntos - JSON directo');
+      nuevaOrden = datosOrden;
+    } else {
+      // Con adjuntos - FormData con archivos
+      console.log('📎 Con adjuntos - FormData');
+      tieneAdjuntos = true;
+      nuevaOrden = datosOrden;
     }
-    if (!nuevaOrden.proveedor_id.trim()) {
+
+    // Validaciones (nota: número se auto-genera en el backend)
+    if (!nuevaOrden?.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
       showNotification('El ID del proveedor es obligatorio', 'error');
       return;
     }
-    if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
+    if (!nuevaOrden?.items || nuevaOrden.items.length === 0) {
       showNotification('Debe agregar al menos un ítem a la orden', 'error');
-      return;
-    }
-
-    const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
-    if (numeroExistente) {
-      showNotification('Ya existe una orden con este número', 'error');
       return;
     }
 
@@ -314,18 +338,53 @@ useEffect(() => {
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    const res = await fetch(API_URL, {
+    const config = {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` //  Token agregado
-      },
-      body: JSON.stringify(nuevaOrden)
+        Authorization: `Bearer ${token}`,
+        'X-Orden-Data': btoa(JSON.stringify(nuevaOrden))  // Base64 encoded JSON en header
+      }
+    };
+
+    // Si hay adjuntos, enviar FormData; si no, enviar JSON
+    if (tieneAdjuntos && formDataOAdjuntos) {
+      console.log('🚀 Enviando con FormData (adjuntos)');
+      config.body = formDataOAdjuntos;
+    } else {
+      console.log('🚀 Enviando JSON directo (sin adjuntos)');
+      config.headers['Content-Type'] = 'application/json';
+      config.body = JSON.stringify(nuevaOrden);
+    }
+
+    console.log('🚀 Enviando orden:', { 
+      tieneAdjuntos, 
+      bodyType: tieneAdjuntos ? 'FormData' : 'JSON'
     });
 
+    const res = await fetch(API_URL, config);
+    console.log('📊 Respuesta recibida:', res.status, res.statusText);
+
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al crear la orden');
+      let errorMessage = `Error ${res.status}: ${res.statusText}`;
+      
+      try {
+        const contentType = res.headers?.get?.('content-type') || '';
+        console.log('📋 Content-Type:', contentType);
+        
+        if (contentType.includes('application/json')) {
+          const errorData = await res.json();
+          console.log('📄 Error JSON:', errorData);
+          errorMessage = errorData?.error || errorData?.message || errorMessage;
+        } else {
+          const text = await res.text();
+          console.error('❌ Respuesta no-JSON:', text.substring(0, 500));
+          errorMessage = `Error del servidor: ${text.substring(0, 100)}`;
+        }
+      } catch (parseErr) {
+        console.error('Error parseando respuesta de error:', parseErr);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const ordenCreada = await res.json();
@@ -333,8 +392,8 @@ useEffect(() => {
     setMostrarModalCrear(false);
     showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
   } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al crear la orden', 'error');
+    console.error('❌ Error completo:', err.message || err);
+    showNotification(err?.message || 'Error al crear la orden', 'error');
   }
 };
 
@@ -946,6 +1005,45 @@ const cancelarEliminacionOrden = () => {
                   
                 </button>
               )}
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="date-range-filters" style={{ 
+              display: 'flex', 
+              alignItems: 'center',
+              gap: '0.75rem',
+              background: '#f8f9fa',
+              padding: '0.75rem 1rem',
+              borderRadius: '8px',
+              border: '2px solid #e0e0e0'
+            }}>
+              <Calendar size={18} color="#666" />
+              <DatePicker
+                selected={fechaInicio}
+                onChange={date => setFechaInicio(date)}
+                selectsStart
+                startDate={fechaInicio}
+                endDate={fechaFin}
+                maxDate={new Date()}
+                className="date-picker-input"
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Desde"
+                style={{ width: '120px' }}
+              />
+              <span style={{ color: '#999' }}>-</span>
+              <DatePicker
+                selected={fechaFin}
+                onChange={date => setFechaFin(date)}
+                selectsEnd
+                startDate={fechaInicio}
+                endDate={fechaFin}
+                minDate={fechaInicio}
+                maxDate={new Date()}
+                className="date-picker-input"
+                dateFormat="dd/MM/yyyy"
+                placeholderText="Hasta"
+                style={{ width: '120px' }}
+              />
             </div>
 
             {/* Status Filter */}

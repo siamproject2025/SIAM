@@ -76,12 +76,16 @@
   }
 
   .proveedor-categoria-section {
-     background: #f8fafc;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-light);
-  transition: transform 0.2s ease;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .proveedor-categoria-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   }
 
   .proveedor-categoria-header {
@@ -108,103 +112,97 @@
     width: 100%;
     background: white;
     border-radius: 12px;
-    overflow: hidden;
     box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     min-height: 600px;
     max-height: calc(100vh - 300px);
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
+    overflow: hidden;
   }
 
   .tabla-header-proveedores {
     display: grid;
-   grid-template-columns: 0.5fr 0.5fr 1fr 1fr 0.8fr 0.6fr 0.6fr 0.4fr;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
+    grid-template-columns: 70px 140px 140px 150px 140px 100px 110px 110px 100px 120px;
+    gap: 0.75rem;
+    padding: 1.2rem 1.5rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     align-items: center;
+    position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 11;
     width: 100%;
+    min-width: fit-content;
+    flex-shrink: 0;
   }
 
   .tabla-body-proveedores {
     flex: 1;
     overflow-y: auto;
-    width: auto
+    overflow-x: auto;
+    width: 100%;
   }
 
   
   
-.proveedor-categorila-section{
-    width:auto;
+.proveedor-categoria-section {
+    width: 100%;
 }
 
   .tabla-fila-proveedores {
-  display: grid;
-  grid-template-columns: 0.5fr 0.5fr 1fr 1fr 0.8fr 0.6fr 0.6fr 0.4fr;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e9ecef;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-}
-
-
-  .tabla-fila::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 3px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    transform: scaleY(0);
-    transition: transform 0.3s ease;
+    display: grid;
+    grid-template-columns: 70px 140px 140px 150px 140px 100px 110px 110px 100px 120px;
+    gap: 0.75rem;
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    align-items: start;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: fit-content;
+    width: 100%;
   }
 
-  .tabla-fila:hover {
-    background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
-    transform: translateX(5px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+  .tabla-fila-proveedores:hover {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.08) 0%, rgba(255, 255, 255, 1) 100%);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transition: all 0.2s ease;
   }
 
-  .tabla-fila:hover::before {
-    transform: scaleY(1);
-  }
-
-  .tabla-fila:last-child {
+  .tabla-fila-proveedores:last-child {
     border-bottom: none;
   }
 
   .estado-badge {
-    padding: 4px 12px;
+    padding: 5px 12px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     display: inline-block;
     text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .estado-badge.activo {
-    background: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
     color: white;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
   }
 
   .estado-badge.inactivo {
-    background: #f44336;
+    background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
     color: white;
+    box-shadow: 0 2px 4px rgba(244, 67, 54, 0.3);
   }
 
   .estado-badge.suspendido {
-    background: #ff9800;
+    background: linear-gradient(135deg, #ff9800 0%, #e65100 100%);
     color: white;
+    box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
   }
 
   .proveedor-container .modal-overlay {

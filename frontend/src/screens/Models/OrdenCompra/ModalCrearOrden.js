@@ -6,7 +6,6 @@ const API_URL = process.env.REACT_APP_API_URL + "/api/proveedores"
 
 const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [nuevaOrden, setNuevaOrden] = useState({
-    numero: '',
     proveedor_id: '',
     estado: 'BORRADOR',
     fecha: new Date().toISOString().split('T')[0],
@@ -19,6 +18,8 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     cantidad: '',
     costoUnit: ''
   });
+
+  const [adjuntosSeleccionados, setAdjuntosSeleccionados] = useState([]);
 
   // Estado para notificaciones
   const [notificacion, setNotificacion] = useState(null);
@@ -101,14 +102,41 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     });
   };
 
-  // Crear orden (validar campos obligatorios)
-  const handleCrear = () => {
-    // Validar número de orden
-    if (!nuevaOrden.numero || nuevaOrden.numero.trim() === '') {
-      mostrarNotificacion('El número de orden es obligatorio', 'warning');
+  // Manejar adjuntos
+  const handleSeleccionarAdjuntos = (e) => {
+    const archivos = Array.from(e.target.files || []);
+    
+    // Validar cantidad máxima
+    if (adjuntosSeleccionados.length + archivos.length > 5) {
+      mostrarNotificacion('Máximo 5 adjuntos por orden', 'warning');
       return;
     }
 
+    // Validar tipos de archivo
+    const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const archivosValidos = archivos.filter(archivo => {
+      if (!tiposPermitidos.includes(archivo.type)) {
+        mostrarNotificacion(`${archivo.name} no tiene un tipo permitido`, 'warning');
+        return false;
+      }
+      if (archivo.size > 10 * 1024 * 1024) {
+        mostrarNotificacion(`${archivo.name} excede 10 MB`, 'warning');
+        return false;
+      }
+      return true;
+    });
+
+    setAdjuntosSeleccionados([...adjuntosSeleccionados, ...archivosValidos]);
+    e.target.value = '';
+  };
+
+  // Eliminar adjunto seleccionado
+  const handleEliminarAdjunto = (index) => {
+    setAdjuntosSeleccionados(adjuntosSeleccionados.filter((_, i) => i !== index));
+  };
+
+  // Crear orden (validar campos obligatorios)
+  const handleCrear = () => {
     // Validar proveedor
     if (!nuevaOrden.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
       mostrarNotificacion('Debes seleccionar un proveedor', 'warning');
@@ -146,9 +174,22 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
       return;
     }
 
-    // Si todo está bien, crear la orden
-    onCreate(nuevaOrden);
-    mostrarNotificacion(' Orden creada exitosamente', 'success');
+    // Si todo está bien, crear la orden (sin enviar número, se genera automáticamente)
+    // Preparar FormData si hay adjuntos
+    if (adjuntosSeleccionados.length > 0) {
+      const formData = new FormData();
+      
+      // Agregar adjuntos
+      adjuntosSeleccionados.forEach(archivo => {
+        formData.append('adjuntos', archivo);
+      });
+      
+      // Pasar los datos de la orden en el callback
+      onCreate(formData, nuevaOrden);
+    } else {
+      onCreate(null, nuevaOrden);
+    }
+    // Nota: La notificación se mostrará desde handleCrearOrden en ordencompra.js
   };
 
   // Calcular total
@@ -198,18 +239,6 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           <h3 className="modal-title"> Crear Nueva Orden de Compra</h3>
 
           <div className="modal-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {/* Número de orden */}
-            <div className="form-group">
-              <label>Número de Orden *</label>
-              <input
-                type="text"
-                value={nuevaOrden.numero}
-                onChange={(e) => setNuevaOrden({ ...nuevaOrden, numero: e.target.value })}
-                placeholder="Ej: ORD-001"
-                required
-              />
-            </div>
-
             {/*  Selector de proveedor mejorado */}
             <div className="form-group">
               <label>Proveedor * {cargandoProveedores && '(Cargando...)'}</label>
@@ -382,6 +411,97 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
               </div>
             </div>
           )}
+
+          {/* Sección Adjuntos */}
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>📎 Adjuntos (Opcional - Máx 5)</h4>
+
+          <div className="adjuntos-container" style={{ 
+            border: '2px dashed #667eea', 
+            borderRadius: '8px', 
+            padding: '1.5rem', 
+            textAlign: 'center',
+            background: '#f0f4ff',
+            marginBottom: '1rem'
+          }}>
+            <input
+              type="file"
+              id="adjuntos-input"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+              onChange={handleSeleccionarAdjuntos}
+              style={{ display: 'none' }}
+            />
+            <button
+              type="button"
+              onClick={() => document.getElementById('adjuntos-input').click()}
+              style={{
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                padding: '0.8rem 1.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              📄 Seleccionar Archivos
+            </button>
+            <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+              PDF, imágenes o documentos hasta 10 MB cada uno
+            </p>
+          </div>
+
+          {/* Lista de adjuntos seleccionados */}
+          {adjuntosSeleccionados.length > 0 && (
+            <div style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1rem',
+              background: '#fafafa'
+            }}>
+              <h5 style={{ margin: '0 0 0.75rem 0' }}>Archivos adjuntos ({adjuntosSeleccionados.length}/5):</h5>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {adjuntosSeleccionados.map((archivo, idx) => (
+                  <li
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '0.75rem',
+                      background: 'white',
+                      marginBottom: '0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid #e9ecef'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.9rem', color: '#333' }}>
+                      📄 {archivo.name} ({(archivo.size / 1024).toFixed(0)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleEliminarAdjunto(idx)}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Sección Adjuntos */}
+          
 
           {/* Acciones del modal */}
           <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>

@@ -41,7 +41,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', origin || '*');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Orden-Data');
   res.setHeader('Access-Control-Max-Age', '86400');
   
   if (req.method === 'OPTIONS') {
@@ -68,13 +68,14 @@ app.use((req, res, next) => {
   express.urlencoded({ limit: '500mb', extended: true })(req, res, next);
 });
 
-// ========== MIDDLEWARE: FILE UPLOAD (EXCLUYE RUTAS DE BACKUP) ==========
+// ========== MIDDLEWARE: FILE UPLOAD (EXCLUYE RUTAS DE BACKUP Y COMPRAS) ==========
 // express-fileupload NO debe procesar /api/backup porque esa ruta usa multer.
+// express-fileupload NO debe procesar /api/compras porque esa ruta usa multer en uploadAdjuntos.
 // Si ambos middlewares intentan consumir el stream multipart al mismo tiempo,
 // multer recibe el stream vacío y lanza "Unexpected end of form".
 const fileUpload = require("express-fileupload");
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/backup')) {
+  if (req.path.startsWith('/api/backup') || req.path.startsWith('/api/compras')) {
     return next();
   }
   fileUpload({
