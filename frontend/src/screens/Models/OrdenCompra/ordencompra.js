@@ -6,8 +6,10 @@ import '../../../styles/Models/ordencompra.css';
 import { auth } from "../../../components/authentication/Auth";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import { loadingController } from "../../../api/loadingController";
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+
+import { Calendar as RSCalendar } from 'rsuite';
+import 'rsuite/dist/rsuite.min.css';
+
 import { 
   Search,
   Plus,
@@ -19,6 +21,11 @@ import {
   DollarSign,
   Filter,
 } from 'lucide-react';
+
+
+
+//Calendario
+
 
 // Iconos SVG
 const ChevronDownIcon = () => (
@@ -36,6 +43,8 @@ const DotsIcon = () => (
 );
 
 const API_URL = process.env.REACT_APP_API_URL+"/api/compras";
+
+
 
 const OrdenCompra = () => {
   // Estados principales
@@ -62,6 +71,8 @@ const [showConfirm, setShowConfirm] = useState(false);
 const [showActionMenu, setShowActionMenu] = useState(null);
 const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
 
+const [openCal, setOpenCal] = useState(null); // 'desde' | 'hasta' | null
+
 useEffect(() => {
   const handleClickOutside = (event) => {
     if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) {
@@ -74,6 +85,9 @@ useEffect(() => {
     if (!event.target.closest('.action-wrapper') && !event.target.closest('.action-menu')) {
       setShowActionMenu(null);
     }
+    if (!event.target.closest('.date-range-filters')) {
+  setOpenCal(null);
+}
   };
 
   document.addEventListener('mousedown', handleClickOutside);
@@ -1008,43 +1022,66 @@ const cancelarEliminacionOrden = () => {
             </div>
 
             {/* Date Range Filter */}
-            <div className="date-range-filters" style={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              gap: '0.75rem',
-              background: '#f8f9fa',
-              padding: '0.75rem 1rem',
-              borderRadius: '8px',
-              border: '2px solid #e0e0e0'
-            }}>
-              <Calendar size={18} color="#666" />
-              <DatePicker
-                selected={fechaInicio}
-                onChange={date => setFechaInicio(date)}
-                selectsStart
-                startDate={fechaInicio}
-                endDate={fechaFin}
-                maxDate={new Date()}
-                className="date-picker-input"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Desde"
-                style={{ width: '120px' }}
-              />
-              <span style={{ color: '#999' }}>-</span>
-              <DatePicker
-                selected={fechaFin}
-                onChange={date => setFechaFin(date)}
-                selectsEnd
-                startDate={fechaInicio}
-                endDate={fechaFin}
-                minDate={fechaInicio}
-                maxDate={new Date()}
-                className="date-picker-input"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Hasta"
-                style={{ width: '120px' }}
-              />
-            </div>
+           {/* Date Range Filter */}
+<div className="date-range-filters">
+  <Calendar size={18} color="#666" />
+
+  {/* Campo Desde */}
+  <div style={{ position: 'relative' }}>
+    <div
+      className="date-picker-input"
+      style={{ cursor: 'pointer', userSelect: 'none' }}
+      onClick={() => setOpenCal(openCal === 'desde' ? null : 'desde')}
+    >
+      {fechaInicio
+        ? `${String(fechaInicio.getDate()).padStart(2,'0')}/${String(fechaInicio.getMonth()+1).padStart(2,'0')}/${fechaInicio.getFullYear()}`
+        : <span style={{ color: '#999' }}>Desde</span>
+      }
+    </div>
+    {openCal === 'desde' && (
+      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200 }}>
+        <RSCalendar
+          compact
+          onSelect={date => {
+            setFechaInicio(date);
+            setOpenCal(null);
+          }}
+          value={fechaInicio}
+          style={{ width: 280, borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+        />
+      </div>
+    )}
+  </div>
+
+  <span style={{ color: '#999' }}>—</span>
+
+  {/* Campo Hasta */}
+  <div style={{ position: 'relative' }}>
+    <div
+      className="date-picker-input"
+      style={{ cursor: 'pointer', userSelect: 'none' }}
+      onClick={() => setOpenCal(openCal === 'hasta' ? null : 'hasta')}
+    >
+      {fechaFin
+        ? `${String(fechaFin.getDate()).padStart(2,'0')}/${String(fechaFin.getMonth()+1).padStart(2,'0')}/${fechaFin.getFullYear()}`
+        : <span style={{ color: '#999' }}>Hasta</span>
+      }
+    </div>
+    {openCal === 'hasta' && (
+      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200 }}>
+        <RSCalendar
+          compact
+          onSelect={date => {
+            setFechaFin(date);
+            setOpenCal(null);
+          }}
+          value={fechaFin}
+          style={{ width: 280, borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+        />
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Status Filter */}
             <div 
