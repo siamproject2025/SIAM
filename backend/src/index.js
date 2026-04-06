@@ -73,17 +73,24 @@ app.use((req, res, next) => {
 // express-fileupload NO debe procesar /api/compras porque esa ruta usa multer en uploadAdjuntos.
 // Si ambos middlewares intentan consumir el stream multipart al mismo tiempo,
 // multer recibe el stream vacío y lanza "Unexpected end of form".
-const fileUpload = require("express-fileupload");
+// ========== MIDDLEWARE: FILE UPLOAD ==========
+/*const fileUpload = require("express-fileupload");
+
+// Middleware condicional para fileUpload
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api/backup') || req.path.startsWith('/api/compras')) {
+  // Excluir TODAS las rutas de backup del fileUpload
+  if (req.path.startsWith('/api/backup')) {
+    console.log(`⏭️  Saltando fileUpload para: ${req.method} ${req.path}`);
     return next();
   }
+  
+  // Aplicar fileUpload solo a rutas que NO son backup
   fileUpload({
-    limits: { fileSize: 500 * 1024 * 1024 }, // 500MB
+    limits: { fileSize: 500 * 1024 * 1024 },
     useTempFiles: true,
     tempFileDir: '/tmp/'
   })(req, res, next);
-});
+});*/
 
 // ========== RUTAS API ==========
 // ⭐ RUTA DE BACKUP PRIMERO (antes de cualquier otro middleware)

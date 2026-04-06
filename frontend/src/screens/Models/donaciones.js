@@ -18,6 +18,29 @@ const API_URL = process.env.REACT_APP_API_URL + '/api/donaciones';
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const ESTADOS = ['Recibida', 'Pendiente', 'Procesada', 'Anulada'];
 
+const S = {
+  sec:   { marginBottom: 24 },
+  title: { display:'flex', alignItems:'center', gap:8, fontFamily:'Poppins,sans-serif', fontSize:'.88rem', fontWeight:700, color:'#6C4FBF', marginBottom:12, paddingBottom:8, borderBottom:'2px solid #E0D9F5' },
+  grid:  { display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:13 },
+  full:  { gridColumn:'1/-1' },
+  field: { display:'flex', flexDirection:'column', gap:4 },
+  label: { fontSize:'.77rem', fontWeight:700, color:'#7A6FA0', textTransform:'uppercase', letterSpacing:'.04em' },
+  req:   { color:'#E74C3C' },
+  inp:   (e) => ({ padding:'9px 12px', border:`2px solid ${e?'#E74C3C':'#E0D9F5'}`, borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:e?'#FFF8F8':'#FAF9FF', outline:'none', width:'100%', transition:'border-color .2s' }),
+  inpRO: { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#6C4FBF', fontWeight:700, background:'#F0ECFF', outline:'none', width:'100%' },
+  sel:   (e) => ({ padding:'9px 12px', border:`2px solid ${e?'#E74C3C':'#E0D9F5'}`, borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%' }),
+  ta:    { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%', resize:'vertical', minHeight:90 },
+  errMsg:{ fontSize:'.73rem', color:'#E74C3C', fontWeight:600 },
+  banner:{ display:'flex', gap:10, alignItems:'flex-start', padding:'11px 14px', borderRadius:10, marginBottom:14, fontSize:'.85rem', background:'#FDE8E8', borderLeft:'4px solid #E74C3C', color:'#7a1010' },
+  info:  { display:'flex', gap:10, alignItems:'flex-start', padding:'10px 14px', borderRadius:9, marginBottom:12, fontSize:'.84rem', background:'#E8F4FD', borderLeft:'4px solid #2980B9', color:'#0c4a6e' },
+  foot:  { display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:16, borderTop:'1px solid #E0D9F5', marginTop:8 },
+  btn:   (bg, col='#fff') => ({ display:'inline-flex', alignItems:'center', gap:7, padding:'10px 20px', borderRadius:10, fontSize:'.86rem', fontWeight:700, border:'none', cursor:'pointer', background:bg, color:col, fontFamily:'inherit', transition:'all .18s' }),
+  upload:{ border:'2px dashed #C4B5E8', borderRadius:12, padding:'26px 20px', textAlign:'center', background:'#FAF9FF' },
+  card:  { background:'#F4F3FB', border:'1px solid #E0D9F5', borderRadius:12, padding:'14px 16px', marginBottom:12, position:'relative' },
+  cardTitle: { fontFamily:'Poppins,sans-serif', fontSize:'.82rem', fontWeight:700, color:'#6C4FBF', marginBottom:10, display:'flex', alignItems:'center', gap:6 },
+  delBtn:{ position:'absolute', top:10, right:10, background:'#FDE8E8', color:'#E74C3C', border:'none', borderRadius:7, padding:'5px 8px', cursor:'pointer', fontSize:'.8rem', fontWeight:700, display:'flex', alignItems:'center', gap:4 },
+};
+
 const estadoConfig = {
   Recibida:  { color: '#27ae60', bg: '#eafaf1', label: 'RECIBIDA'  },
   Pendiente: { color: '#f39c12', bg: '#fef9e7', label: 'PENDIENTE' },
@@ -659,7 +682,7 @@ const Donaciones = () => {
           </div>
 
           <div className="dn-bar-actions">
-            <motion.button className="dn-btn-help" onClick={()=>setMostrarAyuda(true)}
+            <motion.button style={S.btn('#E0D9F5','#6C4FBF')} onClick={()=>setMostrarAyuda(true)}
               whileHover={{scale:1.05}} whileTap={{scale:0.96}}>
               <HelpCircle size={16}/> Ayuda
             </motion.button>
@@ -691,12 +714,7 @@ const Donaciones = () => {
                 <table className="dn-bienes-table">
                   <thead>
                     <tr>
-                      <th className="dn-th-check">
-                        <input type="checkbox"
-                          checked={seleccionados.length === paginados.length && paginados.length > 0}
-                          onChange={e => setSeleccionados(e.target.checked ? paginados.map(d=>d._id||d.id_donacion) : [])}
-                          className="dn-checkbox"/>
-                      </th>
+                      
                       <th>ID ↑</th>
                       <th>TIPO &amp; DESCRIPCIÓN</th>
                       <th>ALMACÉN</th>
@@ -721,14 +739,7 @@ const Donaciones = () => {
                             exit={{opacity:0}} transition={{delay:idx*0.02}}
                             onClick={()=>handleFilaClick(don)}
                             style={{cursor:'pointer'}}>
-                            <td className="dn-td-check" onClick={e=>e.stopPropagation()}>
-                              <input type="checkbox" className="dn-checkbox"
-                                checked={selec}
-                                onChange={e=>{
-                                  e.stopPropagation();
-                                  setSeleccionados(prev => e.target.checked ? [...prev,selId] : prev.filter(s=>s!==selId));
-                                }}/>
-                            </td>
+                            
                             {/* ID badge igual a BIEN-XXXX-XXXX */}
                             <td>
                               <span className="dn-id-badge">DON-{String(don.id_donacion||idx+1).padStart(4,'0')}</span>

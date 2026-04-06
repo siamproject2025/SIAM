@@ -107,11 +107,12 @@ exports.listarSolicitudes = async (req, res) => {
 };
 
 // ─── Resolver solicitud: APROBADO | DENEGADO ──────────────────────────────
+// ─── Resolver solicitud: APROBADO | DENEGADO ──────────────────────────────
 exports.resolverSolicitud = async (req, res) => {
   try {
-    const { id }     = req.params;
-    const { accion } = req.body;
-    console.log("🔵 resolverSolicitud iniciado:", { id, accion });
+    const { id }                    = req.params;
+    const { accion, rol, alumno_id } = req.body;   // ← recibe rol y alumno_id
+    console.log("🔵 resolverSolicitud iniciado:", { id, accion, rol, alumno_id });
 
     if (!['APROBADO', 'DENEGADO'].includes(accion)) {
       return res.status(400).json({ message: 'Acción inválida.' });
@@ -126,6 +127,11 @@ exports.resolverSolicitud = async (req, res) => {
     }
 
     if (accion === 'APROBADO') {
+      // Validar que se envió el rol
+      if (!rol) {
+        return res.status(400).json({ message: 'Debes asignar un rol al aprobar una solicitud.' });
+      }
+
       const passwordTemporal = generarPasswordTemporal();
       console.log("✅ PASO 1: Password generado");
 
@@ -154,22 +160,35 @@ exports.resolverSolicitud = async (req, res) => {
       const hashedPassword = await argon2.hash(passwordTemporal);
       console.log("✅ PASO 3: Password hasheado");
 
-      const nuevoUsuario = new Usuario({
+      // ── Construir objeto usuario con rol y alumno opcionales ──
+      const datosUsuario = {
         authId:                firebaseUid,
         email:                 solicitud.email,
         username:              solicitud.nombre_solicitante,
         password_hash:         hashedPassword,
-        roles:                 ['PADRE'],
+        roles:                 [rol],          // ← rol elegido por el admin
         estado:                'ACTIVO',
-        debe_cambiar_password: true
-      });
+        debe_cambiar_password: true,
+      };
+
+      // Solo agregar alumno si se seleccionó uno
+      if (alumno_id) {
+        const mongoose = require('mongoose');
+        if (mongoose.Types.ObjectId.isValid(alumno_id)) {
+          datosUsuario.alumno = alumno_id;
+          console.log("✅ PASO 3b: Alumno asignado:", alumno_id);
+        } else {
+          console.warn("⚠️ alumno_id inválido, se omite:", alumno_id);
+        }
+      }
+
+      const nuevoUsuario = new Usuario(datosUsuario);
       await nuevoUsuario.save();
-      console.log("✅ PASO 4: Usuario guardado en MongoDB");
+      console.log("✅ PASO 4: Usuario guardado en MongoDB con rol:", rol, "| alumno:", alumno_id || 'ninguno');
 
       // ── Correo — si falla aquí no debe bloquear el proceso ──
       try {
         console.log("🔵 PASO 5: Intentando enviar correo a:", solicitud.email);
-        console.log("🔵 BREVO_API_KEY:", process.env.BREVO_API_KEY ? "✅ definido" : "❌ NO definido");
         await enviarCorreoAprobacion(solicitud.email, solicitud.nombre_solicitante, passwordTemporal);
         console.log("✅ PASO 5: Correo enviado");
       } catch (mailErr) {

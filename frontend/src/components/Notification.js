@@ -13,18 +13,18 @@ const Notification = ({ message, type, onClose, duration = 3000 }) => {
 
   return (
     <div className={`notification notification-${type}`}>
-      <div className="notification-content">
-        <span className="notification-icon">
+     
+        {/*<span className="notification-icon">
           {type === 'success' && ''}
           {type === 'error' && ''}
           {type === 'warning' && ''}
           {type === 'info' && ''}
-        </span>
+        </span>*/}
         <span className="notification-message">{message}</span>
         <button className="notification-close" onClick={onClose}>
-          
+          X
         </button>
-      </div>
+   
     </div>
   );
 };
