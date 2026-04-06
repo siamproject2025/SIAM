@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { auth } from "../../../components/authentication/Auth";
 import Notification from "../../../components/Notification";
+import { Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/proveedores"
 
 const ModalCrearOrden = ({ onClose, onCreate }) => {
   const [nuevaOrden, setNuevaOrden] = useState({
-    numero: '',
     proveedor_id: '',
     estado: 'BORRADOR',
     fecha: new Date().toISOString().split('T')[0],
@@ -20,6 +20,8 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     costoUnit: ''
   });
 
+  const [adjuntosSeleccionados, setAdjuntosSeleccionados] = useState([]);
+
   // Estado para notificaciones
   const [notificacion, setNotificacion] = useState(null);
 
@@ -30,6 +32,16 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
   // Estado para proveedores obtenidos desde la API
   const [proveedores, setProveedores] = useState([]);
   const [cargandoProveedores, setCargandoProveedores] = useState(true);
+
+  // Estado para búsqueda avanzada
+  const [mostrarBusquedaAvanzada, setMostrarBusquedaAvanzada] = useState(false);
+  const [filtros, setFiltros] = useState({
+    id_proveedor: '',
+    nombre: '',
+    empresa: '',
+    estado: '',
+    telefono: ''
+  });
 
   //  Llamada a la API de proveedores
   useEffect(() => {
@@ -64,6 +76,45 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
 
     fetchProveedores();
   }, []);
+
+  // Filtrar proveedores según criterios de búsqueda avanzada
+  const proveedoresFiltrados = useMemo(() => {
+    return proveedores.filter(proveedor => {
+      const coincideId = !filtros.id_proveedor || 
+        (proveedor.id_proveedor && proveedor.id_proveedor.toString().toLowerCase().includes(filtros.id_proveedor.toLowerCase()));
+      
+      const coincideNombre = !filtros.nombre || 
+        (proveedor.nombre && proveedor.nombre.toLowerCase().includes(filtros.nombre.toLowerCase()));
+      
+      const coincideEmpresa = !filtros.empresa || 
+        (proveedor.empresa && proveedor.empresa.toLowerCase().includes(filtros.empresa.toLowerCase()));
+      
+      const coincideEstado = !filtros.estado || proveedor.estado === filtros.estado;
+      
+      const coincideTelefono = !filtros.telefono || 
+        (proveedor.telefono && proveedor.telefono.toString().includes(filtros.telefono));
+
+      return coincideId && coincideNombre && coincideEmpresa && coincideEstado && coincideTelefono;
+    });
+  }, [proveedores, filtros]);
+
+  // Limpiar filtros
+  const limpiarFiltros = () => {
+    setFiltros({
+      id_proveedor: '',
+      nombre: '',
+      empresa: '',
+      estado: '',
+      telefono: ''
+    });
+  };
+
+  // Seleccionar proveedor desde búsqueda avanzada
+  const seleccionarProveedor = (proveedorId) => {
+    setNuevaOrden({ ...nuevaOrden, proveedor_id: proveedorId });
+    setMostrarBusquedaAvanzada(false);
+    limpiarFiltros();
+  };
 
   // Agregar ítem
   const handleAgregarItem = () => {
@@ -101,14 +152,41 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
     });
   };
 
-  // Crear orden (validar campos obligatorios)
-  const handleCrear = () => {
-    // Validar número de orden
-    if (!nuevaOrden.numero || nuevaOrden.numero.trim() === '') {
-      mostrarNotificacion('El número de orden es obligatorio', 'warning');
+  // Manejar adjuntos
+  const handleSeleccionarAdjuntos = (e) => {
+    const archivos = Array.from(e.target.files || []);
+    
+    // Validar cantidad máxima
+    if (adjuntosSeleccionados.length + archivos.length > 5) {
+      mostrarNotificacion('Máximo 5 adjuntos por orden', 'warning');
       return;
     }
 
+    // Validar tipos de archivo
+    const tiposPermitidos = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const archivosValidos = archivos.filter(archivo => {
+      if (!tiposPermitidos.includes(archivo.type)) {
+        mostrarNotificacion(`${archivo.name} no tiene un tipo permitido`, 'warning');
+        return false;
+      }
+      if (archivo.size > 10 * 1024 * 1024) {
+        mostrarNotificacion(`${archivo.name} excede 10 MB`, 'warning');
+        return false;
+      }
+      return true;
+    });
+
+    setAdjuntosSeleccionados([...adjuntosSeleccionados, ...archivosValidos]);
+    e.target.value = '';
+  };
+
+  // Eliminar adjunto seleccionado
+  const handleEliminarAdjunto = (index) => {
+    setAdjuntosSeleccionados(adjuntosSeleccionados.filter((_, i) => i !== index));
+  };
+
+  // Crear orden (validar campos obligatorios)
+  const handleCrear = () => {
     // Validar proveedor
     if (!nuevaOrden.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
       mostrarNotificacion('Debes seleccionar un proveedor', 'warning');
@@ -146,9 +224,22 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
       return;
     }
 
-    // Si todo está bien, crear la orden
-    onCreate(nuevaOrden);
-    mostrarNotificacion(' Orden creada exitosamente', 'success');
+    // Si todo está bien, crear la orden (sin enviar número, se genera automáticamente)
+    // Preparar FormData si hay adjuntos
+    if (adjuntosSeleccionados.length > 0) {
+      const formData = new FormData();
+      
+      // Agregar adjuntos
+      adjuntosSeleccionados.forEach(archivo => {
+        formData.append('adjuntos', archivo);
+      });
+      
+      // Pasar los datos de la orden en el callback
+      onCreate(formData, nuevaOrden);
+    } else {
+      onCreate(null, nuevaOrden);
+    }
+    // Nota: La notificación se mostrará desde handleCrearOrden en ordencompra.js
   };
 
   // Calcular total
@@ -198,34 +289,44 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           <h3 className="modal-title"> Crear Nueva Orden de Compra</h3>
 
           <div className="modal-form-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            {/* Número de orden */}
-            <div className="form-group">
-              <label>Número de Orden *</label>
-              <input
-                type="text"
-                value={nuevaOrden.numero}
-                onChange={(e) => setNuevaOrden({ ...nuevaOrden, numero: e.target.value })}
-                placeholder="Ej: ORD-001"
-                required
-              />
-            </div>
-
-            {/*  Selector de proveedor mejorado */}
-            <div className="form-group">
+            {/*  Selector de proveedor mejorado con botón de búsqueda avanzada */}
+            <div className="form-group" style={{ position: 'relative' }}>
               <label>Proveedor * {cargandoProveedores && '(Cargando...)'}</label>
-              <select
-                value={nuevaOrden.proveedor_id}
-                onChange={(e) => setNuevaOrden({ ...nuevaOrden, proveedor_id: e.target.value })}
-                disabled={cargandoProveedores}
-                required
-              >
-                <option value="">Seleccione un proveedor</option>
-                {proveedores.map((prov) => (
-                  <option key={prov._id} value={prov._id}>
-                    ID: {prov.id_proveedor} - {prov.nombre} {prov.empresa ? `(${prov.empresa})` : ''}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <select
+                  value={nuevaOrden.proveedor_id}
+                  onChange={(e) => setNuevaOrden({ ...nuevaOrden, proveedor_id: e.target.value })}
+                  disabled={cargandoProveedores}
+                  required
+                  style={{ flex: 1 }}
+                >
+                  <option value="">Seleccione un proveedor</option>
+                  {proveedores.map((prov) => (
+                    <option key={prov._id} value={prov._id}>
+                      ID: {prov.id_proveedor} - {prov.nombre} {prov.empresa ? `(${prov.empresa})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setMostrarBusquedaAvanzada(true)}
+                  title="Búsqueda avanzada de proveedores"
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    fontSize: '1rem'
+                  }}
+                >
+                  <Filter size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Fecha */}
@@ -383,6 +484,97 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
             </div>
           )}
 
+          {/* Sección Adjuntos */}
+          <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem' }}>📎 Adjuntos (Opcional - Máx 5)</h4>
+
+          <div className="adjuntos-container" style={{ 
+            border: '2px dashed #667eea', 
+            borderRadius: '8px', 
+            padding: '1.5rem', 
+            textAlign: 'center',
+            background: '#f0f4ff',
+            marginBottom: '1rem'
+          }}>
+            <input
+              type="file"
+              id="adjuntos-input"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+              onChange={handleSeleccionarAdjuntos}
+              style={{ display: 'none' }}
+            />
+            <button
+              type="button"
+              onClick={() => document.getElementById('adjuntos-input').click()}
+              style={{
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                padding: '0.8rem 1.5rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600'
+              }}
+            >
+              📄 Seleccionar Archivos
+            </button>
+            <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+              PDF, imágenes o documentos hasta 10 MB cada uno
+            </p>
+          </div>
+
+          {/* Lista de adjuntos seleccionados */}
+          {adjuntosSeleccionados.length > 0 && (
+            <div style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              padding: '1rem',
+              marginBottom: '1rem',
+              background: '#fafafa'
+            }}>
+              <h5 style={{ margin: '0 0 0.75rem 0' }}>Archivos adjuntos ({adjuntosSeleccionados.length}/5):</h5>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {adjuntosSeleccionados.map((archivo, idx) => (
+                  <li
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '0.75rem',
+                      background: 'white',
+                      marginBottom: '0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid #e9ecef'
+                    }}
+                  >
+                    <span style={{ fontSize: '0.9rem', color: '#333' }}>
+                      📄 {archivo.name} ({(archivo.size / 1024).toFixed(0)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleEliminarAdjunto(idx)}
+                      style={{
+                        background: '#ef4444',
+                        color: 'white',
+                        border: 'none',
+                        padding: '0.25rem 0.75rem',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem'
+                      }}
+                    >
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Sección Adjuntos */}
+          
+
           {/* Acciones del modal */}
           <div className="modal-actions" style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
             <button 
@@ -402,6 +594,325 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE BÚSQUEDA AVANZADA DE PROVEEDORES */}
+      {mostrarBusquedaAvanzada && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            maxWidth: '1000px',
+            width: '95%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            background: 'white',
+            borderRadius: '8px',
+            padding: '2rem',
+            position: 'relative'
+          }}>
+            {/* Encabezado */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, color: '#1f2937' }}>🔍 Búsqueda Avanzada de Proveedores</h3>
+              <button
+                onClick={() => {
+                  setMostrarBusquedaAvanzada(false);
+                  limpiarFiltros();
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.5rem',
+                  color: '#6b7280'
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Sección de Filtros */}
+            <div style={{
+              background: '#f9fafb',
+              padding: '1.5rem',
+              borderRadius: '8px',
+              marginBottom: '1.5rem',
+              border: '1px solid #e5e7eb'
+            }}>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#1f2937', fontSize: '1rem' }}>Criterios de Búsqueda</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
+                {/* Filtro ID Proveedor */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontSize: '0.9rem', fontWeight: '500' }}>
+                    ID Proveedor
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Buscar por ID..."
+                    value={filtros.id_proveedor}
+                    onChange={(e) => setFiltros({ ...filtros, id_proveedor: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Filtro Nombre */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontSize: '0.9rem', fontWeight: '500' }}>
+                    Nombre del Proveedor
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre..."
+                    value={filtros.nombre}
+                    onChange={(e) => setFiltros({ ...filtros, nombre: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Filtro Empresa */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontSize: '0.9rem', fontWeight: '500' }}>
+                    Empresa
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Buscar por empresa..."
+                    value={filtros.empresa}
+                    onChange={(e) => setFiltros({ ...filtros, empresa: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Filtro Teléfono */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontSize: '0.9rem', fontWeight: '500' }}>
+                    Teléfono
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Buscar por teléfono..."
+                    value={filtros.telefono}
+                    onChange={(e) => setFiltros({ ...filtros, telefono: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Filtro Estado */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', color: '#374151', fontSize: '0.9rem', fontWeight: '500' }}>
+                    Estado
+                  </label>
+                  <select
+                    value={filtros.estado}
+                    onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '0.9rem',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="">Todos los estados</option>
+                    <option value="ACTIVO">Activo</option>
+                    <option value="INACTIVO">Inactivo</option>
+                    <option value="SUSPENDIDO">Suspendido</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Botones de acción de filtros */}
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  onClick={limpiarFiltros}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#f3f4f6',
+                    color: '#374151',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  Limpiar Filtros
+                </button>
+              </div>
+            </div>
+
+            {/* Resultados */}
+            <div>
+              <h4 style={{ margin: '0 0 1rem 0', color: '#1f2937', fontSize: '1rem' }}>
+                Resultados: {proveedoresFiltrados.length} {proveedoresFiltrados.length === 1 ? 'proveedor' : 'proveedores'}
+              </h4>
+
+              {proveedoresFiltrados.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '2rem',
+                  background: '#f9fafb',
+                  borderRadius: '8px',
+                  color: '#6b7280'
+                }}>
+                  <p style={{ margin: 0 }}>No se encontraron proveedores que coincidan con los criterios de búsqueda.</p>
+                </div>
+              ) : (
+                <div style={{
+                  overflowX: 'auto',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px'
+                }}>
+                  <table style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.9rem'
+                  }}>
+                    <thead>
+                      <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>ID</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Nombre</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Empresa</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Teléfono</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Email</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#374151' }}>Estado</th>
+                        <th style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#374151' }}>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {proveedoresFiltrados.map((proveedor, idx) => (
+                        <tr 
+                          key={proveedor._id} 
+                          style={{
+                            borderBottom: '1px solid #e5e7eb',
+                            background: idx % 2 === 0 ? 'white' : '#f9fafb',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f0f9ff'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? 'white' : '#f9fafb'}
+                        >
+                          <td style={{ padding: '1rem', color: '#1f2937', fontWeight: '500' }}>
+                            {proveedor.id_proveedor}
+                          </td>
+                          <td style={{ padding: '1rem', color: '#1f2937' }}>
+                            {proveedor.nombre}
+                          </td>
+                          <td style={{ padding: '1rem', color: '#6b7280' }}>
+                            {proveedor.empresa || '-'}
+                          </td>
+                          <td style={{ padding: '1rem', color: '#6b7280' }}>
+                            {proveedor.telefono || '-'}
+                          </td>
+                          <td style={{ padding: '1rem', color: '#6b7280', fontSize: '0.85rem' }}>
+                            {proveedor.email ? (
+                              <a href={`mailto:${proveedor.email}`} style={{ color: '#667eea', textDecoration: 'none' }}>
+                                {proveedor.email}
+                              </a>
+                            ) : '-'}
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '12px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              background: proveedor.estado === 'ACTIVO' ? '#ecfdf5' : '#fee2e2',
+                              color: proveedor.estado === 'ACTIVO' ? '#065f46' : '#991b1b'
+                            }}>
+                              {proveedor.estado}
+                            </span>
+                          </td>
+                          <td style={{ padding: '1rem', textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => seleccionarProveedor(proveedor._id)}
+                              style={{
+                                padding: '0.5rem 1rem',
+                                background: '#667eea',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}
+                            >
+                              Seleccionar
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Botón cerrar modal */}
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarBusquedaAvanzada(false);
+                  limpiarFiltros();
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500'
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
