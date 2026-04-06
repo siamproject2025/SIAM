@@ -408,15 +408,7 @@ const Personal = () => {
             <table className="per-table">
               <thead>
                 <tr>
-                  <th style={{ width:44 }}>
-                    <input type="checkbox" className="per-checkbox"
-                      checked={currentItems.length > 0 && currentItems.every(p => seleccionados.includes(p._id))}
-                      onChange={e => {
-                        if (e.target.checked) setSeleccionados(prev => [...new Set([...prev, ...currentItems.map(p => p._id)])]);
-                        else setSeleccionados(prev => prev.filter(id => !currentItems.map(p => p._id).includes(id)));
-                      }}
-                    />
-                  </th>
+                  
                   {COLS.map(col => (
                     <th key={col.uid} className={col.sortable ? "sortable" : ""} onClick={() => handleSort(col.uid)}>
                       {col.name}
@@ -439,16 +431,7 @@ const Personal = () => {
                   </tr>
                 ) : currentItems.map(emp => (
                   <tr key={emp._id} className={seleccionados.includes(emp._id) ? "row-selected" : ""}>
-                    <td>
-                      <input type="checkbox" className="per-checkbox"
-                        checked={seleccionados.includes(emp._id)}
-                        onChange={e => {
-                          if (e.target.checked) setSeleccionados(p => [...p, emp._id]);
-                          else setSeleccionados(p => p.filter(id => id !== emp._id));
-                        }}
-                      />
-                    </td>
-
+          
                     {/* Código chip */}
                     <td className="per-td-codigo">
                       <span className="per-codigo-chip">{emp.codigo}</span>
