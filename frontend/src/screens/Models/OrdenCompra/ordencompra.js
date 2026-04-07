@@ -6,6 +6,10 @@ import '../../../styles/Models/ordencompra.css';
 import { auth } from "../../../components/authentication/Auth";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import { loadingController } from "../../../api/loadingController";
+
+import { Calendar as RSCalendar } from 'rsuite';
+import 'rsuite/dist/rsuite.min.css';
+
 import { 
   Search,
   Plus,
@@ -17,6 +21,11 @@ import {
   DollarSign,
   Filter,
 } from 'lucide-react';
+
+
+
+//Calendario
+
 
 // Iconos SVG
 const ChevronDownIcon = () => (
@@ -35,6 +44,8 @@ const DotsIcon = () => (
 
 const API_URL = process.env.REACT_APP_API_URL+"/api/compras";
 
+
+
 const OrdenCompra = () => {
   // Estados principales
   const [ordenes, setOrdenes] = useState([]);
@@ -49,7 +60,9 @@ const OrdenCompra = () => {
    const [notification, setNotification] = useState(null);
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
-const [showStatusMenu, setShowStatusMenu] = useState(false); // ← AGREGAR
+const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState(new Date(new Date().setDate(1)));
+  const [fechaFin, setFechaFin] = useState(new Date());
 
   //Dialogo de eliminación
   const [ordenAEliminar, setOrdenAEliminar] = useState(null);
@@ -57,6 +70,8 @@ const [showConfirm, setShowConfirm] = useState(false);
 
 const [showActionMenu, setShowActionMenu] = useState(null);
 const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+const [openCal, setOpenCal] = useState(null); // 'desde' | 'hasta' | null
 
 useEffect(() => {
   const handleClickOutside = (event) => {
@@ -70,6 +85,9 @@ useEffect(() => {
     if (!event.target.closest('.action-wrapper') && !event.target.closest('.action-menu')) {
       setShowActionMenu(null);
     }
+    if (!event.target.closest('.date-range-filters')) {
+  setOpenCal(null);
+}
   };
 
   document.addEventListener('mousedown', handleClickOutside);
@@ -241,8 +259,19 @@ useEffect(() => {
       filtered = filtered.filter(orden => statusFilter.has(orden.estado));
     }
 
+    // Filtrado por rango de fechas
+    filtered = filtered.filter(orden => {
+      if (!orden.fecha) return false;
+      const fecha = new Date(orden.fecha);
+      const inicio = new Date(fechaInicio);
+      const fin = new Date(fechaFin);
+      // Ajustar fin a fin del día
+      fin.setHours(23, 59, 59, 999);
+      return fecha >= inicio && fecha <= fin;
+    });
+
     return filtered;
-  }, [ordenes, filterValue, statusFilter]);
+  }, [ordenes, filterValue, statusFilter, fechaInicio, fechaFin]);
 
   // Ordenamiento
   const sortedItems = useMemo(() => {
@@ -289,24 +318,33 @@ useEffect(() => {
     }
   };
 
-  const handleCrearOrden = async (nuevaOrden) => {
+  const handleCrearOrden = async (formDataOAdjuntos, datosOrden) => {
   try {
-    if (!nuevaOrden.numero.trim()) {
-      showNotification('El número de orden es obligatorio', 'error');
-      return;
+    // Manejar dos formatos:
+    // 1. formDataOAdjuntos es FormData (con archivos), datosOrden es el objeto
+    // 2. formDataOAdjuntos es null (sin archivos), datosOrden es el objeto
+    
+    let nuevaOrden;
+    let tieneAdjuntos = false;
+    
+    if (formDataOAdjuntos === null) {
+      // Sin adjuntos - usar JSON directo
+      console.log('📊 Sin adjuntos - JSON directo');
+      nuevaOrden = datosOrden;
+    } else {
+      // Con adjuntos - FormData con archivos
+      console.log('📎 Con adjuntos - FormData');
+      tieneAdjuntos = true;
+      nuevaOrden = datosOrden;
     }
-    if (!nuevaOrden.proveedor_id.trim()) {
+
+    // Validaciones (nota: número se auto-genera en el backend)
+    if (!nuevaOrden?.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
       showNotification('El ID del proveedor es obligatorio', 'error');
       return;
     }
-    if (!nuevaOrden.items || nuevaOrden.items.length === 0) {
+    if (!nuevaOrden?.items || nuevaOrden.items.length === 0) {
       showNotification('Debe agregar al menos un ítem a la orden', 'error');
-      return;
-    }
-
-    const numeroExistente = ordenes.find(o => o.numero.toLowerCase() === nuevaOrden.numero.toLowerCase());
-    if (numeroExistente) {
-      showNotification('Ya existe una orden con este número', 'error');
       return;
     }
 
@@ -314,18 +352,53 @@ useEffect(() => {
     if (!user) throw new Error('Usuario no autenticado');
     const token = await user.getIdToken();
 
-    const res = await fetch(API_URL, {
+    const config = {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` //  Token agregado
-      },
-      body: JSON.stringify(nuevaOrden)
+        Authorization: `Bearer ${token}`,
+        'X-Orden-Data': btoa(JSON.stringify(nuevaOrden))  // Base64 encoded JSON en header
+      }
+    };
+
+    // Si hay adjuntos, enviar FormData; si no, enviar JSON
+    if (tieneAdjuntos && formDataOAdjuntos) {
+      console.log('🚀 Enviando con FormData (adjuntos)');
+      config.body = formDataOAdjuntos;
+    } else {
+      console.log('🚀 Enviando JSON directo (sin adjuntos)');
+      config.headers['Content-Type'] = 'application/json';
+      config.body = JSON.stringify(nuevaOrden);
+    }
+
+    console.log('🚀 Enviando orden:', { 
+      tieneAdjuntos, 
+      bodyType: tieneAdjuntos ? 'FormData' : 'JSON'
     });
 
+    const res = await fetch(API_URL, config);
+    console.log('📊 Respuesta recibida:', res.status, res.statusText);
+
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al crear la orden');
+      let errorMessage = `Error ${res.status}: ${res.statusText}`;
+      
+      try {
+        const contentType = res.headers?.get?.('content-type') || '';
+        console.log('📋 Content-Type:', contentType);
+        
+        if (contentType.includes('application/json')) {
+          const errorData = await res.json();
+          console.log('📄 Error JSON:', errorData);
+          errorMessage = errorData?.error || errorData?.message || errorMessage;
+        } else {
+          const text = await res.text();
+          console.error('❌ Respuesta no-JSON:', text.substring(0, 500));
+          errorMessage = `Error del servidor: ${text.substring(0, 100)}`;
+        }
+      } catch (parseErr) {
+        console.error('Error parseando respuesta de error:', parseErr);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const ordenCreada = await res.json();
@@ -333,8 +406,8 @@ useEffect(() => {
     setMostrarModalCrear(false);
     showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
   } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al crear la orden', 'error');
+    console.error('❌ Error completo:', err.message || err);
+    showNotification(err?.message || 'Error al crear la orden', 'error');
   }
 };
 
@@ -947,6 +1020,68 @@ const cancelarEliminacionOrden = () => {
                 </button>
               )}
             </div>
+
+            {/* Date Range Filter */}
+           {/* Date Range Filter */}
+<div className="date-range-filters">
+  <Calendar size={18} color="#666" />
+
+  {/* Campo Desde */}
+  <div style={{ position: 'relative' }}>
+    <div
+      className="date-picker-input"
+      style={{ cursor: 'pointer', userSelect: 'none' }}
+      onClick={() => setOpenCal(openCal === 'desde' ? null : 'desde')}
+    >
+      {fechaInicio
+        ? `${String(fechaInicio.getDate()).padStart(2,'0')}/${String(fechaInicio.getMonth()+1).padStart(2,'0')}/${fechaInicio.getFullYear()}`
+        : <span style={{ color: '#999' }}>Desde</span>
+      }
+    </div>
+    {openCal === 'desde' && (
+      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200 }}>
+        <RSCalendar
+          compact
+          onSelect={date => {
+            setFechaInicio(date);
+            setOpenCal(null);
+          }}
+          value={fechaInicio}
+          style={{ width: 280, borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+        />
+      </div>
+    )}
+  </div>
+
+  <span style={{ color: '#999' }}>—</span>
+
+  {/* Campo Hasta */}
+  <div style={{ position: 'relative' }}>
+    <div
+      className="date-picker-input"
+      style={{ cursor: 'pointer', userSelect: 'none' }}
+      onClick={() => setOpenCal(openCal === 'hasta' ? null : 'hasta')}
+    >
+      {fechaFin
+        ? `${String(fechaFin.getDate()).padStart(2,'0')}/${String(fechaFin.getMonth()+1).padStart(2,'0')}/${fechaFin.getFullYear()}`
+        : <span style={{ color: '#999' }}>Hasta</span>
+      }
+    </div>
+    {openCal === 'hasta' && (
+      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200 }}>
+        <RSCalendar
+          compact
+          onSelect={date => {
+            setFechaFin(date);
+            setOpenCal(null);
+          }}
+          value={fechaFin}
+          style={{ width: 280, borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+        />
+      </div>
+    )}
+  </div>
+</div>
 
             {/* Status Filter */}
             <div 

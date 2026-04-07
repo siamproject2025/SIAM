@@ -160,4 +160,11 @@ router.delete('/usuarios/:id',
   usuarioController.eliminarUsuario
 );
 
+router.patch('/usuarios/:id/asignacion',
+  authenticateUser,
+  checkPermission('ACTUALIZAR_SEGURIDAD'),
+  capturarDatosPrevios('USUARIOS'),
+  registrarAuditoria('USUARIOS'),
+  usuarioController.actualizarAsignacion
+);
 module.exports = router;

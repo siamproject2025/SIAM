@@ -7,7 +7,7 @@ import { loadingController } from "../../../api/loadingController";
 import { 
   Building2, Mail, Phone, MapPin, Hash, Search, HelpCircle, Plus, Edit, Trash2,
   X, Clock, Save, Check, Package, Briefcase, Users, Truck, CheckCircle, XCircle,
-  Settings, Boxes, Star, Eye, Award
+  Settings, Boxes, Star, Eye, Award, Copy
 } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/proveedores";
@@ -24,6 +24,13 @@ const Proveedores = () => {
   const [mostrarMenuFiltros, setMostrarMenuFiltros] = useState(false);
   const [proveedorAEliminar, setProveedorAEliminar] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Filtros avanzados
+  const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [filtroCiudad, setFiltroCiudad] = useState('todos');
+  const [mostrarFiltrosAvanzados, setMostrarFiltrosAvanzados] = useState(false);
+  const [mostrarNotas, setMostrarNotas] = useState(null);
 
   // Errores de validación por campo
   const [errores, setErrores] = useState({});
@@ -260,8 +267,9 @@ const Proveedores = () => {
   };
 
   const proveedoresFiltrados = proveedores.filter(p => {
+    // Búsqueda por texto
     const t = busqueda.toLowerCase();
-    return (
+    const cumplebusqueda = (
       p.nombre?.toLowerCase().includes(t) ||
       p.empresa?.toLowerCase().includes(t) ||
       p.email?.toLowerCase().includes(t) ||
@@ -270,6 +278,17 @@ const Proveedores = () => {
       p.pais?.toLowerCase().includes(t) ||
       p.contacto?.toLowerCase().includes(t)
     );
+
+    // Filtro por estado
+    const cumpleEstado = filtroEstado === 'todos' || p.estado === filtroEstado;
+
+    // Filtro por tipo
+    const cumpleTipo = filtroTipo === 'todos' || p.tipo_proveedor === filtroTipo;
+
+    // Filtro por ciudad
+    const cumpleCiudad = filtroCiudad === 'todos' || p.ciudad === filtroCiudad;
+
+    return cumplebusqueda && cumpleEstado && cumpleTipo && cumpleCiudad;
   });
 
   const proveedoresOrdenados = [...proveedoresFiltrados].sort((a, b) => {
@@ -297,6 +316,29 @@ const Proveedores = () => {
     SERVICIOS: <Briefcase size={18} />,
     MIXTO: <Building2 size={18} />
   }[tipo] || <Package size={18} />);
+
+  // ─── FUNCIONES HELPER PARA LA TABLA ───────────────────────────────────────
+  const obtenerColorBadgeCondiciones = (dias) => {
+    if (!dias) return { bg: '#f3f4f6', color: '#6b7280', label: 'N/A' };
+    const numDias = parseInt(dias);
+    if (numDias <= 15) return { bg: '#dcfce7', color: '#166534', label: `${numDias}d` };
+    if (numDias <= 30) return { bg: '#fef3c7', color: '#92400e', label: `${numDias}d` };
+    return { bg: '#fee2e2', color: '#991b1b', label: `${numDias}d` };
+  };
+
+  const obtenerCiudades = () => {
+    const ciudades = new Set(proveedores.map(p => p.ciudad).filter(Boolean));
+    return Array.from(ciudades).sort();
+  };
+
+  const copiarAlPortapapeles = async (texto, tipo) => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      showNotification(`${tipo} copiado al portapapeles`, 'success');
+    } catch (err) {
+      showNotification('Error al copiar', 'error');
+    }
+  };
 
   const handleOpenEditModal = (proveedor) => {
     setProveedorSeleccionado(proveedor);
@@ -340,176 +382,206 @@ const Proveedores = () => {
 
   // ─── CAMPOS DE FORMULARIO (reutilizables en ambos modales) ────────────────
   const renderCamposFormulario = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-      {/* Nombre y Empresa */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="form-group">
-          <label>Nombre *</label>
-          <input
-            type="text"
-            value={formData.nombre}
-            onChange={(e) => { setFormData({ ...formData, nombre: e.target.value }); setErrores({ ...errores, nombre: '' }); }}
-            placeholder="Nombre del proveedor"
-            style={inputStyle('nombre')}
-          />
-          <ErrorMsg campo="nombre" />
-        </div>
-       <div className="form-group">
-  <label>Empresa *</label>
-  <input
-    type="text"
-    value={formData.empresa}
-    onChange={(e) => { setFormData({ ...formData, empresa: e.target.value }); setErrores({ ...errores, empresa: '' }); }}
-    placeholder="Nombre de la empresa"
-    style={inputStyle('empresa')}
-  />
-  <ErrorMsg campo="empresa" />
-</div>
-      </div>
+      {/* Sección 1: Ficha de Identidad Legal */}
+      <div className="form-section">
+        <h4 style={{ margin: '0 0 1rem 0', color: '#333', fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Building2 size={20} color="#667eea" /> Ficha de Identidad Legal
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Nombre y Empresa */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>Nombre *</label>
+              <input
+                type="text"
+                value={formData.nombre}
+                onChange={(e) => { setFormData({ ...formData, nombre: e.target.value }); setErrores({ ...errores, nombre: '' }); }}
+                placeholder="Nombre del proveedor"
+                style={inputStyle('nombre')}
+              />
+              <ErrorMsg campo="nombre" />
+            </div>
+            <div className="form-group">
+              <label>Empresa *</label>
+              <input
+                type="text"
+                value={formData.empresa}
+                onChange={(e) => { setFormData({ ...formData, empresa: e.target.value }); setErrores({ ...errores, empresa: '' }); }}
+                placeholder="Nombre de la empresa"
+                style={inputStyle('empresa')}
+              />
+              <ErrorMsg campo="empresa" />
+            </div>
+          </div>
 
-      {/* Email y Teléfono */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="form-group">
-          <label>Email *</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setErrores({ ...errores, email: '' }); }}
-            placeholder="correo@ejemplo.com"
-            style={inputStyle('email')}
-          />
-          <ErrorMsg campo="email" />
-        </div>
-        <div className="form-group">
-          <label>Teléfono *</label>
-          <input
-            type="tel"
-            value={formData.telefono}
-            onChange={(e) => { setFormData({ ...formData, telefono: e.target.value }); setErrores({ ...errores, telefono: '' }); }}
-            placeholder="+504 1234-5678"
-            style={inputStyle('telefono')}
-          />
-          <ErrorMsg campo="telefono" />
-        </div>
-      </div>
-
-      {/* RTN */}
-      <div className="form-group">
-        <label>RTN <span style={{ fontSize: '12px', color: '#888' }}>(14 dígitos numéricos)</span></label>
-        <input
-          type="text"
-          value={formData.rtn}
-          onChange={(e) => {
-            const soloNumeros = e.target.value.replace(/\D/g, '').slice(0, 14);
-            setFormData({ ...formData, rtn: soloNumeros });
-            setErrores({ ...errores, rtn: '' });
-          }}
-          placeholder="Ej: 08011985123456"
-          maxLength={14}
-          inputMode="numeric"
-          style={inputStyle('rtn')}
-        />
-        {formData.rtn.length > 0 && formData.rtn.length < 14 && (
-          <small style={{ color: '#dc2626', fontSize: '12px' }}>{formData.rtn.length}/14 dígitos</small>
-        )}
-        {formData.rtn.length === 14 && (
-          <small style={{ color: '#16a34a', fontSize: '12px' }}>✓ RTN válido</small>
-        )}
-        <ErrorMsg campo="rtn" />
-      </div>
-
-      {/* Dirección */}
-      <div className="form-group">
-        <label>Dirección *</label>
-        <input
-          type="text"
-          value={formData.direccion}
-          onChange={(e) => { setFormData({ ...formData, direccion: e.target.value }); setErrores({ ...errores, direccion: '' }); }}
-          placeholder="Dirección completa"
-          style={inputStyle('direccion')}
-        />
-        <ErrorMsg campo="direccion" />
-      </div>
-
-      {/* Ciudad y País */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="form-group">
-          <label>Ciudad *</label>
-          <input
-            type="text"
-            value={formData.ciudad}
-            onChange={(e) => { setFormData({ ...formData, ciudad: e.target.value }); setErrores({ ...errores, ciudad: '' }); }}
-            placeholder="Ciudad"
-            style={inputStyle('ciudad')}
-          />
-          <ErrorMsg campo="ciudad" />
-        </div>
-        <div className="form-group">
-          <label>País *</label>
-          <input
-            type="text"
-            value={formData.pais}
-            onChange={(e) => { setFormData({ ...formData, pais: e.target.value }); setErrores({ ...errores, pais: '' }); }}
-            placeholder="País"
-            style={inputStyle('pais')}
-          />
-          <ErrorMsg campo="pais" />
+          {/* RTN y Tipo */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>RTN *</label>
+              <input
+                type="text"
+                value={formData.rtn}
+                onChange={(e) => {
+                  const soloNumeros = e.target.value.replace(/\D/g, '').slice(0, 14);
+                  setFormData({ ...formData, rtn: soloNumeros });
+                  setErrores({ ...errores, rtn: '' });
+                }}
+                placeholder="Ej: 08011985123456"
+                maxLength={14}
+                inputMode="numeric"
+                style={inputStyle('rtn')}
+              />
+              {formData.rtn.length > 0 && formData.rtn.length < 14 && (
+                <small style={{ color: '#dc2626', fontSize: '12px' }}>{formData.rtn.length}/14 dígitos</small>
+              )}
+              {formData.rtn.length === 14 && (
+                <small style={{ color: '#16a34a', fontSize: '12px' }}>✓ RTN válido</small>
+              )}
+              <ErrorMsg campo="rtn" />
+            </div>
+            <div className="form-group">
+              <label>Tipo</label>
+              <select value={formData.tipo_proveedor} onChange={(e) => setFormData({ ...formData, tipo_proveedor: e.target.value })}>
+                <option value="PRODUCTOS">PRODUCTOS</option>
+                <option value="SERVICIOS">SERVICIOS</option>
+                <option value="MIXTO">MIXTO</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Tipo y Estado */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="form-group">
-          <label>Tipo</label>
-          <select value={formData.tipo_proveedor} onChange={(e) => setFormData({ ...formData, tipo_proveedor: e.target.value })}>
-            <option value="PRODUCTOS">PRODUCTOS</option>
-            <option value="SERVICIOS">SERVICIOS</option>
-            <option value="MIXTO">MIXTO</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label>Estado</label>
-          <select value={formData.estado} onChange={(e) => setFormData({ ...formData, estado: e.target.value })}>
-            <option value="ACTIVO">ACTIVO</option>
-            <option value="INACTIVO">INACTIVO</option>
-            <option value="SUSPENDIDO">SUSPENDIDO</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Condiciones y Tiempo Entrega */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-        <div className="form-group">
-          <label>Condiciones de Pago</label>
-          <input
-            type="text"
-            value={formData.condiciones_pago}
-            onChange={(e) => setFormData({ ...formData, condiciones_pago: e.target.value })}
-            placeholder="Ej: 30 días"
-          />
-        </div>
-        <div className="form-group">
-          <label>Tiempo Entrega (días)</label>
-          <input
-            type="number"
-            value={formData.tiempo_entrega_promedio}
-            onChange={(e) => setFormData({ ...formData, tiempo_entrega_promedio: e.target.value })}
-            placeholder="Días promedio"
-            min="0"
-          />
+      {/* Sección 2: Canales de Comunicación */}
+      <div className="form-section">
+        <h4 style={{ margin: '0 0 1rem 0', color: '#333', fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Mail size={20} color="#667eea" /> Canales de Comunicación
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Email y Teléfono */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>Email *</label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setErrores({ ...errores, email: '' }); }}
+                placeholder="correo@ejemplo.com"
+                style={inputStyle('email')}
+              />
+              <ErrorMsg campo="email" />
+            </div>
+            <div className="form-group">
+              <label>Teléfono *</label>
+              <input
+                type="tel"
+                value={formData.telefono}
+                onChange={(e) => { setFormData({ ...formData, telefono: e.target.value }); setErrores({ ...errores, telefono: '' }); }}
+                placeholder="+504 1234-5678"
+                style={inputStyle('telefono')}
+              />
+              <ErrorMsg campo="telefono" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Notas */}
-      <div className="form-group">
-        <label>Notas</label>
-        <textarea
-          value={formData.notas}
-          onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
-          placeholder="Notas adicionales..."
-          rows="3"
-        />
+      {/* Sección 3: Localización Física */}
+      <div className="form-section">
+        <h4 style={{ margin: '0 0 1rem 0', color: '#333', fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <MapPin size={20} color="#667eea" /> Localización Física
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Ciudad y País */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>Ciudad *</label>
+              <input
+                type="text"
+                value={formData.ciudad}
+                onChange={(e) => { setFormData({ ...formData, ciudad: e.target.value }); setErrores({ ...errores, ciudad: '' }); }}
+                placeholder="Ciudad"
+                style={inputStyle('ciudad')}
+              />
+              <ErrorMsg campo="ciudad" />
+            </div>
+            <div className="form-group">
+              <label>País *</label>
+              <input
+                type="text"
+                value={formData.pais}
+                onChange={(e) => { setFormData({ ...formData, pais: e.target.value }); setErrores({ ...errores, pais: '' }); }}
+                placeholder="País"
+                style={inputStyle('pais')}
+              />
+              <ErrorMsg campo="pais" />
+            </div>
+          </div>
+
+          {/* Dirección */}
+          <div className="form-group">
+            <label>Dirección *</label>
+            <textarea
+              value={formData.direccion}
+              onChange={(e) => { setFormData({ ...formData, direccion: e.target.value }); setErrores({ ...errores, direccion: '' }); }}
+              placeholder="Dirección completa"
+              rows="3"
+              style={inputStyle('direccion')}
+            />
+            <ErrorMsg campo="direccion" />
+          </div>
+        </div>
+      </div>
+
+      {/* Sección 4: Configuración Administrativa */}
+      <div className="form-section">
+        <h4 style={{ margin: '0 0 1rem 0', color: '#333', fontSize: '1.1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Settings size={20} color="#667eea" /> Configuración Administrativa
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Estado, Condiciones de Pago, Tiempo Entrega */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+            <div className="form-group">
+              <label>Estado</label>
+              <select value={formData.estado} onChange={(e) => setFormData({ ...formData, estado: e.target.value })}>
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="INACTIVO">INACTIVO</option>
+                <option value="SUSPENDIDO">SUSPENDIDO</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Condiciones de Pago</label>
+              <input
+                type="text"
+                value={formData.condiciones_pago}
+                onChange={(e) => setFormData({ ...formData, condiciones_pago: e.target.value })}
+                placeholder="Ej: 30 días"
+              />
+            </div>
+            <div className="form-group">
+              <label>Tiempo Entrega (días)</label>
+              <input
+                type="number"
+                value={formData.tiempo_entrega_promedio}
+                onChange={(e) => setFormData({ ...formData, tiempo_entrega_promedio: e.target.value })}
+                placeholder="Días promedio"
+                min="0"
+              />
+            </div>
+          </div>
+
+          {/* Notas */}
+          <div className="form-group">
+            <label>Notas</label>
+            <textarea
+              value={formData.notas}
+              onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+              placeholder="Comentarios internos..."
+              rows="3"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -534,63 +606,143 @@ const Proveedores = () => {
         <motion.div className="tabla-proveedores" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}>
           <motion.div className="tabla-header-proveedores" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Hash size={14} /> ID</div>
-            <div>NOMBRE & EMPRESA</div>
+            <div>NOMBRE</div>
+            <div>EMPRESA</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Mail size={14} /> CONTACTO</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><MapPin size={14} /> UBICACIÓN</div>
             <div style={{ textAlign: 'center' }}>TIPO</div>
             <div style={{ textAlign: 'center' }}>ESTADO</div>
+            <div style={{ textAlign: 'center' }}>CONDICIONES</div>
+            <div style={{ textAlign: 'center' }}>ENTREGA</div>
             <div style={{ textAlign: 'center' }}>ACCIONES</div>
           </motion.div>
 
           <div className="tabla-body-proveedores">
-            {lista.map((proveedor, index) => (
-              <motion.div
-                key={proveedor._id}
-                className="tabla-fila-proveedores"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: Math.min(index * 0.05, 1), duration: 0.4, type: "spring", stiffness: 100 }}
-                whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
-                onClick={() => handleOpenEditModal(proveedor)}
-              >
-                <motion.div style={{ fontWeight: 'bold', color: '#FF9800', fontSize: '0.95rem' }} whileHover={{ scale: 1.1 }}>
-                  #{proveedor.id_proveedor}
+            {lista.map((proveedor, index) => {
+              const condicionesBadge = obtenerColorBadgeCondiciones(proveedor.condiciones_pago);
+              return (
+                <motion.div
+                  key={proveedor._id}
+                  className="tabla-fila-proveedores"
+                  initial={{ opacity: 0, x: -50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: Math.min(index * 0.05, 1), duration: 0.4, type: "spring", stiffness: 100 }}
+                  whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+                  onClick={() => handleOpenEditModal(proveedor)}
+                >
+                  {/* ID */}
+                  <motion.div style={{ fontWeight: 'bold', color: '#FF9800', fontSize: '0.95rem', whiteSpace: 'nowrap' }} whileHover={{ scale: 1.1 }}>
+                    #{proveedor.id_proveedor}
+                  </motion.div>
+
+                  {/* NOMBRE */}
+                  <div style={{ fontWeight: '600', fontSize: '0.9rem', color: '#333', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={proveedor.nombre}>
+                    {proveedor.nombre}
+                  </div>
+
+                  {/* EMPRESA */}
+                  <div style={{ fontSize: '0.85rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={proveedor.empresa}>
+                    {proveedor.empresa || '-'}
+                  </div>
+
+                  {/* CONTACTO */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ fontSize: '0.8rem', color: '#555', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Mail size={12} color="#667eea" style={{ minWidth: '12px' }} />
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={proveedor.email}>{proveedor.email}</span>
+                      <Copy size={12} color="#999" onClick={(e) => { e.stopPropagation(); copiarAlPortapapeles(proveedor.email, 'Email'); }} style={{ cursor: 'pointer', minWidth: '12px' }} />
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#555', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <Phone size={12} color="#667eea" style={{ minWidth: '12px' }} />
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={proveedor.telefono}>{proveedor.telefono}</span>
+                      <Copy size={12} color="#999" onClick={(e) => { e.stopPropagation(); copiarAlPortapapeles(proveedor.telefono, 'Teléfono'); }} style={{ cursor: 'pointer', minWidth: '12px' }} />
+                    </div>
+                  </div>
+
+                  {/* UBICACIÓN */}
+                  <div style={{ fontSize: '0.85rem', color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={`${proveedor.ciudad}${proveedor.direccion ? ' - ' + proveedor.direccion : ''}`}>
+                    {proveedor.ciudad || '-'}
+                  </div>
+
+                  {/* TIPO */}
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}>
+                    {getTipoIcon(proveedor.tipo_proveedor)}
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>{proveedor.tipo_proveedor}</span>
+                  </div>
+
+                  {/* ESTADO */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <span className={`estado-badge ${proveedor.estado.toLowerCase()}`} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>{proveedor.estado}</span>
+                  </div>
+
+                  {/* CONDICIONES PAGO */}
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <span style={{
+                      background: condicionesBadge.bg,
+                      color: condicionesBadge.color,
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {condicionesBadge.label}
+                    </span>
+                  </div>
+
+                  {/* TIEMPO ENTREGA */}
+                  <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>
+                    {proveedor.tiempo_entrega_promedio ? `${proveedor.tiempo_entrega_promedio}d` : '-'}
+                  </div>
+
+                  {/* ACCIONES */}
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', alignItems: 'center' }}>
+                    {proveedor.notas && (
+                      <motion.button
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={(e) => { e.stopPropagation(); setMostrarNotas(mostrarNotas === proveedor._id ? null : proveedor._id); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#FFC107', padding: '4px', display: 'flex', alignItems: 'center' }}
+                        title="Ver notas"
+                      >
+                        <Clock size={15} />
+                      </motion.button>
+                    )}
+                    <motion.button
+                      whileHover={{ scale: 1.2, rotate: 15 }}
+                      whileTap={{ scale: 0.9, rotate: -15 }}
+                      onClick={(e) => { e.stopPropagation(); handleOpenEditModal(proveedor); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2196F3', padding: '4px', display: 'flex', alignItems: 'center' }}
+                      title="Editar"
+                    >
+                      <Edit size={15} />
+                    </motion.button>
+                  </div>
+
+                  {/* POPUP NOTAS */}
+                  {mostrarNotas === proveedor._id && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        gridColumn: '1 / -1',
+                        background: '#f9fafb',
+                        padding: '1rem',
+                        borderRadius: '6px',
+                        fontSize: '0.85rem',
+                        color: '#555',
+                        borderLeft: '3px solid #FFC107',
+                        marginTop: '0px'
+                      }}
+                    >
+                      <strong>Notas:</strong> {proveedor.notas}
+                    </motion.div>
+                  )}
                 </motion.div>
-                <div>
-                  <div style={{ fontWeight: '600', fontSize: '1rem', color: '#333', marginBottom: '3px' }}>{proveedor.nombre}</div>
-                  {proveedor.empresa && <div style={{ fontSize: '0.85rem', color: '#666' }}>{proveedor.empresa}</div>}
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.85rem', color: '#555', marginBottom: '3px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Mail size={14} />{proveedor.email}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: '#555', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Phone size={14} />{proveedor.telefono}
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#555' }}>
-                  {proveedor.ciudad && proveedor.pais ? `${proveedor.ciudad}, ${proveedor.pais}` : (proveedor.ciudad || proveedor.pais || '-')}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
-                  {getTipoIcon(proveedor.tipo_proveedor)}
-                  <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{proveedor.tipo_proveedor}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <span className={`estado-badge ${proveedor.estado.toLowerCase()}`}>{proveedor.estado}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                  <motion.button
-                    whileHover={{ scale: 1.2, rotate: 15 }}
-                    whileTap={{ scale: 0.9, rotate: -15 }}
-                    onClick={(e) => { e.stopPropagation(); handleOpenEditModal(proveedor); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#2196F3', padding: '5px', display: 'flex', alignItems: 'center' }}
-                    title="Editar"
-                  >
-                    <Edit size={18} />
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}
@@ -657,7 +809,7 @@ const Proveedores = () => {
 
             <div style={{ position: 'relative' }}>
               <motion.button className="btn-ayuda" onClick={() => setMostrarMenuFiltros(!mostrarMenuFiltros)} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}>
-                <Package size={18} /> Filtros
+                <Package size={18} /> Ordenar
               </motion.button>
               <AnimatePresence>
                 {mostrarMenuFiltros && (
@@ -678,6 +830,45 @@ const Proveedores = () => {
                         </div>
                       </React.Fragment>
                     ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <motion.button className="btn-ayuda" onClick={() => setMostrarFiltrosAvanzados(!mostrarFiltrosAvanzados)} whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.95 }}>
+                <Settings size={18} /> Filtrar
+              </motion.button>
+              <AnimatePresence>
+                {mostrarFiltrosAvanzados && (
+                  <motion.div className="filtros-menu" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }} style={{ width: '220px', minWidth: '220px' }}>
+                    <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e0e0e0' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#666', display: 'block', marginBottom: '4px' }}>ESTADO</label>
+                      <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} style={{ width: '100%', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e0e0e0', fontSize: '0.85rem' }}>
+                        <option value="todos">Todos</option>
+                        <option value="ACTIVO">Activo</option>
+                        <option value="INACTIVO">Inactivo</option>
+                        <option value="SUSPENDIDO">Suspendido</option>
+                      </select>
+                    </div>
+                    <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e0e0e0' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#666', display: 'block', marginBottom: '4px' }}>TIPO</label>
+                      <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} style={{ width: '100%', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e0e0e0', fontSize: '0.85rem' }}>
+                        <option value="todos">Todos</option>
+                        <option value="PRODUCTOS">Productos</option>
+                        <option value="SERVICIOS">Servicios</option>
+                        <option value="MIXTO">Mixto</option>
+                      </select>
+                    </div>
+                    <div style={{ padding: '0.75rem 1rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: '600', color: '#666', display: 'block', marginBottom: '4px' }}>CIUDAD</label>
+                      <select value={filtroCiudad} onChange={(e) => setFiltroCiudad(e.target.value)} style={{ width: '100%', padding: '4px 6px', borderRadius: '4px', border: '1px solid #e0e0e0', fontSize: '0.85rem' }}>
+                        <option value="todos">Todas</option>
+                        {obtenerCiudades().map(ciudad => (
+                          <option key={ciudad} value={ciudad}>{ciudad}</option>
+                        ))}
+                      </select>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

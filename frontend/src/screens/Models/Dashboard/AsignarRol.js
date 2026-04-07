@@ -228,79 +228,100 @@ const AsignarRol = () => {
    };
 
   return (
-    <div className="rol-asignar-container">
-      {/* Header mantenido sin iconos flotantes */}
-      <motion.div 
-        className="rol-asignar-header"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7 }}
+    <>
+    {/* Header mantenido sin iconos flotantes */}
+      <motion.div
+  className="mm-header"
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.5, type: 'spring', stiffness: 120 }}
+>
+  <div className="mm-hi">
+    <div className="mm-ht">
+      <motion.div
+        className="mm-htitle"
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.15 }}
       >
-        <div className="rol-header-gradient">
-          <div className="rol-header-pattern" />
-          
-          <div className="rol-header-content">
-            <div className="rol-header-top">
-              <motion.h1
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <MdAdminPanelSettings className="rol-header-icon" />
-                Gestión de Usuarios
-                <motion.span
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="rol-header-badge"
-                >
-                  <FiShield />
-                </motion.span>
-              </motion.h1>
-
-              <motion.button
-                className="rol-btn-gestion"
-                onClick={irAGestionRoles}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <RiShieldUserLine />
-                <span>Gestión de Roles</span>
-                <FiArrowRight />
-              </motion.button>
-            </div>
-            
-            <motion.p
-              className="rol-header-subtitle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              Administra los roles y permisos de los usuarios del sistema
-            </motion.p>
-
-            <motion.div 
-              className="rol-stats-grid"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <div className="rol-stat-card">
-                <div className="rol-stat-icon" style={{ background: '#3b82f6' }}>
-                  <FiUsers />
-                </div>
-                <div className="rol-stat-info">
-                  <span className="rol-stat-value">{totalUsuarios}</span>
-                  <span className="rol-stat-label">Total Usuarios</span>
-                </div>
-              </div>
-
-            </motion.div>
-          </div>
-        </div>
+        <motion.span
+          initial={{ rotate: -180, scale: 0 }}
+          animate={{ rotate: 0, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
+        >
+          <MdAdminPanelSettings size={34} color="white" />
+        </motion.span>
+        Gestión de Usuarios
       </motion.div>
+
+      <motion.button
+        className="rol-btn-gestion"
+        onClick={irAGestionRoles}
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.96 }}
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.25 }}
+      >
+        <RiShieldUserLine />
+        <span>Gestión de Roles</span>
+        <FiArrowRight />
+      </motion.button>
+    </div>
+
+    <motion.p
+      className="mm-sub"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.3 }}
+    >
+      Administra los roles y permisos de los usuarios del sistema
+    </motion.p>
+
+    <motion.div
+      className="mm-stats"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.35 }}
+    >
+      {[
+  { 
+    ico: <FiUsers size={18} color="white" />, 
+    val: usuariosFiltrados.length, 
+    lbl: filtroTexto || filtroRol ? 'Filtrados' : 'Total Usuarios' 
+  },
+  { 
+    ico: <FiUnlock size={18} color="white" />, 
+    val: usuariosFiltrados.filter(u => u.estado !== 'BLOQUEADO').length, 
+    lbl: 'Activos' 
+  },
+  { 
+    ico: <FiLock size={18} color="white" />, 
+    val: usuariosFiltrados.filter(u => u.estado === 'BLOQUEADO').length, 
+    lbl: 'Bloqueados' 
+  },
+  { 
+    ico: <FiShield size={18} color="white" />, 
+    val: roles.length, 
+    lbl: 'Roles' 
+  },
+].map((s, i) => (
+        <motion.div key={i} className="mm-stat"
+          whileHover={{ scale: 1.04, y: -2 }}
+          transition={{ type: 'spring', stiffness: 300 }}
+        >
+          <div className="mm-stat-ico">{s.ico}</div>
+          <div>
+            <div className="mm-stat-val">{s.val}</div>
+            <div className="mm-stat-lbl">{s.lbl}</div>
+          </div>
+        </motion.div>
+      ))}
+    </motion.div>
+  </div>
+</motion.div>
+    <div className="rol-asignar-container">
+      
 
       {/* Barra de búsqueda y filtros */}
       <div className="rol-search-section">
@@ -372,14 +393,24 @@ const AsignarRol = () => {
       <div className="rol-table-container">
         <table className="rol-users-table">
           <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Email</th>
-              <th>Rol Actual</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
+  <tr style={{ background: 'linear-gradient(135deg, #6C4FBF 0%, #9B59B6 100%)' }}>
+    {['Usuario', 'Email', 'Rol Actual', 'Estado', 'Acciones'].map(col => (
+      <th key={col} style={{
+        padding: '14px 20px',
+        textAlign: 'left',
+        fontFamily: 'Poppins, sans-serif',
+        fontWeight: 700,
+        fontSize: '0.78rem',
+        color: 'rgba(255,255,255,0.95)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        borderBottom: '2px solid #E0D9F5',
+      }}>
+        {col}
+      </th>
+    ))}
+  </tr>
+</thead>
           <tbody>
             {usuariosPaginados.length > 0 ? (
               usuariosPaginados.map((usuario) => {
@@ -591,6 +622,7 @@ const AsignarRol = () => {
         />
       )}
     </div>
+    </>
   );
 };
 
