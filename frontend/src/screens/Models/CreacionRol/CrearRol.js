@@ -108,7 +108,8 @@ function App() {
     MATRICULA: ['VISUALIZAR_MATRICULA', 'CREAR_MATRICULA', 'ACTUALIZAR_MATRICULA', 'ELIMINAR_MATRICULA'],
     DASHBOARD: ['VISUALIZAR_DASHBOARD'],
     ROLES: ['VISUALIZAR_ROLES','CREAR_ROLES','ACTUALIZAR_ROLES', 'ELIMINAR_ROLES'],
-    SOLICITUDES: ['VISUALIZAR_SOLICITUDES','CREAR_SOLICITUDES','ACTUALIZAR_SOLICITUDES', 'ELIMINAR_SOLICITUDES']
+    SOLICITUDES: ['VISUALIZAR_SOLICITUDES','CREAR_SOLICITUDES','ACTUALIZAR_SOLICITUDES', 'ELIMINAR_SOLICITUDES'],
+    PARAMETROS: ['EDITAR_PARAMETROS']
   };
 
   // Función para agrupar permisos por módulo para visualización
@@ -469,7 +470,7 @@ function ModalRol({ mode, rol, onClose, onSave, gruposPermisos, loading }) {
     },
     'Global/Dashboard': {
       icon: <FaChartLine />,
-      modulos: ['DASHBOARD']
+      modulos: ['DASHBOARD','PARAMETROS']
     }
   };
 

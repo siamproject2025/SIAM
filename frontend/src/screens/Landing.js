@@ -1,12 +1,12 @@
 // ============================================================
-// Landingpage.jsx — Landing dinámica
-// FIX #1: Todos los datos están en los parámetros del sistema.
-// Los lee de localStorage (guardados por Parametros.jsx).
-// Si no hay nada guardado, usa los valores por defecto.
+// Landingpage.jsx — consume API real
+// GET /api/parametros sin token (ruta pública)
+// Fallback a localStorage si la API no responde
 // ============================================================
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, animate } from 'framer-motion';
+import axios from 'axios';
 import '../styles/Landingpage/landing.css';
 import {
   Music, User, Users, Calendar, BookOpen, ShoppingCart,
@@ -15,26 +15,38 @@ import {
   CheckCircle, TrendingUp, Shield, Zap, Guitar
 } from "lucide-react";
 import ImgLanding from "../assets/ImgLanding.jpg";
-
-// ── Importar utilidades de parámetros ────────────────────────
 import { PARAMS_KEY, DEFAULTS } from './Parametros';
 
-// ── Hook para leer parámetros actualizados ───────────────────
+const API_URL = process.env.REACT_APP_API_URL + "/api/parametros";
+
+// ── Hook para leer parámetros con fallback ────────────────────
 function useParametros() {
   const [params, setParams] = useState(() => {
+    // Arrancar con caché local si existe (evita flash de defaults)
     try {
       const s = localStorage.getItem(PARAMS_KEY);
       return s ? { ...DEFAULTS, ...JSON.parse(s) } : { ...DEFAULTS };
     } catch { return { ...DEFAULTS }; }
   });
 
-  // Escuchar cambios en localStorage (si el admin guarda en otra pestaña)
   useEffect(() => {
+    // GET público — sin token
+    axios.get(API_URL)
+      .then(res => {
+        const merged = { ...DEFAULTS, ...res.data };
+        setParams(merged);
+        localStorage.setItem(PARAMS_KEY, JSON.stringify(merged));
+      })
+      .catch(() => {
+        // API no disponible: quedarse con localStorage
+      });
+
+    // Escuchar cambios desde otra pestaña (admin guardó)
     const handler = (e) => {
       if (e.key === PARAMS_KEY) {
         try {
           const s = e.newValue;
-          setParams(s ? { ...DEFAULTS, ...JSON.parse(s) } : { ...DEFAULTS });
+          if (s) setParams({ ...DEFAULTS, ...JSON.parse(s) });
         } catch {}
       }
     };
@@ -45,21 +57,17 @@ function useParametros() {
   return params;
 }
 
-// ── Componente número animado ─────────────────────────────────
+// ── Número animado ────────────────────────────────────────────
 const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
-  const count    = useMotionValue(0);
+  const count   = useMotionValue(0);
   const [display, setDisplay] = useState('0');
   useEffect(() => {
     const controls = animate(count, parseInt(to) || 0, {
       duration,
       onUpdate(latest) {
-        const formatted =
-          suffix === '%' || suffix === '+'
-            ? `${Math.round(latest)}${suffix}`
-            : suffix === '/7'
-            ? '24/7'
-            : `${Math.round(latest)}${suffix}`;
-        setDisplay(formatted);
+        setDisplay(
+          suffix === '/7' ? '24/7' : `${Math.round(latest)}${suffix}`
+        );
       },
     });
     return () => controls.stop();
@@ -69,10 +77,9 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
 
 // ============================================================
 const App = () => {
-  // ── Leer todos los parámetros dinámicos ──────────────────
   const P = useParametros();
 
-  const [activeFaq, setActiveFaq]       = useState(null);
+  const [activeFaq, setActiveFaq]     = useState(null);
   const [flippedCards, setFlippedCards] = useState({});
   const [activeSection, setActiveSection] = useState('inicio');
   const navigate = useNavigate();
@@ -82,23 +89,18 @@ const App = () => {
     proposito: useRef(null),
     modulos:   useRef(null),
     beneficios:useRef(null),
-    contacto:  useRef(null)
+    contacto:  useRef(null),
   };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        });
-      },
+      entries => entries.forEach(e => { if (e.isIntersecting) setActiveSection(e.target.id); }),
       { threshold: 0.5 }
     );
-    Object.values(sectionRefs).forEach(ref => { if (ref.current) observer.observe(ref.current); });
-    return () => Object.values(sectionRefs).forEach(ref => { if (ref.current) observer.unobserve(ref.current); });
+    Object.values(sectionRefs).forEach(r => { if (r.current) observer.observe(r.current); });
+    return () => Object.values(sectionRefs).forEach(r => { if (r.current) observer.unobserve(r.current); });
   }, []);
 
-  // ── Módulos (íconos hardcoded, textos editables en futuro) ──
   const modulosData = [
     { id:1, front:{ title:"Gestión de Estudiantes",  icon:<User size={32}/>,         description:"Matrícula digital y expedientes completos" },         back:{ title:"Gestión de Estudiantes",  features:["Matrícula digital","Expedientes completos","Información de contacto","Historial académico","Seguimiento personalizado"] } },
     { id:2, front:{ title:"Gestión de Personal",      icon:<Users size={32}/>,        description:"Registro completo de empleados y estados" },            back:{ title:"Gestión de Personal",      features:["Registro de empleados","Control de vacaciones y licencias","Gestión de cargos y salarios","Estados laborales","Información administrativa"] } },
@@ -108,23 +110,20 @@ const App = () => {
     { id:6, front:{ title:"Órdenes de Compra",        icon:<ShoppingCart size={32}/>, description:"Gestión completa del proceso de compras" },             back:{ title:"Órdenes de Compra",        features:["Generación de órdenes","Envío a proveedores","Recepción de productos","Seguimiento detallado","Cálculo de valores"] } },
   ];
 
-  // ── FAQ desde parámetros ──────────────────────────────────
   const faqData = Array.isArray(P.faq) ? P.faq : DEFAULTS.faq;
-
-  const handleCardClick = (id) => setFlippedCards(prev => ({ ...prev, [id]: !prev[id] }));
-  const toggleFaq        = (i)  => setActiveFaq(activeFaq === i ? null : i);
-  const scrollToSection  = (id) => { sectionRefs[id].current.scrollIntoView({ behavior:'smooth' }); setActiveSection(id); };
+  const handleCardClick = id => setFlippedCards(p => ({ ...p, [id]: !p[id] }));
+  const toggleFaq       = i  => setActiveFaq(activeFaq === i ? null : i);
+  const scrollToSection = id => { sectionRefs[id].current.scrollIntoView({ behavior:'smooth' }); setActiveSection(id); };
 
   return (
     <div className="app landing-app">
 
-      {/* ── Navegación ── */}
+      {/* Navegación */}
       <nav className="navbar landing-navbar">
         <div className="nav-container landing-nav-container">
           <motion.div className="logo landing-logo"
             initial={{ opacity:0, x:-50 }} animate={{ opacity:1, x:0 }} transition={{ duration:.5 }}>
             <span className="logo-icon landing-logo-icon"><Music size={20}/></span>
-            {/* FIX #1: siglas dinámicas */}
             <span className="logo-text landing-logo-text">{P.siglas}</span>
           </motion.div>
           <ul className="nav-menu landing-nav-menu">
@@ -140,23 +139,19 @@ const App = () => {
         </div>
       </nav>
 
-      {/* ── Hero ── */}
+      {/* Hero */}
       <section id="inicio" ref={sectionRefs.inicio} className="hero-section landing-hero-section">
         <div className="hero-content landing-hero-content">
           <motion.h1 className="hero-title landing-hero-title"
             initial={{ opacity:0, y:50 }} animate={{ opacity:1, y:0 }} transition={{ duration:.7 }}>
-            {/* FIX #1: siglas y slogan dinámicos */}
             <span className="title-line landing-title-line">{P.siglas}</span>
             <span className="title-line landing-title-line">{P.slogan.split(' ').slice(0,2).join(' ')}</span>
             <span className="title-line landing-title-line">{P.slogan.split(' ').slice(2).join(' ')}</span>
           </motion.h1>
-
           <motion.p className="hero-subtitle landing-hero-subtitle"
             initial={{ opacity:0, y:30 }} animate={{ opacity:1, y:0 }} transition={{ duration:.7, delay:.2 }}>
-            {/* FIX #1: descripción dinámica */}
             {P.descripcion_hero}
           </motion.p>
-
           <motion.button className="cta-button landing-cta-button"
             initial={{ opacity:0, scale:.8 }} animate={{ opacity:1, scale:1 }} transition={{ duration:.5, delay:.4 }}
             whileHover={{ scale:1.05 }} whileTap={{ scale:.95 }}
@@ -164,16 +159,13 @@ const App = () => {
             Iniciar sesión
           </motion.button>
         </div>
-
         <motion.div className="hero-visual landing-hero-visual"
           initial={{ opacity:0, x:50 }} animate={{ opacity:1, x:0 }} transition={{ duration:.7, delay:.3 }}>
-          <div className="imgLanding">
-            <img src={ImgLanding} alt={P.nombre_institucion}/>
-          </div>
+          <div className="imgLanding"><img src={ImgLanding} alt={P.nombre_institucion}/></div>
         </motion.div>
       </section>
 
-      {/* ── Propósito ── */}
+      {/* Propósito */}
       <section id="proposito" ref={sectionRefs.proposito} className="section purpose landing-purpose">
         <div className="container landing-container">
           <motion.h2 className="section-title landing-section-title"
@@ -184,22 +176,21 @@ const App = () => {
             initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} transition={{ duration:.5, delay:.2 }} viewport={{ once:true }}>
             <div className="purpose-text landing-purpose-text">
               <p>
-                {/* FIX #1: nombre dinámico */}
                 <strong>{P.siglas}</strong> está diseñado para{' '}
                 <span className="highlight landing-highlight">optimizar y automatizar</span> los procesos clave
-                de instituciones musicales, desde la matrícula hasta el inventario, mejorando la
+                de instituciones musicales, mejorando la
                 <span className="highlight landing-highlight"> eficiencia, organización y comunicación interna</span>.
               </p>
               <div className="problems-grid landing-problems-grid">
                 <h3>Problemas que Resuelve:</h3>
                 <div className="problems-list landing-problems-list">
                   {[
-                    { icon:<User size={20}/>,        text:"Procesos manuales de matrícula y seguimiento estudiantil" },
-                    { icon:<Clock size={20}/>,        text:"Desorganización en horarios y asignaciones" },
-                    { icon:<Guitar size={20}/>,       text:"Control limitado de inventario de instrumentos y bienes" },
-                    { icon:<Package size={20}/>,      text:"Falta de trazabilidad en órdenes de compra y proveedores" },
-                    { icon:<MessageCircle size={20}/>,text:"Comunicación institucional dispersa" },
-                    { icon:<Users2 size={20}/>,       text:"Gestión ineficiente de personal y actividades" },
+                    { icon:<User size={20}/>,         text:"Procesos manuales de matrícula y seguimiento estudiantil" },
+                    { icon:<Clock size={20}/>,         text:"Desorganización en horarios y asignaciones" },
+                    { icon:<Guitar size={20}/>,        text:"Control limitado de inventario de instrumentos y bienes" },
+                    { icon:<Package size={20}/>,       text:"Falta de trazabilidad en órdenes de compra y proveedores" },
+                    { icon:<MessageCircle size={20}/>, text:"Comunicación institucional dispersa" },
+                    { icon:<Users2 size={20}/>,        text:"Gestión ineficiente de personal y actividades" },
                   ].map((p,i)=>(
                     <div key={i} className="problem-item landing-problem-item">
                       <span className="problem-icon landing-problem-icon">{p.icon}</span>
@@ -217,8 +208,7 @@ const App = () => {
               ].map((c,i)=>(
                 <div key={i} className="visual-card landing-visual-card">
                   <div className="card-icon landing-card-icon">{c.icon}</div>
-                  <h4>{c.title}</h4>
-                  <p>{c.desc}</p>
+                  <h4>{c.title}</h4><p>{c.desc}</p>
                 </div>
               ))}
             </div>
@@ -226,7 +216,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* ── Módulos ── */}
+      {/* Módulos */}
       <section id="modulos" ref={sectionRefs.modulos} className="section modules landing-modules">
         <div className="container landing-container">
           <motion.h2 className="section-title landing-section-title"
@@ -265,7 +255,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* ── Beneficios ── */}
+      {/* Beneficios */}
       <section id="beneficios" ref={sectionRefs.beneficios} className="section benefits landing-benefits">
         <div className="container landing-container">
           <motion.h2 className="section-title landing-section-title"
@@ -275,50 +265,30 @@ const App = () => {
           <div className="benefits-content landing-benefits-content">
             <motion.div className="benefits-stats landing-benefits-stats"
               initial={{ opacity:0, x:-50 }} whileInView={{ opacity:1, x:0 }} transition={{ duration:.5 }} viewport={{ once:true }}>
-              {/* FIX #1: estadísticas dinámicas */}
-              <div className="stat landing-stat">
-                <AnimatedNumber to={P.stat_eficiencia} suffix="%"/>
-                <div className="stat-label landing-stat-label">Eficiencia en tareas administrativas</div>
-              </div>
-              <div className="stat landing-stat">
-                <AnimatedNumber to={P.stat_reduccion} suffix="%"/>
-                <div className="stat-label landing-stat-label">Reducción de errores en procesos críticos</div>
-              </div>
-              <div className="stat landing-stat">
-                <AnimatedNumber to={P.stat_acceso} suffix="/7"/>
-                <div className="stat-label landing-stat-label">Acceso centralizado a información</div>
-              </div>
-              <div className="stat landing-stat">
-                <AnimatedNumber to={P.stat_estudiantes} suffix="+"/>
-                <div className="stat-label landing-stat-label">Estudiantes beneficiados</div>
-              </div>
+              <div className="stat landing-stat"><AnimatedNumber to={P.stat_eficiencia} suffix="%"/><div className="stat-label landing-stat-label">Eficiencia en tareas administrativas</div></div>
+              <div className="stat landing-stat"><AnimatedNumber to={P.stat_reduccion}  suffix="%"/><div className="stat-label landing-stat-label">Reducción de errores en procesos críticos</div></div>
+              <div className="stat landing-stat"><AnimatedNumber to={P.stat_acceso}     suffix="/7"/><div className="stat-label landing-stat-label">Acceso centralizado a información</div></div>
+              <div className="stat landing-stat"><AnimatedNumber to={P.stat_estudiantes} suffix="+"/><div className="stat-label landing-stat-label">Estudiantes beneficiados</div></div>
             </motion.div>
-
             <motion.div className="benefits-list landing-benefits-list"
               initial={{ opacity:0, x:50 }} whileInView={{ opacity:1, x:0 }} transition={{ duration:.5 }} viewport={{ once:true }}>
               {[
-                { icon:<MessageCircle size={24}/>, title:"Comunicación fluida",      desc:"Entre docentes, estudiantes y padres" },
-                { icon:<Shield size={24}/>,        title:"Trazabilidad completa",    desc:"De bienes y actividades institucionales" },
-                { icon:<TrendingUp size={24}/>,    title:"Gestión eficiente",        desc:"De personal, horarios y recursos" },
-                { icon:<Zap size={24}/>,           title:"Automatización",           desc:"De 15+ procesos administrativos" },
+                { icon:<MessageCircle size={24}/>, title:"Comunicación fluida",   desc:"Entre docentes, estudiantes y padres" },
+                { icon:<Shield size={24}/>,        title:"Trazabilidad completa", desc:"De bienes y actividades institucionales" },
+                { icon:<TrendingUp size={24}/>,    title:"Gestión eficiente",     desc:"De personal, horarios y recursos" },
+                { icon:<Zap size={24}/>,           title:"Automatización",        desc:"De 15+ procesos administrativos" },
               ].map((b,i)=>(
                 <div key={i} className="benefit-item landing-benefit-item">
                   <span className="benefit-icon landing-benefit-icon">{b.icon}</span>
-                  <div className="benefit-text landing-benefit-text">
-                    <h4>{b.title}</h4><p>{b.desc}</p>
-                  </div>
+                  <div className="benefit-text landing-benefit-text"><h4>{b.title}</h4><p>{b.desc}</p></div>
                 </div>
               ))}
             </motion.div>
           </div>
-
-          {/* FIX #1: testimonio dinámico */}
           <motion.div className="testimonial landing-testimonial"
             initial={{ opacity:0, y:30 }} whileInView={{ opacity:1, y:0 }} transition={{ duration:.5, delay:.2 }} viewport={{ once:true }}>
             <div className="testimonial-content landing-testimonial-content">
-              <p className="testimonial-text landing-testimonial-text">
-                "{P.testimonio}"
-              </p>
+              <p className="testimonial-text landing-testimonial-text">"{P.testimonio}"</p>
               <div className="testimonial-author landing-testimonial-author">
                 <strong>{P.directora}</strong>
                 <span>{P.cargo_directora}</span>
@@ -328,7 +298,7 @@ const App = () => {
         </div>
       </section>
 
-      {/* ── FAQ ── */}
+      {/* FAQ */}
       <section className="section faq landing-faq">
         <div className="container landing-container">
           <motion.h2 className="section-title landing-section-title"
@@ -336,8 +306,7 @@ const App = () => {
             Preguntas Frecuentes
           </motion.h2>
           <div className="faq-container landing-faq-container">
-            {/* FIX #1: FAQ dinámica */}
-            {faqData.filter(f => f.question).map((item, index) => (
+            {faqData.filter(f=>f.question).map((item,index)=>(
               <motion.div key={index}
                 className={`faq-item landing-faq-item${activeFaq===index?' active':''}`}
                 initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }}
@@ -346,16 +315,14 @@ const App = () => {
                   <span>{item.question}</span>
                   <span className="faq-toggle landing-faq-toggle">{activeFaq===index?'−':'+'}</span>
                 </div>
-                <div className="faq-answer landing-faq-answer">
-                  <p>{item.answer}</p>
-                </div>
+                <div className="faq-answer landing-faq-answer"><p>{item.answer}</p></div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Contacto ── */}
+      {/* Contacto */}
       <section id="contacto" ref={sectionRefs.contacto} className="section contact landing-contact">
         <div className="container landing-container">
           <motion.h2 className="section-title landing-section-title"
@@ -365,53 +332,24 @@ const App = () => {
           <div className="contact-content landing-contact-content">
             <motion.div className="contact-info landing-contact-info"
               initial={{ opacity:0, x:-50 }} whileInView={{ opacity:1, x:0 }} transition={{ duration:.5 }} viewport={{ once:true }}>
-
-              {/* FIX #1: todos los datos de contacto dinámicos */}
-              <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon"><Phone size={24}/></div>
-                <div className="contact-details landing-contact-details">
-                  <h4>Teléfono</h4>
-                  <p>{P.telefono}</p>
+              {[
+                { icon:<Phone size={24}/>,  title:"Teléfono",           value:P.telefono },
+                { icon:<Mail size={24}/>,   title:"Correo Electrónico", value:P.correo },
+                { icon:<MapPin size={24}/>, title:"Ubicación",          value:P.direccion },
+                { icon:<Code size={24}/>,   title:"Desarrollado por",   value:P.desarrollado_por },
+              ].map((c,i)=>(
+                <div key={i} className="contact-item landing-contact-item">
+                  <div className="contact-icon landing-contact-icon">{c.icon}</div>
+                  <div className="contact-details landing-contact-details"><h4>{c.title}</h4><p>{c.value}</p></div>
                 </div>
-              </div>
-              <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon"><Mail size={24}/></div>
-                <div className="contact-details landing-contact-details">
-                  <h4>Correo Electrónico</h4>
-                  <p>{P.correo}</p>
-                </div>
-              </div>
-              <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon"><MapPin size={24}/></div>
-                <div className="contact-details landing-contact-details">
-                  <h4>Ubicación</h4>
-                  <p>{P.direccion}</p>
-                </div>
-              </div>
-              <div className="contact-item landing-contact-item">
-                <div className="contact-icon landing-contact-icon"><Code size={24}/></div>
-                <div className="contact-details landing-contact-details">
-                  <h4>Desarrollado por</h4>
-                  <p>{P.desarrollado_por}</p>
-                </div>
-              </div>
+              ))}
             </motion.div>
-
             <motion.div className="mapa-contacto landing-mapa-contacto"
               initial={{ opacity:0, x:50 }} whileInView={{ opacity:1, x:0 }} transition={{ duration:.5 }} viewport={{ once:true }}>
               <h3>Ubicación Institucional</h3>
-              {/* FIX #1: descripción y mapa dinámicos */}
               <p className="mapa-descripcion landing-mapa-descripcion">{P.direccion}</p>
               <div className="mapa-embed landing-mapa-embed">
-                <iframe
-                  title={`Mapa ${P.siglas}`}
-                  src={P.mapa_embed_url}
-                  width="100%"
-                  height="400"
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+                <iframe title={`Mapa ${P.siglas}`} src={P.mapa_embed_url} width="100%" height="400" allowFullScreen="" loading="lazy" referrerPolicy="no-referrer-when-downgrade"/>
               </div>
             </motion.div>
           </div>
