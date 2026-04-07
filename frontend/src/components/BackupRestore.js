@@ -59,7 +59,7 @@ export default function BackupRestore() {
       window.URL.revokeObjectURL(url);
 
       setProgress(100);
-      showNotification("✅ Backup descargado exitosamente", "success");
+      showNotification("Backup descargado exitosamente", "success");
     } catch (error) {
       showNotification(`❌ Error: ${error.response?.data?.error || error.message}`, "error");
     } finally {
@@ -126,7 +126,7 @@ export default function BackupRestore() {
           });
         } else if (parsed.type === "done") {
           setRestoreProgress({ percent: 100, message: "¡Restauración completada!", current: parsed.colecciones_restauradas, total: parsed.colecciones_restauradas });
-          showNotification(`✅ ${parsed.message} — ${parsed.colecciones_restauradas} colecciones`, "success");
+          showNotification(` ${parsed.message} — ${parsed.colecciones_restauradas} colecciones`, "success");
           setTimeout(() => { setRestoreProgress(null); window.location.reload(); }, 2500);
         } else if (parsed.type === "error") {
           throw new Error(parsed.message);
@@ -154,7 +154,7 @@ export default function BackupRestore() {
       });
 
       setInfoBackup(response.data);
-      showNotification("✅ Información actualizada", "success");
+      showNotification("Información actualizada", "success");
     } catch (error) {
       showNotification(`❌ Error: ${error.response?.data?.error || error.message}`, "error");
     } finally {

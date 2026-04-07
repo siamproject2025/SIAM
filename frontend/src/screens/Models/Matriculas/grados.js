@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Book, X, Trash2, Users, User, Search, Gift, ChevronRight, Phone, Mail, AlertCircle } from "lucide-react";
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import WithPermission from "../../../components/Permisos/WithPermission";
+import Notification from '../../../components/Notification';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 const API      = `${API_BASE}/api/grados`;

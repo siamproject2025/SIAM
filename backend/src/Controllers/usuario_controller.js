@@ -207,3 +207,54 @@ exports.reiniciarIntentos = async (req, res) => {
     res.status(500).json({ message: "Error en el servidor" });
   }
 };
+
+// ─── Actualizar rol y/o alumno de un usuario existente ───────────────────
+  exports.actualizarAsignacion = async (req, res) => {
+    try {
+      const { id }             = req.params;
+      const { rol, alumno_id } = req.body;
+
+      const usuario = await Auth.findById(id);
+      if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado.' });
+
+      // Actualizar rol si viene
+      if (rol) {
+        usuario.roles = [rol];
+      }
+
+      // Actualizar alumno si viene — permite null para des-asignar
+      if (alumno_id !== undefined) {
+        if (alumno_id === null || alumno_id === '') {
+          usuario.alumno = null;
+        } else {
+          const mongoose = require('mongoose');
+          if (!mongoose.Types.ObjectId.isValid(alumno_id)) {
+            return res.status(400).json({ message: 'alumno_id inválido.' });
+          }
+          usuario.alumno = alumno_id;
+        }
+      }
+
+      await usuario.save();
+
+      // Sincronizar rol_asignado y alumno_asignado en la solicitud también
+      const Solicitud = require('../Models/solicitud_modelo');
+      const updateSolicitud = {};
+      if (rol)               updateSolicitud.rol_asignado    = rol;
+      if (alumno_id !== undefined) updateSolicitud.alumno_asignado = alumno_id || null;
+
+      if (Object.keys(updateSolicitud).length > 0) {
+        await Solicitud.findOneAndUpdate(
+          { email: usuario.email },
+          updateSolicitud
+        );
+      }
+
+      res.json({ message: 'Asignación actualizada correctamente.', usuario });
+
+    } catch (error) {
+      console.error('Error al actualizar asignación:', error);
+      res.status(500).json({ message: 'Error al actualizar asignación.' });
+    }
+  };
+

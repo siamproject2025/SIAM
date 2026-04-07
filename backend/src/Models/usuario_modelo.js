@@ -6,18 +6,21 @@ const userSchema = new mongoose.Schema({
   email:           { type: String, required: false, unique: true },
   password_hash:   { type: String, required: false, default: null },
   roles:           { type: [String], required: false },
-  debe_cambiar_password: {
-  type: Boolean,
-  default: false
-},
-  // ✅ NUEVO — para bloquear desde panel admin
+  debe_cambiar_password: { type: Boolean, default: false },
   estado: {
     type: String,
     enum: ['ACTIVO', 'BLOQUEADO'],
     default: 'ACTIVO'
   },
   intentos_fallidos: { type: Number, default: 0 },
-  bloqueado_hasta:   { type: Date, default: null }
+  bloqueado_hasta:   { type: Date, default: null },
+
+  // ✅ NUEVO — referencia al alumno matriculado
+  alumno: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Matricula',
+    default: null
+  }
 });
 
 const User = mongoose.model('Usuario', userSchema, 'usuarios');
