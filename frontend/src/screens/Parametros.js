@@ -217,39 +217,51 @@ export default function Parametros() {
 const handleSave = async () => {
   setSaving(true);
   try {
-    // 1. Obtener el usuario actual de forma segura
     const user = auth.currentUser;
     if (!user) {
-      setNotification({ message: "Sesión expirada o no válida. Inicia sesión de nuevo.", type: 'error' });
+      setNotification({ message: "Sesión expirada", type: 'error' });
       return;
     }
 
-    // 2. Esperar el Token (Esto es asíncrono)
     const token = await user.getIdToken(true);
-
     const res = await axios.put(API_URL, params, {
       headers: { 
-        'Authorization': `Bearer ${token}`, // Verifica que el backend espere "Bearer"
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json' 
       }
     });
-      const updated = { ...DEFAULTS, ...res.data };
-      setParams(updated);
-      // Actualizar caché local para que la landing lo lea inmediatamente
-      localStorage.setItem(PARAMS_KEY, JSON.stringify(updated));
 
-      setSaved(true);
-      setDirty(false);
-      setNotification({ message: 'Parámetros guardados exitosamente en el servidor.', type: 'success' });
-      setTimeout(() => setSaved(false), 4000);
+    const updated = { ...DEFAULTS, ...res.data };
+    setParams(updated);
+    localStorage.setItem(PARAMS_KEY, JSON.stringify(updated));
 
-    } catch (err) {
-      const msg = err.response?.data?.error || err.message || "Error al guardar";
-      setNotification({ message: msg, type: 'error' });
-    } finally {
-      setSaving(false);
-    }
-  };
+    setSaved(true);
+    setDirty(false);
+
+    // --- NOTIFICACIÓN PEQUEÑA (ESTILO TOAST) ---
+    const { default: Swal } = await import('sweetalert2');
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    });
+
+    Toast.fire({
+      icon: 'success',
+      title: 'Configuración guardada exitosamente'
+    });
+    // -------------------------------------------
+
+    setTimeout(() => setSaved(false), 4000);
+  } catch (err) {
+    const msg = err.response?.data?.error || err.message || "Error al guardar";
+    setNotification({ message: msg, type: 'error' });
+  } finally {
+    setSaving(false);
+  }
+};
 
   // ── Restaurar predeterminados ─────────────────────────────
   const handleReset = async () => {
@@ -265,7 +277,7 @@ const handleSave = async () => {
     setParams({ ...DEFAULTS });
     setDirty(true);
     setSaved(false);
-    setNotification({ message: 'Valores restaurados. Haz clic en "Guardar Cambios" para aplicarlos.', type: 'success' });
+    
   };
 
   const TABS = [

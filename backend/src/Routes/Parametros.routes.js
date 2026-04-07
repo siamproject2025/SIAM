@@ -17,7 +17,7 @@ router.get("/", ctrl.obtenerParametros);
 // ── PUT: solo admin autenticado con permiso ──────────────────
 router.put("/",
   authenticateUser,
-  checkPermission("EDITAR_PARAMETROS"),   // crea este permiso en tu BD de roles
+  checkPermission("ACTUALIZAR_PAGINA_PRINCIPAL","VISUALIZAR_PAGINA_PRINCIPAL"),   // crea este permiso en tu BD de roles
   registrarAuditoria("PARAMETROS"),
   ctrl.actualizarParametros
 );
