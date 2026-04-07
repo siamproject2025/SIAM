@@ -858,8 +858,8 @@ const Donaciones = () => {
                 <form onSubmit={handleSubmitNueva} noValidate>
                   {renderFormTabs()}
                   <div className="dn-modal-footer">
-                    <button type="button" className="dn-btn-cancel" onClick={handleCloseModals}><X size={15}/> Cancelar</button>
-                    <button type="submit" className="dn-btn-save"><Save size={15}/> Guardar Donación</button>
+                    <button type="button"  style={S.btn('#E0D9F5','#6C4FBF')} onClick={handleCloseModals}><X size={15}/> Cancelar</button>
+                    <button type="submit" style={S.btn('#6C4FBF')}><Save size={15}/> Guardar Donación</button>
                   </div>
                 </form>
               </motion.div>
@@ -887,12 +887,12 @@ const Donaciones = () => {
                   {renderFormTabs()}
                   <div className="dn-modal-footer">
                     {donacionSeleccionada.estado!=='Anulada' && (
-                      <button type="button" className="dn-btn-anular" onClick={prepararAnulacion}><Ban size={15}/> Anular</button>
+                      <button type="button" className="dn-btn-anular" onClick={prepararAnulacion}>Anular</button>
                     )}
-                    <button type="button" className="dn-btn-delete" onClick={()=>prepararEliminacion()}><Trash2 size={15}/> Eliminar</button>
-                    <button type="button" className="dn-btn-cancel" onClick={handleCloseModals}>Cancelar</button>
+                    <button type="button" style={S.btn('#E74C3C')} onClick={()=>prepararEliminacion()}>Eliminar</button>
+                    <button type="button"style={S.btn('#E0D9F5','#6C4FBF')} onClick={handleCloseModals}>Cancelar</button>
                     {donacionSeleccionada.estado!=='Anulada' && (
-                      <button type="submit" className="dn-btn-save"><Save size={15}/> Guardar Cambios</button>
+                      <button type="submit" style={S.btn('#6C4FBF')}>Actualizar</button>
                     )}
                   </div>
                 </form>

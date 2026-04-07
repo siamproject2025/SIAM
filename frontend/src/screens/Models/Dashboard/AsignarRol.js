@@ -228,8 +228,8 @@ const AsignarRol = () => {
    };
 
   return (
-    <div className="rol-asignar-container">
-      {/* Header mantenido sin iconos flotantes */}
+    <>
+    {/* Header mantenido sin iconos flotantes */}
       <motion.div
   className="mm-header"
   initial={{ opacity: 0, y: -20 }}
@@ -320,6 +320,8 @@ const AsignarRol = () => {
     </motion.div>
   </div>
 </motion.div>
+    <div className="rol-asignar-container">
+      
 
       {/* Barra de búsqueda y filtros */}
       <div className="rol-search-section">
@@ -620,6 +622,7 @@ const AsignarRol = () => {
         />
       )}
     </div>
+    </>
   );
 };
 
