@@ -128,7 +128,7 @@ const moduloAPermiso = {
   "Auditoria": "VISUALIZAR_AUDITORIA",
   "Dashboard": "VISUALIZAR_DASHBOARD",
   "Roles": "VISUALIZAR_ROLES",
-  "Pagina principal": "VISUALIZAR_SEGURIDAD",
+  "Pagina principal": "VISUALIZAR_PAGINA_PRINCIPAL",
   "Backup y restore": "VISUALIZAR_SEGURIDAD",
 };
 
