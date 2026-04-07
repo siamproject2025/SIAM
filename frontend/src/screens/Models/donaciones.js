@@ -858,8 +858,8 @@ const Donaciones = () => {
                 <form onSubmit={handleSubmitNueva} noValidate>
                   {renderFormTabs()}
                   <div className="dn-modal-footer">
-                    <button type="button"  style={S.btn('#E0D9F5','#6C4FBF')} onClick={handleCloseModals}><X size={15}/> Cancelar</button>
-                    <button type="submit" style={S.btn('#6C4FBF')}><Save size={15}/> Guardar Donación</button>
+                    <button type="button"  style={S.btn('#E0D9F5','#6C4FBF')} onClick={handleCloseModals}>Cancelar</button>
+                    <button type="submit" style={S.btn('#6C4FBF')}>Nueva Donación</button>
                   </div>
                 </form>
               </motion.div>
