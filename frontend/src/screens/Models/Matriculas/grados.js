@@ -468,7 +468,7 @@ const CSS = `
   .dn-unsaved-banner { background:#FEF3C7;border-bottom:2px solid #F59E0B;padding:8px 24px;font-size:.82rem;font-weight:700;color:#92400E;flex-shrink:0; }
   .dn-modal-tabs { display:flex;border-bottom:2px solid #EDE9FF;flex-shrink:0;padding:0 20px; }
   .dn-tab-btn { background:none;border:none;padding:13px 18px;font-size:.85rem;font-weight:700;color:#7A6FA0;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;display:flex;align-items:center;gap:6px;font-family:inherit;transition:color .2s; }
-  .dn-tab-btn.active { color:#6C4FBF;border-bottom-color:#6C4FBF; }
+  .dn-tab-btn.active { color:white;border-bottom-color:#6C4FBF; }
   .dn-tab-btn.has-error { color:#e74c3c; }
   .dn-tab-error-dot { width:7px;height:7px;border-radius:50%;background:#e74c3c;display:inline-block;animation:pulse-dot 1.2s infinite; }
   @keyframes pulse-dot { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.6} }
