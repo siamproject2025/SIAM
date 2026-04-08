@@ -1,11 +1,13 @@
 // ============================================================
 // Horarios.jsx
-// MEJORAS:
-// - Tab "Horario Por Grado": sección visual rediseñada con
-//   header del grado, leyenda de colores y descarga PDF con
-//   el grado claramente identificado en cada página
-// - Filtro de alumnos: el ModalDetalleHorario recibe solo
-//   los alumnos del grado correspondiente al horario
+// CAMBIOS:
+// - Header rediseñado con patrón mm-header (igual a Bienes/
+//   Gestión de Estudiantes): gradiente, stats animados,
+//   submódulo descriptivo.
+// - Stats: Total horarios | Clases hoy | Horas/semana | Grados
+// - Modal usa el nuevo ModalDetalleHorario rediseñado (dn-*)
+// - Tab "Horario Por Grado": sección visual conservada
+// - Filtro de alumnos por grado conservado
 // ============================================================
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import ModalDetalleHorario from "../../../components/Horarios/ModalDetalleHorario";
@@ -14,11 +16,13 @@ import CalendarioHorarios from "../../../components/Horarios/CalendarioHorarios"
 import useUserRole from "../../../components/hooks/useUserRole";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Table2, Book, Download, GraduationCap, Users, BookOpen } from "lucide-react";
+import {
+  Calendar, Table2, Book, Download,
+  GraduationCap, Users, BookOpen, Clock,
+  Plus,
+} from "lucide-react";
 import html2canvas from "html2canvas";
-import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { auth } from "../../../components/authentication/Auth";
 import { loadingController } from "../../../api/loadingController";
 
@@ -33,7 +37,7 @@ const inicializarHorario = () => ({
   dia:[], grado:"", docente_id:"", aula_id:"", alumnos:[],
 });
 
-// ── Paleta para leyenda de asignaturas (igual que CalendarioHorarios) ──
+// ── Paleta para leyenda de asignaturas ──────────────────────
 const PALETA = [
   "#6C4FBF","#2271B3","#27AE60","#E67E22","#E74C3C",
   "#8E44AD","#16A085","#2C3E50","#D35400","#1ABC9C",
@@ -44,13 +48,82 @@ const colorAsig = (nombre = "") => {
   return PALETA[Math.abs(h) % PALETA.length];
 };
 
-// ── CSS para el tab "Horario Por Grado" ──────────────────────
+// ── CSS ─────────────────────────────────────────────────────
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@700;800&display=swap');
 
-  .hpg-wrap { font-family:'Nunito',sans-serif; }
+  /* ══ HEADER ══════════════════════════════════════════════ */
+  .mm-header {
+    background: linear-gradient(135deg, #6C4FBF 0%, #9B59B6 100%);
+    padding: 28px 36px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .mm-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.06'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .mm-hi {
+    position: relative; z-index: 1;
+    max-width: 1400px; margin: 0 auto;
+  }
+  .mm-ht {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 6px;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .mm-htitle {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.65rem; font-weight: 800; color: #fff;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .mm-htitle span {
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .mm-sub {
+    color: rgba(255,255,255,.8); font-size: .9rem;
+    margin-bottom: 22px; max-width: 600px;
+    font-family: 'Nunito', sans-serif;
+  }
+  .mm-stats {
+    display: flex; gap: 14px; flex-wrap: wrap; margin-top: 0;
+  }
+  .mm-stat {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 12px; padding: 11px 18px;
+    display: flex; align-items: center; gap: 12px;
+    backdrop-filter: blur(6px);
+    min-width: 130px; cursor: default;
+    transition: all .2s ease;
+  }
+  .mm-stat:hover {
+    background: rgba(255,255,255,.22);
+    border-color: rgba(255,255,255,.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  }
+  .mm-stat-ico {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .mm-stat-val {
+    font-size: 1.35rem; font-weight: 800;
+    color: #fff; line-height: 1;
+    font-family: 'Poppins', sans-serif;
+  }
+  .mm-stat-lbl {
+    font-size: .7rem; color: rgba(255,255,255,.75);
+    text-transform: uppercase; letter-spacing: .05em;
+    font-family: 'Nunito', sans-serif;
+  }
 
-  /* Header del grado seleccionado */
+  /* ══ TAB "Horario Por Grado" ════════════════════════════ */
+  .hpg-wrap { font-family:'Nunito',sans-serif; }
   .hpg-header {
     background: linear-gradient(135deg,#6C4FBF 0%,#9B59B6 100%);
     border-radius: 14px; padding: 18px 24px; margin-bottom: 20px;
@@ -78,8 +151,6 @@ const CSS = `
     cursor:pointer; transition:all .18s;
   }
   .hpg-dl-btn:hover { background:rgba(255,255,255,.32); transform:translateY(-1px); }
-
-  /* Leyenda de asignaturas */
   .hpg-legend {
     display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;
     padding:12px 16px; background:#fff; border-radius:12px;
@@ -94,22 +165,23 @@ const CSS = `
     font-size:.72rem; color:#7A6FA0; font-weight:700;
     text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;
   }
-
-  /* Stats row */
   .hpg-stats { display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
   .hpg-stat-card {
     background:#fff; border-radius:12px; border:1px solid #E0D9F5;
-    padding:12px 18px; display:flex; align-items:center; gap:10px; flex:1; min-width:140px;
+    padding:12px 18px; display:flex; align-items:center; gap:10px;
+    flex:1; min-width:140px;
   }
-  .hpg-stat-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .hpg-stat-icon {
+    width:36px; height:36px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+  }
   .hpg-stat-val { font-size:1.3rem; font-weight:800; color:#2D2250; line-height:1; }
   .hpg-stat-lbl { font-size:.72rem; color:#7A6FA0; text-transform:uppercase; letter-spacing:.04em; }
-
-  /* Empty state */
   .hpg-empty { text-align:center; padding:60px 20px; color:#7A6FA0; }
   .hpg-empty h4 { font-size:1rem; font-weight:700; color:#2D2250; margin-bottom:6px; }
 `;
 
+// ════════════════════════════════════════════════════════════
 const Horarios = () => {
   const calendarioRef = useRef(null);
 
@@ -163,6 +235,22 @@ const Horarios = () => {
 
   useEffect(() => { obtenerHorarios(); }, [obtenerHorarios]);
 
+  // ── Stats para el header ─────────────────────────────────
+  const hoy = new Date().toLocaleDateString("es-ES",{ weekday:"short" }).toUpperCase().slice(0,3);
+  const diasMap = { LUN:"lu", MAR:"ma", MIE:"mi", JUE:"ju", VIE:"vi", SAB:"sa" };
+  const hoyKey  = Object.entries(diasMap).find(([,v]) => hoy.toLowerCase().startsWith(v))?.[0] || "";
+
+  const totalHorarios   = horarios.length;
+  const clasesHoy       = horarios.filter(h => (h.dia || []).includes(hoyKey)).length;
+  const gradosConHorario= [...new Set(horarios.map(h => h.grado).filter(Boolean))].length;
+  const totalHorasSemanales = horarios.reduce((acc, h) => {
+    if (!h.inicio || !h.fin) return acc;
+    const [hi, mi] = h.inicio.split(":").map(Number);
+    const [hf, mf] = h.fin.split(":").map(Number);
+    const mins = (hf * 60 + mf) - (hi * 60 + mi);
+    return acc + (mins > 0 ? mins / 60 : 0);
+  }, 0);
+
   // ── Modales ──────────────────────────────────────────────
   const clickDetalleAlumnosHandler = async (id) => {
     try {
@@ -189,8 +277,8 @@ const Horarios = () => {
     }
   };
 
-  const clickCerrarModeloHandler   = () => { setHorarioSeleccionado(null); setMostrarModalDetalle(false); };
-  const clickCrearModeloHandler     = () => {
+  const clickCerrarModeloHandler = () => { setHorarioSeleccionado(null); setMostrarModalDetalle(false); };
+  const clickCrearModeloHandler   = () => {
     setHorarioSeleccionado(inicializarHorario());
     setEsModalCreacion(true); setEsModalDetalle(true);
     setMostrarModalDetalle(true);
@@ -213,7 +301,9 @@ const Horarios = () => {
       await obtenerHorarios();
       clickCerrarModeloHandler();
     } catch (err) {
-      showNotification(`Error al guardar: ${err.message}`, "error");
+      // Extraer mensaje del backend (400, 409, etc.) o usar el genérico
+      const msg = err.response?.data?.message || err.message;
+      showNotification(msg, "error");
     } finally { loadingController.stop(); }
   };
 
@@ -226,12 +316,13 @@ const Horarios = () => {
       showNotification("Horario eliminado exitosamente", "success");
       await obtenerHorarios();
     } catch (err) {
-      showNotification(`Error al eliminar: ${err.message}`, "error");
+      const msg = err.response?.data?.message || err.message;
+      showNotification(msg, "error");
     } finally { loadingController.stop(); }
     clickCerrarModeloHandler();
   };
 
-  // ── Filtrado para el tab "Horario Por Grado" ─────────────
+  // ── Filtrado "Horario Por Grado" ─────────────────────────
   const horariosVisibles = useMemo(() => horarios, [horarios]);
 
   const gradosUnicos = useMemo(() => {
@@ -248,35 +339,26 @@ const Horarios = () => {
     horariosVisibles.filter(h => h.grado === gradoSeleccionado)
   ), [horariosVisibles, gradoSeleccionado]);
 
-  // ── Alumnos filtrados por grado del horario ──────────────
-  // Solo se muestran alumnos cuyo grado_a_matricular coincide
-  // con el aula_id de los horarios del grado seleccionado
+  // ── Alumnos filtrados por grado del horario seleccionado ─
   const alumnosFiltradosPorGrado = useMemo(() => {
     if (!horarioSeleccionado) return alumnos;
-
-    // Obtener el aula_id del horario seleccionado
     const aulaId = horarioSeleccionado.aula_id;
     if (!aulaId) return alumnos;
-
-    // Filtrar alumnos cuyo grado_a_matricular sea el mismo aula_id
     const filtrados = alumnos.filter(a => {
       const gradoAlumno = a.grado_a_matricular;
       if (!gradoAlumno) return false;
-      // Comparar como string (pueden venir como ObjectId o string)
       return String(gradoAlumno) === String(aulaId) ||
              (gradoAlumno?.$oid && gradoAlumno.$oid === String(aulaId)) ||
              (aulaId?.$oid && String(gradoAlumno) === aulaId.$oid);
     });
-
     return filtrados.length > 0 ? filtrados : alumnos;
   }, [horarioSeleccionado, alumnos]);
 
-  // ── Asignaturas únicas del grado para la leyenda ─────────
+  // ── Asignaturas y stats del grado ────────────────────────
   const asignaturasDelGrado = useMemo(() => (
     [...new Set(horariosFiltradosPorGrado.map(h => h.asignatura).filter(Boolean))]
   ), [horariosFiltradosPorGrado]);
 
-  // ── Stats del grado ───────────────────────────────────────
   const totalClasesGrado = horariosFiltradosPorGrado.length;
   const totalHorasGrado  = horariosFiltradosPorGrado.reduce((acc, h) => {
     if (!h.inicio || !h.fin) return acc;
@@ -286,72 +368,45 @@ const Horarios = () => {
     return acc + (mins > 0 ? mins / 60 : 0);
   }, 0);
 
-  // ── Descarga PDF del horario por grado ───────────────────
+  // ── Descarga PDF ─────────────────────────────────────────
   const descargarPDFGrado = async () => {
-    if (!calendarioRef.current) {
-      showNotification("El calendario no está listo.", "warning"); return;
-    }
+    if (!calendarioRef.current) { showNotification("El calendario no está listo.", "warning"); return; }
     setDescargandoPDF(true);
     showNotification("Generando PDF del horario...", "info");
-
     try {
       const canvas  = await html2canvas(calendarioRef.current, {
-        scale: 2.5, useCORS: true, backgroundColor: "#ffffff",
-        logging: false,
+        scale:2.5, useCORS:true, backgroundColor:"#ffffff", logging:false,
       });
-      const imgData  = canvas.toDataURL("image/jpeg", 0.95);
-      const doc      = new jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
-      const pageW    = doc.internal.pageSize.getWidth();
-      const pageH    = doc.internal.pageSize.getHeight();
-      const logoUrl  = "/Logo1.png";
-
-      // ── Encabezado del PDF ──────────────────────────────
-      try { doc.addImage(logoUrl,"PNG",10,8,20,20); } catch(e){}
-
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const doc     = new jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
+      const pageW   = doc.internal.pageSize.getWidth();
+      const pageH   = doc.internal.pageSize.getHeight();
+      try { doc.addImage("/Logo1.png","PNG",10,8,20,20); } catch(e){}
       doc.setFont("helvetica","bold");
       doc.setFontSize(13); doc.setTextColor(108,79,191);
       doc.text("Escuela Experimental de Niños para la Música", pageW/2, 14, {align:"center"});
-
-      // Banner con el nombre del grado
       doc.setFillColor(108,79,191);
-      doc.roundedRect(10, 18, pageW-20, 12, 3, 3, "F");
+      doc.roundedRect(10,18,pageW-20,12,3,3,"F");
       doc.setFontSize(12); doc.setTextColor(255,255,255);
-      doc.text(
-        `Horario del Grado: ${gradoSeleccionado}   |   Año Académico: ${new Date().getFullYear()}`,
-        pageW/2, 26, { align:"center" }
-      );
-
+      doc.text(`Horario del Grado: ${gradoSeleccionado}   |   Año Académico: ${new Date().getFullYear()}`, pageW/2, 26, {align:"center"});
       doc.setLineWidth(0.3); doc.setDrawColor(200,190,230);
       doc.line(10,32,pageW-10,32);
-
       doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(120);
       const fecha = new Date().toLocaleDateString("es-ES",{year:"numeric",month:"long",day:"numeric"});
       doc.text(`Generado: ${fecha}  |  ${totalClasesGrado} clases  |  ${totalHorasGrado.toFixed(1)} horas semanales`, 10, 37);
-
-      // ── Imagen del calendario ─────────────────────────
-      const imgH     = (canvas.height * (pageW - 20)) / canvas.width;
-      const startY   = 40;
-      const maxImgH  = pageH - startY - 14;
-      const drawH    = Math.min(imgH, maxImgH);
-
-      doc.addImage(imgData, "JPEG", 10, startY, pageW-20, drawH);
-
-      // ── Pie de página ─────────────────────────────────
+      const imgH   = (canvas.height * (pageW-20)) / canvas.width;
+      const startY = 40;
+      const drawH  = Math.min(imgH, pageH - startY - 14);
+      doc.addImage(imgData,"JPEG",10,startY,pageW-20,drawH);
       doc.setFontSize(7.5); doc.setTextColor(140);
-      doc.text(
-        `Grado: ${gradoSeleccionado}  |  S.I.A.M. — Escuela Experimental de Niños para la Música`,
-        pageW/2, pageH-6, {align:"center"}
-      );
-
+      doc.text(`Grado: ${gradoSeleccionado}  |  S.I.A.M. — Escuela Experimental de Niños para la Música`, pageW/2, pageH-6, {align:"center"});
       const slug = gradoSeleccionado.replace(/\s+/g,"_").toLowerCase();
       doc.save(`horario_${slug}_${new Date().toISOString().split("T")[0]}.pdf`);
       showNotification("PDF descargado exitosamente.", "success");
     } catch (err) {
       console.error(err);
       showNotification("Error al generar el PDF.", "error");
-    } finally {
-      setDescargandoPDF(false);
-    }
+    } finally { setDescargandoPDF(false); }
   };
 
   // ── Pestañas ─────────────────────────────────────────────
@@ -364,35 +419,64 @@ const Horarios = () => {
       <style>{CSS}</style>
 
       <div className="donacion-container">
-        {/* Header animado */}
-        <motion.div className="donacion-header"
-          initial={{ opacity:0, y:-30 }} animate={{ opacity:1, y:0 }}
-          transition={{ duration:0.7, type:"spring", stiffness:100 }}>
-          <motion.div className="header-gradient"
-            initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
-            transition={{ delay:0.1, duration:0.6 }}>
-            <div className="header-content">
-              <motion.h2 initial={{ opacity:0, x:-50 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2, duration:0.5 }}>
-                <motion.div initial={{ rotate:-180, scale:0 }} animate={{ rotate:0, scale:1 }}
-                  transition={{ type:"spring", stiffness:200, damping:15, delay:0.3 }}>
-                  <Calendar size={36} fill="white" color="white"/>
-                </motion.div>
+
+        {/* ══ HEADER ══════════════════════════════════════ */}
+        <motion.div
+          className="mm-header"
+          initial={{ opacity:0, y:-20 }}
+          animate={{ opacity:1, y:0 }}
+          transition={{ duration:0.5, type:"spring", stiffness:120 }}>
+          <div className="mm-hi">
+            <div className="mm-ht">
+              <motion.div
+                className="mm-htitle"
+                initial={{ opacity:0, x:-30 }}
+                animate={{ opacity:1, x:0 }}
+                transition={{ delay:0.15 }}>
+                <motion.span
+                  initial={{ rotate:-180, scale:0 }}
+                  animate={{ rotate:0, scale:1 }}
+                  transition={{ type:"spring", stiffness:200, delay:0.2 }}>
+                  <Calendar size={34} color="white" fill="white"/>
+                </motion.span>
                 Gestión de Horarios
-                <motion.div animate={{ rotate:[0,10,-10,0], scale:[1,1.1,1] }}
-                  transition={{ duration:2, repeat:Infinity, repeatDelay:5 }} style={{ marginLeft:"auto" }}>
-                  <Calendar size={32} color="white"/>
-                </motion.div>
-              </motion.h2>
-              <motion.p initial={{ opacity:0, x:-50 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.3, duration:0.5 }}>
-                Gestiona y controla los horarios y distribución de las aulas.
-              </motion.p>
+              </motion.div>
             </div>
-          </motion.div>
+
+            <motion.p className="mm-sub"
+              initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.3 }}>
+              Gestiona y controla los horarios y distribución de las aulas.
+            </motion.p>
+
+            {/* Stats animados */}
+            <motion.div className="mm-stats"
+              initial={{ opacity:0, y:16 }}
+              animate={{ opacity:1, y:0 }}
+              transition={{ delay:0.35 }}>
+              {[
+                { ico:<Calendar  size={18} color="white"/>, val:totalHorarios,                    lbl:"Total Horarios" },
+                { ico:<Clock     size={18} color="white"/>, val:clasesHoy,                        lbl:"Clases hoy" },
+                { ico:<BookOpen  size={18} color="white"/>, val:`${totalHorasSemanales.toFixed(1)}h`, lbl:"Horas / semana" },
+                { ico:<GraduationCap size={18} color="white"/>, val:gradosConHorario,             lbl:"Grados activos" },
+              ].map((s, i) => (
+                <motion.div key={i} className="mm-stat"
+                  whileHover={{ scale:1.04, y:-2 }}
+                  transition={{ type:"spring", stiffness:300 }}>
+                  <div className="mm-stat-ico">{s.ico}</div>
+                  <div>
+                    <div className="mm-stat-val">{s.val}</div>
+                    <div className="mm-stat-lbl">{s.lbl}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
         </motion.div>
 
-        {/* Tabs */}
+        {/* ══ TABS ════════════════════════════════════════ */}
         <motion.ul className="nav nav-tabs justify-content-center"
-          initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} transition={{ delay:0.1, duration:0.6 }}>
+          initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }}
+          transition={{ delay:0.1, duration:0.6 }}>
           <li className="nav-item">
             <a href="#" className={`nav-link ${horariosContent?"active":""}`}
               onClick={e=>{e.preventDefault();clickHorariosContent();}}>
@@ -410,11 +494,12 @@ const Horarios = () => {
         <div className="tab-content">
           <AnimatePresence>
 
-            {/* ──────── Tab: Horarios (lista de cards) ──────── */}
+            {/* ── Tab: lista de horarios ────────────────── */}
             {horariosContent && (
               <BusquedaTablaHorarios
                 horarios={horariosVisibles}
                 aulas={aulas}
+                docentes={docentes}
                 onDetalleHorario={clickDetalleHorarioHandler}
                 onDetalleAlumnos={clickDetalleAlumnosHandler}
                 onCrearHorario={clickCrearModeloHandler}
@@ -422,7 +507,7 @@ const Horarios = () => {
               />
             )}
 
-            {/* ──────── Tab: Horario Por Grado (calendario) ──────── */}
+            {/* ── Tab: calendario por grado ─────────────── */}
             {gradosContent && (
               <motion.div key="horarios-por-grado"
                 initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }}
@@ -437,7 +522,6 @@ const Horarios = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Header del grado */}
                     <div className="hpg-header">
                       <h2 className="hpg-title">
                         <GraduationCap size={22}/>
@@ -460,7 +544,6 @@ const Horarios = () => {
                       </div>
                     </div>
 
-                    {/* Stats del grado */}
                     <div className="hpg-stats">
                       <div className="hpg-stat-card">
                         <div className="hpg-stat-icon" style={{ background:"#EDE9FF" }}>
@@ -491,7 +574,6 @@ const Horarios = () => {
                       </div>
                     </div>
 
-                    {/* Leyenda de colores por asignatura */}
                     {asignaturasDelGrado.length > 0 && (
                       <div className="hpg-legend">
                         <div className="w-100 hpg-legend-title">Asignaturas del grado:</div>
@@ -504,7 +586,6 @@ const Horarios = () => {
                       </div>
                     )}
 
-                    {/* Calendario */}
                     <div ref={calendarioRef}>
                       <CalendarioHorarios
                         horarios={horariosFiltradosPorGrado}
@@ -519,7 +600,7 @@ const Horarios = () => {
         </div>
       </div>
 
-      {/* Modal Detalle/Edición */}
+      {/* ══ Modal Detalle/Edición ════════════════════════ */}
       <AnimatePresence>
         {mostrarModalDetalle && (
           <ModalDetalleHorario
@@ -528,7 +609,6 @@ const Horarios = () => {
               docentes,
               aulas,
               esCreacion: esModalCreacion,
-              // FILTRO: solo alumnos del grado del horario seleccionado
               alumnos:    alumnosFiltradosPorGrado,
               esDetalle:  esModalDetalle,
             }}
@@ -540,7 +620,7 @@ const Horarios = () => {
         )}
       </AnimatePresence>
 
-      {/* Notificaciones */}
+      {/* ══ Notificaciones ══════════════════════════════ */}
       <AnimatePresence>
         {notification && (
           <motion.div
