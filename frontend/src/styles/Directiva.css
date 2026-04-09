@@ -223,35 +223,40 @@
 }
 
 .btn-ayuda {
-  padding: 0.7rem 1.2rem;
-  background: var(--dir-primary);
-  color: white;
-  border: none;
+  padding: 0.65rem 1.2rem;
+  background: #ede9ff;
+  color: var(--dir-primary);
+  border: 1.5px solid #c4b5e8;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
   white-space: nowrap;
   font-family: inherit;
-  font-size: .875rem;
+  font-size: 0.875rem;
 }
 
 .btn-ayuda:hover {
-  background: var(--dir-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(108, 79, 191, 0.3);
+  background: #ddd5ff;
+  border-color: var(--dir-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(108, 79, 191, 0.18);
 }
 
+/* Nuevo Miembro — morado sólido con + igual a "Agregar ítem" */
 .btn-ayuda.btn-nuevo {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: var(--dir-primary);
+  color: white;
+  border-color: var(--dir-primary);
 }
 
 .btn-ayuda.btn-nuevo:hover {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+  background: var(--dir-primary-dark);
+  border-color: var(--dir-primary-dark);
+  box-shadow: 0 4px 12px rgba(108, 79, 191, 0.35);
 }
 
 /* Filtros barra */
@@ -310,94 +315,243 @@
    ══════════════════════════════════════════════════════════ */
 .directiva-body-area {
   padding: 20px 25px;
+  background: var(--dir-bg);
 }
 
-.tabla-directiva {
-  width: 100%;
+/* ══════════════════════════════════════════════════════════
+   TABLA  dir-*  (diseño igual a Sistema de Bienes)
+   ══════════════════════════════════════════════════════════ */
+.dir-table-wrapper {
   background: white;
   border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
   overflow: hidden;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-  min-height: 300px;
+}
+
+.dir-table-info {
+  padding: 14px 20px;
+  font-size: 0.86rem;
+  color: #555;
+  border-bottom: 1px solid var(--dir-gray-light);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dir-selected-badge {
+  background: var(--dir-primary);
+  color: white;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.dir-table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.dir-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+/* Header */
+.dir-th {
+  background: #4a3f8c;
+  color: white;
+  padding: 13px 16px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: none;
+}
+
+.dir-th:first-child  { border-radius: 0; }
+.dir-th-check        { width: 44px; padding: 13px 12px; }
+.dir-th-actions      { text-align: center; width: 100px; }
+
+/* Filas */
+.dir-tr {
+  border-bottom: 1px solid #f0eef8;
+  transition: background 0.15s ease;
+}
+
+.dir-tr:hover { background: #f8f6ff; }
+.dir-tr:last-child { border-bottom: none; }
+.dir-tr-selected { background: #f0ecff !important; }
+
+.dir-td {
+  padding: 13px 16px;
+  font-size: 0.875rem;
+  color: #2d2250;
+  vertical-align: middle;
+}
+
+.dir-td-check { width: 44px; padding: 13px 12px; }
+.dir-td-actions { text-align: center; }
+.dir-td-empty {
+  padding: 3rem;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+.dir-td-empty p { margin-top: 10px; }
+
+/* Checkbox */
+.dir-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--dir-primary);
+}
+
+/* Avatar + nombre */
+.dir-cell-name {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.dir-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6C4FBF, #9B59B6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.dir-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dir-name   { font-weight: 700; font-size: 0.9rem; color: #1a1a2e; }
+.dir-email  { font-size: 0.78rem; color: #7a6fa0; margin-top: 1px; }
+.dir-regby  { font-size: 0.7rem; color: #bbb; margin-top: 1px; }
+
+/* Badge código identidad */
+.dir-badge-code {
+  display: inline-block;
+  padding: 3px 10px;
+  border: 1.5px solid var(--dir-primary);
+  color: var(--dir-primary);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  background: #f0ecff;
+  white-space: nowrap;
+}
+
+.dir-badge-missing {
+  font-size: 0.76rem;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Badge cargo */
+.dir-badge-cargo {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #ede9ff;
+  color: var(--dir-primary);
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* Vigencia */
+.dir-cell-vigencia {
   display: flex;
   flex-direction: column;
-}
-
-.tabla-header {
-  display: grid;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-weight: 600;
-  font-size: 0.85rem;
-  align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.tabla-body {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.tabla-fila {
-  display: grid;
-  gap: 1rem;
-  padding: 1.1rem 1.5rem;
-  border-bottom: 1px solid #e9ecef;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  position: relative;
-}
-
-.tabla-fila::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 3px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
-}
-
-.tabla-fila:hover {
-  background: linear-gradient(90deg, rgba(102, 126, 234, 0.04) 0%, rgba(255,255,255,1) 100%);
-  transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-
-.tabla-fila:hover::before { transform: scaleY(1); }
-.tabla-fila:last-child { border-bottom: none; }
-
-.estado-badge {
-  padding: 4px 12px;
-  border-radius: 20px;
+  gap: 2px;
   font-size: 0.82rem;
-  font-weight: 600;
+  color: #555;
+}
+
+.dir-vigencia-fin    { color: #b45309; font-weight: 600; }
+.dir-vigencia-activa { color: #16a34a; font-weight: 600; }
+
+/* Empresa */
+.dir-empresa {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* Estado badges */
+.dir-estado-badge {
   display: inline-block;
-  text-align: center;
-  min-width: 85px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
-.estado-badge.activo {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
+.dir-estado-activo     { background: #dcfce7; color: #16a34a; }
+.dir-estado-inactivo   { background: #fee2e2; color: #dc2626; }
+.dir-estado-suspendido { background: #ffedd5; color: #ea580c; }
+
+/* Botones de acción */
+.dir-btn-edit,
+.dir-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  margin: 0 3px;
 }
 
-.estado-badge.inactivo {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+.dir-btn-edit {
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
-.estado-badge.suspendido {
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  color: white;
+.dir-btn-edit:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+  box-shadow: 0 2px 6px rgba(59,130,246,0.25);
 }
+
+.dir-btn-delete {
+  background: #fff1f2;
+  color: #ef4444;
+}
+
+.dir-btn-delete:hover {
+  background: #ffe4e6;
+  color: #dc2626;
+  box-shadow: 0 2px 6px rgba(239,68,68,0.25);
+}
+
+/* Mantener clases antiguas por compatibilidad */
+.tabla-directiva,
+.tabla-header,
+.tabla-body,
+.tabla-fila { display: none; }
 
 .directiva-vacio {
   text-align: center;
@@ -889,6 +1043,10 @@
   .dn-form-grid { grid-template-columns: 1fr; }
   .dn-modal-footer { flex-wrap: wrap; }
 
+  .directiva-body-area { padding: 12px; }
+  .dir-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* legacy – keep hidden */
   .tabla-header,
   .tabla-fila {
     font-size: 0.78rem;

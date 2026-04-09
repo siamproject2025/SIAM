@@ -16,11 +16,7 @@ const userSchema = new mongoose.Schema({
   bloqueado_hasta:   { type: Date, default: null },
 
   // ✅ NUEVO — referencia al alumno matriculado
-  alumno: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Matricula',
-    default: null
-  }
+  
 });
 
 const User = mongoose.model('Usuario', userSchema, 'usuarios');

@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const solicitudSchema = new mongoose.Schema({
   nombre_solicitante: { type: String, required: true },
   email:              { type: String, required: true, unique: true },
-  nombre_alumno:      { type: String, required: true },
-  grado:              { type: String, required: true },
+  nombre_alumno:      { type: String, required: false },
+  grado:              { type: String, required: false },
 
   estado: {
     type:    String,

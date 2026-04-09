@@ -6,9 +6,9 @@ const mailer = require('../config/mailer');
 // ─── Crear solicitud (público, sin auth) ──────────────────────────────────
 exports.crearSolicitud = async (req, res) => {
   try {
-    const { nombre_solicitante, email, nombre_alumno, grado } = req.body;
+    const { nombre_solicitante, email} = req.body;
 
-    if (!nombre_solicitante || !email || !nombre_alumno || !grado) {
+    if (!nombre_solicitante || !email ) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
     }
 
