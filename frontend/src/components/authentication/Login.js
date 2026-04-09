@@ -17,13 +17,7 @@ import Swal from "sweetalert2";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const GRADOS = [
-  "Kínder", "Preparatoria",
-  "1ro Primaria", "2do Primaria", "3ro Primaria",
-  "4to Primaria", "5to Primaria", "6to Primaria",
-  "1ro Secundaria", "2do Secundaria", "3ro Secundaria",
-  "Empleado de la escuela"
-];
+
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -153,9 +147,7 @@ const Login = () => {
     try {
       await axios.post(`${API_URL}/api/solicitudes`, {
         nombre_solicitante: data.nombre_solicitante,
-        email:              data.email_sol.toLowerCase().trim(),
-        nombre_alumno:      data.nombre_alumno,
-        grado:              data.grado
+        email:              data.email_sol.toLowerCase().trim()
       });
 
       Swal.fire({
@@ -303,39 +295,7 @@ const Login = () => {
                 )}
 
                 {/* Nombre del alumno */}
-                <input
-                  type="text"
-                  placeholder="Nombre del alumno"
-                  {...register("nombre_alumno", {
-                    required: "Este campo es obligatorio",
-                    pattern: {
-                      value:   /^[A-Z\s]+$/,
-                      message: "Solo se permiten letras y espacios"
-                    },
-                    onChange: (e) => {
-                      const val = e.target.value.toUpperCase().replace(/[^A-Z\s]/g, "");
-                      setValue("nombre_alumno", val, { shouldValidate: true });
-                    }
-                  })}
-                />
-                {errors.nombre_alumno && (
-                  <span className="loginMessage">{errors.nombre_alumno.message}</span>
-                )}
-
-                {/* Grado */}
-                <select
-                  {...register("grado", { required: "Selecciona un grado" })}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Grado del alumno / Relación</option>
-                  {GRADOS.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-                {errors.grado && (
-                  <span className="loginMessage">{errors.grado.message}</span>
-                )}
-
+                
                 <div className="login-center-buttons">
                   <button type="submit" className="button" disabled={enviando}>
                     {enviando ? "Enviando..." : "Enviar solicitud"}

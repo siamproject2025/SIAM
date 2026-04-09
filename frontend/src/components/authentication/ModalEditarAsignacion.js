@@ -191,7 +191,7 @@ useEffect(() => {
                 >
                   <option value="">-- Seleccionar rol --</option>
                   {roles.map(r => (
-                    <option key={r._id} value={r.nombre}>{r.nombre}</option>
+                    <option key={r._id} value={r._id}>{r._id}</option>
                   ))}
                 </select>
               </div>

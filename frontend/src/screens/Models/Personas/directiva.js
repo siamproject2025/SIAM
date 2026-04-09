@@ -537,68 +537,132 @@ const Directiva = () => {
   };
 
   // ── Tabla ──────────────────────────────────────────────────
+  const [seleccionados, setSeleccionados] = useState(new Set());
+
+  const toggleSeleccion = (id) => {
+    setSeleccionados(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleTodos = (lista) => {
+    if (seleccionados.size === lista.length) setSeleccionados(new Set());
+    else setSeleccionados(new Set(lista.map(m => m._id)));
+  };
+
   const renderTabla = (lista) => (
-    <motion.div className="tabla-directiva" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-      <motion.div className="tabla-header" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-        style={{ gridTemplateColumns: '2fr 1.5fr 1.5fr 1.2fr 1fr 80px' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:5 }}><UserCheck size={14} /> MIEMBRO</div>
-        <div style={{ display:'flex', alignItems:'center', gap:5 }}><Hash size={14} /> IDENTIDAD</div>
-        <div style={{ display:'flex', alignItems:'center', gap:5 }}><Briefcase size={14} /> CARGO</div>
-        <div style={{ display:'flex', alignItems:'center', gap:5 }}><Calendar size={14} /> VIGENCIA</div>
-        <div style={{ textAlign:'center' }}>ESTADO</div>
-        <div style={{ textAlign:'center' }}>ACCIÓN</div>
-      </motion.div>
-      <div className="tabla-body">
-        {lista.length === 0 ? (
-          <motion.div className="directiva-vacio" initial={{ opacity:0 }} animate={{ opacity:1 }}>
-            No hay miembros que coincidan con la búsqueda.
-          </motion.div>
-        ) : lista.map((m, idx) => (
-          <motion.div key={m._id} className="tabla-fila"
-            initial={{ opacity:0, x:-40 }} animate={{ opacity:1, x:0 }}
-            transition={{ delay: Math.min(idx * 0.05, 1), type:'spring', stiffness:120 }}
-            style={{ gridTemplateColumns:'2fr 1.5fr 1.5fr 1.2fr 1fr 80px' }}>
-
-            {/* Avatar + nombre */}
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg,#6C4FBF,#9B59B6)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, overflow:'hidden', fontWeight:800, color:'#fff', fontSize:'.85rem' }}>
-                {m.foto ? <img src={`data:image/jpeg;base64,${m.foto}`} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} /> : iniciales(m.nombre)}
-              </div>
-              <div>
-                <div style={{ fontWeight:600, fontSize:'1rem', color:'#333' }}>{m.nombre}</div>
-                <div style={{ fontSize:'.82rem', color:'#666' }}>{m.email}</div>
-                {m.creado_por && <div style={{ fontSize:'.72rem', color:'#aaa' }}>Reg. por {m.creado_por}</div>}
-              </div>
-            </div>
-
-            <div style={{ fontSize:'.86rem', color:'#555', fontFamily:'monospace' }}>
-              {m.numero_identidad || <span style={{ color:'#E74C3C', fontSize:'.78rem', fontFamily:'inherit' }}>⚠ Sin identidad</span>}
-            </div>
-
-            <div style={{ fontWeight:600, color:'#667eea', fontSize:'.9rem' }}>{m.cargo}</div>
-
-            <div style={{ fontSize:'.8rem', color:'#666' }}>
-              {m.fecha_inicio_cargo && <div>Desde: {new Date(m.fecha_inicio_cargo).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' })}</div>}
-              {m.fecha_fin_cargo
-                ? <div style={{ color:'#b45309' }}>Hasta: {new Date(m.fecha_fin_cargo).toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' })}</div>
-                : m.fecha_inicio_cargo && <div style={{ color:'#1a7a40' }}>En curso</div>}
-            </div>
-
-            <div style={{ display:'flex', justifyContent:'center' }}>
-              <span className={`estado-badge ${m.estado?.toLowerCase()}`}>{m.estado}</span>
-            </div>
-
-            <div style={{ display:'flex', justifyContent:'center' }}>
-              <motion.button whileHover={{ scale:1.2 }} whileTap={{ scale:.9 }}
-                onClick={e => { e.stopPropagation(); handleOpenEditModal(m); }}
-                style={{ background:'none', border:'none', cursor:'pointer', color:'#2196F3', padding:'5px', display:'flex', alignItems:'center' }} title="Editar">
-                <Edit size={18} />
-              </motion.button>
-            </div>
-          </motion.div>
-        ))}
+    <div className="dir-table-wrapper">
+      {/* Contador */}
+      <div className="dir-table-info">
+        Mostrando <strong>{lista.length > 0 ? 1 : 0}–{lista.length}</strong> de <strong>{lista.length}</strong> miembro{lista.length !== 1 ? 's' : ''}
+        {seleccionados.size > 0 && <span className="dir-selected-badge">{seleccionados.size} seleccionado{seleccionados.size > 1 ? 's' : ''}</span>}
       </div>
-    </motion.div>
+
+      <div className="dir-table-scroll">
+        <table className="dir-table">
+          <thead>
+            <tr>
+             
+              <th className="dir-th">NOMBRE</th>
+              <th className="dir-th">IDENTIDAD</th>
+              <th className="dir-th">CARGO</th>
+              <th className="dir-th">VIGENCIA</th>
+              <th className="dir-th">EMPRESA</th>
+              <th className="dir-th">ESTADO</th>
+              <th className="dir-th dir-th-actions">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lista.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="dir-td-empty">
+                  <Users size={36} color="#c4b5e8" />
+                  <p>No hay miembros que coincidan con la búsqueda.</p>
+                </td>
+              </tr>
+            ) : lista.map((m, idx) => (
+              <motion.tr key={m._id} className={`dir-tr${seleccionados.has(m._id) ? ' dir-tr-selected' : ''}`}
+                initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
+                transition={{ delay: Math.min(idx * 0.04, 0.6) }}>
+
+                {/* Checkbox */}
+               
+
+                {/* Nombre + avatar */}
+                <td className="dir-td">
+                  <div className="dir-cell-name">
+                    <div className="dir-avatar">
+                      {m.foto
+                        ? <img src={`data:image/jpeg;base64,${m.foto}`} alt="" />
+                        : iniciales(m.nombre)}
+                    </div>
+                    <div>
+                      <div className="dir-name">{m.nombre}</div>
+                      <div className="dir-email">{m.email}</div>
+                      {m.creado_por && <div className="dir-regby">Reg. por {m.creado_por}</div>}
+                    </div>
+                  </div>
+                </td>
+
+                {/* Identidad — badge estilo código */}
+                <td className="dir-td">
+                  {m.numero_identidad
+                    ? <span className="dir-badge-code">{m.numero_identidad}</span>
+                    : <span className="dir-badge-missing">⚠ Sin identidad</span>}
+                </td>
+
+                {/* Cargo — badge morado */}
+                <td className="dir-td">
+                  <span className="dir-badge-cargo">{m.cargo}</span>
+                </td>
+
+                {/* Vigencia */}
+                <td className="dir-td">
+                  <div className="dir-cell-vigencia">
+                    {m.fecha_inicio_cargo && (
+                      <span>{new Date(m.fecha_inicio_cargo).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' })}</span>
+                    )}
+                    {m.fecha_fin_cargo
+                      ? <span className="dir-vigencia-fin">→ {new Date(m.fecha_fin_cargo).toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' })}</span>
+                      : m.fecha_inicio_cargo && <span className="dir-vigencia-activa">En curso</span>}
+                  </div>
+                </td>
+
+                {/* Empresa */}
+                <td className="dir-td">
+                  <span className="dir-empresa">{m.empresa || '—'}</span>
+                </td>
+
+                {/* Estado */}
+                <td className="dir-td">
+                  <span className={`dir-estado-badge dir-estado-${m.estado?.toLowerCase()}`}>
+                    {m.estado?.toUpperCase()}
+                  </span>
+                </td>
+
+                {/* Acciones */}
+                <td className="dir-td dir-td-actions">
+                  <motion.button className="dir-btn-edit"
+                    whileHover={{ scale:1.12 }} whileTap={{ scale:.9 }}
+                    onClick={e => { e.stopPropagation(); handleOpenEditModal(m); }}
+                    title="Editar">
+                    <Edit size={15} />
+                  </motion.button>
+                  <motion.button className="dir-btn-delete"
+                    whileHover={{ scale:1.12 }} whileTap={{ scale:.9 }}
+                    onClick={e => { e.stopPropagation(); setMiembroAEliminar(m); setShowConfirm(true); }}
+                    title="Eliminar">
+                    <Trash2 size={15} />
+                  </motion.button>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 
   // ══════════════════════════════════════════════════════════
@@ -668,7 +732,7 @@ const Directiva = () => {
             <div className="directiva-bar-buttons">
               {/* Filtro orden */}
               <div style={{ position:'relative' }}>
-                <button className="btn-ayuda" onClick={() => setMostrarMenuFiltros(p => !p)}>
+                <button  style={S.btn('#E0D9F5','#6C4FBF')}  onClick={() => setMostrarMenuFiltros(p => !p)}>
                   <Briefcase size={16} /> Ordenar
                 </button>
                 <AnimatePresence>
@@ -693,10 +757,10 @@ const Directiva = () => {
                 </AnimatePresence>
               </div>
 
-              <button className="btn-ayuda" onClick={() => setMostrarAyuda(true)}>
+              <button style={S.btn('#E0D9F5','#6C4FBF')}  onClick={() => setMostrarAyuda(true)}>
                 <HelpCircle size={16} /> Ayuda
               </button>
-              <button className="btn-ayuda btn-nuevo" onClick={() => {
+              <button style={S.btn('#6C4FBF')} onClick={() => {
                 setFormData(formVacio()); setFotoPreview(null);
                 setErrors({}); setTabActivo('info'); setHayCambios(false);
                 setMostrarModalCrear(true);
@@ -863,7 +927,7 @@ const Directiva = () => {
                 </div>
               </div>
               <div className="dn-modal-footer">
-                <button className="dn-btn-cancel" onClick={() => setMostrarAyuda(false)}>Cerrar</button>
+                <button  style={S.btn('#E0D9F5','#6C4FBF')}  onClick={() => setMostrarAyuda(false)}>Cerrar</button>
               </div>
             </motion.div>
           </motion.div>
@@ -889,6 +953,28 @@ const Directiva = () => {
       </AnimatePresence>
     </>
   );
+};
+const S = {
+  sec:   { marginBottom: 24 },
+  title: { display:'flex', alignItems:'center', gap:8, fontFamily:'Poppins,sans-serif', fontSize:'.88rem', fontWeight:700, color:'#6C4FBF', marginBottom:12, paddingBottom:8, borderBottom:'2px solid #E0D9F5' },
+  grid:  { display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:13 },
+  full:  { gridColumn:'1/-1' },
+  field: { display:'flex', flexDirection:'column', gap:4 },
+  label: { fontSize:'.77rem', fontWeight:700, color:'#7A6FA0', textTransform:'uppercase', letterSpacing:'.04em' },
+  req:   { color:'#E74C3C' },
+  inp:   (e) => ({ padding:'9px 12px', border:`2px solid ${e?'#E74C3C':'#E0D9F5'}`, borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:e?'#FFF8F8':'#FAF9FF', outline:'none', width:'100%', transition:'border-color .2s' }),
+  inpRO: { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#6C4FBF', fontWeight:700, background:'#F0ECFF', outline:'none', width:'100%' },
+  sel:   (e) => ({ padding:'9px 12px', border:`2px solid ${e?'#E74C3C':'#E0D9F5'}`, borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%' }),
+  ta:    { padding:'9px 12px', border:'2px solid #E0D9F5', borderRadius:8, fontFamily:'inherit', fontSize:'.88rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%', resize:'vertical', minHeight:90 },
+  errMsg:{ fontSize:'.73rem', color:'#E74C3C', fontWeight:600 },
+  banner:{ display:'flex', gap:10, alignItems:'flex-start', padding:'11px 14px', borderRadius:10, marginBottom:14, fontSize:'.85rem', background:'#FDE8E8', borderLeft:'4px solid #E74C3C', color:'#7a1010' },
+  info:  { display:'flex', gap:10, alignItems:'flex-start', padding:'10px 14px', borderRadius:9, marginBottom:12, fontSize:'.84rem', background:'#E8F4FD', borderLeft:'4px solid #2980B9', color:'#0c4a6e' },
+  foot:  { display:'flex', justifyContent:'space-between', alignItems:'center', paddingTop:16, borderTop:'1px solid #E0D9F5', marginTop:8 },
+  btn:   (bg, col='#fff') => ({ display:'inline-flex', alignItems:'center', gap:7, padding:'10px 20px', borderRadius:10, fontSize:'.86rem', fontWeight:700, border:'none', cursor:'pointer', background:bg, color:col, fontFamily:'inherit', transition:'all .18s' }),
+  upload:{ border:'2px dashed #C4B5E8', borderRadius:12, padding:'26px 20px', textAlign:'center', background:'#FAF9FF' },
+  card:  { background:'#F4F3FB', border:'1px solid #E0D9F5', borderRadius:12, padding:'14px 16px', marginBottom:12, position:'relative' },
+  cardTitle: { fontFamily:'Poppins,sans-serif', fontSize:'.82rem', fontWeight:700, color:'#6C4FBF', marginBottom:10, display:'flex', alignItems:'center', gap:6 },
+  delBtn:{ position:'absolute', top:10, right:10, background:'#FDE8E8', color:'#E74C3C', border:'none', borderRadius:7, padding:'5px 8px', cursor:'pointer', fontSize:'.8rem', fontWeight:700, display:'flex', alignItems:'center', gap:4 },
 };
 
 export default Directiva;

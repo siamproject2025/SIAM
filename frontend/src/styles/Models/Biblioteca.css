@@ -906,7 +906,7 @@
 .dn-tab-btn:hover { color: #6C4FBF; }
 
 .dn-tab-btn.active {
-  color: #6C4FBF;
+  color: #ffffff;
   border-bottom-color: #6C4FBF;
   background: white;
 }
