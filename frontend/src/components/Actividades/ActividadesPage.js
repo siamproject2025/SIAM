@@ -86,14 +86,22 @@ const Actividades = () => {
   const cargarActividades = async () => {
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error('No autenticado');
+      if (!user) return;
       const token = await user.getIdToken();
+      
       const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        method: 'GET',
+        headers: { 
+          'Authorization': `Bearer ${token}` // SOLO TOKEN, como la versión antigua
+        }
       });
+      
       if (!res.ok) throw new Error('Error al obtener actividades');
-      setActividades(await res.json());
-    } catch (err) { console.error(err.message); }
+      const data = await res.json();
+      setActividades(data);
+    } catch (err) { 
+      console.error("Error:", err.message); 
+    }
   };
 
   useEffect(() => { cargarActividades(); }, []);
@@ -163,22 +171,31 @@ const Actividades = () => {
       return;
     }
 
-    try {
-      const user  = auth.currentUser;
-      if (!user) { showNotification('No estás autenticado', 'error'); return; }
+   try {
+      const user = auth.currentUser;
       const token = await user.getIdToken();
-      const res   = await fetch(API_URL, {
+      
+      const res = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // SOLO TOKEN
+        },
         body: JSON.stringify(nuevaActividad)
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Error al crear'); }
+
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.message || 'Error al crear');
+      }
+      
       const creada = await res.json();
       setActividades(prev => [...prev, creada]);
       setMostrarModalCrear(false);
-      setPreselectedDate(null);
-      showNotification(`Actividad "${creada.nombre}" creada exitosamente`, 'success');
-    } catch (err) { showNotification(err.message, 'error'); }
+      showNotification(`Actividad "${creada.nombre}" creada`, 'success');
+    } catch (err) { 
+      showNotification(err.message, 'error'); 
+    }
   };
 
   // ── FIX #3: Editar con validación de conflicto ───────────────
@@ -198,21 +215,28 @@ const Actividades = () => {
       return;
     }
 
-    try {
-      const user  = auth.currentUser;
-      if (!user) { showNotification('No estás autenticado', 'error'); return; }
+   try {
+      const user = auth.currentUser;
       const token = await user.getIdToken();
-      const res   = await fetch(`${API_URL}/${actividadActualizada._id}`, {
+      
+      const res = await fetch(`${API_URL}/${actividadActualizada._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // SOLO TOKEN
+        },
         body: JSON.stringify(actividadActualizada)
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'Error al editar'); }
+
+      if (!res.ok) throw new Error('Error al actualizar');
+      
       const actualizada = await res.json();
       setActividades(prev => prev.map(a => a._id === actualizada._id ? actualizada : a));
       setActividadSeleccionada(null);
-      showNotification(`Actividad "${actualizada.nombre}" actualizada exitosamente`, 'success');
-    } catch (err) { showNotification(err.message, 'error'); }
+      showNotification('Actividad actualizada', 'success');
+    } catch (err) { 
+      showNotification(err.message, 'error'); 
+    }
   };
 
   const handleEliminarActividad = (id) => {
@@ -221,21 +245,28 @@ const Actividades = () => {
     setShowConfirm(true);
   };
 
-  const confirmarEliminacion = async () => {
+ const confirmarEliminacion = async () => {
     setShowConfirm(false);
     if (!actividadAEliminar) return;
+    
     try {
-      const user  = auth.currentUser;
+      const user = auth.currentUser;
       const token = await user.getIdToken();
-      const res   = await fetch(`${API_URL}/${actividadAEliminar._id}`, {
-        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      
+      const res = await fetch(`${API_URL}/${actividadAEliminar._id}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}` // SOLO TOKEN
+        }
       });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+
+      if (!res.ok) throw new Error('Error al eliminar');
+      
       setActividades(prev => prev.filter(a => a._id !== actividadAEliminar._id));
-      setActividadSeleccionada(null);
-      showNotification(`Actividad "${actividadAEliminar.nombre}" eliminada exitosamente`, 'success');
-      setActividadAEliminar(null);
-    } catch (err) { showNotification(err.message, 'error'); }
+      showNotification('Actividad eliminada', 'success');
+    } catch (err) { 
+      showNotification(err.message, 'error'); 
+    }
   };
 
   // ── Render de grupo de actividades ────────────────────────────
