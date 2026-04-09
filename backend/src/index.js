@@ -27,6 +27,7 @@ const authRoutes = require("./Routes/authRoutes");
 const audit = require("./Routes/auditControlRoutes");
 const resetRoutes = require('./Routes/reset_password_routes');
 const backupRoutes = require("./Routes/backup");
+const parametros = require("./Routes/Parametros.routes");
 
 const app = express();
 
@@ -116,6 +117,7 @@ app.use("/api/", rolRoutes);
 app.use("/api/", authRoutes);
 app.use("/api/", audit);
 app.use('/api', resetRoutes);
+app.use("/api/parametros", parametros);
 
 // ========== ARCHIVOS ESTÁTICOS ==========
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

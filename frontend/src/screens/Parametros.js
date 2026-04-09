@@ -1,23 +1,25 @@
 // ============================================================
-// Parametros.jsx — Módulo de Parámetros del Sistema
-// FIX #1 CRÍTICO: Los datos institucionales son editables por
-// el administrador y se persisten en localStorage.
-// La landing los consume automáticamente.
-// Sin backend requerido.
+// Parametros.jsx — consume API real en lugar de solo localStorage
+// - GET al montar: carga desde el backend
+// - PUT al guardar: persiste en MongoDB
+// - localStorage como caché local (fallback si la API falla)
 // ============================================================
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+import { auth } from '../components/authentication/Auth';
 import {
   Settings, Save, RotateCcw, Building2, Phone, Mail,
   MapPin, User, Globe, Image, Music, Eye, EyeOff,
-  CheckCircle, AlertTriangle, Upload, Trash2, Info
+  CheckCircle, AlertTriangle, Upload, Trash2, Info, Loader
 } from 'lucide-react';
 import Notification from '../components/Notification';
 
-// ── Clave en localStorage ─────────────────────────────────────
+// ── Clave localStorage (caché) ────────────────────────────────
 export const PARAMS_KEY = 'siam_parametros';
+const API_URL = process.env.REACT_APP_API_URL + "/api/parametros";
 
-// ── Valores por defecto (los actuales hardcoded de la landing) ─
+// ── Valores por defecto ───────────────────────────────────────
 export const DEFAULTS = {
   nombre_institucion:  'Escuela Experimental de Niños para la Música',
   siglas:              'S.I.A.M.',
@@ -34,29 +36,56 @@ export const DEFAULTS = {
   mapa_embed_url:      'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3931.562882243273!2d-87.1767392!3d14.0727637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f6fbcd070775acd%3A0x30d484aaca34d4cf!2sEscuela%20Experimental%20De%20Ni%C3%B1os%20Para%20La%20M%C3%BAsica!5e0!3m2!1ses!2shn!4v1699999999999',
   color_primario:      '#6C4FBF',
   color_secundario:    '#9B59B6',
-  // Estadísticas editables
   stat_eficiencia:     '70',
   stat_reduccion:      '100',
   stat_acceso:         '24',
   stat_estudiantes:    '500',
-  // FAQ editable
   faq: [
-    { question: '¿Qué es S.I.A.M.?', answer: 'S.I.A.M. es un Sistema Integrado Administrativo Musical diseñado para optimizar y automatizar los procesos clave de instituciones musicales, desde la matrícula hasta el control de inventario.' },
-    { question: '¿Qué problemas resuelve S.I.A.M.?', answer: 'Resuelve problemas como procesos manuales de matrícula, desorganización en horarios, control limitado de inventario, falta de trazabilidad en compras y comunicación institucional dispersa.' },
-    { question: '¿Qué tecnologías utiliza S.I.A.M.?', answer: 'Utiliza React y JavaScript en el frontend, Express.js en el backend, MongoDB como base de datos y APIs privadas seguras para integración.' },
+    { question: '¿Qué es S.I.A.M.?',                   answer: 'S.I.A.M. es un Sistema Integrado Administrativo Musical diseñado para optimizar y automatizar los procesos clave de instituciones musicales, desde la matrícula hasta el control de inventario.' },
+    { question: '¿Qué problemas resuelve S.I.A.M.?',   answer: 'Resuelve problemas como procesos manuales de matrícula, desorganización en horarios, control limitado de inventario, falta de trazabilidad en compras y comunicación institucional dispersa.' },
+    { question: '¿Qué tecnologías utiliza S.I.A.M.?',  answer: 'Utiliza React y JavaScript en el frontend, Express.js en el backend, MongoDB como base de datos y APIs privadas seguras para integración.' },
     { question: '¿Cómo mejora la eficiencia institucional?', answer: 'Aumenta en más del 70% la eficiencia en tareas administrativas, reduce errores en procesos críticos y proporciona acceso centralizado a información 24/7.' },
-    { question: '¿Quién puede utilizar S.I.A.M.?', answer: 'Está diseñado para escuelas de música, conservatorios y cualquier institución educativa musical que necesite gestionar sus procesos administrativos y académicos.' },
+    { question: '¿Quién puede utilizar S.I.A.M.?',     answer: 'Está diseñado para escuelas de música, conservatorios y cualquier institución educativa musical que necesite gestionar sus procesos administrativos y académicos.' },
   ],
 };
 
-// ── Hook público para leer los parámetros desde cualquier componente ──
+// ── Hook público para leer parámetros (landing + otros módulos) ──
+// Primero intenta la API, fallback a localStorage, fallback a DEFAULTS
 export function useParametros() {
-  const stored = localStorage.getItem(PARAMS_KEY);
-  try {
-    return stored ? { ...DEFAULTS, ...JSON.parse(stored) } : { ...DEFAULTS };
-  } catch {
-    return { ...DEFAULTS };
-  }
+  const [params, setParams] = useState(() => {
+    try {
+      const s = localStorage.getItem(PARAMS_KEY);
+      return s ? { ...DEFAULTS, ...JSON.parse(s) } : { ...DEFAULTS };
+    } catch { return { ...DEFAULTS }; }
+  });
+
+  useEffect(() => {
+    // Fetch público sin token (GET es abierto)
+    axios.get(API_URL)
+      .then(res => {
+        const merged = { ...DEFAULTS, ...res.data };
+        setParams(merged);
+        // Actualizar caché local
+        localStorage.setItem(PARAMS_KEY, JSON.stringify(merged));
+      })
+      .catch(() => {
+        // Si la API falla, quedarse con lo del localStorage
+      });
+
+    // Escuchar cambios desde otra pestaña (admin guardó)
+    const handler = (e) => {
+      if (e.key === PARAMS_KEY) {
+        try {
+          const s = e.newValue;
+          if (s) setParams({ ...DEFAULTS, ...JSON.parse(s) });
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
+
+  return params;
 }
 
 // ── CSS inline ────────────────────────────────────────────────
@@ -80,11 +109,9 @@ const CSS = `
   .pm-card-desc { font-size:.8rem; color:#7A6FA0; margin-top:2px; }
   .pm-card-body { padding:22px; }
   .pm-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-  .pm-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
   .pm-full { grid-column:1/-1; }
   .pm-field { display:flex; flex-direction:column; gap:5px; }
   .pm-label { font-size:.77rem; font-weight:700; color:#7A6FA0; text-transform:uppercase; letter-spacing:.04em; display:flex; align-items:center; gap:6px; }
-  .pm-label .req { color:#E74C3C; }
   .pm-input, .pm-textarea, .pm-select { padding:10px 13px; border:2px solid #E0D9F5; border-radius:9px; font-family:inherit; font-size:.9rem; color:#2D2250; background:#FAF9FF; outline:none; width:100%; transition:border-color .2s,box-shadow .2s; }
   .pm-input:focus, .pm-textarea:focus, .pm-select:focus { border-color:#6C4FBF; box-shadow:0 0 0 3px rgba(108,79,191,.1); background:#fff; }
   .pm-textarea { resize:vertical; min-height:80px; }
@@ -94,16 +121,15 @@ const CSS = `
   .pm-color-input { opacity:0; position:absolute; width:0; height:0; }
   .pm-btn { display:inline-flex; align-items:center; gap:7px; padding:11px 22px; border-radius:10px; font-size:.87rem; font-weight:700; border:none; cursor:pointer; font-family:inherit; transition:all .18s; }
   .pm-primary { background:#6C4FBF; color:#fff; } .pm-primary:hover { background:#4B3090; }
+  .pm-primary:disabled { background:#9f90d0; cursor:not-allowed; }
   .pm-ghost { background:#E0D9F5; color:#6C4FBF; } .pm-ghost:hover { background:#6C4FBF; color:#fff; }
   .pm-danger { background:#FDE8E8; color:#E74C3C; } .pm-danger:hover { background:#E74C3C; color:#fff; }
-  .pm-success { background:#D4F5E2; color:#1a7a40; }
   .pm-action-bar { display:flex; gap:12px; align-items:center; padding:20px 36px; background:#fff; border-top:1px solid #E0D9F5; position:sticky; bottom:0; z-index:10; box-shadow:0 -4px 20px rgba(108,79,191,.07); }
   .pm-saved-badge { display:inline-flex; align-items:center; gap:6px; background:#D4F5E2; color:#1a7a40; padding:6px 14px; border-radius:20px; font-size:.8rem; font-weight:700; }
   .pm-preview-box { background:#F0ECFF; border:2px solid #C4B5E8; border-radius:12px; padding:16px 20px; }
   .pm-preview-title { font-size:.78rem; font-weight:700; color:#6C4FBF; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
   .pm-preview-landing { border-radius:10px; overflow:hidden; border:2px solid #E0D9F5; }
   .pm-preview-bar { background:linear-gradient(135deg,#6C4FBF,#9B59B6); padding:8px 16px; display:flex; align-items:center; gap:8px; }
-  .pm-preview-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.5); }
   .pm-preview-content { background:#fff; padding:16px; }
   .pm-preview-h1 { font-family:'Poppins',sans-serif; font-size:1rem; font-weight:800; color:#2D2250; margin-bottom:4px; }
   .pm-preview-p { font-size:.78rem; color:#7A6FA0; }
@@ -122,10 +148,11 @@ const CSS = `
   .pm-stat-suffix { font-size:.9rem; color:#7A6FA0; font-weight:700; }
   .pm-info-box { background:#E8F4FD; border-left:4px solid #2980B9; border-radius:9px; padding:10px 14px; font-size:.84rem; color:#0c4a6e; margin-bottom:16px; display:flex; gap:8px; }
   .pm-warn-box { background:#FFF3E0; border-left:4px solid #F39C12; border-radius:9px; padding:10px 14px; font-size:.84rem; color:#713f12; margin-bottom:16px; display:flex; gap:8px; }
-  @media(max-width:700px) { .pm-header{padding:18px 14px 22px;} .pm-body{padding:14px;} .pm-tabs{padding:0 8px;} .pm-grid{grid-template-columns:1fr;} .pm-grid-3{grid-template-columns:1fr 1fr;} .pm-action-bar{padding:14px;} }
+  .pm-loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4rem; gap:1rem; color:#7A6FA0; font-size:.95rem; }
+  .spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+  @media(max-width:700px) { .pm-header{padding:18px 14px 22px;} .pm-body{padding:14px;} .pm-tabs{padding:0 8px;} .pm-grid{grid-template-columns:1fr;} .pm-action-bar{padding:14px;} }
 `;
 
-// ── Sección component ─────────────────────────────────────────
 const Sec = ({ icon, title, desc, children }) => (
   <div className="pm-card">
     <div className="pm-card-header">
@@ -149,17 +176,33 @@ const Field = ({ label, hint, full, children }) => (
 
 // ============================================================
 export default function Parametros() {
-  const [tab, setTab]           = useState('institucion');
-  const [params, setParams]     = useState(() => {
-    try {
-      const s = localStorage.getItem(PARAMS_KEY);
-      return s ? { ...DEFAULTS, ...JSON.parse(s) } : { ...DEFAULTS };
-    } catch { return { ...DEFAULTS }; }
-  });
-  const [saved, setSaved]       = useState(false);
-  const [dirty, setDirty]       = useState(false);
+  const [tab, setTab]               = useState('institucion');
+  const [params, setParams]         = useState({ ...DEFAULTS });
+  const [saved, setSaved]           = useState(false);
+  const [dirty, setDirty]           = useState(false);
+  const [loadingInit, setLoadingInit] = useState(true);
+  const [saving, setSaving]         = useState(false);
   const [notification, setNotification] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview]   = useState(false);
+
+  // ── Cargar desde API al montar ────────────────────────────
+  useEffect(() => {
+    axios.get(API_URL)
+      .then(res => {
+        const merged = { ...DEFAULTS, ...res.data };
+        setParams(merged);
+        localStorage.setItem(PARAMS_KEY, JSON.stringify(merged));
+      })
+      .catch(() => {
+        // Fallback a localStorage si la API no responde
+        try {
+          const s = localStorage.getItem(PARAMS_KEY);
+          if (s) setParams({ ...DEFAULTS, ...JSON.parse(s) });
+        } catch {}
+        setNotification({ message: 'No se pudo conectar con el servidor. Mostrando datos locales.', type: 'warning' });
+      })
+      .finally(() => setLoadingInit(false));
+  }, []);
 
   const set = (k, v) => { setParams(p => ({ ...p, [k]: v })); setDirty(true); setSaved(false); };
   const setFaq = (i, field, v) => {
@@ -170,41 +213,90 @@ export default function Parametros() {
   const addFaq = () => set('faq', [...params.faq, { question: '', answer: '' }]);
   const delFaq = (i) => set('faq', params.faq.filter((_, idx) => idx !== i));
 
-  const handleSave = () => {
-    try {
-      localStorage.setItem(PARAMS_KEY, JSON.stringify(params));
-      setSaved(true); setDirty(false);
-      setNotification({ message: 'Parámetros guardados exitosamente. La landing page se actualizará automáticamente.', type: 'success' });
-      setTimeout(() => setSaved(false), 4000);
-    } catch (e) {
-      setNotification({ message: 'Error al guardar los parámetros: ' + e.message, type: 'error' });
+  // ── Guardar en API ────────────────────────────────────────
+const handleSave = async () => {
+  setSaving(true);
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      setNotification({ message: "Sesión expirada", type: 'error' });
+      return;
     }
-  };
 
+    const token = await user.getIdToken(true);
+    const res = await axios.put(API_URL, params, {
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json' 
+      }
+    });
+
+    const updated = { ...DEFAULTS, ...res.data };
+    setParams(updated);
+    localStorage.setItem(PARAMS_KEY, JSON.stringify(updated));
+
+    setSaved(true);
+    setDirty(false);
+
+    // --- NOTIFICACIÓN PEQUEÑA (ESTILO TOAST) ---
+    const { default: Swal } = await import('sweetalert2');
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+    });
+
+    Toast.fire({
+      icon: 'success',
+      title: 'Configuración guardada exitosamente'
+    });
+    // -------------------------------------------
+
+    setTimeout(() => setSaved(false), 4000);
+  } catch (err) {
+    const msg = err.response?.data?.error || err.message || "Error al guardar";
+    setNotification({ message: msg, type: 'error' });
+  } finally {
+    setSaving(false);
+  }
+};
+
+  // ── Restaurar predeterminados ─────────────────────────────
   const handleReset = async () => {
     const { default: Swal } = await import('sweetalert2');
     const r = await Swal.fire({
       title: '¿Restaurar valores predeterminados?',
-      text: 'Se perderán todos los cambios guardados.',
+      text: 'Se sobreescribirán los datos guardados en el servidor.',
       icon: 'warning', showCancelButton: true,
       confirmButtonColor: '#E74C3C', cancelButtonColor: '#6C4FBF',
       confirmButtonText: 'Sí, restaurar', cancelButtonText: 'Cancelar',
     });
     if (!r.isConfirmed) return;
-    localStorage.removeItem(PARAMS_KEY);
     setParams({ ...DEFAULTS });
-    setSaved(false); setDirty(false);
-    setNotification({ message: 'Parámetros restaurados a los valores predeterminados.', type: 'success' });
+    setDirty(true);
+    setSaved(false);
+    
   };
 
   const TABS = [
-    { id:'institucion', label:'Institución',   icon:<Building2 size={15}/> },
-    { id:'contacto',    label:'Contacto',       icon:<Phone size={15}/> },
-    { id:'landing',     label:'Textos Landing', icon:<Globe size={15}/> },
-    { id:'estadisticas',label:'Estadísticas',   icon:<Settings size={15}/> },
-    { id:'faq',         label:'FAQ',            icon:<Info size={15}/> },
-    { id:'colores',     label:'Colores',        icon:<Image size={15}/> },
+    { id:'institucion',  label:'Institución',    icon:<Building2 size={15}/> },
+    { id:'contacto',     label:'Contacto',        icon:<Phone size={15}/> },
+    { id:'landing',      label:'Textos Landing',  icon:<Globe size={15}/> },
+    { id:'estadisticas', label:'Estadísticas',    icon:<Settings size={15}/> },
+    { id:'faq',          label:'FAQ',             icon:<Info size={15}/> },
+    { id:'colores',      label:'Colores',         icon:<Image size={15}/> },
   ];
+
+  if (loadingInit) return (
+    <div className="pm-wrap"><style>{CSS}</style>
+      <div className="pm-loading">
+        <Loader size={36} className="spin" color="#6C4FBF"/>
+        <span>Cargando parámetros del sistema...</span>
+      </div>
+    </div>
+  );
 
   return (
     <div className="pm-wrap">
@@ -221,10 +313,10 @@ export default function Parametros() {
               </motion.span>
               Parámetros del Sistema
             </div>
-            <div style={{display:'flex',gap:10}}>
+            <div style={{display:'flex',gap:10,alignItems:'center'}}>
               {saved && (
                 <motion.span className="pm-saved-badge" initial={{opacity:0,scale:.8}} animate={{opacity:1,scale:1}}>
-                  <CheckCircle size={14}/> Guardado
+                  <CheckCircle size={14}/> Guardado en servidor
                 </motion.span>
               )}
               <button className="pm-btn" style={{background:'rgba(255,255,255,.18)',color:'#fff',border:'1px solid rgba(255,255,255,.3)'}}
@@ -234,7 +326,7 @@ export default function Parametros() {
               </button>
             </div>
           </div>
-          <p className="pm-sub">Configura los datos institucionales que se muestran en la landing page y el sistema.</p>
+          <p className="pm-sub">Configura los datos institucionales guardados en el servidor. La landing page los lee automáticamente.</p>
         </div>
       </motion.div>
 
@@ -249,11 +341,10 @@ export default function Parametros() {
 
       {/* Body */}
       <div className="pm-body">
-
         {dirty && (
           <div className="pm-warn-box">
             <AlertTriangle size={16} style={{flexShrink:0,marginTop:1}}/>
-            Tienes cambios sin guardar. Haz clic en "Guardar Cambios" para aplicarlos en la landing page.
+            Tienes cambios sin guardar. Haz clic en "Guardar Cambios" para persistirlos en el servidor.
           </div>
         )}
 
@@ -264,10 +355,7 @@ export default function Parametros() {
             {/* ══ Institución ══ */}
             {tab==='institucion' && (
               <>
-                <div className="pm-info-box">
-                  <Info size={15} style={{flexShrink:0,marginTop:1}}/>
-                  Estos datos aparecen en el encabezado, hero y footer de la landing page.
-                </div>
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Estos datos aparecen en el encabezado, hero y footer de la landing page.</div>
                 <Sec icon={<Building2 size={18}/>} title="Datos de la Institución" desc="Información principal que se muestra en toda la plataforma">
                   <div className="pm-grid">
                     <Field label="Nombre de la Institución">
@@ -277,12 +365,11 @@ export default function Parametros() {
                       <input className="pm-input" value={params.siglas} onChange={e=>set('siglas',e.target.value)}/>
                     </Field>
                     <Field label="Slogan del Sistema" full>
-                      <input className="pm-input" value={params.slogan} onChange={e=>set('slogan',e.target.value)} placeholder="Sistema Integrado Administrativo Musical"/>
+                      <input className="pm-input" value={params.slogan} onChange={e=>set('slogan',e.target.value)}/>
                     </Field>
                   </div>
                 </Sec>
-
-                <Sec icon={<User size={18}/>} title="Dirección / Autoridad" desc="Nombre del director/a y su cargo oficial">
+                <Sec icon={<User size={18}/>} title="Dirección / Autoridad">
                   <div className="pm-grid">
                     <Field label="Nombre del Director/a">
                       <input className="pm-input" value={params.directora} onChange={e=>set('directora',e.target.value)}/>
@@ -292,16 +379,11 @@ export default function Parametros() {
                     </Field>
                   </div>
                 </Sec>
-
                 <Sec icon={<Music size={18}/>} title="Desarrollado por">
-                  <div className="pm-grid">
-                    <Field label="Créditos del desarrollo" full>
-                      <input className="pm-input" value={params.desarrollado_por} onChange={e=>set('desarrollado_por',e.target.value)}/>
-                    </Field>
-                  </div>
+                  <Field label="Créditos del desarrollo" full>
+                    <input className="pm-input" value={params.desarrollado_por} onChange={e=>set('desarrollado_por',e.target.value)}/>
+                  </Field>
                 </Sec>
-
-                {/* Preview */}
                 {showPreview && (
                   <div className="pm-preview-box" style={{marginTop:16}}>
                     <div className="pm-preview-title"><Eye size={13}/> Preview — Barra de navegación</div>
@@ -314,9 +396,6 @@ export default function Parametros() {
                       <div className="pm-preview-content">
                         <div className="pm-preview-h1">{params.siglas} — {params.slogan}</div>
                         <div className="pm-preview-p">{params.nombre_institucion}</div>
-                        <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid #E0D9F5',fontSize:'.76rem',color:'#7A6FA0'}}>
-                          Testimonio: <em>"{params.testimonio}"</em> — <strong>{params.directora}</strong>, {params.cargo_directora}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -327,19 +406,16 @@ export default function Parametros() {
             {/* ══ Contacto ══ */}
             {tab==='contacto' && (
               <>
-                <div className="pm-info-box">
-                  <Info size={15} style={{flexShrink:0,marginTop:1}}/>
-                  Esta información aparece en la sección "Contacto" de la landing page.
-                </div>
-                <Sec icon={<Phone size={18}/>} title="Información de Contacto" desc="Datos visibles en la sección de contacto de la landing">
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Esta información aparece en la sección "Contacto" de la landing page.</div>
+                <Sec icon={<Phone size={18}/>} title="Información de Contacto">
                   <div className="pm-grid">
-                    <Field label={<><Phone size={12}/> Teléfono</>}>
+                    <Field label="Teléfono">
                       <input className="pm-input" value={params.telefono} onChange={e=>set('telefono',e.target.value)} placeholder="+504 0000-0000"/>
                     </Field>
-                    <Field label={<><Mail size={12}/> Correo Electrónico</>}>
+                    <Field label="Correo Electrónico">
                       <input className="pm-input" type="email" value={params.correo} onChange={e=>set('correo',e.target.value)}/>
                     </Field>
-                    <Field label={<><MapPin size={12}/> Dirección Completa</>} full>
+                    <Field label="Dirección Completa" full>
                       <textarea className="pm-textarea" value={params.direccion} onChange={e=>set('direccion',e.target.value)} rows={3}/>
                     </Field>
                     <Field label="Ciudad / País">
@@ -347,22 +423,18 @@ export default function Parametros() {
                     </Field>
                   </div>
                 </Sec>
-
-                <Sec icon={<MapPin size={18}/>} title="Mapa Integrado (Google Maps)" desc="URL del embed de Google Maps para mostrar la ubicación">
+                <Sec icon={<MapPin size={18}/>} title="Mapa Integrado (Google Maps)">
                   <div className="pm-field">
                     <label className="pm-label">URL de embed de Google Maps</label>
                     <textarea className="pm-textarea" rows={3} value={params.mapa_embed_url} onChange={e=>set('mapa_embed_url',e.target.value)}/>
-                    <span className="pm-hint">
-                      Para obtener la URL: Google Maps → tu ubicación → Compartir → Insertar mapa → copia la URL del src="..."
-                    </span>
+                    <span className="pm-hint">Google Maps → tu ubicación → Compartir → Insertar mapa → copia la URL del src="..."</span>
                   </div>
                   {params.mapa_embed_url && (
                     <div style={{marginTop:14,borderRadius:10,overflow:'hidden',border:'2px solid #E0D9F5'}}>
-                      <iframe title="preview-mapa" src={params.mapa_embed_url} width="100%" height="220" style={{border:0,display:'block'}} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/>
+                      <iframe title="preview-mapa" src={params.mapa_embed_url} width="100%" height="220" style={{border:0,display:'block'}} loading="lazy"/>
                     </div>
                   )}
                 </Sec>
-
                 {showPreview && (
                   <div className="pm-preview-box">
                     <div className="pm-preview-title"><Eye size={13}/> Preview — Sección Contacto</div>
@@ -379,19 +451,14 @@ export default function Parametros() {
             {/* ══ Textos Landing ══ */}
             {tab==='landing' && (
               <>
-                <div className="pm-info-box">
-                  <Info size={15} style={{flexShrink:0,marginTop:1}}/>
-                  Estos textos aparecen en el hero y sección de testimonios de la landing page.
-                </div>
-                <Sec icon={<Globe size={18}/>} title="Sección Hero (portada)" desc="Título principal y subtítulo del hero">
-                  <div className="pm-grid">
-                    <Field label="Descripción principal del Hero" full>
-                      <textarea className="pm-textarea" rows={3} value={params.descripcion_hero} onChange={e=>set('descripcion_hero',e.target.value)}/>
-                      <span className="pm-hint">Se muestra debajo del título S.I.A.M. en la portada.</span>
-                    </Field>
-                  </div>
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Estos textos aparecen en el hero y sección de testimonios de la landing page.</div>
+                <Sec icon={<Globe size={18}/>} title="Sección Hero (portada)">
+                  <Field label="Descripción principal del Hero" full>
+                    <textarea className="pm-textarea" rows={3} value={params.descripcion_hero} onChange={e=>set('descripcion_hero',e.target.value)}/>
+                    <span className="pm-hint">Se muestra debajo del título S.I.A.M. en la portada.</span>
+                  </Field>
                 </Sec>
-                <Sec icon={<User size={18}/>} title="Sección Testimonios" desc="Cita y autor del testimonio institucional">
+                <Sec icon={<User size={18}/>} title="Sección Testimonios">
                   <div className="pm-grid">
                     <Field label="Texto del Testimonio" full>
                       <textarea className="pm-textarea" rows={3} value={params.testimonio} onChange={e=>set('testimonio',e.target.value)}/>
@@ -410,16 +477,13 @@ export default function Parametros() {
             {/* ══ Estadísticas ══ */}
             {tab==='estadisticas' && (
               <>
-                <div className="pm-info-box">
-                  <Info size={15} style={{flexShrink:0,marginTop:1}}/>
-                  Estos números aparecen animados en la sección "Beneficios Institucionales" de la landing.
-                </div>
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Estos números aparecen animados en la sección "Beneficios Institucionales" de la landing.</div>
                 <Sec icon={<Settings size={18}/>} title="Estadísticas Animadas" desc="Los valores se animan al hacer scroll en la landing">
                   <div className="pm-stat-grid">
                     {[
                       { key:'stat_eficiencia', label:'Eficiencia en tareas administrativas', suffix:'%' },
                       { key:'stat_reduccion',  label:'Reducción de errores en procesos',     suffix:'%' },
-                      { key:'stat_acceso',     label:'Acceso centralizado (horas)',           suffix:'/7 → se muestra como 24/7' },
+                      { key:'stat_acceso',     label:'Acceso centralizado (horas)',           suffix:'/7' },
                       { key:'stat_estudiantes',label:'Estudiantes beneficiados',              suffix:'+' },
                     ].map(s=>(
                       <div key={s.key} className="pm-stat-card">
@@ -440,10 +504,7 @@ export default function Parametros() {
             {/* ══ FAQ ══ */}
             {tab==='faq' && (
               <>
-                <div className="pm-info-box">
-                  <Info size={15} style={{flexShrink:0,marginTop:1}}/>
-                  Las preguntas frecuentes se muestran en la sección FAQ de la landing. Puedes agregar, editar o eliminar preguntas.
-                </div>
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Las preguntas frecuentes se muestran en la sección FAQ de la landing.</div>
                 <Sec icon={<Info size={18}/>} title="Preguntas Frecuentes" desc={`${params.faq.length} pregunta(s) configurada(s)`}>
                   {params.faq.map((item,i)=>(
                     <div key={i} className="pm-faq-item">
@@ -451,17 +512,15 @@ export default function Parametros() {
                       <div className="pm-faq-q">Pregunta {i+1}</div>
                       <div className="pm-field" style={{marginBottom:8}}>
                         <label className="pm-label">Pregunta</label>
-                        <input className="pm-input" value={item.question} onChange={e=>setFaq(i,'question',e.target.value)} placeholder="¿Cuál es la pregunta?"/>
+                        <input className="pm-input" value={item.question} onChange={e=>setFaq(i,'question',e.target.value)}/>
                       </div>
                       <div className="pm-field">
                         <label className="pm-label">Respuesta</label>
-                        <textarea className="pm-textarea" rows={3} value={item.answer} onChange={e=>setFaq(i,'answer',e.target.value)} placeholder="Escriba la respuesta aquí..."/>
+                        <textarea className="pm-textarea" rows={3} value={item.answer} onChange={e=>setFaq(i,'answer',e.target.value)}/>
                       </div>
                     </div>
                   ))}
-                  <div className="pm-faq-add" onClick={addFaq}>
-                    + Agregar nueva pregunta
-                  </div>
+                  <div className="pm-faq-add" onClick={addFaq}>+ Agregar nueva pregunta</div>
                 </Sec>
               </>
             )}
@@ -469,12 +528,8 @@ export default function Parametros() {
             {/* ══ Colores ══ */}
             {tab==='colores' && (
               <>
-                <div className="pm-info-box">
-                  <Info size={15} style={{flexShrink:0,marginTop:1}}/>
-                  Los colores se aplican en el gradiente del header, tabs y botones de toda la plataforma.
-                  <br/><strong>Nota:</strong> El cambio de colores requiere recargar la página para verse en toda la app.
-                </div>
-                <Sec icon={<Image size={18}/>} title="Colores Institucionales" desc="Paleta de color principal del sistema">
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Los colores se aplican en el gradiente del header, tabs y botones de toda la plataforma.</div>
+                <Sec icon={<Image size={18}/>} title="Colores Institucionales">
                   <div className="pm-grid">
                     {[
                       { key:'color_primario',   label:'Color Primario (gradiente inicio)' },
@@ -493,8 +548,6 @@ export default function Parametros() {
                       </div>
                     ))}
                   </div>
-
-                  {/* Preview del gradiente */}
                   <div style={{marginTop:18,borderRadius:12,overflow:'hidden',border:'1px solid #E0D9F5'}}>
                     <div style={{background:`linear-gradient(135deg,${params.color_primario},${params.color_secundario})`,padding:'18px 24px',color:'#fff',fontFamily:'Poppins,sans-serif',fontWeight:800,fontSize:'1rem',display:'flex',alignItems:'center',gap:10}}>
                       <Music size={18}/> {params.siglas} — Vista previa del gradiente
@@ -510,16 +563,16 @@ export default function Parametros() {
 
       {/* Barra de acciones fija */}
       <div className="pm-action-bar">
-        <button className="pm-btn pm-primary" onClick={handleSave}>
-          <Save size={16}/> Guardar Cambios
+        <button className="pm-btn pm-primary" onClick={handleSave} disabled={saving}>
+          {saving ? <><Loader size={15} className="spin"/> Guardando...</> : <><Save size={16}/> Guardar Cambios</>}
         </button>
-        <button className="pm-btn pm-ghost" onClick={handleReset}>
+        <button className="pm-btn pm-ghost" onClick={handleReset} disabled={saving}>
           <RotateCcw size={15}/> Restaurar predeterminados
         </button>
-        {dirty && <span style={{fontSize:'.82rem',color:'#b45309',fontWeight:700}}>⚠ Cambios sin guardar</span>}
+        {dirty && !saving && <span style={{fontSize:'.82rem',color:'#b45309',fontWeight:700}}>⚠ Cambios sin guardar</span>}
         {saved && (
           <motion.span className="pm-saved-badge" initial={{opacity:0}} animate={{opacity:1}}>
-            <CheckCircle size={13}/> Guardado — la landing se actualiza automáticamente
+            <CheckCircle size={13}/> Guardado en MongoDB
           </motion.span>
         )}
       </div>

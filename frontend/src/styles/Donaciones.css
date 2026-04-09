@@ -448,7 +448,7 @@
   white-space: nowrap;
 }
 .dn-tab-btn:hover { color: #6C4FBF; }
-.dn-tab-btn.active { color: white; border-bottom-color: #6C4FBF; font-weight: 600; }
+.dn-tab-btn.active { color: #ffffff; border-bottom-color: #6C4FBF; font-weight: 600; }
 
 /* ── Pestaña con error: punto rojo estilo notificación ── */
 .dn-tab-btn {
