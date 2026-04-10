@@ -11,6 +11,7 @@ import {
 import ModalCrearActividad from '../../screens/Models/Actividades/ModalCrearActividad';
 import ModalDetalleActividad from '../../screens/Models/Actividades/ModalDetalleActividad';
 import "../../styles/Models/Calendario.css";
+import Notification from "../Notification";
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/actividades";
 
@@ -54,6 +55,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const [tooltip, setTooltip] = useState({ visible: false, x: 0, y: 0, content: null });
   const [modal, setModal] = useState({ visible: false, content: null, tipo: null });
   const [modalCrear, setModalCrear] = useState({ visible: false, fechaInicial: null });
+  
 
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -66,6 +68,37 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const [coloresFiltrados, setColoresFiltrados] = useState(Object.keys(COLORES_EVENTO).reduce((a, k) => ({ ...a, [k]: true }), {}));
   const [busquedaLista, setBusquedaLista] = useState('');
 
+
+  const [notification, setNotification] = useState({
+  visible: false,
+  message: '',
+  type: 'error'
+});
+const existeConflictoHora = (fechaNueva, idActual = null) => {
+  const nueva = new Date(fechaNueva);
+
+  return eventosRaw.some(e => {
+    if (idActual && e._id === idActual) return false;
+
+    const existente = new Date(e.fecha);
+
+    return (
+      nueva.getFullYear() === existente.getFullYear() &&
+      nueva.getMonth() === existente.getMonth() &&
+      nueva.getDate() === existente.getDate() &&
+      nueva.getHours() === existente.getHours() &&
+      nueva.getMinutes() === existente.getMinutes()
+    );
+  });
+};
+
+const mostrarNotificacion = (message, type = "error") => {
+  setNotification({
+    visible: true,
+    message,
+    type
+  });
+};
   const dropdownRef = useRef(null);
 
   // ===== LÓGICA DE API (SIN HEADER USUARIO PARA EVITAR CORS) =====
@@ -82,25 +115,50 @@ const CalendarioActividades = forwardRef((props, ref) => {
     } catch (err) { console.error("Error al cargar:", err); }
   };
 
-  const handleCrearDesdeCalendario = async (nuevaActividad) => {
-    try {
-      const user = auth.currentUser;
-      const token = await user.getIdToken();
-      const payload = { ...nuevaActividad, usuario: user.uid };
-      await axios.post(API_URL, payload, { headers: { Authorization: `Bearer ${token}` } });
-      setModalCrear({ visible: false, fechaInicial: null });
-      cargarActividades();
-    } catch (err) { alert("Error al guardar"); }
-  };
+ const handleCrearDesdeCalendario = async (nuevaActividad) => {
+  try {
+    // 🔴 VALIDACIÓN
+    if (existeConflictoHora(nuevaActividad.fecha)) {
+  mostrarNotificacion("Ya existe una actividad en esa fecha y hora");
+  return;
+}
 
+    const user = auth.currentUser;
+    const token = await user.getIdToken();
+    const payload = { ...nuevaActividad, usuario: user.uid };
+
+    await axios.post(API_URL, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    setModalCrear({ visible: false, fechaInicial: null });
+    cargarActividades();
+
+  } catch (err) {
+    alert("Error al guardar");
+  }
+};
   const handleActualizarActividad = async (datos) => {
-    try {
-      const token = await auth.currentUser.getIdToken();
-      await axios.put(`${API_URL}/${datos._id}`, datos, { headers: { Authorization: `Bearer ${token}` } });
-      cerrarModal();
-      cargarActividades();
-    } catch (err) { alert("Error al actualizar"); }
-  };
+  try {
+    // 🔴 VALIDACIÓN
+    if (existeConflictoHora(datos.fecha, datos._id)) {
+  mostrarNotificacion("Ya existe otra actividad en esa misma hora");
+  return;
+}
+
+    const token = await auth.currentUser.getIdToken();
+
+    await axios.put(`${API_URL}/${datos._id}`, datos, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    cerrarModal();
+    cargarActividades();
+
+  } catch (err) {
+    alert("Error al actualizar");
+  }
+};
 
   const handleEliminarActividad = async (id) => {
     if (!window.confirm("¿Eliminar actividad?")) return;
@@ -248,7 +306,13 @@ const CalendarioActividades = forwardRef((props, ref) => {
   // ===== RENDER PRINCIPAL =====
   return (
     <div style={{ background: '#f8f9fe', minHeight: '100vh', padding: 20 }}>
-      
+      {notification.visible && (
+  <Notification
+    message={notification.message}
+    type={notification.type}
+    onClose={() => setNotification({ ...notification, visible: false })}
+  />
+)}
       {/* BARRA DE NAVEGACIÓN PERSONALIZADA (Estilos de la versión antigua) */}
       <div style={{
         background: 'white', padding: '15px 20px', borderRadius: 12,
@@ -471,6 +535,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
         </div>
       )}
     </div>
+  
   );
 });
 
