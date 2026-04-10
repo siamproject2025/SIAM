@@ -69,13 +69,11 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const dropdownRef = useRef(null);
 
   // ===== LÓGICA DE API (SIN HEADER USUARIO PARA EVITAR CORS) =====
-
   const cargarActividades = async () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
       const token = await user.getIdToken();
-      // FIX: SOLO Authorization, sin 'usuario'
       const res = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       const actividades = res.data || [];
       const normalizadas = actividades.map(a => ({ ...a, color: a.color || getColorPorDefecto(a.nombre) }));
@@ -115,7 +113,6 @@ const CalendarioActividades = forwardRef((props, ref) => {
   };
 
   // ===== FUNCIONES DE NAVEGACIÓN Y SOPORTE =====
-
   const actualizarProximosEventos = (todos) => {
     const hoy = new Date();
     const futuros = todos.filter(e => new Date(e.fecha) >= hoy).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
@@ -154,9 +151,10 @@ const CalendarioActividades = forwardRef((props, ref) => {
   };
 
   const handleSeleccionarMes = (idx) => { setCurrentMonth(idx); setMesDropdownOpen(false); };
+  
   const handleConfirmarAno = () => {
-    const n = parseInt(anoInputValue);
-    if (n > 1900 && n < 2100) { setCurrentYear(n); setAnoEditando(false); }
+    const n = parseInt(anoInputValue, 10);
+    if (!isNaN(n) && n > 1900 && n < 2100) { setCurrentYear(n); setAnoEditando(false); }
   };
 
   const handleEventoClick = (e) => setModal({ visible: true, content: e, tipo: 'editar' });
@@ -177,8 +175,17 @@ const CalendarioActividades = forwardRef((props, ref) => {
   useImperativeHandle(ref, () => ({ cargarActividades }));
   useEffect(() => { cargarActividades(); }, []);
 
-  // ===== RENDERIZADOS DE VISTAS (RESTABLECIDOS) =====
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setMesDropdownOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
+  // ===== RENDERIZADOS DE VISTAS =====
   const renderVistaMonth = () => {
     const dias = getDiasDelMes(currentYear, currentMonth);
     const primerDia = getPrimerDiaDelMes(currentYear, currentMonth);
@@ -241,52 +248,210 @@ const CalendarioActividades = forwardRef((props, ref) => {
   // ===== RENDER PRINCIPAL =====
   return (
     <div style={{ background: '#f8f9fe', minHeight: '100vh', padding: 20 }}>
-      {/* TOOLBAR COMPLETO */}
-      <div style={{ background: 'white', padding: '15px 20px', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
+      
+      {/* BARRA DE NAVEGACIÓN PERSONALIZADA (Estilos de la versión antigua) */}
+      <div style={{
+        background: 'white', padding: '15px 20px', borderRadius: 12,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)', marginBottom: 20, display: 'flex',
+        alignItems: 'center', gap: 15, flexWrap: 'wrap'
+      }}>
+        
+        {/* Botones de navegación anterior/siguiente */}
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={navegarAnterior} className="btn-nav"><ChevronLeft size={18} /></button>
-          <button onClick={navegarSiguiente} className="btn-nav"><ChevronRight size={18} /></button>
-          <button onClick={irAHoy} className="btn-hoy">Hoy</button>
+          <button
+            onClick={navegarAnterior}
+            style={{
+              background: '#6C4FBF', color: 'white', border: 'none', borderRadius: 6,
+              padding: '8px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#4B3090'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#6C4FBF'}
+            title="Anterior"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            onClick={navegarSiguiente}
+            style={{
+              background: '#6C4FBF', color: 'white', border: 'none', borderRadius: 6,
+              padding: '8px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#4B3090'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#6C4FBF'}
+            title="Siguiente"
+          >
+            <ChevronRight size={18} />
+          </button>
+          <button
+            onClick={irAHoy}
+            style={{
+              background: '#f0f0f0', color: '#6C4FBF', border: '1px solid #ddd', borderRadius: 6,
+              padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#e0dcf5'; e.currentTarget.style.color = '#4B3090'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#f0f0f0'; e.currentTarget.style.color = '#6C4FBF'; }}
+            title="Hoy"
+          >
+            Hoy
+          </button>
         </div>
 
         <div style={{ width: 1, height: 28, background: '#e0e0e0' }}></div>
 
+        {/* Selector de mes (dropdown) */}
         <div ref={dropdownRef} style={{ position: 'relative' }}>
-          <button onClick={() => setMesDropdownOpen(!mesDropdownOpen)} className="btn-selector">{MESES_NOMBRES[currentMonth]}</button>
+          <button
+            onClick={() => setMesDropdownOpen(!mesDropdownOpen)}
+            style={{
+              background: 'white', color: '#2b3674', border: '1.5px solid #E0D9F5', borderRadius: 6,
+              padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#f8f7ff'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+          >
+            {MESES_NOMBRES[currentMonth]}
+          </button>
           {mesDropdownOpen && (
-            <div className="dropdown-meses">
+            <div style={{
+              position: 'absolute', top: '100%', left: 0, background: 'white', border: '1.5px solid #E0D9F5',
+              borderRadius: 8, marginTop: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.12)', zIndex: 1000, minWidth: 150
+            }}>
               {MESES_NOMBRES.map((mes, idx) => (
-                <div key={mes} onClick={() => handleSeleccionarMes(idx)} className="dropdown-item">{mes}</div>
+                <button
+                  key={mes}
+                  onClick={() => handleSeleccionarMes(idx)}
+                  style={{
+                    display: 'block', width: '100%', padding: '10px 14px', border: 'none',
+                    background: idx === currentMonth ? '#f0f0f0' : 'transparent',
+                    color: idx === currentMonth ? '#6C4FBF' : '#666',
+                    fontWeight: idx === currentMonth ? 700 : 500,
+                    fontSize: '0.9rem', cursor: 'pointer', textAlign: 'left', transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={(e) => { if (idx !== currentMonth) e.currentTarget.style.background = '#f8f7ff'; }}
+                  onMouseLeave={(e) => { if (idx !== currentMonth) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {mes}
+                </button>
               ))}
             </div>
           )}
         </div>
 
-        <button onClick={() => setAnoEditando(true)} className="btn-selector">
-          {anoEditando ? <input value={anoInputValue} onChange={e => setAnoInputValue(e.target.value)} onBlur={handleConfirmarAno} autoFocus className="input-ano" /> : currentYear}
-        </button>
+        {/* Selector de año (input) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {anoEditando ? (
+            <>
+              <input
+                type="number"
+                value={anoInputValue}
+                onChange={(e) => setAnoInputValue(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleConfirmarAno()}
+                style={{
+                  width: 70, padding: '8px 6px', border: '1.5px solid #E0D9F5',
+                  borderRadius: 6, fontSize: '0.9rem', textAlign: 'center'
+                }}
+                autoFocus
+              />
+              <button
+                onClick={handleConfirmarAno}
+                style={{ background: '#6C4FBF', color: 'white', border: 'none', borderRadius: 4, padding: '6px 8px', cursor: 'pointer', fontSize: '0.8rem' }}
+              >
+                ✓
+              </button>
+              <button
+                onClick={() => { setAnoEditando(false); setAnoInputValue(currentYear.toString()); }}
+                style={{ background: '#f0f0f0', color: '#999', border: 'none', borderRadius: 4, padding: '6px 8px', cursor: 'pointer', fontSize: '0.8rem' }}
+              >
+                ✕
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setAnoEditando(true)}
+              style={{
+                background: 'white', color: '#2b3674', border: '1.5px solid #E0D9F5', borderRadius: 6,
+                padding: '8px 12px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', transition: 'all 0.2s', minWidth: 60
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f8f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+            >
+              {currentYear}
+            </button>
+          )}
+        </div>
 
-        <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-          {['mes', 'semana', 'dia', 'ano', 'lista'].map(v => (
-            <button key={v} onClick={() => setCurrentView(v)} className={`btn-view ${currentView === v ? 'active' : ''}`}>{v}</button>
+        <div style={{ width: 1, height: 28, background: '#e0e0e0' }}></div>
+
+        {/* Botones de vista */}
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[
+            { id: 'mes', label: 'Mes', icon: <Grid3X3 size={16} /> },
+            { id: 'semana', label: 'Semana', icon: <List size={16} /> },
+            { id: 'dia', label: 'Día', icon: <Calendar size={16} /> },
+            { id: 'ano', label: 'Año', icon: <Grid3X3 size={16} /> },
+            { id: 'lista', label: 'Lista', icon: <List size={16} /> }
+          ].map(view => (
+            <button
+              key={view.id}
+              onClick={() => setCurrentView(view.id)}
+              style={{
+                background: currentView === view.id ? '#6C4FBF' : '#f0f0f0',
+                color: currentView === view.id ? 'white' : '#666',
+                border: 'none', borderRadius: 6, padding: '8px 10px', cursor: 'pointer',
+                fontSize: '0.8rem', fontWeight: currentView === view.id ? 600 : 500,
+                display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                if (currentView !== view.id) {
+                  e.currentTarget.style.background = '#e0dcf5';
+                  e.currentTarget.style.color = '#4B3090';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currentView !== view.id) {
+                  e.currentTarget.style.background = '#f0f0f0';
+                  e.currentTarget.style.color = '#666';
+                }
+              }}
+              title={view.label}
+            >
+              {view.icon}
+              <span style={{ display: '@media (max-width: 600px)' ? 'none' : 'inline' }}>{view.label}</span>
+            </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 10 }}>
+        <div style={{ width: 1, height: 28, background: '#e0e0e0' }}></div>
+
+        {/* Filtros de colores */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: '0.8rem', color: '#999', fontWeight: 500 }}>Filtros:</span>
           {Object.entries(COLORES_EVENTO).map(([key, color]) => (
-            <button key={key} onClick={() => setColoresFiltrados({...coloresFiltrados, [key]: !coloresFiltrados[key]})}
-              style={{ width: 20, height: 20, borderRadius: '50%', background: color.hex, border: coloresFiltrados[key] ? '2.5px solid #333' : '1px solid #ddd', cursor: 'pointer', opacity: coloresFiltrados[key] ? 1 : 0.3 }}
+            <button
+              key={key}
+              onClick={() => setColoresFiltrados({ ...coloresFiltrados, [key]: !coloresFiltrados[key] })}
+              style={{
+                width: 24, height: 24, borderRadius: '50%', background: color.hex,
+                border: coloresFiltrados[key] ? '3px solid #333' : '2px solid #ddd',
+                cursor: 'pointer', opacity: coloresFiltrados[key] ? 1 : 0.4, transition: 'all 0.2s'
+              }}
+              title={color.nombre}
             />
           ))}
         </div>
+
+        <div style={{ marginLeft: 'auto' }}>
+          <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 600 }}>
+            {MESES_NOMBRES[currentMonth]} {currentYear}
+          </span>
+        </div>
       </div>
 
-      {/* CONTENIDO */}
+      {/* CONTENIDO DE VISTAS */}
       <div style={{ background: 'white', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
         {currentView === 'mes' && renderVistaMonth()}
         {currentView === 'ano' && renderVistaYear()}
         {currentView === 'lista' && renderVistaLista()}
-        {/* Renderiza un placeholder para Semana/Día si no quieres el código gigante, pero la estructura está lista */}
         {(currentView === 'semana' || currentView === 'dia') && <div style={{ padding: 40, textAlign: 'center' }}>Vista {currentView} en mantenimiento</div>}
       </div>
 
