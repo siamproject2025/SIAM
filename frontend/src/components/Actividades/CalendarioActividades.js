@@ -68,6 +68,21 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const [coloresFiltrados, setColoresFiltrados] = useState(Object.keys(COLORES_EVENTO).reduce((a, k) => ({ ...a, [k]: true }), {}));
   const [busquedaLista, setBusquedaLista] = useState('');
 
+  const [confirmacion, setConfirmacion] = useState({
+  visible: false,
+  message: "",
+  onConfirm: null
+});
+
+const mostrarConfirmacion = (message, onConfirm) => {
+  setConfirmacion({
+    visible: true,
+    message,
+    onConfirm
+  });
+};
+
+  
 
   const [notification, setNotification] = useState({
   visible: false,
@@ -159,17 +174,24 @@ const mostrarNotificacion = (message, type = "error") => {
     alert("Error al actualizar");
   }
 };
-
-  const handleEliminarActividad = async (id) => {
-    if (!window.confirm("¿Eliminar actividad?")) return;
+const handleEliminarActividad = (id) => {
+  mostrarConfirmacion("¿Seguro que deseas eliminar esta actividad?", async () => {
     try {
       const token = await auth.currentUser.getIdToken();
-      await axios.delete(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      cerrarModal();
-      cargarActividades();
-    } catch (err) { alert("Error al eliminar"); }
-  };
 
+      await axios.delete(`${API_URL}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      cerrarModal(); // 👈 cerrar el modal de detalle
+      cargarActividades();
+      mostrarNotificacion("Actividad eliminada correctamente", "success");
+
+    } catch (err) {
+      mostrarNotificacion("Error al eliminar", "error");
+    }
+  });
+};
   // ===== FUNCIONES DE NAVEGACIÓN Y SOPORTE =====
   const actualizarProximosEventos = (todos) => {
     const hoy = new Date();
@@ -519,6 +541,7 @@ const mostrarNotificacion = (message, type = "error") => {
         {(currentView === 'semana' || currentView === 'dia') && <div style={{ padding: 40, textAlign: 'center' }}>Vista {currentView} en mantenimiento</div>}
       </div>
 
+          
       {/* MODALES */}
       {modal.visible && (
         <ModalDetalleActividad actividad={modal.content} onClose={cerrarModal} onUpdate={handleActualizarActividad} onDelete={() => handleEliminarActividad(modal.content._id)} />
@@ -534,6 +557,21 @@ const mostrarNotificacion = (message, type = "error") => {
           <div>{tooltip.content.lugar}</div>
         </div>
       )}
+      {/* MODAL DE CONFIRMACION */}
+      {confirmacion.visible && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div style={{ background: 'white', padding: 20, borderRadius: 8, textAlign: 'center' }}>
+            <p>{confirmacion.message}</p>
+            <button onClick={() => { confirmacion.onConfirm(); setConfirmacion({ visible: false, message: "", onConfirm: null }); }} style={{ background: '#6C4FBF', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 6, cursor: 'pointer' }}>
+              Confirmar
+            </button>
+            <button onClick={() => setConfirmacion({ visible: false, message: "", onConfirm: null })} style={{ background: '#f0f0f0', color: '#666', border: 'none', padding: '8px 16px', borderRadius: 6, cursor: 'pointer', marginLeft: 10 }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   
   );
