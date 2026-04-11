@@ -140,6 +140,15 @@ const Bienes = () => {
     cargarCategorias();
   }, []);
 
+  const getLocalDate = (utcDate) => {
+  if (!utcDate) return "";
+  const date = new Date(utcDate);
+  // Ajustar a GMT-6 (Honduras)
+  const offsetMs = -6 * 60 * 60 * 1000;
+  const localDate = new Date(date.getTime() + offsetMs);
+  return localDate.toISOString().split('T')[0];
+};
+
   // Cierre de dropdowns al click fuera
   useEffect(() => {
     const fn = (e) => {

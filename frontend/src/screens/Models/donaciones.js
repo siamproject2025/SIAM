@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import "..//..//styles/Donaciones.css"
 import { auth } from "..//../components/authentication/Auth";
+import { loadingController } from "../../api/loadingController";
 import {
   Heart, Music, Music2, BookOpen, Video,
   Apple, Shirt, Pill, Armchair, Wine, Book, Droplet, Package,
@@ -144,9 +145,25 @@ const Donaciones = () => {
     return user.getIdToken();
   };
 
+  
+ const getLocalDate = (utcDate) => {
+  if (!utcDate) return "";
+  const date = new Date(utcDate);
+  // Ajustar a GMT-6 (Honduras)
+  const offsetMs = -6 * 60 * 60 * 1000;
+  const localDate = new Date(date.getTime() + offsetMs);
+  
+  // Formato dd/mm/yyyy
+  const day = String(localDate.getUTCDate()).padStart(2, "0");
+  const month = String(localDate.getUTCMonth() + 1).padStart(2, "0");
+  const year = localDate.getUTCFullYear();
+  
+  return `${day}/${month}/${year}`;
+};
   const cargarDonaciones = async () => {
     try {
       const token = await getToken();
+       loadingController.start();
       const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Error al cargar donaciones');
       const result = await res.json();
@@ -155,7 +172,7 @@ const Donaciones = () => {
       console.error(err);
       mostrarNotificacion('Error al cargar las donaciones', 'error');
       setDonaciones([]);
-    }
+    } finally { loadingController.stop(); }
   };
 
   const mostrarNotificacion = (mensaje, tipo = 'success') => {
@@ -384,16 +401,34 @@ const Donaciones = () => {
   const getColorAlmacen  = (id) => ({1:'#e74c3c',2:'#27ae60',3:'#2980b9',4:'#f39c12',5:'#8e44ad'}[id]||'#95a5a6');
 
   // ── Filtrado ───────────────────────────────────────────────────────────────
-  const donacionesFiltradas = donaciones.filter(d => {
-    const q      = busqueda.toLowerCase();
-    const matchQ = !q || d.tipo_donacion?.toLowerCase().includes(q) || d.descripcion?.toLowerCase().includes(q) || getNombreAlmacen(d.id_almacen).toLowerCase().includes(q);
-    const matchE = filtroEstado === 'Todos' || d.estado === filtroEstado;
-    const fech   = d.fecha ? new Date(d.fecha) : null;
-    const matchD = !fechaDesde || (fech && fech >= new Date(fechaDesde));
-    const matchH = !fechaHasta || (fech && fech <= new Date(fechaHasta + 'T23:59:59'));
-    return matchQ && matchE && matchD && matchH;
-  });
+ // Helper fuera del componente
+const toLocalDate = (fechaStr, incluirHoraFin = false) => {
+  if (!fechaStr) return null;
+  let fecha = new Date(fechaStr);
+  if (incluirHoraFin) {
+    fecha = new Date(`${fechaStr}T23:59:59`);
+  }
+  // Ajustar a GMT-6
+  return new Date(fecha.getTime() - 6 * 60 * 60 * 1000);
+};
 
+// En tu filtro:
+const donacionesFiltradas = donaciones.filter(d => {
+  const q = busqueda.toLowerCase();
+  const matchQ = !q || d.tipo_donacion?.toLowerCase().includes(q) || 
+                 d.descripcion?.toLowerCase().includes(q) || 
+                 getNombreAlmacen(d.id_almacen).toLowerCase().includes(q);
+  const matchE = filtroEstado === 'Todos' || d.estado === filtroEstado;
+  
+  const fech = d.fecha ? toLocalDate(d.fecha) : null;
+  const fechaDesdeDate = fechaDesde ? toLocalDate(fechaDesde) : null;
+  const fechaHastaDate = fechaHasta ? toLocalDate(fechaHasta, true) : null;
+  
+  const matchD = !fechaDesdeDate || (fech && fech >= fechaDesdeDate);
+  const matchH = !fechaHastaDate || (fech && fech <= fechaHastaDate);
+  
+  return matchQ && matchE && matchD && matchH;
+});
   const hayFiltro = !!(fechaDesde || fechaHasta || filtroEstado !== 'Todos' || busqueda);
   const stats = getHeaderStats(donacionesFiltradas, hayFiltro);
   const limpiarFechas = () => { setFechaDesde(''); setFechaHasta(''); setPaginaActual(1); };
@@ -762,11 +797,11 @@ const Donaciones = () => {
                             </td>
                             {/* Fecha */}
                             <td className="dn-td-fecha">
-                              {don.fecha ? new Date(don.fecha).toLocaleDateString('es-HN') : '—'}
+                              {getLocalDate(don.fecha)}
                             </td>
                             {/* Cantidad */}
                             <td style={{textAlign:'right',fontWeight:600,color:'#2d3436'}}>
-                              {fmtInt(don.cantidad_donacion)}
+                              {fmtInt(don.cantidad_donacion)} 
                             </td>
                             {/* Valor — verde como en Bienes */}
                             <td style={{textAlign:'right',fontWeight:700,color:'#27ae60',fontSize:'0.97rem'}}>
