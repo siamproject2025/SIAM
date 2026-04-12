@@ -129,8 +129,8 @@ const moduloAPermiso = {
   "Dashboard": "VISUALIZAR_DASHBOARD",
   "Roles": "VISUALIZAR_ROLES",
   "Pagina principal": "VISUALIZAR_PAGINA_PRINCIPAL",
-  "Backup y restore": "VISUALIZAR_SEGURIDAD",
-  "Mantenimientos": "VISUALIZAR_MATRICULA",
+  "Backup y restore": "VISUALIZAR_RESTORE",
+  "Mantenimientos": "VISUALIZAR_MANTENIMIENTOS",
 };
 
 const SideBar = () => {

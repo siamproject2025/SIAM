@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from "../../../components/authentication/Auth";
 import { motion } from 'framer-motion';
-import { Eye, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Eye, Plus, Pencil, Trash2, Edit } from 'lucide-react';
 import {
   FaEdit, FaShieldAlt, FaSearch, FaEraser, FaPlus, FaUsersCog,
   FaChevronDown, FaTimes, FaLock, FaPaintRoller
@@ -70,9 +70,10 @@ const GRUPOS_PERMISOS = {
   ROLES:               ['VISUALIZAR_ROLES',            'CREAR_ROLES',            'ACTUALIZAR_ROLES',            'ELIMINAR_ROLES'],
   SOLICITUDES:         ['VISUALIZAR_SOLICITUDES',      'CREAR_SOLICITUDES',      'ACTUALIZAR_SOLICITUDES',      'ELIMINAR_SOLICITUDES'],
   AUDITORIA:           ['VISUALIZAR_AUDITORIA',        'CREAR_AUDITORIA',        'ACTUALIZAR_AUDITORIA',        'ELIMINAR_AUDITORIA'],
-  BACKUP:              ['VISUALIZAR_BACKUP',           'CREAR_BACKUP',           'ACTUALIZAR_BACKUP',           'ELIMINAR_BACKUP'],
+  BACKUP:              ['VISUALIZAR_RESTORE',           'CREAR_RESTORE',           'ACTUALIZAR_RESTORE',        'ELIMINAR_RESTORE'],
   DASHBOARD:           ['VISUALIZAR_DASHBOARD'],
   PAGINA_PRINCIPAL:    ['VISUALIZAR_PAGINA_PRINCIPAL', 'ACTUALIZAR_PAGINA_PRINCIPAL'],
+  MANTENIMIENTOS :     ['VISUALIZAR_MANTENIMIENTOS',       'CREAR_MANTENIMIENTOS',   'ACTUALIZAR_MANTENIMIENTOS',   'ELIMINAR_MANTENIMIENTOS']
 };
 
 /* ─── ESTRUCTURA ─── */
@@ -124,7 +125,7 @@ const ESTRUCTURA_PERMISOS = [
     categoria: 'Personalización',
     icon: <FaPaintRoller size={14} />,
     color: '#ec4899',
-    grupos: [{ label: 'Personalización', modulos: ['PAGINA_PRINCIPAL'] }],
+    grupos: [{ label: 'Personalización', modulos: ['PAGINA_PRINCIPAL', 'MANTENIMIENTOS'] }],
   },
 ];
 
@@ -135,7 +136,7 @@ const MODULO_LABEL = {
   BIENES: 'Bienes', DONACIONES: 'Donaciones', COMPRAS: 'Compras', PROVEEDORES: 'Proveedores',
   PERSONAL: 'Personal', DIRECTIVA: 'Directiva', GESTION_DE_USUARIOS: 'Usuarios',
   ROLES: 'Roles', SOLICITUDES: 'Solicitudes', AUDITORIA: 'Auditoría',
-  BACKUP: 'Backup', DASHBOARD: 'Dashboard', PAGINA_PRINCIPAL: 'Página principal',
+  BACKUP: 'Backup', DASHBOARD: 'Dashboard', PAGINA_PRINCIPAL: 'Página principal', MANTENIMIENTOS : 'Mantenimientos'
 };
 
 const ACCION_META = [
@@ -281,12 +282,11 @@ function App() {
       {/* FILTROS */}
       <div className="rols-css-filtros-container">
         <div className="rols-css-filtros-grid">
-          <div className="rols-css-filtro-item">
-            <FaSearch className="rols-css-filtro-icon" />
-            <input type="text" placeholder="Buscar por nombre de rol" value={filtros.busqueda} onChange={e => setFiltros({ busqueda: e.target.value })} />
-          </div>
+      
         </div>
-        <div className="rols-css-filtros-actions">
+        <div className="rols-css-filtros-actions" height={10}>
+         <input  className="form-control form-control-sm" type="text" placeholder="Buscar por nombre de rol" value={filtros.busqueda} onChange={e => setFiltros({ busqueda: e.target.value })} />
+
           <button className="rols-css-btn rols-css-btn-outline" onClick={() => setFiltros({ busqueda: '' })} disabled={loading}><FaEraser /> Limpiar Filtros</button>
           <WithPermission requiredPermissions={["CREAR_ROLES"]}>
             <button type="submit" style={S.btn('#6C4FBF')} onClick={() => { setModalMode('crear'); setSelectedRol(null); setShowModal(true); }} disabled={loading}><FaPlus /> Nuevo Rol</button>
@@ -315,10 +315,10 @@ function App() {
                 </div>
                 <div className="rols-css-rol-actions">
                   <WithPermission requiredPermissions={["ACTUALIZAR_ROLES"]}>
-                    <button className="rols-css-btn-icon" onClick={() => handleEditarRol(rol)} disabled={loading} type="button" title="Editar"><FaEdit /></button>
+                    <button  className="bienes-btn-icon edit" onClick={() => handleEditarRol(rol)} disabled={loading} type="button" title="Editar"><Edit size={15}/></button>
                   </WithPermission>
                   <WithPermission requiredPermissions={["ELIMINAR_ROLES"]}>
-                    <button className="rols-css-btn-icon rols-css-btn-icon-delete" onClick={() => handleEliminarRol(rol._id)} disabled={loading} type="button" title="Eliminar"><MdDelete /></button>
+                    <button  className="bienes-btn-icon delete" onClick={() => handleEliminarRol(rol._id)} disabled={loading} type="button" title="Eliminar"><svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
                   </WithPermission>
                 </div>
               </div>

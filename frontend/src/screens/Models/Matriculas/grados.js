@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Book, X, Trash2, Users, Search, ChevronRight,
   AlertCircle, Clock, UserCheck, GraduationCap,
-  LayoutGrid, Plus, Save, Filter, Download,
+  LayoutGrid, Plus, Save, Filter, Download,Edit
 } from "lucide-react";
 import {
   FiBook, FiInfo, FiFileText, FiEdit2,
@@ -321,10 +321,7 @@ const CSS = `
     transition: all .18s;
     flex-shrink: 0;
   }
-  .bienes-btn-icon.edit { background: #EDE9FF; color: #6C4FBF; }
-  .bienes-btn-icon.edit:hover { background: #6C4FBF; color: #fff; transform: scale(1.08); }
-  .bienes-btn-icon.delete { background: #FDE8E8; color: #e74c3c; }
-  .bienes-btn-icon.delete:hover { background: #e74c3c; color: #fff; transform: scale(1.08); }
+  
 
   /* Paginación */
   .gv-pagination {
@@ -735,13 +732,12 @@ const ModalGrado = ({ onClose, onSave, gradoEditando, loading }) => {
             <button type="button"
               style={{ display:"inline-flex",alignItems:"center",gap:7,padding:"10px 20px",borderRadius:10,fontSize:".86rem",fontWeight:700,border:"none",cursor:"pointer",background:"#E0D9F5",color:"#6C4FBF",fontFamily:"inherit" }}
               onClick={onClose}
-            >
-              <X size={15} /> Cancelar
+            > Cancelar
             </button>
             <button type="submit" disabled={loading}
               style={{ display:"inline-flex",alignItems:"center",gap:7,padding:"10px 20px",borderRadius:10,fontSize:".86rem",fontWeight:700,border:"none",cursor:"pointer",background:"#6C4FBF",color:"#fff",fontFamily:"inherit",opacity:loading?.6:1 }}
             >
-              <Save size={15} /> {loading ? "Guardando..." : esEdicion ? "Guardar Cambios" : "Crear Grado"}
+              {loading ? "Guardando..." : esEdicion ? "Guardar" : "Guardar"}
             </button>
           </div>
         </form>
@@ -1116,11 +1112,11 @@ export default function GradosPage() {
                         <div className="bienes-action-buttons">
                           <WithPermission requiredPermissions={["ACTUALIZAR_GRADOS"]}>
                             <button
-                              className="bienes-btn-icon edit"
+                               className="bienes-btn-icon edit"
                               title="Editar"
                               onClick={() => { setGradoEditar(g); setShowModal(true); }}
                             >
-                              <FiEdit2 size={15} />
+                              <Edit size={15} />
                             </button>
                           </WithPermission>
                           {g.totalAlumnos === 0 && (
@@ -1130,12 +1126,7 @@ export default function GradosPage() {
                                 title="Eliminar"
                                 onClick={() => { setGradoAEliminar(g); setShowConfirm(true); }}
                               >
-                                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                  <polyline points="3 6 5 6 21 6"/>
-                                  <path d="M19 6l-1 14H6L5 6"/>
-                                  <path d="M10 11v6M14 11v6"/>
-                                  <path d="M9 6V4h6v2"/>
-                                </svg>
+                                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                               </button>
                             </WithPermission>
                           )}

@@ -881,7 +881,7 @@ const ModalDetalleHorario = ({
                 <motion.button className="dn-btn-eliminar"
                   onClick={() => onEliminar(horarioEdicion._id)}
                   whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}>
-                  <Trash2 size={15}/> Eliminar
+                 Eliminar
                 </motion.button>
               </WithPermission>
             )}
@@ -891,13 +891,13 @@ const ModalDetalleHorario = ({
             <motion.button className="dn-btn-cerrar"
               onClick={onCerrar}
               whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}>
-              <X size={15}/> Cerrar
+              Cerrar
             </motion.button>
             <WithPermission requiredPermissions={["ACTUALIZAR_HORARIOS"]}>
               <motion.button className="dn-btn-guardar"
                 onClick={() => onGuardar(horarioEdicion, esCreacion)}
                 whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}>
-                <Save size={15}/> Guardar
+                Guardar
               </motion.button>
             </WithPermission>
           </div>

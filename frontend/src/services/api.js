@@ -36,7 +36,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
      
-      window.location.href = "/bitacira";
+      window.location.href = "/bitacora";
     }
     return Promise.reject(error);
   }

@@ -16,6 +16,7 @@ import { loadingController } from "../api/loadingController";
 import {
   Clock, UserCheck,
   BookOpen, GraduationCap, Library, Globe, Info,
+  Edit,
 } from "lucide-react";
 import {
   FiSearch, FiUpload, FiDownload, FiBook, FiX, FiFilter,
@@ -1099,20 +1100,20 @@ export default function BibliotecaTest() {
                           )}
                           <WithPermission requiredPermissions={["ACTUALIZAR_BIBLIOTECA"]}>
                             <button
-                              className="bib-btn-icon edit"
+                               className="bienes-btn-icon edit"
                               title="Editar metadatos"
                               onClick={() => { setLibroEditando(libro); setMostrarModal(true); }}
                             >
-                              <FiEdit2 size={14} />
+                              <Edit size={15} />
                             </button>
                           </WithPermission>
                           <WithPermission requiredPermissions={["ELIMINAR_BIBLIOTECA"]}>
                             <button
-                              className="bib-btn-icon delete"
+                               className="bienes-btn-icon delete"
                               title="Eliminar"
                               onClick={() => { setLibroAEliminar(libro); setShowConfirm(true); }}
                             >
-                              <FiTrash2 size={14} />
+                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                             </button>
                           </WithPermission>
                         </div>
