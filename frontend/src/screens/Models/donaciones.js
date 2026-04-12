@@ -14,7 +14,8 @@ import {
 
 import ConfirmDialog from '../../components/ConfirmDialog/ConfirmDialog';
 
-const API_URL = process.env.REACT_APP_API_URL + '/api/donaciones';
+const API_URL      = process.env.REACT_APP_API_URL + '/api/donaciones';
+const API_CATALOGOS = process.env.REACT_APP_API_URL + '/api/catalogos';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 const ESTADOS = ['Recibida', 'Pendiente', 'Procesada', 'Anulada'];
@@ -57,15 +58,12 @@ const valorDonacion = (don) =>
   (parseFloat(don.precio_unitario || 0) * parseFloat(don.cantidad_donacion || 0));
 
 // ─── Stats del header — se calculan sobre la lista YA FILTRADA ───────────────
-// Recibe: lista filtrada, lista total (para el label), filtros activos
 const getHeaderStats = (filtradas, hayFiltro) => {
   const hoy      = new Date();
   const mes      = hoy.getMonth();
   const anio     = hoy.getFullYear();
   const mesLabel = hoy.toLocaleString('es-HN', { month: 'long' });
 
-  // "Nuevas este mes" = registradas (fecha_ingreso) en el mes/año actual
-  // fecha_ingreso viene como string ISO del JSON de Mongo
   const nuevasMes = filtradas.filter(d => {
     const raw = d.fecha_ingreso || d.createdAt;
     if (!raw) return false;
@@ -107,6 +105,11 @@ const Donaciones = () => {
   const [seleccionados,        setSeleccionados]        = useState([]);
   const [erroresCampos,        setErroresCampos]        = useState({});
   const [intentoGuardar,       setIntentoGuardar]       = useState(false);
+
+  // ── Catálogos dinámicos (igual que Personal) ───────────────────────────────
+  const [catTipoDonacion, setCatTipoDonacion] = useState([]);
+  const [catAlmacen,      setCatAlmacen]      = useState([]);
+
   const POR_PAGINA = 10;
 
   const emptyForm = () => ({
@@ -128,11 +131,39 @@ const Donaciones = () => {
 
   const valorCalculado = (parseFloat(formData.precio_unitario) || 0) * (parseFloat(formData.cantidad_donacion) || 0);
 
-  // ── Carga ──────────────────────────────────────────────────────────────────
+  // ── Carga de donaciones ────────────────────────────────────────────────────
   useEffect(() => {
     cargarDonaciones();
     const interval = setInterval(cargarDonaciones, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // ── Carga de catálogos dinámicos (igual que Personal) ─────────────────────
+  useEffect(() => {
+    const cargarCatalogos = async () => {
+      const cargarCat = async (endpoint, setter) => {
+        try {
+          const res = await fetch(`${API_CATALOGOS}/donaciones/${endpoint}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const arr  = Array.isArray(data) ? data : data.data;
+          if (arr && arr.length > 0) {
+            setter(arr.map(item => ({
+              valor:    item.valor,
+              etiqueta: item.etiqueta || item.valor,
+            })));
+          }
+        } catch (err) {
+          console.error(`Error cargando catálogo ${endpoint}:`, err);
+        }
+      };
+
+      await Promise.all([
+        cargarCat('tipo_donacion', setCatTipoDonacion),
+        cargarCat('id_almacen',   setCatAlmacen),
+      ]);
+    };
+    cargarCatalogos();
   }, []);
 
   useEffect(() => {
@@ -145,25 +176,21 @@ const Donaciones = () => {
     return user.getIdToken();
   };
 
-  
- const getLocalDate = (utcDate) => {
-  if (!utcDate) return "";
-  const date = new Date(utcDate);
-  // Ajustar a GMT-6 (Honduras)
-  const offsetMs = -6 * 60 * 60 * 1000;
-  const localDate = new Date(date.getTime() + offsetMs);
-  
-  // Formato dd/mm/yyyy
-  const day = String(localDate.getUTCDate()).padStart(2, "0");
-  const month = String(localDate.getUTCMonth() + 1).padStart(2, "0");
-  const year = localDate.getUTCFullYear();
-  
-  return `${day}/${month}/${year}`;
-};
+  const getLocalDate = (utcDate) => {
+    if (!utcDate) return "";
+    const date = new Date(utcDate);
+    const offsetMs = -6 * 60 * 60 * 1000;
+    const localDate = new Date(date.getTime() + offsetMs);
+    const day   = String(localDate.getUTCDate()).padStart(2, "0");
+    const month = String(localDate.getUTCMonth() + 1).padStart(2, "0");
+    const year  = localDate.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const cargarDonaciones = async () => {
     try {
       const token = await getToken();
-       loadingController.start();
+      loadingController.start();
       const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Error al cargar donaciones');
       const result = await res.json();
@@ -179,6 +206,19 @@ const Donaciones = () => {
     setNotification({ message: mensaje, type: tipo });
     setTimeout(() => setNotification(null), 4000);
   };
+
+  // ── Helpers de catálogo — reemplazan los mapas hardcodeados ───────────────
+  // Devuelve la etiqueta de un almacén dado su valor (id)
+  const getNombreAlmacen = (id) => {
+    if (catAlmacen.length > 0) {
+      const found = catAlmacen.find(a => String(a.valor) === String(id));
+      return found ? found.etiqueta : `Almacén ${id}`;
+    }
+    // Fallback mientras carga
+    return { 1:'Almacén 1', 2:'Almacén 2', 3:'Almacén 3', 4:'Almacén 4', 5:'Almacén 5' }[id] || `Almacén ${id}`;
+  };
+
+const getColorAlmacen = () => '#9b59b6'
 
   // ── Validación campo a campo ──────────────────────────────────────────────
   const validarCampos = (data) => {
@@ -198,13 +238,11 @@ const Donaciones = () => {
     return errs;
   };
 
-  // Mapa campo → pestaña donde vive
   const tabDeCampo = {
     tipo_donacion: 'datos', cantidad_donacion: 'datos',
     id_almacen: 'datos', fecha: 'datos',
   };
 
-  // ¿La pestaña tiene al menos un error?
   const tabTieneError = (tabKey) =>
     Object.keys(erroresCampos).some(c => tabDeCampo[c] === tabKey);
 
@@ -213,7 +251,6 @@ const Donaciones = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setHasUnsavedChanges(true);
-    // Limpiar error individual al corregir el campo
     if (intentoGuardar && erroresCampos[name]) {
       setErroresCampos(prev => { const n = {...prev}; delete n[name]; return n; });
     }
@@ -301,7 +338,6 @@ const Donaciones = () => {
     const errs = validarCampos(formData);
     if (Object.keys(errs).length > 0) {
       setErroresCampos(errs);
-      // Ir a la pestaña que tiene el primer error
       const primerCampo = Object.keys(errs)[0];
       if (tabDeCampo[primerCampo]) setTabActiva(tabDeCampo[primerCampo]);
       mostrarNotificacion('Revisa los campos marcados en rojo','error');
@@ -371,15 +407,15 @@ const Donaciones = () => {
       const token = await getToken();
       const fd = new FormData();
       Object.entries({
-        tipo_donacion: donacionSeleccionada.tipo_donacion,
+        tipo_donacion:     donacionSeleccionada.tipo_donacion,
         cantidad_donacion: donacionSeleccionada.cantidad_donacion,
-        precio_unitario: donacionSeleccionada.precio_unitario || 0,
-        valor_total: donacionSeleccionada.valor_total || 0,
-        descripcion: donacionSeleccionada.descripcion || '',
-        observaciones: donacionSeleccionada.observaciones || '',
-        id_almacen: donacionSeleccionada.id_almacen,
-        fecha: donacionSeleccionada.fecha || new Date().toISOString(),
-        estado: 'Anulada',
+        precio_unitario:   donacionSeleccionada.precio_unitario || 0,
+        valor_total:       donacionSeleccionada.valor_total || 0,
+        descripcion:       donacionSeleccionada.descripcion || '',
+        observaciones:     donacionSeleccionada.observaciones || '',
+        id_almacen:        donacionSeleccionada.id_almacen,
+        fecha:             donacionSeleccionada.fecha || new Date().toISOString(),
+        estado:            'Anulada',
       }).forEach(([k,v]) => fd.append(k,v));
       const res = await fetch(`${API_URL}/${donacionSeleccionada.id_donacion}`, { method:'PUT', body:fd, headers:{Authorization:`Bearer ${token}`} });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
@@ -397,38 +433,33 @@ const Donaciones = () => {
     'Material didactico':<BookOpen size={18}/>, 'Otro':<Package size={18}/>,
   }[tipo] || <Package size={18}/>);
 
-  const getNombreAlmacen = (id) => ({1:'Almacén 1',2:'Almacén 2',3:'Almacén 3',4:'Almacén 4',5:'Almacén 5'}[id]||`Almacén ${id}`);
-  const getColorAlmacen  = (id) => ({1:'#e74c3c',2:'#27ae60',3:'#2980b9',4:'#f39c12',5:'#8e44ad'}[id]||'#95a5a6');
-
   // ── Filtrado ───────────────────────────────────────────────────────────────
- // Helper fuera del componente
-const toLocalDate = (fechaStr, incluirHoraFin = false) => {
-  if (!fechaStr) return null;
-  let fecha = new Date(fechaStr);
-  if (incluirHoraFin) {
-    fecha = new Date(`${fechaStr}T23:59:59`);
-  }
-  // Ajustar a GMT-6
-  return new Date(fecha.getTime() - 6 * 60 * 60 * 1000);
-};
+  const toLocalDate = (fechaStr, incluirHoraFin = false) => {
+    if (!fechaStr) return null;
+    let fecha = new Date(fechaStr);
+    if (incluirHoraFin) {
+      fecha = new Date(`${fechaStr}T23:59:59`);
+    }
+    return new Date(fecha.getTime() - 6 * 60 * 60 * 1000);
+  };
 
-// En tu filtro:
-const donacionesFiltradas = donaciones.filter(d => {
-  const q = busqueda.toLowerCase();
-  const matchQ = !q || d.tipo_donacion?.toLowerCase().includes(q) || 
-                 d.descripcion?.toLowerCase().includes(q) || 
-                 getNombreAlmacen(d.id_almacen).toLowerCase().includes(q);
-  const matchE = filtroEstado === 'Todos' || d.estado === filtroEstado;
-  
-  const fech = d.fecha ? toLocalDate(d.fecha) : null;
-  const fechaDesdeDate = fechaDesde ? toLocalDate(fechaDesde) : null;
-  const fechaHastaDate = fechaHasta ? toLocalDate(fechaHasta, true) : null;
-  
-  const matchD = !fechaDesdeDate || (fech && fech >= fechaDesdeDate);
-  const matchH = !fechaHastaDate || (fech && fech <= fechaHastaDate);
-  
-  return matchQ && matchE && matchD && matchH;
-});
+  const donacionesFiltradas = donaciones.filter(d => {
+    const q = busqueda.toLowerCase();
+    const matchQ = !q || d.tipo_donacion?.toLowerCase().includes(q) ||
+                   d.descripcion?.toLowerCase().includes(q) ||
+                   getNombreAlmacen(d.id_almacen).toLowerCase().includes(q);
+    const matchE = filtroEstado === 'Todos' || d.estado === filtroEstado;
+
+    const fech         = d.fecha ? toLocalDate(d.fecha) : null;
+    const fechaDesdeDate = fechaDesde ? toLocalDate(fechaDesde) : null;
+    const fechaHastaDate = fechaHasta ? toLocalDate(fechaHasta, true) : null;
+
+    const matchD = !fechaDesdeDate || (fech && fech >= fechaDesdeDate);
+    const matchH = !fechaHastaDate || (fech && fech <= fechaHastaDate);
+
+    return matchQ && matchE && matchD && matchH;
+  });
+
   const hayFiltro = !!(fechaDesde || fechaHasta || filtroEstado !== 'Todos' || busqueda);
   const stats = getHeaderStats(donacionesFiltradas, hayFiltro);
   const limpiarFechas = () => { setFechaDesde(''); setFechaHasta(''); setPaginaActual(1); };
@@ -466,23 +497,27 @@ const donacionesFiltradas = donaciones.filter(d => {
         <div className="dn-tab-content">
           <div className="dn-form-section-title">Identificación de la Donación</div>
           <div className="dn-form-grid">
+
+            {/* ── Tipo de Donación — dinámico desde catálogo ── */}
             <div className={`dn-form-group${clsField('tipo_donacion')}`}>
               <label>Tipo de Donación <span className="req">*</span></label>
               <select name="tipo_donacion" value={formData.tipo_donacion} onChange={handleInputChange} required
                 className={erroresCampos.tipo_donacion ? 'dn-input-err' : ''}>
                 <option value="">Seleccionar tipo</option>
-                {['Alimentos','Instrumentos musicales','Accesorios musicales','Vestimenta','Medicina',
-                  'Enseres','Bebidas','Útiles escolares','Productos de higiene','Material Audiovisual',
-                  'Material didactico','Otro'].map(t=><option key={t} value={t}>{t}</option>)}
+                {catTipoDonacion.map(t => (
+                  <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+                ))}
               </select>
               {erroresCampos.tipo_donacion && <span className="dn-err-msg">{erroresCampos.tipo_donacion}</span>}
             </div>
+
             <div className="dn-form-group">
               <label>Estado <span className="req">*</span></label>
               <select name="estado" value={formData.estado} onChange={handleInputChange} required>
                 {ESTADOS.map(s=><option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+
             <div className={`dn-form-group${clsField('cantidad_donacion')}`}>
               <label>Cantidad <span className="req">*</span></label>
               <input type="number" name="cantidad_donacion" value={formData.cantidad_donacion}
@@ -490,11 +525,13 @@ const donacionesFiltradas = donaciones.filter(d => {
                 className={erroresCampos.cantidad_donacion ? 'dn-input-err' : ''}/>
               {erroresCampos.cantidad_donacion && <span className="dn-err-msg">{erroresCampos.cantidad_donacion}</span>}
             </div>
+
             <div className="dn-form-group">
               <label>Precio Unitario (L.) <span className="req">*</span></label>
               <input type="number" name="precio_unitario" value={formData.precio_unitario}
                 onChange={handleInputChange} min="0" step="0.01" placeholder="0.00"/>
             </div>
+
             {/* Valor calculado */}
             <div className="dn-form-group dn-full">
               <div className="dn-valor-total-box">
@@ -503,15 +540,20 @@ const donacionesFiltradas = donaciones.filter(d => {
                 <span className="dn-vt-hint">{fmtInt(formData.cantidad_donacion||0)} unid. × L. {fmt(formData.precio_unitario||0)}</span>
               </div>
             </div>
+
+            {/* ── Almacén — dinámico desde catálogo ── */}
             <div className={`dn-form-group${clsField('id_almacen')}`}>
               <label>Almacén <span className="req">*</span></label>
               <select name="id_almacen" value={formData.id_almacen} onChange={handleInputChange} required
                 className={erroresCampos.id_almacen ? 'dn-input-err' : ''}>
                 <option value="">Seleccionar almacén</option>
-                {[1,2,3,4,5].map(n=><option key={n} value={n}>Almacén {n}</option>)}
+                {catAlmacen.map(a => (
+                  <option key={a.valor} value={a.valor}>{a.etiqueta}</option>
+                ))}
               </select>
               {erroresCampos.id_almacen && <span className="dn-err-msg">{erroresCampos.id_almacen}</span>}
             </div>
+
             <div className={`dn-form-group${clsField('fecha')}`}>
               <label>Fecha de Donación <span className="req">*</span></label>
               <input type="date" name="fecha" value={formData.fecha}
@@ -521,12 +563,14 @@ const donacionesFiltradas = donaciones.filter(d => {
                 ? <span className="dn-err-msg">{erroresCampos.fecha}</span>
                 : <small className="dn-hint">Fecha real de recepción</small>}
             </div>
+
             <div className="dn-form-group dn-full">
               <label>Descripción</label>
               <textarea name="descripcion" value={formData.descripcion} onChange={handleInputChange}
                 placeholder="Describe la donación..." maxLength="1000" rows={3}/>
               <small className="dn-char">{formData.descripcion.length}/1000</small>
             </div>
+
             <div className="dn-form-group dn-full">
               <label>Observaciones</label>
               <textarea name="observaciones" value={formData.observaciones} onChange={handleInputChange}
@@ -737,7 +781,6 @@ const donacionesFiltradas = donaciones.filter(d => {
             </motion.div>
           ) : (
             <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.1}}>
-              {/* Tarjeta contenedora igual a Bienes */}
               <div className="dn-card">
                 {/* Meta */}
                 <div className="dn-card-meta">
@@ -749,7 +792,6 @@ const donacionesFiltradas = donaciones.filter(d => {
                 <table className="dn-bienes-table">
                   <thead>
                     <tr>
-                      
                       <th>ID ↑</th>
                       <th>TIPO &amp; DESCRIPCIÓN</th>
                       <th>ALMACÉN</th>
@@ -763,10 +805,10 @@ const donacionesFiltradas = donaciones.filter(d => {
                   <tbody>
                     <AnimatePresence>
                       {paginados.map((don,idx) => {
-                        const est    = estadoConfig[don.estado] || estadoConfig.Recibida;
-                        const valor  = valorDonacion(don);
-                        const selId  = don._id || don.id_donacion;
-                        const selec  = seleccionados.includes(selId);
+                        const est   = estadoConfig[don.estado] || estadoConfig.Recibida;
+                        const valor = valorDonacion(don);
+                        const selId = don._id || don.id_donacion;
+                        const selec = seleccionados.includes(selId);
                         return (
                           <motion.tr key={selId}
                             className={`dn-bienes-tr${don.estado==='Anulada'?' anulada':''}${selec?' selected':''}`}
@@ -774,12 +816,9 @@ const donacionesFiltradas = donaciones.filter(d => {
                             exit={{opacity:0}} transition={{delay:idx*0.02}}
                             onClick={()=>handleFilaClick(don)}
                             style={{cursor:'pointer'}}>
-                            
-                            {/* ID badge igual a BIEN-XXXX-XXXX */}
                             <td>
                               <span className="dn-id-badge">DON-{String(don.id_donacion||idx+1).padStart(4,'0')}</span>
                             </td>
-                            {/* Tipo + descripción */}
                             <td>
                               <div className="dn-tipo-cell">
                                 <span className="dn-tipo-ico">{getIconoTipo(don.tipo_donacion)}</span>
@@ -789,38 +828,31 @@ const donacionesFiltradas = donaciones.filter(d => {
                                 </div>
                               </div>
                             </td>
-                            {/* Almacén como badge */}
                             <td>
                               <span className="dn-badge-almacen" style={{background:getColorAlmacen(don.id_almacen)}}>
                                 {getNombreAlmacen(don.id_almacen)}
                               </span>
                             </td>
-                            {/* Fecha */}
                             <td className="dn-td-fecha">
                               {getLocalDate(don.fecha)}
                             </td>
-                            {/* Cantidad */}
                             <td style={{textAlign:'right',fontWeight:600,color:'#2d3436'}}>
-                              {fmtInt(don.cantidad_donacion)} 
+                              {fmtInt(don.cantidad_donacion)}
                             </td>
-                            {/* Valor — verde como en Bienes */}
                             <td style={{textAlign:'right',fontWeight:700,color:'#27ae60',fontSize:'0.97rem'}}>
                               L {fmt(valor)}
                             </td>
-                            {/* Estado badge */}
                             <td style={{textAlign:'center'}}>
                               <span className="dn-estado-pill"
                                 style={{color:est.color,background:est.bg,border:`1px solid ${est.color}44`}}>
                                 {est.label}
                               </span>
                             </td>
-                            {/* Acciones — iconos SVG sin texto, igual a Bienes */}
                             <td style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}>
                               <div className="dn-acciones-cell">
                                 <motion.button className="dn-icon-btn edit" title="Editar"
                                   onClick={()=>handleFilaClick(don)}
                                   whileHover={{scale:1.15}} whileTap={{scale:0.92}}>
-                                  {/* ícono lápiz SVG (mismo que en Bienes) */}
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -829,7 +861,6 @@ const donacionesFiltradas = donaciones.filter(d => {
                                 <motion.button className="dn-icon-btn delete" title="Eliminar"
                                   onClick={()=>prepararEliminacion(don)}
                                   whileHover={{scale:1.15}} whileTap={{scale:0.92}}>
-                                  {/* ícono basura SVG */}
                                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="3 6 5 6 21 6"/>
                                     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -853,8 +884,6 @@ const donacionesFiltradas = donaciones.filter(d => {
                     &nbsp;·&nbsp;
                     Valor visible (activas): <strong style={{color:'#6C4FBF'}}>L. {fmt(valorFiltrados)}</strong>
                   </div>
-
-                  {/* Paginación igual a Bienes */}
                   <div className="dn-pagination">
                     <button className="dn-page-btn" onClick={()=>setPaginaActual(1)}        disabled={paginaActual===1}>«</button>
                     <button className="dn-page-btn" onClick={()=>setPaginaActual(p=>p-1)}   disabled={paginaActual===1}>‹</button>

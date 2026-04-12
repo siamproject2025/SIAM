@@ -58,7 +58,7 @@ const validar = (form) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [] }) => {
+const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [], tiposAsignacionDisponibles = [] }) => {
   const [form,          setForm]          = useState(EMPTY());
   const [errores,       setErrores]       = useState({});
   const [intentoGuardar,setIntentoGuardar]= useState(false);
@@ -136,14 +136,6 @@ const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [] }) => {
     onCreate(payload);
   };
 
-  // ── Categorías agrupadas ───────────────────────────────────
-  const grupos = categoriasDisponibles.reduce((acc, cat) => {
-    const g = cat.grupo || "General";
-    if (!acc[g]) acc[g] = [];
-    acc[g].push(cat);
-    return acc;
-  }, {});
-
   // ── Render de pestañas ─────────────────────────────────────
   const renderTabs = () => (
     <>
@@ -210,10 +202,8 @@ const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [] }) => {
                 className={errores.categoria ? "dn-input-err" : ""}
               >
                 <option value="">Seleccione una categoría</option>
-                {Object.entries(grupos).map(([grupo, cats]) => (
-                  <optgroup key={grupo} label={grupo}>
-                    {cats.map(c => <option key={c._id} value={c._id}>{c.nombre}</option>)}
-                  </optgroup>
+                {categoriasDisponibles.map(c => (
+                  <option key={c.valor} value={c.valor}>{c.etiqueta}</option>
                 ))}
               </select>
               {errores.categoria && <span className="dn-err-msg">{errores.categoria}</span>}
@@ -304,12 +294,11 @@ const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [] }) => {
             <div className="dn-form-group">
               <label>Tipo de Asignación</label>
               <select name="tipo_asignacion" value={form.tipo_asignacion} onChange={handleChange}>
-                <option value="">Sin asignación específica</option>
-                <option value="Persona">Persona</option>
-                <option value="Aula">Aula</option>
-                <option value="Departamento">Departamento</option>
-                <option value="Almacén">Almacén</option>
-              </select>
+              <option value="">Sin asignación específica</option>
+              {tiposAsignacionDisponibles.map(t => (
+                <option key={t.valor} value={t.valor}>{t.etiqueta}</option>
+              ))}
+            </select>
             </div>
 
             <div className="dn-form-group">
@@ -319,11 +308,10 @@ const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [] }) => {
                 value={form.asignado_a}
                 onChange={handleChange}
                 placeholder={
-                  form.tipo_asignacion === "Persona"     ? "Nombre del responsable" :
-                  form.tipo_asignacion === "Aula"        ? "Ej: Aula 3-B" :
-                  form.tipo_asignacion === "Departamento"? "Ej: Depto. de Cuerdas" :
-                  "Persona, aula o departamento"
-                }
+  form.tipo_asignacion
+    ? `Ingrese el ${form.tipo_asignacion.toLowerCase()} asignado`
+    : "Persona, aula o área asignada"
+}
               />
             </div>
           </div>

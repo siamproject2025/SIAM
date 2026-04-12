@@ -8,9 +8,8 @@ const donacionSchema = new mongoose.Schema({
     min: [1, 'El ID debe ser mayor a 0']
   },
   id_almacen: {
-    type: Number,
-    required: [true, 'El ID de almacén es obligatorio'],
-    min: [1, 'El ID de almacén debe ser mayor a 0']
+    type: String,
+    required: [true, 'El nombre del almacén es obligatorio']
   },
 
   // Fecha real de recepción (la ingresa el usuario, no puede ser futura)
@@ -53,33 +52,14 @@ const donacionSchema = new mongoose.Schema({
   tipo_donacion: {
     type: String,
     required: [true, 'El tipo de donación es obligatorio'],
-    enum: {
-      values: [
-        'Alimentos',
-        'Instrumentos musicales',
-        'Accesorios musicales',
-        'Vestimenta',
-        'Medicina',
-        'Enseres',
-        'Bebidas',
-        'Útiles escolares',
-        'Productos de higiene',
-        'Material Audiovisual',
-        'Material didactico',
-        'Otro'
-      ],
-      message: '{VALUE} no es un tipo de donación válido'
-    }
+    default: 'Recibida'
   },
 
   // ── Estado del ciclo de vida ─────────────────────────────────────────────
   estado: {
     type: String,
     required: [true, 'El estado es obligatorio'],
-    enum: {
-      values: ['Recibida', 'Pendiente', 'Procesada', 'Anulada'],
-      message: '{VALUE} no es un estado válido'
-    },
+    
     default: 'Recibida'
   },
 

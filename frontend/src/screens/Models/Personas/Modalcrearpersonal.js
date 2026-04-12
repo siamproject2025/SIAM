@@ -1,10 +1,10 @@
 // ============================================================
 // ModalCrearPersonal.jsx
 // Modal para crear empleado con upload de documentos a Drive
-// Diseño alineado a ModalCrearBien
+// Catálogos dinámicos desde API (igual que Bienes)
 // ============================================================
 import React, { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Users, Upload, X, Plus, Trash2, FileText, AlertCircle, Camera } from "lucide-react";
 
 const TIPOS_DOC = [
@@ -19,12 +19,7 @@ const TIPOS_DOC = [
 ];
 
 const NIVELES = ["BASICO","INTERMEDIO","AVANZADO","EXPERTO"];
-
-const CARGOS    = ["DOCENTE","DIRECTOR","LIMPIEZA","GUARDIA","SERVICIO_SOCIAL"];
-const HORARIOS  = ["MATUTINO","VESPERTINO","NOCTURNO","ROTATIVO","FLEXIBLE"];
-const CONTRATOS = ["TIEMPO_COMPLETO","MEDIO_TIEMPO","TEMPORAL","HONORARIOS","PRACTICANTE"];
-const ESTADOS   = ["ACTIVO","VACACIONES","LICENCIA","INACTIVO"];
-const AREAS     = ["Dirección","Docencia","Administración","Mantenimiento","Seguridad","Servicios Generales","Otro"];
+const ESTADOS = ["ACTIVO","VACACIONES","LICENCIA","INACTIVO"];
 
 const initForm = () => ({
   nombres: "", apellidos: "", numero_identidad: "",
@@ -34,22 +29,26 @@ const initForm = () => ({
   cargo_asignacion: { cargo: "", horario_preferido: "", fecha_asignacion: "" },
 });
 
-const ModalCrearPersonal = ({ onClose, onCreate }) => {
+const ModalCrearPersonal = ({
+  onClose, onCreate,
+  catTipoContrato = [],
+  catAreaTrabajo  = [],
+  catCargo        = [],
+  catHorario      = [],
+}) => {
   const [form,           setForm]           = useState(initForm());
   const [especialidades, setEspecialidades] = useState([]);
-  const [documentos,     setDocumentos]     = useState([]); // [{file, tipo, descripcion, preview}]
+  const [documentos,     setDocumentos]     = useState([]);
   const [imagenPreview,  setImagenPreview]  = useState(null);
   const [imagenFile,     setImagenFile]     = useState(null);
   const [errors,         setErrors]         = useState({});
-  const [tab,            setTab]            = useState("basico"); // basico | laboral | docs
+  const [tab,            setTab]            = useState("basico");
   const fileDocRef = useRef(null);
   const fileImgRef = useRef(null);
 
-  // ── Handlers genéricos ────────────────────────────────
-  const set = (field, val) => setForm(f => ({ ...f, [field]: val }));
+  const set      = (field, val) => setForm(f => ({ ...f, [field]: val }));
   const setCargo = (field, val) => setForm(f => ({ ...f, cargo_asignacion: { ...f.cargo_asignacion, [field]: val } }));
 
-  // ── Imagen ────────────────────────────────────────────
   const handleImagen = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -57,19 +56,15 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
     setImagenPreview(URL.createObjectURL(file));
   };
 
-  // ── Especialidades ────────────────────────────────────
   const addEsp = () => setEspecialidades(p => [...p, { nombre: "", nivel: "INTERMEDIO" }]);
   const setEsp = (i, field, val) => setEspecialidades(p => p.map((e, idx) => idx===i ? { ...e, [field]: val } : e));
   const delEsp = (i) => setEspecialidades(p => p.filter((_,idx) => idx !== i));
 
-  // ── Documentos ────────────────────────────────────────
   const handleDocFiles = (e) => {
     const files = Array.from(e.target.files || []);
     const nuevos = files.map(f => ({
-      file: f,
-      tipo_documento: "OTRO",
-      descripcion: f.name.replace(/\.[^.]+$/, ""),
-      preview: f.name
+      file: f, tipo_documento: "OTRO",
+      descripcion: f.name.replace(/\.[^.]+$/, ""), preview: f.name
     }));
     setDocumentos(p => [...p, ...nuevos].slice(0, 10));
     e.target.value = "";
@@ -77,7 +72,6 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
   const setDoc = (i, field, val) => setDocumentos(p => p.map((d, idx) => idx===i ? { ...d, [field]: val } : d));
   const delDoc = (i) => setDocumentos(p => p.filter((_,idx) => idx !== i));
 
-  // ── Validar y enviar ──────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.nombres.trim())           e.nombres = "Requerido";
@@ -87,47 +81,30 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
     if (!form.telefono.trim())          e.telefono = "Requerido";
     if (!form.direccion_correo.trim())  e.direccion_correo = "Requerido";
     if (!form.cargo_asignacion.cargo)   e.cargo = "Requerido";
-    if (!form.cargo_asignacion.horario_preferido)  e.horario_preferido = "Requerido";
-    if (!form.cargo_asignacion.fecha_asignacion) e.fecha_asignacion = "Requerido";
+    if (!form.cargo_asignacion.horario_preferido) e.horario_preferido = "Requerido";
+    if (!form.cargo_asignacion.fecha_asignacion)  e.fecha_asignacion = "Requerido";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = () => {
     if (!validate()) { setTab("basico"); return; }
-
     const fd = new FormData();
-
-    // Campos base
     Object.entries(form).forEach(([k, v]) => {
-      if (k === "cargo_asignacion") {
-        fd.append("cargo_asignacion", JSON.stringify(v));
-      } else if (v !== null && v !== undefined && v !== "") {
-        fd.append(k, v);
-      }
+      if (k === "cargo_asignacion") fd.append("cargo_asignacion", JSON.stringify(v));
+      else if (v !== null && v !== undefined && v !== "") fd.append(k, v);
     });
-
-    // Especialidades
     fd.append("especialidades", JSON.stringify(especialidades.filter(e => e.nombre.trim())));
-
-    // Imagen
     if (imagenFile) fd.append("imagen", imagenFile);
-
-    // Documentos: archivos + metadatos
     const meta = documentos.map(d => ({ tipo_documento: d.tipo_documento, descripcion: d.descripcion }));
     fd.append("documentos_meta", JSON.stringify(meta));
     documentos.forEach(d => fd.append("documentos", d.file));
-
     onCreate(fd);
   };
 
-  const inp = (err) => ({
-    className: `per-input${err ? " error" : ""}`,
-  });
-
   const TABS = [
-    { id: "basico",  label: "Datos Básicos"    },
-    { id: "laboral", label: "Info Laboral"      },
+    { id: "basico",  label: "Datos Básicos" },
+    { id: "laboral", label: "Info Laboral"  },
     { id: "docs",    label: `Documentos (${documentos.length})` },
   ];
 
@@ -156,7 +133,6 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
           {/* ══ TAB: DATOS BÁSICOS ══ */}
           {tab === "basico" && (
             <>
-              {/* Foto */}
               <div className="per-form-section">
                 <div className="per-section-title"><Camera size={15}/> Foto de Perfil</div>
                 <div className="per-upload-area" onClick={() => fileImgRef.current?.click()}>
@@ -173,39 +149,37 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
                 )}
               </div>
 
-              {/* Identificación */}
               <div className="per-form-section">
                 <div className="per-section-title"><Users size={15}/> Identificación</div>
                 <div className="per-form-grid">
                   <div className="per-form-group">
                     <label className="per-form-label">Nombres <span className="req">*</span></label>
-                    <input {...inp(errors.nombres)} type="text" value={form.nombres} onChange={e => set("nombres", e.target.value)} placeholder="Nombres completos"/>
+                    <input className={`per-input${errors.nombres?" error":""}`} type="text" value={form.nombres} onChange={e => set("nombres", e.target.value)} placeholder="Nombres completos"/>
                     {errors.nombres && <span className="per-error-msg">{errors.nombres}</span>}
                   </div>
                   <div className="per-form-group">
                     <label className="per-form-label">Apellidos <span className="req">*</span></label>
-                    <input {...inp(errors.apellidos)} type="text" value={form.apellidos} onChange={e => set("apellidos", e.target.value)} placeholder="Apellidos completos"/>
+                    <input className={`per-input${errors.apellidos?" error":""}`} type="text" value={form.apellidos} onChange={e => set("apellidos", e.target.value)} placeholder="Apellidos completos"/>
                     {errors.apellidos && <span className="per-error-msg">{errors.apellidos}</span>}
                   </div>
                   <div className="per-form-group">
                     <label className="per-form-label">N° Identidad <span className="req">*</span></label>
-                    <input {...inp(errors.numero_identidad)} type="text" value={form.numero_identidad} onChange={e => set("numero_identidad", e.target.value)} placeholder="0801-1990-12345"/>
+                    <input className={`per-input${errors.numero_identidad?" error":""}`} type="text" value={form.numero_identidad} onChange={e => set("numero_identidad", e.target.value)} placeholder="0801-1990-12345"/>
                     {errors.numero_identidad && <span className="per-error-msg">{errors.numero_identidad}</span>}
                   </div>
                   <div className="per-form-group">
                     <label className="per-form-label">Teléfono <span className="req">*</span></label>
-                    <input {...inp(errors.telefono)} type="text" value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="9999-9999"/>
+                    <input className={`per-input${errors.telefono?" error":""}`} type="text" value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="9999-9999"/>
                     {errors.telefono && <span className="per-error-msg">{errors.telefono}</span>}
                   </div>
                   <div className="per-form-group full">
                     <label className="per-form-label">Correo electrónico <span className="req">*</span></label>
-                    <input {...inp(errors.direccion_correo)} type="email" value={form.direccion_correo} onChange={e => set("direccion_correo", e.target.value)} placeholder="correo@ejemplo.com"/>
+                    <input className={`per-input${errors.direccion_correo?" error":""}`} type="email" value={form.direccion_correo} onChange={e => set("direccion_correo", e.target.value)} placeholder="correo@ejemplo.com"/>
                     {errors.direccion_correo && <span className="per-error-msg">{errors.direccion_correo}</span>}
                   </div>
                 </div>
               </div>
 
-              {/* Especialidades */}
               <div className="per-form-section">
                 <div className="per-section-title" style={{ justifyContent:"space-between" }}>
                   <span>Especialidades</span>
@@ -236,25 +210,28 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
               <div className="per-form-section">
                 <div className="per-section-title">Contrato y Estado</div>
                 <div className="per-form-grid">
+                  {/* Tipo contrato — dinámico */}
                   <div className="per-form-group">
                     <label className="per-form-label">Tipo de Contrato <span className="req">*</span></label>
                     <select className={`per-select${errors.tipo_contrato?" error":""}`} value={form.tipo_contrato} onChange={e => set("tipo_contrato",e.target.value)}>
                       <option value="">Seleccionar...</option>
-                      {CONTRATOS.map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                      {catTipoContrato.map(c => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
                     </select>
                     {errors.tipo_contrato && <span className="per-error-msg">{errors.tipo_contrato}</span>}
                   </div>
+                  {/* Estado */}
                   <div className="per-form-group">
                     <label className="per-form-label">Estado</label>
                     <select className="per-select" value={form.estado} onChange={e => set("estado",e.target.value)}>
                       {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
+                  {/* Área de trabajo — dinámica */}
                   <div className="per-form-group">
                     <label className="per-form-label">Área de Trabajo</label>
                     <select className="per-select" value={form.area_trabajo} onChange={e => set("area_trabajo",e.target.value)}>
                       <option value="">Seleccionar área...</option>
-                      {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                      {catAreaTrabajo.map(a => <option key={a.valor} value={a.valor}>{a.etiqueta}</option>)}
                     </select>
                   </div>
                   <div className="per-form-group">
@@ -267,24 +244,23 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
               <div className="per-form-section">
                 <div className="per-section-title">Cargo Asignado</div>
                 <div className="per-form-grid">
+                  {/* Cargo — dinámico */}
                   <div className="per-form-group">
                     <label className="per-form-label">Cargo <span className="req">*</span></label>
                     <select className={`per-select${errors.cargo?" error":""}`} value={form.cargo_asignacion.cargo} onChange={e => setCargo("cargo",e.target.value)}>
                       <option value="">Seleccionar cargo...</option>
-                      {CARGOS.map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                      {catCargo.map(c => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
                     </select>
                     {errors.cargo && <span className="per-error-msg">{errors.cargo}</span>}
                   </div>
+                  {/* Horario — dinámico */}
                   <div className="per-form-group">
-                    <label className="per-form-label">
-                        Horario Preferido <span className="req">*</span>
-                    </label>
-                    <select className={`per-select${errors.horario_preferido ? " error" : ""}`}  value={form.cargo_asignacion.horario_preferido} onChange={e => setCargo("horario_preferido",e.target.value)}>
+                    <label className="per-form-label">Horario Preferido <span className="req">*</span></label>
+                    <select className={`per-select${errors.horario_preferido?" error":""}`} value={form.cargo_asignacion.horario_preferido} onChange={e => setCargo("horario_preferido",e.target.value)}>
                       <option value="">Seleccionar...</option>
-                      {HORARIOS.map(h => <option key={h} value={h}>{h}</option>)}
+                      {catHorario.map(h => <option key={h.valor} value={h.valor}>{h.etiqueta}</option>)}
                     </select>
                     {errors.horario_preferido && <span className="per-error-msg">{errors.horario_preferido}</span>}
-
                   </div>
                   <div className="per-form-group">
                     <label className="per-form-label">Fecha de Asignación <span className="req">*</span></label>
@@ -315,13 +291,10 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
                 <span><FileText size={15}/> Documentos del Expediente</span>
                 <span style={{ fontSize:".76rem", color:"#aaa", fontWeight:400 }}>Se guardan en Google Drive</span>
               </div>
-
               <div className="per-info-banner">
                 <AlertCircle size={16} style={{ flexShrink:0, marginTop:2 }}/>
                 <span>Los documentos se subirán a Google Drive al guardar. Obligatorio para personal que trabaja con menores: DPI, Antecedentes.</span>
               </div>
-
-              {/* Lista de documentos cargados */}
               {documentos.map((doc, i) => (
                 <div key={i} className="per-doc-card">
                   <div className="per-doc-icon"><FileText size={20} color="#6C4FBF"/></div>
@@ -335,8 +308,6 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
                   <button className="per-btn-icon delete" onClick={() => delDoc(i)}><X size={14}/></button>
                 </div>
               ))}
-
-              {/* Zona de drop / clic */}
               <div className="per-drop-zone" onClick={() => fileDocRef.current?.click()}>
                 <Upload size={32} color="#C4B5E8"/>
                 <p>Los documentos se guardan automáticamente en Google Drive</p>
@@ -345,32 +316,19 @@ const ModalCrearPersonal = ({ onClose, onCreate }) => {
                 </button>
                 <span className="per-upload-hint">PDF, JPG, PNG · Máx. 10MB · Máx. 10 documentos</span>
               </div>
-              <input
-                ref={fileDocRef}
-                type="file"
-                multiple
-                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                style={{ display:"none" }}
-                onChange={handleDocFiles}
-              />
+              <input ref={fileDocRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display:"none" }} onChange={handleDocFiles}/>
             </div>
           )}
-
         </div>
 
         {/* Footer */}
         <div className="per-modal-footer">
-          <div style={{ fontSize:".78rem", color:"#aaa" }}>
-            El código se generará automáticamente
-          </div>
+          <div style={{ fontSize:".78rem", color:"#aaa" }}>El código se generará automáticamente</div>
           <div style={{ display:"flex", gap:".75rem" }}>
             <button className="per-btn per-btn-secondary" onClick={onClose}>Cancelar</button>
-            <button className="per-btn per-btn-primary" onClick={handleSubmit}>
-              <Plus size={15}/> Crear Empleado
-            </button>
+            <button className="per-btn per-btn-primary" onClick={handleSubmit}><Plus size={15}/> Crear Empleado</button>
           </div>
         </div>
-
       </motion.div>
     </div>
   );

@@ -22,7 +22,8 @@ import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import Notification from "../../../components/Notification";
 import * as XLSX from "xlsx";
 
-const API_URL = process.env.REACT_APP_API_URL + "/api/directiva";
+const API_URL       = process.env.REACT_APP_API_URL + "/api/directiva";
+const API_CATALOGOS = process.env.REACT_APP_API_URL + "/api/catalogos";
 
 // ── Estilos inline S.btn — idénticos a Bienes/Proveedores ──
 const S = {
@@ -36,13 +37,13 @@ const S = {
 
 // ── Columnas de tabla ──────────────────────────────────────
 const columns = [
-  { name: "NOMBRE",    uid: "nombre",           sortable: true  },
-  { name: "IDENTIDAD", uid: "numero_identidad", sortable: true  },
-  { name: "CARGO",     uid: "cargo",            sortable: true  },
+  { name: "NOMBRE",    uid: "nombre",             sortable: true  },
+  { name: "IDENTIDAD", uid: "numero_identidad",   sortable: true  },
+  { name: "CARGO",     uid: "cargo",              sortable: true  },
   { name: "VIGENCIA",  uid: "fecha_inicio_cargo", sortable: true  },
-  { name: "EMPRESA",   uid: "empresa",          sortable: false },
-  { name: "ESTADO",    uid: "estado",           sortable: true  },
-  { name: "ACCIONES",  uid: "acciones",         sortable: false },
+  { name: "EMPRESA",   uid: "empresa",            sortable: false },
+  { name: "ESTADO",    uid: "estado",             sortable: true  },
+  { name: "ACCIONES",  uid: "acciones",           sortable: false },
 ];
 
 const estadosOptions = [
@@ -106,6 +107,9 @@ const Directiva = () => {
   const [seleccionados,    setSeleccionados]    = useState([]);
   const [showConfirmBulk,  setShowConfirmBulk]  = useState(false);
 
+  // Catálogo dinámico de cargos (igual que Personal/Donaciones)
+  const [catCargo, setCatCargo] = useState([]);
+
   // Modal crear
   const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
   const [tabActivo,          setTabActivo]         = useState("info");
@@ -128,6 +132,31 @@ const Directiva = () => {
   const [formData, setFormData] = useState(formVacio());
 
   useEffect(() => { cargarMiembros(); }, []);
+
+  // ── Carga de catálogo de cargos (igual que Personal) ──────
+  useEffect(() => {
+    const cargarCatalogos = async () => {
+      const cargarCat = async (endpoint, setter) => {
+        try {
+          const res = await fetch(`${API_CATALOGOS}/directiva/${endpoint}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const arr  = Array.isArray(data) ? data : data.data;
+          if (arr && arr.length > 0) {
+            setter(arr.map(item => ({
+              valor:    item.valor,
+              etiqueta: item.etiqueta || item.valor,
+            })));
+          }
+        } catch (err) {
+          console.error(`Error cargando catálogo ${endpoint}:`, err);
+        }
+      };
+
+      await cargarCat("cargo", setCatCargo);
+    };
+    cargarCatalogos();
+  }, []);
 
   const cargarMiembros = async () => {
     try {
@@ -494,10 +523,20 @@ const Directiva = () => {
             <div className="dn-form-section-title">Cargo y Vigencia</div>
             <div className="dn-form-grid">
 
+              {/* ── Cargo — dinámico desde catálogo ── */}
               <div className={`dn-form-group dn-full${errs.cargo ? " dn-field-error" : ""}`}>
                 <label>Cargo en la Directiva <span className="req">*</span></label>
-                <input name="cargo" value={formData.cargo} onChange={handleChange}
-                  placeholder="Ej: Presidente, Secretario..." className={errs.cargo ? "dn-input-err" : ""} />
+                <select
+                  name="cargo"
+                  value={formData.cargo}
+                  onChange={handleChange}
+                  className={errs.cargo ? "dn-input-err" : ""}
+                >
+                  <option value="">Seleccionar cargo...</option>
+                  {catCargo.map(c => (
+                    <option key={c.valor} value={c.valor}>{c.etiqueta}</option>
+                  ))}
+                </select>
                 {errs.cargo && <span className="dn-err-msg">{errs.cargo}</span>}
               </div>
 
@@ -751,7 +790,6 @@ const Directiva = () => {
             <table className="bienes-table">
               <thead>
                 <tr>
-                  {/* Checkbox seleccionar todos */}
                   <th style={{ width: 44 }}>
                     <input type="checkbox" className="bienes-checkbox"
                       checked={currentItems.length > 0 && currentItems.every(m => seleccionados.includes(m._id))}
@@ -820,14 +858,14 @@ const Directiva = () => {
                       </div>
                     </td>
 
-                    {/* Identidad — codigo-chip igual a Bienes */}
+                    {/* Identidad */}
                     <td className="bienes-td-codigo">
                       {m.numero_identidad
                         ? <span className="codigo-chip">{m.numero_identidad}</span>
                         : <span style={{ color: "#ef4444", fontSize: "0.76rem", fontWeight: 600 }}>⚠ Sin identidad</span>}
                     </td>
 
-                    {/* Cargo — bienes-categoria-badge */}
+                    {/* Cargo */}
                     <td>
                       <span className="bienes-categoria-badge">{m.cargo}</span>
                     </td>
@@ -847,12 +885,12 @@ const Directiva = () => {
                       {m.empresa || "—"}
                     </td>
 
-                    {/* Estado — estado-badge idéntico a Bienes */}
+                    {/* Estado */}
                     <td>
                       <span className={estadoBadgeClass(m.estado)}>{m.estado?.toUpperCase()}</span>
                     </td>
 
-                    {/* Acciones — bienes-btn-icon idéntico a Bienes */}
+                    {/* Acciones */}
                     <td>
                       <div className="bienes-action-buttons">
                         <button className="bienes-btn-icon edit" title="Editar"
@@ -876,7 +914,7 @@ const Directiva = () => {
             </table>
           </div>
 
-          {/* Paginación — idéntica a Bienes */}
+          {/* Paginación */}
           <div className="bienes-pagination">
             <div className="bienes-pagination-info">
               Página <strong>{page}</strong> de <strong>{pages}</strong>
@@ -971,6 +1009,7 @@ const Directiva = () => {
                   <li><strong>Número de Identidad:</strong> Obligatorio y único por miembro.</li>
                   <li><strong>Foto:</strong> Identificación visual en el sistema.</li>
                   <li><strong>Cargo y Vigencia:</strong> Fecha de inicio, fin y motivo de salida.</li>
+                  <li><strong>Catálogo de cargos:</strong> Los cargos disponibles se administran desde la API.</li>
                   <li><strong>Auditoría:</strong> El sistema registra automáticamente quién y cuándo.</li>
                 </ul>
               </div>

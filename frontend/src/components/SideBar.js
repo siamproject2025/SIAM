@@ -104,7 +104,7 @@ const estructuraSidebar = [
     grupos: [
       {
         label: "Personalización",
-        modulos: ["Pagina principal"]
+        modulos: ["Pagina principal","Mantenimientos"]
       }
     ]
   }
@@ -130,6 +130,7 @@ const moduloAPermiso = {
   "Roles": "VISUALIZAR_ROLES",
   "Pagina principal": "VISUALIZAR_PAGINA_PRINCIPAL",
   "Backup y restore": "VISUALIZAR_SEGURIDAD",
+  "Mantenimientos": "VISUALIZAR_MATRICULA",
 };
 
 const SideBar = () => {

@@ -20,7 +20,6 @@ const bienSchema = new mongoose.Schema({
   },
   tipo_asignacion: {
     type: String,
-    enum: ["Persona", "Aula", "Departamento", "Almacén", null],
     default: null
   },
   asignado_a: {
@@ -29,20 +28,6 @@ const bienSchema = new mongoose.Schema({
   },
   categoria: {
     type: String,
-    enum: [
-      'MOBILIARIO',
-      'EQUIPO_COMPUTO',
-      'ELECTRONICO',
-      'HERRAMIENTA',
-      'OTRO',
-      'CUERDA',
-      'VIENTO_MADERA',
-      'VIENTO_METAL',
-      'PERCUSION',
-      'TECLADO',
-      'INSTRUMENTO_ELECTRONICO',
-      'ACCESORIO_MUSICAL'
-    ],
     required: true
   },
   estado: {

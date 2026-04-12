@@ -1,6 +1,7 @@
 // ============================================================
 // ModalDetallePersonal.jsx
 // Modal editar empleado con gestión de documentos en Drive
+// Catálogos dinámicos desde API (igual que Bienes)
 // ============================================================
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -17,58 +18,57 @@ const TIPOS_DOC = [
   { value: "OTRO",         label: "Otro"                 },
 ];
 
-const NIVELES   = ["BASICO","INTERMEDIO","AVANZADO","EXPERTO"];
-const CARGOS    = ["DOCENTE","DIRECTOR","LIMPIEZA","GUARDIA","SERVICIO_SOCIAL"];
-const HORARIOS  = ["MATUTINO","VESPERTINO","NOCTURNO","ROTATIVO","FLEXIBLE"];
-const CONTRATOS = ["TIEMPO_COMPLETO","MEDIO_TIEMPO","TEMPORAL","HONORARIOS","PRACTICANTE"];
-const ESTADOS   = ["ACTIVO","VACACIONES","LICENCIA","INACTIVO"];
-const AREAS     = ["Dirección","Docencia","Administración","Mantenimiento","Seguridad","Servicios Generales","Otro"];
+const NIVELES = ["BASICO","INTERMEDIO","AVANZADO","EXPERTO"];
+const ESTADOS = ["ACTIVO","VACACIONES","LICENCIA","INACTIVO"];
 
-const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
-  const [form,              setForm]              = useState({
-    nombres:          empleado.nombres         || "",
-    apellidos:        empleado.apellidos       || "",
-    numero_identidad: empleado.numero_identidad|| "",
-    tipo_contrato:    empleado.tipo_contrato   || "",
-    estado:           empleado.estado          || "ACTIVO",
-    area_trabajo:     empleado.area_trabajo    || "",
-    telefono:         empleado.telefono        || "",
-    direccion_correo: empleado.direccion_correo|| "",
-    salario:          empleado.salario         || "",
-    fecha_ingreso:    empleado.fecha_ingreso   ? empleado.fecha_ingreso.slice(0,10) : "",
-    fecha_salida:     empleado.fecha_salida    ? empleado.fecha_salida.slice(0,10)  : "",
-    motivo_salida:    empleado.motivo_salida   || "",
+const ModalDetallePersonal = ({
+  empleado, onClose, onUpdate, onDelete,
+  catTipoContrato = [],
+  catAreaTrabajo  = [],
+  catCargo        = [],
+  catHorario      = [],
+}) => {
+  const [form, setForm] = useState({
+    nombres:          empleado.nombres          || "",
+    apellidos:        empleado.apellidos        || "",
+    numero_identidad: empleado.numero_identidad || "",
+    tipo_contrato:    empleado.tipo_contrato    || "",
+    estado:           empleado.estado           || "ACTIVO",
+    area_trabajo:     empleado.area_trabajo     || "",
+    telefono:         empleado.telefono         || "",
+    direccion_correo: empleado.direccion_correo || "",
+    salario:          empleado.salario          || "",
+    fecha_ingreso:    empleado.fecha_ingreso    ? empleado.fecha_ingreso.slice(0,10) : "",
+    fecha_salida:     empleado.fecha_salida     ? empleado.fecha_salida.slice(0,10)  : "",
+    motivo_salida:    empleado.motivo_salida    || "",
     cargo_asignacion: {
-      cargo:             empleado.cargo_asignacion?.cargo              || "",
-      horario_preferido: empleado.cargo_asignacion?.horario_preferido  || "",
+      cargo:             empleado.cargo_asignacion?.cargo             || "",
+      horario_preferido: empleado.cargo_asignacion?.horario_preferido || "",
       fecha_asignacion:  empleado.cargo_asignacion?.fecha_asignacion
         ? new Date(empleado.cargo_asignacion.fecha_asignacion).toISOString().slice(0,10) : "",
     },
   });
-  const [especialidades,    setEspecialidades]    = useState(
+  const [especialidades,   setEspecialidades]   = useState(
     (empleado.especialidades || []).map(e => ({ nombre: e.nombre || "", nivel: e.nivel || "INTERMEDIO" }))
   );
-  // Documentos existentes en Drive
-  const [docsExistentes,    setDocsExistentes]    = useState(empleado.documentacion || []);
-  // Docs a eliminar de Drive al guardar
-  const [docsEliminar,      setDocsEliminar]      = useState([]);
-  // Nuevos docs locales
-  const [nuevosDocumentos,  setNuevosDocumentos]  = useState([]);
-  const [imagenPreview,     setImagenPreview]     = useState(
+  const [docsExistentes,   setDocsExistentes]   = useState(empleado.documentacion || []);
+  const [docsEliminar,     setDocsEliminar]     = useState([]);
+  const [nuevosDocumentos, setNuevosDocumentos] = useState([]);
+  const [imagenPreview,    setImagenPreview]    = useState(
     empleado.imagen ? `data:${empleado.tipo_imagen};base64,${empleado.imagen}` : null
   );
-  const [imagenFile,        setImagenFile]        = useState(null);
-  const [errors,            setErrors]            = useState({});
-  const [tab,               setTab]               = useState("basico");
-  const [unsaved,           setUnsaved]           = useState(false);
+  const [imagenFile,       setImagenFile]       = useState(null);
+  const [errors,           setErrors]           = useState({});
+  const [tab,              setTab]              = useState("basico");
+  const [unsaved,          setUnsaved]          = useState(false);
 
   const fileDocRef = useRef(null);
   const fileImgRef = useRef(null);
 
   useEffect(() => { setUnsaved(true); }, [form, especialidades, nuevosDocumentos, docsEliminar, imagenFile]);
 
-  const setF  = (field, val) => setForm(f => ({ ...f, [field]: val }));
-  const setC  = (field, val) => setForm(f => ({ ...f, cargo_asignacion: { ...f.cargo_asignacion, [field]: val } }));
+  const setF = (field, val) => setForm(f => ({ ...f, [field]: val }));
+  const setC = (field, val) => setForm(f => ({ ...f, cargo_asignacion: { ...f.cargo_asignacion, [field]: val } }));
 
   const handleImagen = (e) => {
     const file = e.target.files?.[0];
@@ -90,7 +90,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
   const setNuevoDoc = (i, field, val) => setNuevosDocumentos(p => p.map((d,idx) => idx===i ? { ...d, [field]:val } : d));
   const delNuevoDoc = (i) => setNuevosDocumentos(p => p.filter((_,idx) => idx !== i));
 
-  // Marcar doc existente para eliminar
   const marcarEliminar = (doc) => {
     setDocsEliminar(p => [...p, doc.drive_file_id]);
     setDocsExistentes(p => p.filter(d => d.drive_file_id !== doc.drive_file_id));
@@ -104,59 +103,47 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
     if (!form.tipo_contrato)           e.tipo_contrato = "Requerido";
     if (!form.telefono.trim())         e.telefono = "Requerido";
     if (!form.direccion_correo.trim()) e.direccion_correo = "Requerido";
+    if (!form.cargo_asignacion.cargo)              e.cargo = "Requerido";
     if (!form.cargo_asignacion.horario_preferido)  e.horario_preferido = "Requerido";
-    if (!form.cargo_asignacion.cargo)  e.cargo = "Requerido";
-    if (!form.cargo_asignacion.fecha_asignacion) e.fecha_asignacion = "Requerido";
+    if (!form.cargo_asignacion.fecha_asignacion)   e.fecha_asignacion = "Requerido";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = () => {
     if (!validate()) { setTab("basico"); return; }
-
     const fd = new FormData();
-
     Object.entries(form).forEach(([k,v]) => {
       if (k === "cargo_asignacion") fd.append("cargo_asignacion", JSON.stringify(v));
       else if (v !== null && v !== undefined && v !== "") fd.append(k, v);
     });
-
     fd.append("especialidades", JSON.stringify(especialidades.filter(e => e.nombre.trim())));
     if (imagenFile) fd.append("imagen", imagenFile);
-
     if (docsEliminar.length > 0) fd.append("documentos_eliminar", JSON.stringify(docsEliminar));
-
     const meta = nuevosDocumentos.map(d => ({ tipo_documento: d.tipo_documento, descripcion: d.descripcion }));
     fd.append("documentos_meta", JSON.stringify(meta));
     nuevosDocumentos.forEach(d => fd.append("documentos", d.file));
-
     onUpdate(empleado._id, fd);
   };
-
-  const TABS = [
-    { id:"basico",    label:"Datos Básicos"  },
-    { id:"laboral",   label:"Info Laboral"   },
-    { id:"docs",      label:`Documentos (${docsExistentes.length + nuevosDocumentos.length})` },
-    { id:"auditoria", label:"Auditoría", ico: <Clock size={14}/> },
-  ];
 
   const fmtFecha = (iso) => {
     if (!iso || iso === "null") return "No registrado";
     const s = typeof iso === "string" ? iso : new Date(iso).toISOString();
-    const datePart = s.slice(0, 10);
-    const [y, m, d] = datePart.split("-");
-    if (s.includes("T")) {
-      const timePart = s.slice(11, 16);
-      return `${d}/${m}/${y} ${timePart}`;
-    }
-    return `${d}/${m}/${y}`;
+    const [y, m, d] = s.slice(0,10).split("-");
+    return s.includes("T") ? `${d}/${m}/${y} ${s.slice(11,16)}` : `${d}/${m}/${y}`;
   };
+
+  const TABS = [
+    { id:"basico",    label:"Datos Básicos" },
+    { id:"laboral",   label:"Info Laboral"  },
+    { id:"docs",      label:`Documentos (${docsExistentes.length + nuevosDocumentos.length})` },
+    { id:"auditoria", label:"Auditoría"     },
+  ];
 
   return (
     <div className="per-modal-overlay">
       <motion.div className="per-modal lg" initial={{ opacity:0, y:-20, scale:0.96 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.25 }}>
 
-        {/* Header */}
         <div className="per-modal-header">
           <h3 className="per-modal-title">
             <Users size={20}/>
@@ -165,11 +152,10 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
           <button className="per-modal-close" onClick={onClose}>✕</button>
         </div>
 
-        {/* Tabs */}
         <div className="per-tabs">
           {TABS.map(t => (
             <button key={t.id} className={`per-tab${tab===t.id?" active":""}`} onClick={() => setTab(t.id)}>
-              {t.ico && t.ico} {t.label}
+              {t.label}
               {Object.keys(errors).length > 0 && t.id==="basico" && <span className="per-tab-err">!</span>}
             </button>
           ))}
@@ -180,13 +166,10 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
           {/* ══ TAB: DATOS BÁSICOS ══ */}
           {tab === "basico" && (
             <>
-              {/* Código (readonly) */}
               <div className="per-form-section">
                 <div className="per-section-title">Código de Empleado</div>
                 <input className="per-input per-input-readonly" type="text" value={empleado.codigo} readOnly/>
               </div>
-
-              {/* Foto */}
               <div className="per-form-section">
                 <div className="per-section-title"><Camera size={15}/> Foto de Perfil</div>
                 <div className="per-upload-area" onClick={() => fileImgRef.current?.click()}>
@@ -197,8 +180,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
                   <input ref={fileImgRef} type="file" accept="image/*" style={{ display:"none" }} onChange={handleImagen}/>
                 </div>
               </div>
-
-              {/* Identificación */}
               <div className="per-form-section">
                 <div className="per-section-title"><Users size={15}/> Identificación</div>
                 <div className="per-form-grid">
@@ -229,8 +210,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
                   </div>
                 </div>
               </div>
-
-              {/* Especialidades */}
               <div className="per-form-section">
                 <div className="per-section-title" style={{ justifyContent:"space-between" }}>
                   <span>Especialidades</span>
@@ -261,24 +240,28 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
               <div className="per-form-section">
                 <div className="per-section-title">Contrato y Estado</div>
                 <div className="per-form-grid">
+                  {/* Tipo contrato — dinámico */}
                   <div className="per-form-group">
                     <label className="per-form-label">Tipo de Contrato <span className="req">*</span></label>
                     <select className={`per-select${errors.tipo_contrato?" error":""}`} value={form.tipo_contrato} onChange={e => setF("tipo_contrato",e.target.value)}>
                       <option value="">Seleccionar...</option>
-                      {CONTRATOS.map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                      {catTipoContrato.map(c => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
                     </select>
+                    {errors.tipo_contrato && <span className="per-error-msg">{errors.tipo_contrato}</span>}
                   </div>
+                  {/* Estado */}
                   <div className="per-form-group">
                     <label className="per-form-label">Estado</label>
                     <select className="per-select" value={form.estado} onChange={e => setF("estado",e.target.value)}>
                       {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
+                  {/* Área de trabajo — dinámica */}
                   <div className="per-form-group">
                     <label className="per-form-label">Área de Trabajo</label>
                     <select className="per-select" value={form.area_trabajo} onChange={e => setF("area_trabajo",e.target.value)}>
                       <option value="">Seleccionar área...</option>
-                      {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                      {catAreaTrabajo.map(a => <option key={a.valor} value={a.valor}>{a.etiqueta}</option>)}
                     </select>
                   </div>
                   <div className="per-form-group">
@@ -291,21 +274,21 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
               <div className="per-form-section">
                 <div className="per-section-title">Cargo Asignado</div>
                 <div className="per-form-grid">
+                  {/* Cargo — dinámico */}
                   <div className="per-form-group">
                     <label className="per-form-label">Cargo <span className="req">*</span></label>
                     <select className={`per-select${errors.cargo?" error":""}`} value={form.cargo_asignacion.cargo} onChange={e => setC("cargo",e.target.value)}>
                       <option value="">Seleccionar cargo...</option>
-                      {CARGOS.map(c => <option key={c} value={c}>{c.replace(/_/g," ")}</option>)}
+                      {catCargo.map(c => <option key={c.valor} value={c.valor}>{c.etiqueta}</option>)}
                     </select>
                     {errors.cargo && <span className="per-error-msg">{errors.cargo}</span>}
                   </div>
+                  {/* Horario — dinámico */}
                   <div className="per-form-group">
-                    <label className="per-form-label">
-                        Horario Preferido <span className="req">*</span>
-                    </label>
-                    <select  className={`per-select${errors.horario_preferido ? " error" : ""}`}  value={form.cargo_asignacion.horario_preferido} onChange={e => setC("horario_preferido",e.target.value)}>
+                    <label className="per-form-label">Horario Preferido <span className="req">*</span></label>
+                    <select className={`per-select${errors.horario_preferido?" error":""}`} value={form.cargo_asignacion.horario_preferido} onChange={e => setC("horario_preferido",e.target.value)}>
                       <option value="">Seleccionar...</option>
-                      {HORARIOS.map(h => <option key={h} value={h}>{h}</option>)}
+                      {catHorario.map(h => <option key={h.valor} value={h.valor}>{h.etiqueta}</option>)}
                     </select>
                     {errors.horario_preferido && <span className="per-error-msg">{errors.horario_preferido}</span>}
                   </div>
@@ -338,8 +321,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
                 <span><FileText size={15}/> Documentos del Expediente</span>
                 <span style={{ fontSize:".76rem", color:"#aaa", fontWeight:400 }}>Guardados en Google Drive</span>
               </div>
-
-              {/* Docs existentes en Drive */}
               {docsExistentes.length > 0 && (
                 <div style={{ marginBottom:16 }}>
                   <p style={{ fontSize:".78rem", fontWeight:700, color:"#7a6fa0", textTransform:"uppercase", letterSpacing:".04em", marginBottom:8 }}>
@@ -362,8 +343,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
                   ))}
                 </div>
               )}
-
-              {/* Nuevos docs por agregar */}
               {nuevosDocumentos.map((doc, i) => (
                 <div key={`new-${i}`} className="per-doc-card">
                   <div className="per-doc-icon"><FileText size={20} color="#6C4FBF"/></div>
@@ -377,8 +356,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
                   <button className="per-btn-icon delete" onClick={() => delNuevoDoc(i)}><X size={14}/></button>
                 </div>
               ))}
-
-              {/* Drop zone */}
               <div className="per-drop-zone" onClick={() => fileDocRef.current?.click()}>
                 <Upload size={32} color="#C4B5E8"/>
                 <p>Los documentos se guardan automáticamente en Google Drive</p>
@@ -395,71 +372,49 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
           {tab === "auditoria" && (
             <div className="per-form-section">
               <div className="per-section-title"><Clock size={15}/> Auditoría del Empleado</div>
-
               <div className="per-audit-card">
-
-                {/* Creación */}
                 <div className="per-audit-row">
                   <UserCheck size={16} className="per-audit-ico"/>
                   <div>
                     <div className="per-audit-label">Creación</div>
                     <div className="per-audit-val">
-                      Registrado por:{" "}
-                      <strong>{empleado.creado_por_email || empleado.creado_por || "N/D"}</strong>
-                      &nbsp;·&nbsp;
-                      Fecha:{" "}
-                      <strong>{fmtFecha(empleado.fecha_creacion || empleado.createdAt)}</strong>
+                      Registrado por: <strong>{empleado.creado_por_email || empleado.creado_por || "N/D"}</strong>
+                      &nbsp;·&nbsp; Fecha: <strong>{fmtFecha(empleado.fecha_creacion || empleado.createdAt)}</strong>
                     </div>
                   </div>
                 </div>
-
-                {/* Última actualización */}
                 {(empleado.actualizado_por || empleado.actualizado_por_email || empleado.updatedAt) && (
                   <div className="per-audit-row">
                     <Clock size={16} className="per-audit-ico"/>
                     <div>
                       <div className="per-audit-label">Última Actualización</div>
                       <div className="per-audit-val">
-                        Por:{" "}
-                        <strong>{empleado.actualizado_por_email || empleado.actualizado_por || "N/D"}</strong>
-                        &nbsp;·&nbsp;
-                        <strong>{fmtFecha(empleado.fecha_actualizacion || empleado.updatedAt)}</strong>
+                        Por: <strong>{empleado.actualizado_por_email || empleado.actualizado_por || "N/D"}</strong>
+                        &nbsp;·&nbsp; <strong>{fmtFecha(empleado.fecha_actualizacion || empleado.updatedAt)}</strong>
                       </div>
                     </div>
                   </div>
                 )}
-
-                {/* Fecha ingreso / salida */}
                 <div className="per-audit-row">
                   <FileText size={16} className="per-audit-ico"/>
                   <div>
                     <div className="per-audit-label">Ciclo Laboral</div>
                     <div className="per-audit-val">
                       Ingreso: <strong>{fmtFecha(empleado.fecha_ingreso)}</strong>
-                      {empleado.fecha_salida && (
-                        <>&nbsp;·&nbsp; Salida: <strong>{fmtFecha(empleado.fecha_salida)}</strong></>
-                      )}
-                      {empleado.motivo_salida && (
-                        <>&nbsp;·&nbsp; Motivo: <strong>{empleado.motivo_salida}</strong></>
-                      )}
+                      {empleado.fecha_salida && <>&nbsp;·&nbsp; Salida: <strong>{fmtFecha(empleado.fecha_salida)}</strong></>}
+                      {empleado.motivo_salida && <>&nbsp;·&nbsp; Motivo: <strong>{empleado.motivo_salida}</strong></>}
                     </div>
                   </div>
                 </div>
-
-                {/* IDs y datos técnicos */}
                 <div className="per-audit-ids">
                   <small>ID: <strong>{empleado._id}</strong></small>
                   <small>Código: <strong>{empleado.codigo}</strong></small>
                   <small>Estado: <strong>{empleado.estado}</strong></small>
-                  {empleado.numero_identidad && (
-                    <small>Identidad: <strong>{empleado.numero_identidad}</strong></small>
-                  )}
+                  {empleado.numero_identidad && <small>Identidad: <strong>{empleado.numero_identidad}</strong></small>}
                 </div>
-
               </div>
             </div>
           )}
-
         </div>
 
         {/* Footer */}
@@ -474,7 +429,6 @@ const ModalDetallePersonal = ({ empleado, onClose, onUpdate, onDelete }) => {
             <button className="per-btn per-btn-primary" onClick={handleSubmit}>Actualizar</button>
           </div>
         </div>
-
       </motion.div>
     </div>
   );

@@ -502,7 +502,7 @@ function App() {
                                 <div className="mm-sw">
                                     <IcoSearch/>
                                     <input placeholder="Buscar por nombre, documento, encargado..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}/>
-                                    {search&&<button style={{border:'none',background:'none',cursor:'pointer',color:'#7A6FA0',fontSize:'1.1rem'}} onClick={()=>{setSearch('');setPage(1);}}>×</button>}
+                                    {search&&<button style={{border:'none',background:'white',cursor:'pointer',color:'#000000',fontSize:'1.1rem'}} onClick={()=>{setSearch('');setPage(1);}}>X</button>}
                                 </div>
                                 <select className="mm-fsel" value={filterEstado} onChange={e=>{setFilterEstado(e.target.value);setPage(1);}}>
                                     <option value="">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option>

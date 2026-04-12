@@ -223,19 +223,7 @@ const ModalDetalleProveedor = ({
               {errores.nombre && <span className="dn-err-msg">{errores.nombre}</span>}
             </div>
 
-            <div className={`dn-form-group${clsGrupo("empresa")}`}>
-              <label>Empresa <span className="req">*</span></label>
-              <input
-                name="empresa"
-                value={form.empresa || ""}
-                onChange={handleChange}
-                placeholder="Nombre de la empresa"
-                className={errores.empresa ? "dn-input-err" : ""}
-              />
-              {errores.empresa && <span className="dn-err-msg">{errores.empresa}</span>}
-            </div>
-
-            <div className={`dn-form-group${clsGrupo("rtn")}`}>
+              <div className={`dn-form-group${clsGrupo("rtn")}`}>
               <label>RTN <span className="req">*</span></label>
               <input
                 name="rtn"
@@ -255,6 +243,20 @@ const ModalDetalleProveedor = ({
               {errores.rtn && <span className="dn-err-msg">{errores.rtn}</span>}
             </div>
 
+
+            <div className={`dn-form-group${clsGrupo("empresa")}`}>
+              <label>Empresa <span className="req">*</span></label>
+              <input
+                name="empresa"
+                value={form.empresa || ""}
+                onChange={handleChange}
+                placeholder="Nombre de la empresa"
+                className={errores.empresa ? "dn-input-err" : ""}
+              />
+              {errores.empresa && <span className="dn-err-msg">{errores.empresa}</span>}
+            </div>
+
+          
             <div className="dn-form-group">
               <label>Tipo de Proveedor</label>
               <select name="tipo_proveedor" value={form.tipo_proveedor || "PRODUCTOS"} onChange={handleChange}>

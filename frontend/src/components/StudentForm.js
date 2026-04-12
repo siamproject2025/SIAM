@@ -1,11 +1,13 @@
 // ============================================================
 // StudentForm.jsx
 // FIX #1 ALTO    — Múltiples encargados (hasta 3): padre, madre, otro
-// FIX #2 MEDIO   — Catálogo de parentescos ampliado y consistente
+// FIX #2 MEDIO   — Catálogo de parentescos dinámico desde API
 // FIX #3 ALTO    — Campos médicos con textarea amplios
 // FIX #4 MEDIO   — Pediatra: nombre + teléfono en campos separados
 // FIX #5 ALTO    — Adjuntar documentos de matrícula (identidad,
 //                  partida de nacimiento, acta de compromiso)
+// CATÁLOGOS      — parentesco_encargado y tipo_documento dinámicos
+//                  desde /api/catalogos/matricula/*
 // ============================================================
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,16 +15,44 @@ import { Trash2, ImagePlus, Upload, Plus, X, FileText, Phone } from 'lucide-reac
 import axios from 'axios';
 import { auth } from '../components/authentication/Auth';
 
-const API_HOST   = process.env.REACT_APP_API_URL;
-const API_GRADOS = `${API_HOST}/api/grados`;
-const CURRENT_YEAR = new Date().getFullYear();
+const API_HOST      = process.env.REACT_APP_API_URL;
+const API_GRADOS    = `${API_HOST}/api/grados`;
+const API_CATALOGOS = `${API_HOST}/api/catalogos`;
+const CURRENT_YEAR  = new Date().getFullYear();
 
-// ── Parentescos disponibles — FIX #2 ────────────────────────
-const PARENTESCOS = [
+// ── Fallbacks estáticos (se usan solo si la API falla) ───────
+const PARENTESCOS_FALLBACK = [
   "Padre", "Madre", "Abuelo", "Abuela",
   "Tío", "Tía", "Hermano", "Hermana",
   "Tutor Legal", "Padrino", "Madrina", "Otro",
 ];
+
+const TIPOS_DOC_FALLBACK = [
+  { value: 'identidad',          label: 'Copia de Identidad / Acta de Nacimiento' },
+  { value: 'partida_nacimiento', label: 'Partida de Nacimiento' },
+  { value: 'acta_compromiso',    label: 'Acta de Compromiso' },
+  { value: 'constancia_notas',   label: 'Constancia de Notas' },
+  { value: 'certificado_salud',  label: 'Certificado de Salud' },
+  { value: 'otro',               label: 'Otro Documento' },
+];
+
+// ── Helper: cargar un catálogo desde la API ──────────────────
+// Mismo patrón que Personal.jsx y MantenimientosCatalogos.jsx
+const cargarCatalogo = async (modulo, tipo) => {
+  try {
+    const res  = await fetch(`${API_CATALOGOS}/${modulo}/${tipo}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const arr  = Array.isArray(data) ? data : data.data;
+    if (!arr || arr.length === 0) return null;
+    return arr
+      .filter(item => item.activo !== false)   // solo registros activos
+      .sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)); // respetar orden de catálogo
+  } catch (err) {
+    console.error(`Error cargando catálogo ${modulo}/${tipo}:`, err);
+    return null;
+  }
+};
 
 // ── Template de encargado vacío ───────────────────────────────
 const encargadoVacio = () => ({
@@ -57,23 +87,19 @@ const INIT = {
   grado_a_matricular:      '',
   escuela_anterior:        '',
   notas_grado_anterior:    '',
-  estado:          'activo',
-  // FIX #3: campos médicos amplios
-  alergias:        '',
-  enfermedades:    '',
-  medicamentos:    '',
-  // FIX #4: pediatra con teléfono separado
-  pediatra_nombre: '',
-  pediatra_telefono: '',
-  vacunas_al_dia:  false,
-  imagen:          null,
-  foto_preview:    null,
+  estado:                  'activo',
+  alergias:                '',
+  enfermedades:            '',
+  medicamentos:            '',
+  pediatra_nombre:         '',
+  pediatra_telefono:       '',
+  vacunas_al_dia:          false,
+  imagen:                  null,
+  foto_preview:            null,
   contacto_emergencia_nombre:   '',
   contacto_emergencia_telefono: '',
-  // FIX #1: array de encargados
-  encargados: [encargadoVacio()],
-  // FIX #5: documentos adjuntos
-  documentos: [],
+  encargados:              [encargadoVacio()],
+  documentos:              [],
 };
 
 // ── Estilos ───────────────────────────────────────────────────
@@ -98,6 +124,7 @@ const S = {
   card:  { background:'#F4F3FB', border:'1px solid #E0D9F5', borderRadius:12, padding:'14px 16px', marginBottom:12, position:'relative' },
   cardTitle: { fontFamily:'Poppins,sans-serif', fontSize:'.82rem', fontWeight:700, color:'#6C4FBF', marginBottom:10, display:'flex', alignItems:'center', gap:6 },
   delBtn:{ position:'absolute', top:10, right:10, background:'#FDE8E8', color:'#E74C3C', border:'none', borderRadius:7, padding:'5px 8px', cursor:'pointer', fontSize:'.8rem', fontWeight:700, display:'flex', alignItems:'center', gap:4 },
+  hint:  { fontSize:'.72rem', color:'#9CA3AF', marginTop:2 },
 };
 
 const Field = ({ label, required, error, full, children }) => (
@@ -108,35 +135,62 @@ const Field = ({ label, required, error, full, children }) => (
   </div>
 );
 
-// ── Tipos de documento — FIX #5 ──────────────────────────────
-const TIPOS_DOC = [
-  { value:'identidad',          label:'Copia de Identidad / Acta de Nacimiento' },
-  { value:'partida_nacimiento', label:'Partida de Nacimiento' },
-  { value:'acta_compromiso',    label:'Acta de Compromiso' },
-  { value:'constancia_notas',   label:'Constancia de Notas' },
-  { value:'certificado_salud',  label:'Certificado de Salud' },
-  { value:'otro',               label:'Otro Documento' },
-];
-
 // Devuelve el nombre legible para mostrar en pantalla.
-// Extrae la extensión del nombreArchivo real y la combina con el tipo seleccionado.
-// El nombreArchivo completo (con UUID) se conserva intacto en Drive.
 const nombreVisual = (doc) => {
-  // Obtener extensión del archivo real (nombreArchivo o nombre)
   const fuente = doc.nombreArchivo || doc.nombre || '';
   const ext    = fuente.includes('.') ? fuente.split('.').pop().toLowerCase() : '';
-  const label  = TIPOS_DOC.find(t => t.value === doc.tipo)?.label || doc.tipo || 'Documento';
+  const label  = doc._tiposDoc?.find(t => t.value === doc.tipo)?.label || doc.tipo || 'Documento';
   return ext ? `${label}.${ext}` : label;
 };
 
 // ============================================================
 const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) => {
-  const [formData, setFormData]   = useState({ ...INIT });
-  const [errors, setErrors]       = useState({});
+  const [formData, setFormData]     = useState({ ...INIT });
+  const [errors, setErrors]         = useState({});
   const [showBanner, setShowBanner] = useState(false);
-  const [grados, setGrados]       = useState([]);
+  const [grados, setGrados]         = useState([]);
   const [loadingGrados, setLoadingGrados] = useState(false);
-  const [tabActivo, setTabActivo] = useState('datos');
+  const [tabActivo, setTabActivo]   = useState('datos');
+
+  // ── Catálogos dinámicos ──────────────────────────────────
+  const [catParentescos, setCatParentescos] = useState([]);   // { valor, etiqueta }
+  const [catTiposDoc,    setCatTiposDoc]    = useState([]);   // { valor, etiqueta }
+  const [loadingCats,    setLoadingCats]    = useState(true);
+
+  // ── Carga de catálogos al montar ─────────────────────────
+  useEffect(() => {
+    const init = async () => {
+      setLoadingCats(true);
+      const [parentescos, tiposDoc] = await Promise.all([
+        cargarCatalogo('matricula', 'parentesco_encargado'),
+        cargarCatalogo('matricula', 'tipo'),
+      ]);
+
+      // Parentescos: mapear a string simple para el select (igual que antes)
+      if (parentescos && parentescos.length > 0) {
+        setCatParentescos(parentescos.map(p => ({
+          valor:    p.valor,
+          etiqueta: p.etiqueta || p.valor,
+        })));
+      } else {
+        // Fallback: convertir strings a objetos
+        setCatParentescos(PARENTESCOS_FALLBACK.map(p => ({ valor: p, etiqueta: p })));
+      }
+
+      // Tipos de documento: mapear a { value, label } para consistencia interna
+      if (tiposDoc && tiposDoc.length > 0) {
+        setCatTiposDoc(tiposDoc.map(t => ({
+          value: t.valor,
+          label: t.etiqueta || t.valor,
+        })));
+      } else {
+        setCatTiposDoc(TIPOS_DOC_FALLBACK);
+      }
+
+      setLoadingCats(false);
+    };
+    init();
+  }, []);
 
   const obtenerGrados = async () => {
     try {
@@ -166,7 +220,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
       f.vacunas_al_dia = student.vacunas_al_dia === true || student.vacunas_al_dia === 'true';
       f.foto_preview = student.imagen && student.imagen !== 'null' ? `data:image/png;base64,${student.imagen}` : null;
 
-      // FIX #1: compatibilidad con formato antiguo (un solo encargado)
+      // Compatibilidad con formato antiguo (un solo encargado)
       if (!student.encargados || !student.encargados.length) {
         f.encargados = [{
           nombre_encargado:       student.nombre_encargado       || '',
@@ -178,19 +232,18 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
         }];
       }
 
-      // FIX #4: compatibilidad pediatra
+      // Compatibilidad pediatra
       if (student.pediatra && !student.pediatra_nombre) {
         f.pediatra_nombre   = student.pediatra;
         f.pediatra_telefono = '';
       }
 
-      // FIX #5: documentos existentes
       f.documentos = student.documentos || [];
       setFormData(f);
     }
   }, [student]);
 
-  // ── Encargados — FIX #1 ──────────────────────────────────
+  // ── Encargados ───────────────────────────────────────────
   const addEncargado = () => {
     if (formData.encargados.length >= 3) return;
     setFormData(p => ({ ...p, encargados: [...p.encargados, encargadoVacio()] }));
@@ -212,17 +265,19 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     }
   };
 
-  // ── Documentos — FIX #5 ──────────────────────────────────
+  // ── Documentos ───────────────────────────────────────────
   const addDocumento = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { alert('El documento no debe superar 10MB'); return; }
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
     if (!allowedTypes.includes(file.type)) { alert('Solo PDF, JPG o PNG'); return; }
+    // Valor por defecto: primer tipo del catálogo o fallback
+    const tipoDefault = catTiposDoc[0]?.value || 'otro';
     setFormData(p => ({
       ...p,
       documentos: [...p.documentos, {
-        tipo:   'identidad',
+        tipo:   tipoDefault,
         nombre: file.name,
         file,
         tamaño: (file.size / 1024).toFixed(0) + ' KB',
@@ -288,7 +343,14 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
   // ── Validación ───────────────────────────────────────────
   const validateForm = () => {
     const newErrors = {};
-    const req = { nombre_completo:'El nombre completo', fecha_nacimiento:'La fecha de nacimiento', genero:'El género', id_documento:'El número de acta de nacimiento', residencia_direccion:'La dirección de residencia', grado_a_matricular:'El grado a matricular' };
+    const req = {
+      nombre_completo:      'El nombre completo',
+      fecha_nacimiento:     'La fecha de nacimiento',
+      genero:               'El género',
+      id_documento:         'El número de acta de nacimiento',
+      residencia_direccion: 'La dirección de residencia',
+      grado_a_matricular:   'El grado a matricular',
+    };
     Object.entries(req).forEach(([f, lbl]) => { if (!formData[f]?.toString().trim()) newErrors[f] = `${lbl} es requerido`; });
 
     const soloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
@@ -302,11 +364,10 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
       else if (edad > 18) newErrors.fecha_nacimiento = `Edad: ${edad} años. Máximo 18 años`;
     }
 
-    // Validar encargados — FIX #1
     formData.encargados.forEach((enc, i) => {
-      if (!enc.nombre_encargado?.trim())     newErrors[`enc_${i}_nombre`]    = 'Nombre requerido';
-      if (!enc.parentesco_encargado?.trim()) newErrors[`enc_${i}_parentesco`]= 'Parentesco requerido';
-      if (!enc.telefono_encargado?.trim())   newErrors[`enc_${i}_telefono`]  = 'Teléfono requerido';
+      if (!enc.nombre_encargado?.trim())     newErrors[`enc_${i}_nombre`]     = 'Nombre requerido';
+      if (!enc.parentesco_encargado?.trim()) newErrors[`enc_${i}_parentesco`] = 'Parentesco requerido';
+      if (!enc.telefono_encargado?.trim())   newErrors[`enc_${i}_telefono`]   = 'Teléfono requerido';
       if (enc.email_encargado && !/\S+@\S+\.\S+/.test(enc.email_encargado)) newErrors[`enc_${i}_email`] = 'Email inválido';
     });
 
@@ -322,29 +383,24 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     delete clean.foto_preview;
     if (isEdit && !(clean.imagen instanceof File)) delete clean.imagen;
 
-    // ── Encargados: serializar a JSON string ─────────────────
-    // FormData no puede serializar arrays — sin esto llega "[object Object]" al backend
     if (clean.encargados && clean.encargados.length > 0) {
       const principal = clean.encargados.find(e => e.es_principal) || clean.encargados[0];
-      // Campos legacy para compatibilidad con código anterior
       clean.nombre_encargado       = principal.nombre_encargado;
       clean.parentesco_encargado   = principal.parentesco_encargado;
       clean.id_documento_encargado = principal.id_documento_encargado;
       clean.telefono_encargado     = principal.telefono_encargado;
       clean.email_encargado        = principal.email_encargado;
     }
-    // El array completo viaja como JSON string — el backend lo parsea con JSON.parse()
     clean.encargados = JSON.stringify(clean.encargados || []);
 
-    // ── Documentos: separar archivos nuevos de los ya guardados en Drive ─────
     const archivosNuevos = (clean.documentos || []).filter(d => d.nuevo && d.file instanceof File);
     const docsExistentes = (clean.documentos || [])
       .filter(d => !d.nuevo)
-      .map(({ file, nuevo, tamano, ...rest }) => rest); // quitar campos del frontend
+      .map(({ file, nuevo, tamano, ...rest }) => rest);
 
-    clean.documentos     = JSON.stringify(docsExistentes); // docs ya en Drive (JSON)
-    clean.documentosMeta = JSON.stringify(archivosNuevos.map(d => ({ tipo: d.tipo }))); // tipo de cada archivo nuevo
-    clean._archivosDocumentos = archivosNuevos.map(d => d.file); // File objects reales
+    clean.documentos          = JSON.stringify(docsExistentes);
+    clean.documentosMeta      = JSON.stringify(archivosNuevos.map(d => ({ tipo: d.tipo })));
+    clean._archivosDocumentos = archivosNuevos.map(d => d.file);
 
     onSubmit(clean);
   };
@@ -359,8 +415,10 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
   ];
 
   const tabStyle = (id) => ({
-    padding:'9px 16px', border:'none', background: tabActivo===id?'#6C4FBF':'#EDE9FF',
-    color: tabActivo===id?'#fff':'#6C4FBF', borderRadius:'8px 8px 0 0',
+    padding:'9px 16px', border:'none',
+    background: tabActivo===id ? '#6C4FBF' : '#EDE9FF',
+    color: tabActivo===id ? '#fff' : '#6C4FBF',
+    borderRadius:'8px 8px 0 0',
     fontWeight:700, fontSize:'.82rem', cursor:'pointer', fontFamily:'inherit',
     transition:'all .18s', whiteSpace:'nowrap',
   });
@@ -377,11 +435,11 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
               {Object.keys(errors).length>6&&<li>...y {Object.keys(errors).length-6} más</li>}
             </ul>
           </div>
-          <button style={{border:'none',background:'none',cursor:'pointer',color:'#7a1010',fontSize:'1.1rem'}} onClick={()=>setShowBanner(false)}>×</button>
+          <button style={{border:'none',background:'none',cursor:'pointer',color:'#ffffff',fontSize:'1.1rem'}} onClick={()=>setShowBanner(false)}>×</button>
         </div>
       )}
 
-      {/* Tabs de navegación */}
+      {/* Tabs */}
       <div style={{display:'flex',gap:4,marginBottom:0,flexWrap:'wrap',borderBottom:'2px solid #E0D9F5',paddingBottom:0}}>
         {tabs.map(t=>(
           <button key={t.id} style={tabStyle(t.id)} onClick={()=>setTabActivo(t.id)} type="button">{t.label}</button>
@@ -447,12 +505,11 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
             </div>
           )}
 
-          {/* ── Tab: Datos Médicos — FIX #3 y #4 ── */}
+          {/* ── Tab: Datos Médicos ── */}
           {tabActivo === 'medicos' && (
             <>
               <div style={S.info}>ℹ Esta información es confidencial. Campos amplios para registrar información detallada.</div>
               <div style={S.grid}>
-                {/* FIX #3: textarea con minHeight amplio */}
                 <Field label="Alergias conocidas (describe todas las alergias)" full>
                   <textarea style={{...S.ta, minHeight:100}} name="alergias" value={formData.alergias} onChange={handleChange} placeholder="Ej: Polen, Penicilina, Mariscos, látex, etc. Describe síntomas si los conoces..."/>
                 </Field>
@@ -462,7 +519,6 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                 <Field label="Medicamentos actuales (nombre, dosis y frecuencia)" full>
                   <textarea style={{...S.ta, minHeight:100}} name="medicamentos" value={formData.medicamentos} onChange={handleChange} placeholder="Ej: Salbutamol 100mcg — 2 inhalaciones si hay crisis. Ritalín 10mg — 1 tableta en la mañana antes de clases."/>
                 </Field>
-                {/* FIX #4: pediatra con nombre y teléfono separados */}
                 <Field label="Nombre del Pediatra / Médico tratante">
                   <input style={S.inp(false)} name="pediatra_nombre" value={formData.pediatra_nombre} onChange={handleChange} placeholder="Dr./Dra. Nombre Completo"/>
                 </Field>
@@ -507,7 +563,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
             </div>
           )}
 
-          {/* ── Tab: Encargados — FIX #1 y #2 ── */}
+          {/* ── Tab: Encargados ── */}
           {tabActivo === 'encargados' && (
             <>
               <div style={S.info}>ℹ Registra hasta 3 encargados para garantizar la localización en emergencias. El primero es el encargado principal.</div>
@@ -526,13 +582,29 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                     <Field label="Nombre Completo" required error={errors[`enc_${i}_nombre`]}>
                       <input style={S.inp(errors[`enc_${i}_nombre`])} value={enc.nombre_encargado} onChange={e=>updateEncargado(i,'nombre_encargado',e.target.value)}/>
                     </Field>
-                    {/* FIX #2: catálogo completo */}
+
+                    {/* ── Parentesco — dinámico desde catálogo ── */}
                     <Field label="Parentesco" required error={errors[`enc_${i}_parentesco`]}>
-                      <select style={S.sel(errors[`enc_${i}_parentesco`])} value={enc.parentesco_encargado} onChange={e=>updateEncargado(i,'parentesco_encargado',e.target.value)}>
-                        <option value="">Seleccionar parentesco...</option>
-                        {PARENTESCOS.map(p=><option key={p} value={p}>{p}</option>)}
-                      </select>
+                      {loadingCats ? (
+                        <input style={{...S.inp(false), color:'#aaa'}} value="Cargando catálogo..." readOnly/>
+                      ) : (
+                        <select
+                          style={S.sel(errors[`enc_${i}_parentesco`])}
+                          value={enc.parentesco_encargado}
+                          onChange={e => updateEncargado(i, 'parentesco_encargado', e.target.value)}
+                        >
+                          <option value="">Seleccionar parentesco...</option>
+                          {catParentescos.map(p => (
+                            <option key={p.valor} value={p.valor}>{p.etiqueta}</option>
+                          ))}
+                        </select>
+                      )}
+                      {/* Hint: los valores vienen de Mantenimiento de Catálogos */}
+                      {!loadingCats && (
+                        <span style={S.hint}>Valores administrables en Mantenimiento → Matrícula → Parentesco</span>
+                      )}
                     </Field>
+
                     <Field label="Documento de Identidad">
                       <input style={S.inp(false)} value={enc.id_documento_encargado} onChange={e=>updateEncargado(i,'id_documento_encargado',e.target.value.replace(/\D/g,''))} inputMode="numeric" maxLength="20"/>
                     </Field>
@@ -562,22 +634,32 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                 <div key={i} style={{...S.card, display:'flex', alignItems:'center', gap:12}}>
                   <FileText size={20} color="#6C4FBF" style={{flexShrink:0}}/>
                   <div style={{flex:1}}>
-                    <select style={{...S.sel(false), marginBottom:4}} value={doc.tipo} onChange={e=>updateDocTipo(i,e.target.value)}>
-                      {TIPOS_DOC.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
+
+                    {/* ── Tipo de documento — dinámico desde catálogo ── */}
+                    {loadingCats ? (
+                      <input style={{...S.inp(false), marginBottom:4, color:'#aaa'}} value="Cargando tipos..." readOnly/>
+                    ) : (
+                      <select
+                        style={{...S.sel(false), marginBottom:6}}
+                        value={doc.tipo}
+                        onChange={e => updateDocTipo(i, e.target.value)}
+                      >
+                        {catTiposDoc.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    )}
+
                     {doc.archivoUrl ? (
-                      /* Documento ya guardado en Drive */
                       <div style={{fontSize:'.8rem',display:'flex',alignItems:'center',gap:6}}>
                         <span style={{color:'#27AE60',fontWeight:700}}>✓ Guardado en Drive</span>
                         <span style={{color:'#aaa'}}>—</span>
-                        {/* nombreVisual() muestra solo "Tipo.ext" — el UUID queda en Drive */}
                         <a href={doc.archivoUrl} target="_blank" rel="noopener noreferrer"
                            style={{color:'#6C4FBF',fontWeight:700,textDecoration:'none'}}>
-                          {nombreVisual(doc)}
+                          {catTiposDoc.find(t => t.value === doc.tipo)?.label || doc.tipo}
                         </a>
                       </div>
                     ) : (
-                      /* Archivo nuevo pendiente de subir */
                       <div style={{fontSize:'.8rem',color:'#7A6FA0',display:'flex',alignItems:'center',gap:6}}>
                         <span style={{color:'#F39C12',fontWeight:700}}>⏳ Pendiente de subir</span>
                         <span>— {doc.nombre} ({doc.tamaño})</span>
@@ -594,6 +676,11 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
                   <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={addDocumento} style={{display:'none'}} id="sf-doc-new"/>
                   <label htmlFor="sf-doc-new" style={{...S.btn('#6C4FBF'),cursor:'pointer'}}><Upload size={14}/> Seleccionar documento</label>
                   <small style={{display:'block',marginTop:10,color:'#aaa',fontSize:'.8rem'}}>PDF, JPG, PNG · Máx. 10MB · Máx. 6 documentos</small>
+                  {!loadingCats && (
+                    <small style={{display:'block',marginTop:4,color:'#aaa',fontSize:'.75rem'}}>
+                      Tipos administrables en Mantenimiento → Matrícula → Tipo de Documento
+                    </small>
+                  )}
                 </div>
               )}
             </>

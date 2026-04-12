@@ -250,13 +250,13 @@ const handleCrearActividad = async (nueva) => {
       showNotification(err.message, 'error');
       throw err;
     }
-
+    /*
     const conflicto = detectarConflicto(actividades, payload.lugar, payload.fecha, id);
     if (conflicto) {
       const msg = `⚠ Conflicto: "${conflicto.nombre}" ya está en "${conflicto.lugar}" el ${formatearFechaHN(conflicto.fecha)}.`;
       showNotification(msg, 'error');
       throw new Error(msg);
-    }
+    }*/
 
     try {
       const token = await auth.currentUser.getIdToken();

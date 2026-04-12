@@ -27,7 +27,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         <div className="modal-header-matriculas">
           <h2 className="modal-title-matriculas">{title}</h2>
           <button className="modal-close-matriculas" onClick={onClose}>
-            <i className="fas fa-times"></i>
+            <i className="fas fa-times">X</i>
           </button>
         </div>
         <div className="modal-body-matriculas">
