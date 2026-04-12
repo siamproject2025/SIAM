@@ -1,5 +1,5 @@
 // Controllers/ordenCompraController.js
-const OrdenCompra = require("../Models/OrdenCompra");
+const OrdenCompra = require("../Models/ordenCompra");
 
 // ── Helper: detectar cambios campo a campo ───────────────────
 const detectarCambios = (anterior, nuevo) => {
