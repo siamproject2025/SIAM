@@ -2,6 +2,7 @@
 // Personal.jsx — Gestión de Personal
 // Diseño alineado a Sistema de Bienes
 // Incluye: código autogenerado, docs en Drive, tabla estilizada
+// Catálogos dinámicos desde API (igual que Bienes)
 // ============================================================
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,7 +19,8 @@ import ModalCrearPersonal from "./Modalcrearpersonal";
 import ModalDetallePersonal from "./Modaldetallepersonal";
 import "../../../styles/Personal.css";
 
-const API_URL = process.env.REACT_APP_API_URL + "/api/personal";
+const API_URL      = process.env.REACT_APP_API_URL + "/api/personal";
+const API_CATALOGOS = process.env.REACT_APP_API_URL + "/api/catalogos";
 
 const COLS = [
   { uid: "codigo",           name: "CÓDIGO",       sortable: true  },
@@ -39,15 +41,6 @@ const ESTADO_OPTS = [
   { uid: "INACTIVO",  name: "Inactivo"   },
 ];
 
-const CARGO_OPTS = [
-  { uid: "all",           name: "Todos los cargos" },
-  { uid: "DOCENTE",       name: "Docente"          },
-  { uid: "DIRECTOR",      name: "Director"         },
-  { uid: "LIMPIEZA",      name: "Limpieza"         },
-  { uid: "GUARDIA",       name: "Guardia"          },
-  { uid: "SERVICIO_SOCIAL", name: "Servicio Social"},
-];
-
 const ROWS = 15;
 
 const fmtFechaLocal = (iso) => {
@@ -63,7 +56,6 @@ const ChevronDown = () => (
   </svg>
 );
 
-// ── Estado badge class ─────────────────────────────────────
 const estadoBadge = (e) => ({
   ACTIVO:     "per-estado-badge per-activo",
   VACACIONES: "per-estado-badge per-vacaciones",
@@ -91,9 +83,15 @@ const Personal = () => {
   const [fechaDesde,        setFechaDesde]        = useState("");
   const [fechaHasta,        setFechaHasta]        = useState("");
 
+  // ── Catálogos dinámicos (igual que Bienes) ─────────────
+  const [catTipoContrato,   setCatTipoContrato]   = useState([]);
+  const [catAreaTrabajo,    setCatAreaTrabajo]     = useState([]);
+  const [catCargo,          setCatCargo]          = useState([]);
+  const [catHorario,        setCatHorario]        = useState([]);
+
   const cargoMenuRef = useRef(null);
 
-  // ── Carga inicial ──────────────────────────────────────
+  // ── Carga inicial de personal ──────────────────────────
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -106,6 +104,36 @@ const Personal = () => {
       finally { loadingController.stop(); }
     };
     cargar();
+  }, []);
+
+  // ── Carga de catálogos (igual que Bienes) ──────────────
+  useEffect(() => {
+    const cargarCatalogos = async () => {
+      const cargarCat = async (endpoint, setter) => {
+        try {
+          const res = await fetch(`${API_CATALOGOS}/personal/${endpoint}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const arr  = Array.isArray(data) ? data : data.data;
+          if (arr && arr.length > 0) {
+            setter(arr.map(item => ({
+              valor:    item.valor,
+              etiqueta: item.etiqueta || item.valor,
+            })));
+          }
+        } catch (err) {
+          console.error(`Error cargando catálogo ${endpoint}:`, err);
+        }
+      };
+
+      await Promise.all([
+        cargarCat("tipo_contrato",    setCatTipoContrato),
+        cargarCat("area_trabajo",     setCatAreaTrabajo),
+        cargarCat("cargo",            setCatCargo),
+        cargarCat("horario_preferido",setCatHorario),
+      ]);
+    };
+    cargarCatalogos();
   }, []);
 
   useEffect(() => {
@@ -314,7 +342,7 @@ const Personal = () => {
           </div>
           <div className="per-bar-buttons">
             {seleccionados.length > 0 && (
-              <button className="per-btn per-btn-danger" >
+              <button className="per-btn per-btn-danger">
                 <Trash2 size={15}/> Eliminar ({seleccionados.length})
               </button>
             )}
@@ -339,20 +367,29 @@ const Personal = () => {
             </div>
           </div>
 
-          {/* Cargo dropdown */}
+          {/* Cargo dropdown — dinámico desde catálogo */}
           <div className="per-filter-group">
             <span className="per-filter-label">Cargo:</span>
             <div className="per-dropdown-wrapper" ref={cargoMenuRef}>
               <button className={`per-filter-select${cargoFiltro !== "all" ? " has-value" : ""}`}
                 onClick={() => setShowCargoMenu(!showCargoMenu)}>
-                {CARGO_OPTS.find(c => c.uid === cargoFiltro)?.name || "Todos los cargos"}<ChevronDown/>
+                {cargoFiltro === "all"
+                  ? "Todos los cargos"
+                  : catCargo.find(c => c.valor === cargoFiltro)?.etiqueta || cargoFiltro}
+                <ChevronDown/>
               </button>
               {showCargoMenu && (
                 <div className="per-dropdown-menu">
-                  {CARGO_OPTS.map(op => (
-                    <div key={op.uid} className={`per-dropdown-item${cargoFiltro === op.uid ? " active" : ""}`}
-                      onClick={() => { setCargoFiltro(op.uid); setShowCargoMenu(false); setPage(1); }}>
-                      {cargoFiltro === op.uid && <span className="chk">✓</span>} {op.name}
+                  <div
+                    className={`per-dropdown-item${cargoFiltro === "all" ? " active" : ""}`}
+                    onClick={() => { setCargoFiltro("all"); setShowCargoMenu(false); setPage(1); }}
+                  >
+                    {cargoFiltro === "all" && <span className="chk">✓</span>} Todos los cargos
+                  </div>
+                  {catCargo.map(op => (
+                    <div key={op.valor} className={`per-dropdown-item${cargoFiltro === op.valor ? " active" : ""}`}
+                      onClick={() => { setCargoFiltro(op.valor); setShowCargoMenu(false); setPage(1); }}>
+                      {cargoFiltro === op.valor && <span className="chk">✓</span>} {op.etiqueta}
                     </div>
                   ))}
                 </div>
@@ -360,7 +397,7 @@ const Personal = () => {
             </div>
           </div>
 
-          {/* Especialidad — fix #7 */}
+          {/* Especialidad */}
           <div className="per-filter-group">
             <span className="per-filter-label">Especialidad:</span>
             <div className="per-search-wrapper" style={{ minWidth:180, maxWidth:220 }}>
@@ -408,7 +445,6 @@ const Personal = () => {
             <table className="per-table">
               <thead>
                 <tr>
-                  
                   {COLS.map(col => (
                     <th key={col.uid} className={col.sortable ? "sortable" : ""} onClick={() => handleSort(col.uid)}>
                       {col.name}
@@ -431,13 +467,9 @@ const Personal = () => {
                   </tr>
                 ) : currentItems.map(emp => (
                   <tr key={emp._id} className={seleccionados.includes(emp._id) ? "row-selected" : ""}>
-          
-                    {/* Código chip */}
                     <td className="per-td-codigo">
                       <span className="per-codigo-chip">{emp.codigo}</span>
                     </td>
-
-                    {/* Empleado */}
                     <td>
                       <div className="per-nombre-cell">
                         {emp.imagen ? (
@@ -453,25 +485,13 @@ const Personal = () => {
                         </div>
                       </div>
                     </td>
-
-                    {/* Cargo */}
                     <td>
                       <span className="per-cargo-badge">{emp.cargo_asignacion?.cargo?.replace(/_/g," ") || "—"}</span>
                     </td>
-
-                    {/* Área */}
                     <td className="per-td-area">{emp.area_trabajo || <span className="per-sin">—</span>}</td>
-
-                    {/* Contrato */}
                     <td><span className="per-contrato-chip">{emp.tipo_contrato?.replace(/_/g," ") || "—"}</span></td>
-
-                    {/* Fecha ingreso */}
                     <td className="per-td-fecha">{fmtFechaLocal(emp.fecha_ingreso)}</td>
-
-                    {/* Estado */}
                     <td><span className={estadoBadge(emp.estado)}>{emp.estado}</span></td>
-
-                    {/* Acciones */}
                     <td>
                       <div className="per-action-buttons">
                         <button className="per-btn-icon edit" title="Editar" onClick={() => setEmpleadoSelec(emp)}>
@@ -508,7 +528,14 @@ const Personal = () => {
 
       {/* ── Modales ── */}
       {mostrarModalCrear && (
-        <ModalCrearPersonal onClose={() => setMostrarModalCrear(false)} onCreate={handleCrear}/>
+        <ModalCrearPersonal
+          onClose={() => setMostrarModalCrear(false)}
+          onCreate={handleCrear}
+          catTipoContrato={catTipoContrato}
+          catAreaTrabajo={catAreaTrabajo}
+          catCargo={catCargo}
+          catHorario={catHorario}
+        />
       )}
       {empleadoSelec && (
         <ModalDetallePersonal
@@ -516,6 +543,10 @@ const Personal = () => {
           onClose={() => setEmpleadoSelec(null)}
           onUpdate={handleActualizar}
           onDelete={handleEliminar}
+          catTipoContrato={catTipoContrato}
+          catAreaTrabajo={catAreaTrabajo}
+          catCargo={catCargo}
+          catHorario={catHorario}
         />
       )}
 
@@ -541,6 +572,7 @@ const Personal = () => {
                   <li><strong>Filtro por especialidad:</strong> Búsqueda específica en el campo de especialidad</li>
                   <li><strong>Ciclo laboral:</strong> Fecha de ingreso, salida y motivo de egreso</li>
                   <li><strong>Auditoría:</strong> Registro de quién creó/actualizó cada empleado</li>
+                  <li><strong>Catálogos dinámicos:</strong> Cargos, contratos, áreas y horarios administrables desde la API</li>
                 </ul>
               </div>
               <div className="per-help-section">

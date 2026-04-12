@@ -1,112 +1,114 @@
+// models/OrdenCompra.js
 const mongoose = require("mongoose");
 
 const itemSchema = new mongoose.Schema({
   descripcion: { type: String, required: true },
-  cantidad: { type: Number, required: true, min: 0 },
-  costoUnit: { type: Number, required: true, min: 0 }
+  cantidad:    { type: Number, required: true, min: 0 },
+  costoUnit:   { type: Number, required: true, min: 0 }
 });
 
-// Schema para adjuntos (PDF, imágenes, documentos)
 const adjuntoSchema = new mongoose.Schema({
-  nombre: { 
-    type: String, 
-    required: true,
-    trim: true 
-  },
-  tipo: { 
-    type: String, 
-    enum: ['PDF', 'IMG', 'DOC'], 
-    required: true 
-  },
-  ruta: { 
-    type: String, 
-    required: true 
-  },
-  tamano: { 
-    type: Number, 
-    required: true 
-  },
-  fecha_carga: { 
-    type: Date, 
-    default: Date.now 
-  }
+  nombre:      { type: String, required: true, trim: true },
+  tipo:        { type: String, enum: ['PDF', 'IMG', 'DOC'], required: true },
+  ruta:        { type: String, required: true },
+  tamano:      { type: Number, required: true },
+  fecha_carga: { type: Date, default: Date.now }
 });
 
 const ordenCompraSchema = new mongoose.Schema({
-  numero: { 
-    type: String, 
-    required: false,  // Se genera en pre-save, no es obligatorio en input
-    unique: true,
-    trim: true 
+  numero: {
+    type:     String,
+    required: false,   // Se genera en pre-save
+    unique:   true,
+    trim:     true
   },
-  proveedor_id: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: "Proveedor", //  Necesario para populate()
-    required: true 
+  proveedor_id: {
+    type:     mongoose.Schema.Types.ObjectId,
+    ref:      "Proveedor",
+    required: true
   },
-  estado: { 
-    type: String, 
+  estado: {
+    type:    String,
     required: true,
-    enum: ["BORRADOR", "ENVIADA", "RECIBIDA", "CERRADA"],
+    enum:    ["BORRADOR", "ENVIADA", "RECIBIDA", "CERRADA"],
     default: "BORRADOR"
   },
-  fecha: { 
-    type: Date, 
-    default: Date.now 
-  },
-  items: { 
-    type: [itemSchema], 
+  fecha: { type: Date, default: Date.now },
+  items: {
+    type: [itemSchema],
     required: true,
     validate: {
-      validator: function(items) {
-        return items && items.length > 0;
-      },
-      message: 'La orden debe tener al menos un ítem'
+      validator: (items) => items && items.length > 0,
+      message:   'La orden debe tener al menos un ítem'
     }
   },
-  recepciones: { 
-    type: Array,
-    default: [] 
-  },
+  recepciones: { type: Array, default: [] },
   adjuntos: {
     type: [adjuntoSchema],
     default: [],
     validate: {
-      validator: function(adjuntos) {
-        // Máximo 5 adjuntos por orden
-        return adjuntos.length <= 5;
-      },
-      message: 'Máximo 5 adjuntos por orden'
+      validator: (a) => a.length <= 5,
+      message:   'Máximo 5 adjuntos por orden'
     }
+  },
+
+  // ========== CAMPOS DE AUDITORÍA ==========
+  creado_por: {
+    type:    String,
+    default: null
+  },
+  creado_por_email: {
+    type:    String,
+    default: null
+  },
+  fecha_creacion: {
+    type:    Date,
+    default: Date.now
+  },
+  actualizado_por: {
+    type:    String,
+    default: null
+  },
+  actualizado_por_email: {
+    type:    String,
+    default: null
+  },
+  fecha_actualizacion: {
+    type:    Date,
+    default: null
+  },
+  eliminado_por: {
+    type:    String,
+    default: null
+  },
+  eliminado_por_email: {
+    type:    String,
+    default: null
+  },
+  fecha_eliminacion: {
+    type:    Date,
+    default: null
   }
 }, {
-  timestamps: true // Agrega createdAt y updatedAt automáticamente
+  collection: "ordenes_compra",
+  timestamps: true   // createdAt + updatedAt automáticos
 });
 
-// Método pre-save para generar número automáticamente
-ordenCompraSchema.pre('save', async function(next) {
-  // Si el número ya existe (actualización), no regenerar
-  if (this.numero) {
-    return next();
-  }
-  
+// ── Auto-generar número ──────────────────────────────────────
+ordenCompraSchema.pre('save', async function (next) {
+  if (this.numero) return next();
   try {
-    // Obtener la última orden creada
-    const ultimaOrden = await mongoose.model('OrdenCompra').findOne()
-      .sort({ createdAt: -1 })
-      .lean();
-    
-    // Generar nuevo número: ORD-000001, ORD-000002, etc.
-    let proximoNumero = 1;
-    if (ultimaOrden && ultimaOrden.numero) {
-      const numeroActual = parseInt(ultimaOrden.numero.split('-')[1]);
-      proximoNumero = numeroActual + 1;
+    const ultima = await mongoose.model('OrdenCompra').findOne().sort({ createdAt: -1 }).lean();
+
+    let siguiente = 1;
+    if (ultima?.numero) {
+      const actual = parseInt(ultima.numero.split('-')[1], 10);
+      siguiente = actual + 1;
     }
-    
-    this.numero = `ORD-${String(proximoNumero).padStart(6, '0')}`;
+    this.numero = `ORD-${String(siguiente).padStart(6, '0')}`;
     next();
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 });
 

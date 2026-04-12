@@ -7,7 +7,7 @@
 //   • AnimatePresence + spring de framer-motion
 //
 // Funcionalidades conservadas al 100%:
-//   • Catálogo de asignaturas (localStorage)
+//   • Catálogo de asignaturas dinámico desde API
 //   • Toggle picker ↔ digitación manual de hora
 //   • Selector de grado con info completa
 //   • Asignación / eliminación de alumnos
@@ -34,34 +34,6 @@ const diasSemana = {
   JUE: "Jueves",
   VIE: "Viernes",
   SAB: "Sábado",
-};
-
-// ── Catálogo de asignaturas ──────────────────────────────────
-const ASIGNATURAS_KEY = "siam_asignaturas";
-const ASIGNATURAS_DEFAULT = [
-  "Teoría Musical", "Solfeo", "Armonía", "Historia de la Música",
-  "Piano", "Guitarra", "Violín", "Flauta", "Trompeta", "Percusión",
-  "Canto", "Coro", "Educación Musical", "Lectura Musical",
-  "Apreciación Musical", "Contrapunto", "Composición",
-];
-
-const useAsignaturas = () => {
-  const [asignaturas, setAsignaturas] = useState(() => {
-    try {
-      const stored = localStorage.getItem(ASIGNATURAS_KEY);
-      return stored ? JSON.parse(stored) : ASIGNATURAS_DEFAULT;
-    } catch { return ASIGNATURAS_DEFAULT; }
-  });
-  const agregar = (nueva) => {
-    const nombre = nueva.trim();
-    if (!nombre) return false;
-    if (asignaturas.find(a => a.toLowerCase() === nombre.toLowerCase())) return false;
-    const actualizado = [...asignaturas, nombre].sort();
-    setAsignaturas(actualizado);
-    localStorage.setItem(ASIGNATURAS_KEY, JSON.stringify(actualizado));
-    return true;
-  };
-  return { asignaturas, agregar };
 };
 
 // ── CSS del modal (patrón dn-* idéntico al de Bienes) ────────
@@ -241,11 +213,6 @@ const CSS = `
 
   /* ── Asignatura row ──────────────────────────────────────── */
   .dn-asig-row { display: flex; gap: 8px; align-items: flex-end; }
-  .dn-asig-new-panel {
-    background: #F4F3FB; border-radius: 10px;
-    border: 1px solid #E0D9F5; padding: 12px 14px;
-    margin-top: 8px;
-  }
 
   /* ── Botones pequeños ────────────────────────────────────── */
   .dn-btn-add {
@@ -391,6 +358,13 @@ const CSS = `
     font-size: .72rem; font-weight: 700;
   }
 
+  /* ── Skeleton carga catálogo ─────────────────────────────── */
+  .dn-cat-loading {
+    padding: 9px 12px; border: 2px solid #E0D9F5; border-radius: 9px;
+    background: #FAF9FF; color: #aaa; font-size: .86rem;
+    font-family: 'Nunito', sans-serif;
+  }
+
   @media (max-width: 640px) {
     .dn-form-grid { grid-template-columns: 1fr; }
     .dn-alumnos-filters { grid-template-columns: 1fr; }
@@ -406,6 +380,10 @@ const ModalDetalleHorario = ({
   onCerrar,
   enviarNotificacion,
 }) => {
+  const API_HOST      = process.env.REACT_APP_API_URL;
+  const API_GRADOS    = `${API_HOST}/api/grados`;
+  const API_CATALOGOS = `${API_HOST}/api/catalogos`;
+
   // Normaliza ObjectId (string, {$oid:...} o objeto mongoose)
   const normId = (id) => {
     if (!id) return "";
@@ -431,7 +409,11 @@ const ModalDetalleHorario = ({
   const [filtroNombre, setFiltroNombre]      = useState("");
   const [grados, setGrados]                  = useState([]);
 
-  // Reinicializar cuando cambia el horario (ej: abrir modal con distinto registro)
+  // ── Catálogo dinámico de asignaturas (igual que Personal/Donaciones/Directiva) ──
+  const [catAsignaturas,     setCatAsignaturas]     = useState([]);
+  const [cargandoAsignaturas, setCargandoAsignaturas] = useState(true);
+
+  // Reinicializar cuando cambia el horario
   useEffect(() => {
     if (!params.horario) return;
     setHorarioEdicion({
@@ -442,17 +424,35 @@ const ModalDetalleHorario = ({
     });
   }, [params.horario?._id]);
 
-  // FIX #1: catálogo de asignaturas
-  const { asignaturas, agregar: agregarAsignatura } = useAsignaturas();
-  const [nuevaAsignatura, setNuevaAsignatura]       = useState("");
-  const [showNuevaAsig, setShowNuevaAsig]           = useState(false);
+  // ── Carga de catálogo de asignaturas desde API ─────────────
+  useEffect(() => {
+    const cargarAsignaturas = async () => {
+      setCargandoAsignaturas(true);
+      try {
+        const res  = await fetch(`${API_CATALOGOS}/horarios/asignatura`);
+        if (!res.ok) throw new Error("No se pudo cargar el catálogo");
+        const data = await res.json();
+        const arr  = Array.isArray(data) ? data : data.data;
+        if (arr && arr.length > 0) {
+          setCatAsignaturas(arr.map(item => ({
+            valor:    item.valor,
+            etiqueta: item.etiqueta || item.valor,
+          })));
+        }
+      } catch (err) {
+        console.error("Error cargando catálogo de asignaturas:", err);
+        // Si falla la API, catálogo vacío — el select mostrará solo "Seleccionar..."
+        setCatAsignaturas([]);
+      } finally {
+        setCargandoAsignaturas(false);
+      }
+    };
+    cargarAsignaturas();
+  }, []);
 
   // FIX #2: toggle hora manual / picker
   const [horaManualInicio, setHoraManualInicio] = useState(false);
   const [horaManualFin, setHoraManualFin]       = useState(false);
-
-  const API_HOST   = process.env.REACT_APP_API_URL;
-  const API_GRADOS = `${API_HOST}/api/grados`;
 
   // ── Obtener grados ─────────────────────────────────────
   const obtenerGrados = async () => {
@@ -504,18 +504,6 @@ const ModalDetalleHorario = ({
     const aulaSeleccionada = params.aulas.find(a => a._id === nuevaAula);
     const textoGrado       = aulaSeleccionada ? aulaSeleccionada.grado : "";
     setHorarioEdicion({ ...horarioEdicion, aula_id: nuevaAula, grado: textoGrado });
-  };
-
-  const handleAgregarAsignatura = () => {
-    const ok = agregarAsignatura(nuevaAsignatura);
-    if (ok) {
-      setHorarioEdicion({ ...horarioEdicion, asignatura: nuevaAsignatura.trim() });
-      setNuevaAsignatura("");
-      setShowNuevaAsig(false);
-      enviarNotificacion(`Asignatura "${nuevaAsignatura.trim()}" agregada al catálogo`, "success");
-    } else {
-      enviarNotificacion("La asignatura ya existe en el catálogo", "error");
-    }
   };
 
   // ── Alumnos ────────────────────────────────────────────
@@ -616,52 +604,26 @@ const ModalDetalleHorario = ({
                 initial={{ opacity:0, y:14 }} animate={{ opacity:1, y:0 }}
                 exit={{ opacity:0, y:14 }} transition={{ duration:0.22 }}>
 
-                {/* Asignatura */}
+                {/* ── Asignatura — dinámico desde catálogo API ── */}
                 <div className="dn-form-section-title">
                   <BookOpen size={14}/> Asignatura
                 </div>
                 <div className="dn-form-group dn-full" style={{ marginBottom:16 }}>
                   <label>Asignatura <span className="req">*</span></label>
-                  <div className="dn-asig-row">
-                    <select className="dn-select"
+                  {cargandoAsignaturas ? (
+                    <div className="dn-cat-loading">Cargando asignaturas...</div>
+                  ) : (
+                    <select
+                      className="dn-select"
                       value={horarioEdicion.asignatura}
-                      onChange={e => setHorarioEdicion({ ...horarioEdicion, asignatura: e.target.value })}>
+                      onChange={e => setHorarioEdicion({ ...horarioEdicion, asignatura: e.target.value })}
+                    >
                       <option value="">Seleccionar asignatura...</option>
-                      {asignaturas.sort().map(a => (
-                        <option key={a} value={a}>{a}</option>
+                      {catAsignaturas.map(a => (
+                        <option key={a.valor} value={a.valor}>{a.etiqueta}</option>
                       ))}
                     </select>
-                    <button type="button" className="dn-btn-add"
-                      onClick={() => setShowNuevaAsig(p => !p)}
-                      title="Agregar nueva asignatura al catálogo">
-                      <Plus size={14}/> Nueva
-                    </button>
-                  </div>
-
-                  <AnimatePresence>
-                    {showNuevaAsig && (
-                      <motion.div className="dn-asig-new-panel"
-                        initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }}
-                        exit={{ opacity:0, height:0 }} style={{ overflow:"hidden" }}>
-                        <div className="dn-info-box" style={{ marginBottom:8 }}>
-                          ℹ La asignatura se agregará al catálogo permanente y estará disponible para todos los horarios.
-                        </div>
-                        <div className="dn-asig-row">
-                          <input className="dn-input" value={nuevaAsignatura}
-                            onChange={e => setNuevaAsignatura(e.target.value)}
-                            placeholder="Ej: Saxofón, Música de Cámara..."
-                            onKeyDown={e => { if (e.key === "Enter") handleAgregarAsignatura(); }}/>
-                          <button type="button" className="dn-btn-add" onClick={handleAgregarAsignatura}>
-                            <Plus size={14}/> Agregar
-                          </button>
-                          <button type="button" className="dn-btn-cancel-sm"
-                            onClick={() => { setShowNuevaAsig(false); setNuevaAsignatura(""); }}>
-                            <X size={14}/>
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  )}
                 </div>
 
                 {/* Días de la semana */}
@@ -913,7 +875,6 @@ const ModalDetalleHorario = ({
 
         {/* ── Footer ────────────────────────────────────────── */}
         <div className="dn-modal-footer">
-          {/* Eliminar — solo si no es creación */}
           <div>
             {!esCreacion && (
               <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>

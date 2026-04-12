@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 const API_URL        = process.env.REACT_APP_API_URL + "/api/bienes";
-const API_CATEGORIAS = process.env.REACT_APP_API_URL + "/api/categorias-bienes";
+const API_CATALOGOS  = process.env.REACT_APP_API_URL + "/api/catalogos";
 
 const ChevronDown = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -93,6 +93,8 @@ const Bienes = () => {
   const [fechaDesde,           setFechaDesde]           = useState("");
   const [fechaHasta,           setFechaHasta]           = useState("");
   const [bienesSeleccionados,  setBienesSeleccionados]  = useState([]);
+  // Junto a los demás useState
+const [tiposAsignacion, setTiposAsignacion] = useState([]);
 
   const estadoMenuRef    = useRef(null);
   const categoriaMenuRef = useRef(null);
@@ -113,32 +115,75 @@ const Bienes = () => {
   }, []);
 
   useEffect(() => {
-    const cargarCategorias = async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken();
-        const res   = await fetch(API_CATEGORIAS, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) throw new Error();
-        setCategoriasDisponibles(await res.json());
-      } catch {
-        // Fallback
-        setCategoriasDisponibles([
-          { _id: "MOBILIARIO",              nombre: "Mobiliario",               grupo: "General"             },
-          { _id: "EQUIPO_COMPUTO",          nombre: "Equipo de Cómputo",        grupo: "General"             },
-          { _id: "ELECTRONICO",             nombre: "Electrónico",              grupo: "General"             },
-          { _id: "HERRAMIENTA",             nombre: "Herramienta",              grupo: "General"             },
-          { _id: "OTRO",                    nombre: "Otro",                     grupo: "General"             },
-          { _id: "CUERDA",                  nombre: "Cuerda",                   grupo: "Instrumento Musical" },
-          { _id: "VIENTO_MADERA",           nombre: "Viento Madera",            grupo: "Instrumento Musical" },
-          { _id: "VIENTO_METAL",            nombre: "Viento Metal",             grupo: "Instrumento Musical" },
-          { _id: "PERCUSION",               nombre: "Percusión",                grupo: "Instrumento Musical" },
-          { _id: "TECLADO",                 nombre: "Teclado",                  grupo: "Instrumento Musical" },
-          { _id: "INSTRUMENTO_ELECTRONICO", nombre: "Instrumento Electrónico",  grupo: "Instrumento Musical" },
-          { _id: "ACCESORIO_MUSICAL",       nombre: "Accesorio Musical",        grupo: "Instrumento Musical" },
-        ]);
+  const cargarCatalogos = async () => {
+    try {
+      console.log("1. URL a solicitar:", `${API_CATALOGOS}/bienes/categoria`);
+
+      const resCat = await fetch(`${API_CATALOGOS}/bienes/categoria`);
+      
+      // Si el backend devuelve un 404 o 500, forzamos el error
+      if (!resCat.ok) {
+        throw new Error(`Error HTTP: ${resCat.status} - ${resCat.statusText}`);
       }
-    };
-    cargarCategorias();
-  }, []);
+
+      const dataCat = await resCat.json();
+
+      // Adaptación: Verificamos si el backend devuelve un array directo o un objeto con .data
+      const categoriasArray = Array.isArray(dataCat) ? dataCat : dataCat.data;
+
+      // Si dataCat.ok no existe (porque tu backend no lo manda), omitimos esa validación
+      if (categoriasArray && categoriasArray.length > 0) {
+        setCategoriasDisponibles(
+          categoriasArray.map(item => ({
+            valor:    item.valor,
+            etiqueta: item.etiqueta || item.valor,
+          }))
+        );
+      }
+
+      // ── Tipos de asignación ──────────────────────────────
+      const resTipo = await fetch(`${API_CATALOGOS}/bienes/tipo_asignacion`);
+      if (!resTipo.ok) throw new Error(`Error HTTP (Tipos): ${resTipo.status}`);
+      
+      const dataTipo = await resTipo.json();
+      const tiposArray = Array.isArray(dataTipo) ? dataTipo : dataTipo.data;
+
+      if (tiposArray && tiposArray.length > 0) {
+        setTiposAsignacion(
+          tiposArray.map(item => ({
+            valor:    item.valor,
+            etiqueta: item.etiqueta || item.valor,
+          }))
+        );
+      }
+      
+    } catch (err) {
+      // AQUÍ VERÁS EXACTAMENTE QUÉ ESTÁ FALLANDO
+      
+      setCategoriasDisponibles([
+        { _id: "EQUIPO_COMPUTO",   nombre: "Equipo de Cómputo",  grupo: "General" },
+        { _id: "MOBILIARIO",       nombre: "Mobiliario",         grupo: "General" },
+        // ... resto de tu fallback
+      ]);
+      setTiposAsignacion([
+        { valor: "Persona",     etiqueta: "Persona"     },
+        { valor: "Área",        etiqueta: "Área"        },
+        // ... resto de tu fallback
+      ]);
+    }
+  };
+
+  cargarCatalogos();
+}, []);
+
+  const getLocalDate = (utcDate) => {
+  if (!utcDate) return "";
+  const date = new Date(utcDate);
+  // Ajustar a GMT-6 (Honduras)
+  const offsetMs = -6 * 60 * 60 * 1000;
+  const localDate = new Date(date.getTime() + offsetMs);
+  return localDate.toISOString().split('T')[0];
+};
 
   // Cierre de dropdowns al click fuera
   useEffect(() => {
@@ -529,7 +574,7 @@ const Bienes = () => {
               >
                 {categoriaFiltro === "all"
                   ? "Todas las categorías"
-                  : categoriasDisponibles.find(c => c._id === categoriaFiltro)?.nombre || categoriaFiltro}
+                  : categoriasDisponibles.find(c => c.valor === categoriaFiltro)?.etiqueta || categoriaFiltro}
                 <ChevronDown />
               </button>
               {showCategoriaMenu && (
@@ -542,12 +587,11 @@ const Bienes = () => {
                   </div>
                   {categoriasDisponibles.map((cat) => (
                     <div
-                      key={cat._id}
-                      className={`bienes-dropdown-item${categoriaFiltro === cat._id ? " active" : ""}`}
-                      onClick={() => { setCategoriaFiltro(cat._id); setShowCategoriaMenu(false); setPage(1); }}
+                      key={cat.valor}
+                      className={`bienes-dropdown-item${categoriaFiltro === cat.valor ? " active" : ""}`}
+                      onClick={() => { setCategoriaFiltro(cat.valor); setShowCategoriaMenu(false); setPage(1); }}
                     >
-                      {categoriaFiltro === cat._id && <span className="chk">✓</span>} {cat.nombre}
-                      {cat.grupo && <span className="grupo-tag">{cat.grupo}</span>}
+                      {categoriaFiltro === cat.valor && <span className="chk">✓</span>} {cat.etiqueta}
                     </div>
                   ))}
                 </div>
@@ -760,20 +804,22 @@ const Bienes = () => {
       {/* ── Modales CRUD ── */}
       {mostrarModalCrear && (
         <ModalCrearBien
-          onClose={() => setMostrarModalCrear(false)}
-          onCreate={handleCrearBien}
-          categoriasDisponibles={categoriasDisponibles}
-        />
+  onClose={() => setMostrarModalCrear(false)}
+  onCreate={handleCrearBien}
+  categoriasDisponibles={categoriasDisponibles}
+  tiposAsignacionDisponibles={tiposAsignacion}   // ← nuevo
+/>
       )}
 
       {bienSeleccionado && (
         <ModalDetalleBien
-          bien={bienSeleccionado}
-          onClose={() => setBienSeleccionado(null)}
-          onUpdate={handleEditarBien}
-          onDelete={handleEliminarBien}
-          categoriasDisponibles={categoriasDisponibles}
-        />
+  bien={bienSeleccionado}
+  onClose={() => setBienSeleccionado(null)}
+  onUpdate={handleEditarBien}
+  onDelete={handleEliminarBien}
+  categoriasDisponibles={categoriasDisponibles}
+  tiposAsignacionDisponibles={tiposAsignacion}   // ← nuevo
+/>
       )}
 
       {notification && (

@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const ordenController = require("../Controllers/ordenCompra");
+const controller = require('../Controllers/ordenCompra');
 const { authenticateUser } = require('../middleware/authMiddleWare');
 const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
-const Orden = require("../Models/ordenCompra");
+const Orden = require("../Models/OrdenCompra");
 const { uploadAdjuntos, procesarAdjuntos, manejarErroresMulter } = require('../middleware/uploadAdjuntosOrden');
 
 router.use(authenticateUser);
@@ -14,10 +14,10 @@ router.post("/",
   manejarErroresMulter, 
   procesarAdjuntos, 
   registrarAuditoria('ORDENES_COMPRA'), 
-  ordenController.crearOrden
+  controller.createOrden
 );
 
-router.get("/", ordenController.obtenerOrdenes);
+router.get("/", controller.getOrdenes);
 
 router.put("/:id", 
   uploadAdjuntos, 
@@ -25,7 +25,7 @@ router.put("/:id",
   procesarAdjuntos, 
   capturarDatosPrevios(Orden), 
   registrarAuditoria('ORDENES_COMPRA'), 
-  ordenController.actualizarOrden
+  controller.updateOrden
 );
 
 router.post("/:id/adjuntos", 
@@ -33,19 +33,19 @@ router.post("/:id/adjuntos",
   manejarErroresMulter, 
   procesarAdjuntos, 
   registrarAuditoria('ORDENES_COMPRA'), 
-  ordenController.agregarAdjuntos
+  controller.agregarAdjuntos
 );
 
 router.delete("/:id/adjuntos/:adjuntoIndex", 
   capturarDatosPrevios(Orden), 
   registrarAuditoria('ORDENES_COMPRA'), 
-  ordenController.eliminarAdjunto
+  controller.eliminarAdjunto
 );
 
 router.delete("/:id", 
   capturarDatosPrevios(Orden), 
   registrarAuditoria('ORDENES_COMPRA'), 
-  ordenController.eliminarOrden
+  controller.deleteOrden
 );
 
 module.exports = router;

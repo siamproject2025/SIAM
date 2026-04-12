@@ -28,6 +28,8 @@ const audit = require("./Routes/auditControlRoutes");
 const resetRoutes = require('./Routes/reset_password_routes');
 const backupRoutes = require("./Routes/backup");
 const parametros = require("./Routes/Parametros.routes");
+const catalogoRoutes = require("./Routes/catalogoRoutes");
+ 
 
 const app = express();
 
@@ -118,7 +120,7 @@ app.use("/api/", authRoutes);
 app.use("/api/", audit);
 app.use('/api', resetRoutes);
 app.use("/api/parametros", parametros);
-
+app.use("/api/catalogos", catalogoRoutes);
 // ========== ARCHIVOS ESTÁTICOS ==========
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
