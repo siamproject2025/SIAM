@@ -410,10 +410,11 @@ const ModalCrearBien = ({ onClose, onCreate, categoriasDisponibles = [], tiposAs
           {/* Footer */}
           <div className="dn-modal-footer">
             <button type="button" style={S.btn('#E0D9F5','#6C4FBF')} onClick={onClose}>
-              <X size={15} /> Cancelar
+              
+              Cancelar
             </button>
             <button type="submit" style={S.btn('#6C4FBF')}>
-              <Save size={15} /> Nuevo Bien
+              Guardar
             </button>
           </div>
         </form>

@@ -651,15 +651,15 @@ const Directiva = () => {
           {esEdicion && (
             <button type="button" style={S.btn("#E74C3C")}
               onClick={() => { setMiembroAEliminar(miembro); setShowConfirm(true); }}>
-              <Trash2 size={15} /> Eliminar
+             Eliminar
             </button>
           )}
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" style={S.btn("#E0D9F5", "#6C4FBF")} onClick={onCancel}>
-              <X size={15} /> Cancelar
+             Cancelar
             </button>
             <button type="submit" style={S.btn("#6C4FBF")}>
-              {esEdicion ? <><Save size={15} /> Guardar Cambios</> : <><Check size={15} /> Crear Miembro</>}
+              {esEdicion ? <>Guardar</> : <>Guardar</>}
             </button>
           </div>
         </div>

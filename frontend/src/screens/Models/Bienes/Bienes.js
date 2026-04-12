@@ -525,10 +525,10 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
               <button
                type="button" style={S.btn('#E74C3C')}
                 onClick={() => {
-                  if (window.confirm(`¿Eliminar ${bienesSeleccionados.length} bien(es) seleccionado(s)?`)) {
+                  
                     bienesSeleccionados.forEach(id => handleEliminarBien(id));
                     setBienesSeleccionados([]);
-                  }
+                 
                 }}
               >
                 <Trash2 size={15} /> Eliminar ({bienesSeleccionados.length})

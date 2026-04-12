@@ -915,7 +915,7 @@ const getColorAlmacen = () => '#9b59b6'
                   {renderFormTabs()}
                   <div className="dn-modal-footer">
                     <button type="button"  style={S.btn('#E0D9F5','#6C4FBF')} onClick={handleCloseModals}>Cancelar</button>
-                    <button type="submit" style={S.btn('#6C4FBF')}>Nueva Donación</button>
+                    <button type="submit" style={S.btn('#6C4FBF')}>Guardar</button>
                   </div>
                 </form>
               </motion.div>

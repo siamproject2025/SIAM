@@ -160,7 +160,7 @@ const ModalCrearActividad = ({ onClose, onCreate, fechaInicial = null }) => {
                 Cancelar
               </button>
               <button type="submit" style={S.btn('#6C4FBF')}>
-                <Plus size={15} /> Crear Actividad
+                Guardar
               </button>
             </div>
           </div>
