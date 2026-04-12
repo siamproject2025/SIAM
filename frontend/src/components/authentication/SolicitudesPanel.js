@@ -6,7 +6,8 @@ import ModalEditarAsignacion from "./ModalEditarAsignacion";
 import { motion } from "framer-motion";
 import { 
   ClipboardList, Clock, CheckCircle, XCircle, 
-  ShieldOff, ShieldCheck, Pencil, RotateCcw, X 
+  ShieldOff, ShieldCheck, Pencil, RotateCcw, X, 
+  Edit
 } from "lucide-react";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -610,7 +611,7 @@ const SolicitudesPanel = () => {
                         <ActionBtn color={theme.danger}  disabled={procesando === s._id} onClick={() => denegar(s._id)}       title="Denegar"><XIcon /></ActionBtn>
                       </>)}
                       {s.estado === "APROBADO" && (<>
-                        <ActionBtn color="#6366f1"       disabled={procesando === s._id} onClick={() => abrirEdicionAsignacion(s)} title="Editar asignación"><EditIcon /></ActionBtn>
+                        <button  className="bienes-btn-icon edit"     disabled={procesando === s._id} onClick={() => abrirEdicionAsignacion(s)} title="Editar asignación"><Edit size={15}/></button>
                         <ActionBtn color={theme.warning} disabled={procesando === s._id} onClick={() => bloquearUsuario(s)}        title="Bloquear usuario"><LockIcon /></ActionBtn>
                       </>)}
                       {s.estado === "BLOQUEADO" && (

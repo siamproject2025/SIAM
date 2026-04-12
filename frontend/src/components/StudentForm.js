@@ -689,10 +689,10 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
 
         {/* Botones de acción */}
         <div style={S.foot}>
-          <div>{isEdit&&onDelete&&<button type="button" style={S.btn('#E74C3C')} onClick={onDelete}><Trash2 size={15}/> Eliminar</button>}</div>
+          <div>{isEdit&&onDelete&&<button type="button" style={S.btn('#E74C3C')} onClick={onDelete}> Eliminar</button>}</div>
           <div style={{display:'flex',gap:10}}>
             <button type="button" style={S.btn('#E0D9F5','#6C4FBF')} onClick={onCancel}>Cancelar</button>
-            <button type="submit" style={S.btn('#6C4FBF')}>{isEdit?'Actualizar':'Guardar'}</button>
+            <button type="submit" style={S.btn('#6C4FBF')}>{isEdit?'Guardar':'Guardar'}</button>
           </div>
         </div>
       </form>

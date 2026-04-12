@@ -116,7 +116,8 @@ function App() {
   return (
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
       {user && <NavBar />}
-      <ChatFlotanteConsultas />
+      {/*<ChatFlotanteConsultas />*/}
+      
 
       <div className="app-content">
         {user && <SideBar />}
@@ -131,16 +132,19 @@ function App() {
             <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
             <Route path="/verifyEmail"         element={<PublicRoute><VerifyEmail /></PublicRoute>} />
 
+            {/* ==================== MÓDULO DASHBOARD ==================== */}
+  
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/account"    element={<AccountSettings />} />
             <Route path="/contrasena" element={<ChangePasswordLogueado />} />
 
             {/* ==================== MÓDULO HOME ==================== */}
-            <Route element={<PrivateRoute />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />} >
               <Route path="/home" element={<Home />} />
             </Route>
 
             {/* ==================== MÓDULO SEGURIDAD ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SOLICITUDES"]} />}>
               <Route path="/seguridad"         element={<AsignarRol />} />
               <Route path="/admin/solicitudes" element={<SolicitudesPanel />} />
             </Route>
@@ -177,7 +181,7 @@ function App() {
 
             {/* ==================== MÓDULO AUDITORIA ==================== */}
             <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_AUDITORIA"]} />}>
-              <Route path='/bitacira' element={<Bitacora />} />
+              <Route path='/bitacora' element={<Bitacora />} />
             </Route>
 
             {/* ==================== MÓDULO BIBLIOTECA ==================== */}
@@ -211,17 +215,12 @@ function App() {
             </Route>
 
              {/* ==================== MÓDULO MATRICULA ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_MATRICULA"]} />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_MANTENIMIENTOS"]} />}>
               <Route path="/mantenimientos" element={<MantenimientosCatalogos />} />
             </Route>
 
             {/* ==================== MÓDULO DASHBOARD ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-            </Route>
-
-            {/* ==================== MÓDULO DASHBOARD ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_RESTORE"]} />}>
               <Route path="/backup" element={<BackupRestore />} />
             </Route>
 

@@ -1,831 +1,805 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   Cell, CartesianGrid, PieChart, Pie, Legend, LineChart, Line
 } from "recharts";
 import { auth } from "../../../components/authentication/Auth";
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
 import {
-  FiUsers, FiShoppingCart, FiBox, FiBook, FiCalendar, 
-  FiDollarSign, FiTrendingUp, FiDownload, 
-  FiUserCheck, FiAward, FiLoader, FiAlertCircle
-} from "react-icons/fi";
-import "../../../styles/Home.css";
-import DatePicker from 'react-datepicker';
+  Users, ShoppingCart, Package, BookOpen, Calendar,
+  TrendingUp, Download, UserCheck, Award, AlertCircle,
+  DollarSign, Activity, Loader2, RotateCcw
+} from "lucide-react";
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import "../../../styles/Home.css";
+import imageLogo from "../../../assets/login.png";
 
 const API_URL = process.env.REACT_APP_API_URL;
-const COLORS = ["#6366f1", "#8b5cf6", "#a78bfa", "#c084fc", "#e9d5ff"];
+const COLORS = ["#7c6ff7", "#4a7cf5", "#9b5ff5", "#d95f91", "#2baa8a", "#e07d35"];
+
+/* ── Utilidades de fecha GMT-6 (Honduras) ── */
+const toHN = (date) => {
+  const d = new Date(date);
+  const hnOffset = -360;
+  const localOffset = d.getTimezoneOffset();
+  const diff = (localOffset - hnOffset) * 60 * 1000;
+  return new Date(d.getTime() + diff);
+};
+
+const startOfDayHN = (date) => {
+  const d = toHN(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const endOfDayHN = (date) => {
+  const d = toHN(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+const parseDate = (val) => {
+  if (!val) return null;
+  if (val.$date) return new Date(val.$date);
+  return new Date(val);
+};
+
+/* ── Utilidad segura para arrays ── */
+const safe = (arr) => (Array.isArray(arr) ? arr : []);
+const safeLen = (arr) => safe(arr).length;
+
+const extractData = (res) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  for (const k of ["data", "items", "results", "datos", "registros", "users"]) {
+    if (Array.isArray(res[k])) return res[k];
+  }
+  return [];
+};
+
+/* ── Calcular monto total de una orden de compra ── */
+const montoOrden = (compra) =>
+  safe(compra?.items).reduce((s, i) => s + (i.cantidad || 0) * (i.costoUnit || 0), 0);
+
+/* ── Nombre del mes en español ── */
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
+/* ── Parsear fecha manual dd/MM/yyyy ── */
+const parseDateManual = (str) => {
+  if (!str) return null;
+  const parts = str.split("/");
+  if (parts.length === 3 && parts[2].length === 4) {
+    const d = new Date(`${parts[2]}-${parts[1].padStart(2,"0")}-${parts[0].padStart(2,"0")}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+};
 
 export default function Home() {
-  const [data, setData] = useState({
-    usuarios: null,
-    alumnos: [],
-    compras: [],
-    bienes: [],
-    libros: [],
-    actividades: [],
-    donaciones: [],
-    personal: [],
-    directiva: [],
-    proveedores: [],
-    grados: [],
-    horarios: []
+  const [rawData, setRawData] = useState({
+    compras: [], bienes: [], libros: [], actividades: [],
+    alumnos: [], donaciones: [], personal: [], directiva: [],
+    proveedores: [], grados: [], horarios: []
   });
   const [cargando, setCargando] = useState(true);
   const [exportando, setExportando] = useState(false);
-  const [fechaInicio, setFechaInicio] = useState(new Date(new Date().setDate(1)));
-  const [fechaFin, setFechaFin] = useState(new Date());
-  const [selectedKPI, setSelectedKPI] = useState('all');
+  const [exportType, setExportType] = useState(null);
 
-  // Función para validar y limitar fechas
-  const maxDate = new Date();
+  /* Rango por defecto: primer día del mes actual hasta hoy, en GMT-6 */
+  const getDefaultInicio = () =>
+    startOfDayHN(new Date(new Date().getFullYear(), 0, 1));
+  const getDefaultFin = () => endOfDayHN(new Date());
 
-  // Función auxiliar para extraer datos de diferentes formatos de respuesta
-  const extractData = (response, defaultArray = []) => {
-    if (!response) return defaultArray;
-    
-    if (Array.isArray(response)) return response;
-    if (response.data && Array.isArray(response.data)) return response.data;
-    if (response.users && Array.isArray(response.users)) return response.users;
-    
-    const possibleArrays = ['items', 'results', 'datos', 'registros'];
-    for (const prop of possibleArrays) {
-      if (response[prop] && Array.isArray(response[prop])) return response[prop];
-    }
-    
-    return defaultArray;
+  const [fechaInicio, setFechaInicio] = useState(getDefaultInicio);
+  const [fechaFin, setFechaFin]       = useState(getDefaultFin);
+
+  /* ── Reset fechas al mes actual ── */
+  const resetFechas = () => {
+    setFechaInicio(getDefaultInicio());
+    setFechaFin(getDefaultFin());
   };
 
+  /* ── Carga de datos ── */
   useEffect(() => {
-    const obtenerDatos = async () => {
+    const fetch = async () => {
       try {
         const user = auth.currentUser;
         if (!user) return;
         const token = await user.getIdToken();
-        const headers = { Authorization: `Bearer ${token}` };
+        const h = { Authorization: `Bearer ${token}` };
 
-        const results = await Promise.allSettled([
-          axios.get(`${API_URL}/api/usuarios`, { headers }),
-          axios.get(`${API_URL}/api/compras`, { headers }),
-          axios.get(`${API_URL}/api/bienes`, { headers }),
-          axios.get(`${API_URL}/api/biblioteca`, { headers }),
-          axios.get(`${API_URL}/api/actividades`, { headers }),
-          axios.get(`${API_URL}/api/matriculas`, { headers }),
-          axios.get(`${API_URL}/api/donaciones`, { headers }),
-          axios.get(`${API_URL}/api/personal`, { headers }),
-          axios.get(`${API_URL}/api/directiva`, { headers }),
-          axios.get(`${API_URL}/api/proveedores`, { headers }),
-          axios.get(`${API_URL}/api/grados`, { headers }),
-          axios.get(`${API_URL}/api/horario`, { headers })
+        const rs = await Promise.allSettled([
+          axios.get(`${API_URL}/api/compras`,    { headers: h }),
+          axios.get(`${API_URL}/api/bienes`,     { headers: h }),
+          axios.get(`${API_URL}/api/biblioteca`, { headers: h }),
+          axios.get(`${API_URL}/api/actividades`,{ headers: h }),
+          axios.get(`${API_URL}/api/matriculas`, { headers: h }),
+          axios.get(`${API_URL}/api/donaciones`, { headers: h }),
+          axios.get(`${API_URL}/api/personal`,   { headers: h }),
+          axios.get(`${API_URL}/api/directiva`,  { headers: h }),
+          axios.get(`${API_URL}/api/proveedores`,{ headers: h }),
+          axios.get(`${API_URL}/api/grados`,     { headers: h }),
+          axios.get(`${API_URL}/api/horario`,    { headers: h }),
         ]);
 
-        setData({
-          usuarios: results[0].status === "fulfilled" ? results[0].value.data : "no_access",
-          compras: results[1].status === "fulfilled" ? extractData(results[1].value.data) : [],
-          bienes: results[2].status === "fulfilled" ? extractData(results[2].value.data) : [],
-          libros: results[3].status === "fulfilled" ? extractData(results[3].value.data) : [],
-          actividades: results[4].status === "fulfilled" ? extractData(results[4].value.data) : [],
-          alumnos: results[5].status === "fulfilled" ? extractData(results[5].value.data) : [],
-          donaciones: results[6].status === "fulfilled" ? extractData(results[6].value.data) : [],
-          personal: results[7].status === "fulfilled" ? extractData(results[7].value.data) : [],
-          directiva: results[8].status === "fulfilled" ? extractData(results[8].value.data) : [],
-          proveedores: results[9].status === "fulfilled" ? extractData(results[9].value.data) : [],
-          grados: results[10].status === "fulfilled" ? extractData(results[10].value.data) : [],
-          horarios: results[11].status === "fulfilled" ? extractData(results[11].value.data) : []
+        const ok = (r) => r.status === "fulfilled" ? extractData(r.value.data) : [];
+        setRawData({
+          compras:     ok(rs[0]),
+          bienes:      ok(rs[1]),
+          libros:      ok(rs[2]),
+          actividades: ok(rs[3]),
+          alumnos:     ok(rs[4]),
+          donaciones:  ok(rs[5]),
+          personal:    ok(rs[6]),
+          directiva:   ok(rs[7]),
+          proveedores: ok(rs[8]),
+          grados:      ok(rs[9]),
+          horarios:    ok(rs[10]),
         });
-      } catch (error) {
-        console.error("Error crítico en Home:", error);
+      } catch (e) {
+        console.error("Error en Home:", e);
       } finally {
         setCargando(false);
       }
     };
-    obtenerDatos();
+    fetch();
   }, []);
 
-  // Función para obtener nombre del grado por ID
-  const obtenerNombreGrado = (gradoId) => {
-    if (!gradoId || !data.grados || !Array.isArray(data.grados)) return 'No asignado';
-    
-    // Buscar el grado en el array de grados
-    const grado = data.grados.find(g => {
-      // Comparar por _id
-      if (g._id && gradoId) {
-        return g._id === gradoId || g._id.$oid === gradoId || g._id === gradoId.$oid;
-      }
-      return false;
-    });
-    
-    return grado?.grado || grado?.nombre || 'No asignado';
-  };
+  /* ── Filtro por rango de fecha en GMT-6 ── */
+  const enRango = useCallback((item, campo) => {
+    const raw = item?.[campo];
+    if (!raw) return false;
+    const fecha = parseDate(raw);
+    if (!fecha) return false;
+    const hn = toHN(fecha);
+    return hn >= fechaInicio && hn <= fechaFin;
+  }, [fechaInicio, fechaFin]);
 
-  // Función para filtrar por fecha
-  const filtrarPorFecha = (item, campoFecha) => {
-    if (!item || !item[campoFecha]) return false;
-    const fecha = new Date(item[campoFecha]);
-    return fecha >= fechaInicio && fecha <= fechaFin;
-  };
+  /* ── Derivados filtrados ── */
+  const alumnosFiltrados    = safe(rawData.alumnos).filter(a => enRango(a, "fecha_matricula"));
+  const comprasFiltradas    = safe(rawData.compras).filter(c => enRango(c, "fecha"));
+  const donacionesFiltradas = safe(rawData.donaciones).filter(d => enRango(d, "fecha"));
+  const bienesFiltrados     = safe(rawData.bienes).filter(b => enRango(b, "fechaIngreso"));
+  const actividadesFiltradas= safe(rawData.actividades).filter(a => enRango(a, "fecha"));
 
-  // Función segura para filtrar arrays
-  const safeFilter = (array, callback) => {
-    if (!Array.isArray(array)) return [];
-    return array.filter(callback);
-  };
+  /* ── KPIs ── */
+  const totalAlumnos   = safeLen(rawData.alumnos);
+  const alumnosPeriodo = alumnosFiltrados.length;
+  const pctAlumnos     = totalAlumnos ? Math.round((alumnosPeriodo / totalAlumnos) * 100) : 0;
 
-  const safeMap = (array, callback) => {
-    if (!Array.isArray(array)) return [];
-    return array.map(callback);
-  };
+  const todoPersonal   = [...safe(rawData.personal), ...safe(rawData.directiva)];
+  const totalPersonal  = todoPersonal.length;
+  const personalActivo = todoPersonal.filter(p => p?.estado?.toLowerCase() === "activo").length;
+  const pctPersonal    = totalPersonal ? Math.round((personalActivo / totalPersonal) * 100) : 0;
 
-  const safeLength = (array) => {
-    if (!Array.isArray(array)) return 0;
-    return array.length;
-  };
+  const totalCompras          = safeLen(rawData.compras);
+  const comprasPeriodo        = comprasFiltradas.length;
+  const montoComprasPeriodo   = comprasFiltradas.reduce((s, c) => s + montoOrden(c), 0);
+  const montoComprasTotal     = safe(rawData.compras).reduce((s, c) => s + montoOrden(c), 0);
 
-  // Datos filtrados por fecha
-  const alumnosFiltrados = safeFilter(data.alumnos, a => filtrarPorFecha(a, 'fecha_matricula'));
-  const comprasFiltradas = safeFilter(data.compras, c => filtrarPorFecha(c, 'fecha'));
-  const donacionesFiltradas = safeFilter(data.donaciones, d => filtrarPorFecha(d, 'fecha'));
-  const actividadesFiltradas = safeFilter(data.actividades, a => filtrarPorFecha(a, 'fecha'));
-  const bienesFiltrados = safeFilter(data.bienes, b => filtrarPorFecha(b, 'fechaIngreso'));
+  const totalBienes   = safeLen(rawData.bienes);
+  const bienesActivos = safe(rawData.bienes).filter(b =>
+    ["activo","disponible"].includes(b?.estado?.toLowerCase())
+  ).length;
+  const bienesPeriodo = bienesFiltrados.length;
 
-  // Cálculos de KPI
-  const totalEstudiantes = safeLength(data.alumnos);
-  const totalEstudiantesPeriodo = safeLength(alumnosFiltrados);
-  const totalPersonal = safeLength(data.personal) + safeLength(data.directiva);
-  const personalActivo = safeFilter(data.personal, p => p?.estado === "ACTIVO").length;
-  const totalCompras = safeLength(data.compras);
-  const comprasMes = safeLength(comprasFiltradas);
-  
-  const totalDonaciones = safeLength(data.donaciones);
-  const donacionesMes = safeLength(donacionesFiltradas);
+  const totalDonaciones   = safeLen(rawData.donaciones);
+  const donacionesPeriodo = donacionesFiltradas.length;
 
-  const totalProveedores = safeLength(data.proveedores);
-  const proveedoresActivos = safeFilter(data.proveedores, p => p?.estado === "ACTIVO").length;
+  const totalLibros       = safeLen(rawData.libros);
+  const librosDisponibles = safe(rawData.libros).filter(l => l?.disponible).length;
+  const librosPrestados   = totalLibros - librosDisponibles;
 
-  const bienesPorEstado = [...new Set(safeMap(data.bienes, b => b?.estado).filter(Boolean))].map(estado => ({
-    name: estado,
-    value: safeFilter(data.bienes, b => b?.estado === estado).length,
-  }));
+  const totalProveedores   = safeLen(rawData.proveedores);
+  const proveedoresActivos = safe(rawData.proveedores).filter(p =>
+    p?.estado?.toLowerCase() === "activo"
+  ).length;
 
-  const librosDisponibles = safeFilter(data.libros, l => l?.disponible).length;
+  /* ── Datos para gráficas ── */
+  const bienesPorEstado = [...new Set(safe(rawData.bienes).map(b => b?.estado).filter(Boolean))]
+    .map(e => ({ name: e, value: safe(rawData.bienes).filter(b => b?.estado === e).length }));
 
-  const actividadesProximas = safeFilter(data.actividades, a => a?.fecha && new Date(a.fecha) >= new Date())
-    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
-    .slice(0, 5);
+  const comprasPorEstado = [...new Set(safe(rawData.compras).map(c => c?.estado).filter(Boolean))]
+    .map(e => ({ name: e, value: safe(rawData.compras).filter(c => c?.estado === e).length }));
 
-  const comprasPorEstado = [...new Set(safeMap(data.compras, c => c?.estado).filter(Boolean))].map(estado => ({
-    name: estado,
-    value: safeFilter(data.compras, c => c?.estado === estado).length,
-  }));
-
-  // Datos para gráfica de tendencia
-  const tendenciaMatriculas = alumnosFiltrados.reduce((acc, alumno) => {
-    if (!alumno?.fecha_matricula) return acc;
-    const fecha = new Date(alumno.fecha_matricula);
-    const mes = fecha.toLocaleString('default', { month: 'short' });
-    acc[mes] = (acc[mes] || 0) + 1;
+  const tendenciaMap = alumnosFiltrados.reduce((acc, a) => {
+    const d = parseDate(a.fecha_matricula);
+    if (!d) return acc;
+    const key = `${MESES[d.getMonth()]} ${d.getFullYear()}`;
+    acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {});
+  const dataTendencia = Object.entries(tendenciaMap).map(([mes, matriculas]) => ({ mes, matriculas }));
 
-  const dataTendencia = Object.keys(tendenciaMatriculas).map(mes => ({
-    mes,
-    matriculas: tendenciaMatriculas[mes]
-  }));
+  const ahoraHN = toHN(new Date());
+  const actividadesProximas = safe(rawData.actividades)
+    .filter(a => { const f = parseDate(a?.fecha); return f && toHN(f) >= ahoraHN; })
+    .sort((a, b) => parseDate(a.fecha) - parseDate(b.fecha))
+    .slice(0, 5);
 
-  // Función para verificar si hay datos para exportar
-  const tieneDatosParaExportar = () => {
-    switch(selectedKPI) {
-      case 'estudiantes':
-        return alumnosFiltrados.length > 0;
-      case 'personal':
-        return (data.personal.length + data.directiva.length) > 0;
-      case 'compras':
-        return comprasFiltradas.length > 0;
-      default:
-        return true;
-    }
+  /* ── Nombre del grado ── */
+  const nombreGrado = (id) => {
+    if (!id) return "—";
+    const gId = id?.$oid || id;
+    const g = safe(rawData.grados).find(g => (g._id?.$oid || g._id) === gId);
+    return g?.grado || g?.nombre || "—";
   };
 
-  // Función de exportación a Excel
-  const exportToExcel = async (data, filename) => {
+  /* ── Helpers de formato ── */
+  const fmt = (n) => new Intl.NumberFormat("es-HN", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2
+  }).format(n);
+  const fmtDate = (val) => {
+    const d = parseDate(val);
+    if (!d) return "—";
+    return toHN(d).toLocaleDateString("es-HN");
+  };
+
+  /* ── Datos a exportar ── */
+  const getExportPayload = () => ({
+    rows: [
+      { "Indicador": "Estudiantes en el período",   "Valor": alumnosPeriodo },
+      { "Indicador": "Total estudiantes",           "Valor": totalAlumnos },
+      { "Indicador": "Personal activo",             "Valor": personalActivo },
+      { "Indicador": "Total personal",              "Valor": totalPersonal },
+      { "Indicador": "Compras en el período",       "Valor": comprasPeriodo },
+      { "Indicador": "Monto compras período (L.)",  "Valor": fmt(montoComprasPeriodo) },
+      { "Indicador": "Total órdenes de compra",     "Valor": totalCompras },
+      { "Indicador": "Monto compras total (L.)",    "Valor": fmt(montoComprasTotal) },
+      { "Indicador": "Bienes ingresados período",   "Valor": bienesPeriodo },
+      { "Indicador": "Total bienes",                "Valor": totalBienes },
+      { "Indicador": "Bienes activos",              "Valor": bienesActivos },
+      { "Indicador": "Total libros",                "Valor": totalLibros },
+      { "Indicador": "Libros disponibles",          "Valor": librosDisponibles },
+      { "Indicador": "Libros prestados",            "Valor": librosPrestados },
+      { "Indicador": "Total donaciones",            "Valor": totalDonaciones },
+      { "Indicador": "Donaciones en el período",    "Valor": donacionesPeriodo },
+      { "Indicador": "Proveedores activos",         "Valor": proveedoresActivos },
+      { "Indicador": "Total proveedores",           "Valor": totalProveedores },
+    ],
+    title: "Resumen_Dashboard",
+    label: "Resumen general del dashboard",
+  });
+
+  /* ── Export Excel ── */
+  const handleExcel = async () => {
     try {
-      setExportando(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const ws = XLSX.utils.json_to_sheet(data);
+      setExportando(true); setExportType("excel");
+      await new Promise(r => setTimeout(r, 400));
+      const { rows, title } = getExportPayload();
+      if (!rows.length) { alert("No hay datos en el período seleccionado."); return; }
+
+      const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Datos");
-      XLSX.writeFile(wb, `${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
-    } catch (error) {
-      console.error("Error exportando a Excel:", error);
-      alert("Error al exportar a Excel: " + error.message);
+
+      const colWidths = Object.keys(rows[0]).map(k => ({
+        wch: Math.max(k.length, ...rows.map(r => String(r[k] ?? "").length)) + 2,
+      }));
+      ws["!cols"] = colWidths;
+
+      XLSX.writeFile(wb, `${title}_${new Date().toISOString().split("T")[0]}.xlsx`);
+    } catch (e) {
+      console.error(e);
+      alert("Error al exportar a Excel: " + e.message);
     } finally {
-      setExportando(false);
+      setExportando(false); setExportType(null);
     }
   };
 
-  // Función de exportación a PDF con jsPDF puro - MÁS ANCHO
-  const exportToPDF = async (data, title) => {
+  /* ── Export PDF ── */
+  const handlePDF = async () => {
     try {
-      setExportando(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
+      setExportando(true); setExportType("pdf");
+      await new Promise(r => setTimeout(r, 400));
+      const { rows, title, label } = getExportPayload();
+      if (!rows.length) { alert("No hay datos en el período seleccionado."); return; }
 
-      // Crear PDF con orientación horizontal y tamaño más ancho
-      const doc = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: [297, 210] // A4 horizontal (5% más ancho que el estándar)
-      });
-      
-      let yPos = 20;
-      const lineHeight = 7;
-      const marginLeft = 14;
-      const pageHeight = doc.internal.pageSize.height;
-      const pageWidth = doc.internal.pageSize.width;
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const PW = doc.internal.pageSize.width;
+      const PH = doc.internal.pageSize.height;
+      const ML = 14;
+      const MR = PW - 14;
+      let y = 0;
 
-      // Título
-      doc.setFontSize(18);
-      doc.setTextColor(102, 126, 234);
-      doc.text(title, marginLeft, yPos);
-      yPos += lineHeight + 2;
+      doc.setFillColor(124, 111, 247);
+      doc.rect(0, 0, PW, 38, "F");
+      doc.setFillColor(74, 124, 245);
+      doc.rect(PW - 70, 0, 70, 38, "F");
 
-      // Período
-      doc.setFontSize(11);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Período: ${fechaInicio.toLocaleDateString()} - ${fechaFin.toLocaleDateString()}`, marginLeft, yPos);
-      yPos += lineHeight;
-      doc.text(`Generado: ${new Date().toLocaleString()}`, marginLeft, yPos);
-      yPos += lineHeight + 5;
+      try {
+        const img = new Image();
+        img.src = imageLogo;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        const imgData = canvas.toDataURL("image/png");
+        const ratio = img.naturalWidth / img.naturalHeight;
+        const logoH = 28;
+        const logoW = logoH * ratio;
+        doc.addImage(imgData, "PNG", ML, 5, logoW, logoH);
+        y = ML + logoW + 6;
+      } catch {
+        y = ML + 6;
+      }
 
-      // Línea separadora
-      doc.setDrawColor(200, 200, 200);
-      doc.line(marginLeft, yPos - 2, pageWidth - 10, yPos - 2);
+      doc.setFontSize(15);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text("Escuela experimental de niños para la música", ML + 34, 13);
 
       doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(220, 215, 255);
+      doc.text(label, ML + 34, 20);
 
-      if (Array.isArray(data)) {
-        if (data.length > 0) {
-          const headers = Object.keys(data[0]);
-          
-          // Calcular ancho de columna basado en el número de columnas
-          const colWidth = (pageWidth - 30) / headers.length;
-          
-          // Dibujar encabezados
-          doc.setFont("helvetica", "bold");
-          let xPos = marginLeft;
-          headers.forEach(header => {
-            doc.text(header, xPos, yPos);
-            xPos += colWidth;
-          });
-          yPos += lineHeight;
-          
-          // Línea debajo de encabezados
-          doc.setDrawColor(102, 126, 234);
-          doc.line(marginLeft, yPos - 3, pageWidth - 10, yPos - 3);
-          
-          // Dibujar datos
-          doc.setFont("helvetica", "normal");
-          data.forEach((item) => {
-            if (yPos > pageHeight - 20) {
-              doc.addPage();
-              yPos = 20;
-              
-              // Repetir encabezados
-              doc.setFont("helvetica", "bold");
-              xPos = marginLeft;
-              headers.forEach(header => {
-                doc.text(header, xPos, yPos);
-                xPos += colWidth;
-              });
-              yPos += lineHeight;
-              doc.setFont("helvetica", "normal");
-            }
+      doc.setFontSize(9);
+      doc.setTextColor(200, 195, 255);
+      doc.text(
+        `Período: ${fechaInicio.toLocaleDateString("es-HN")} – ${fechaFin.toLocaleDateString("es-HN")}`,
+        ML + 34, 27
+      );
+      doc.text(
+        `Generado: ${new Date().toLocaleString("es-HN", { timeZone: "America/Tegucigalpa" })}`,
+        ML + 34, 33
+      );
 
-            xPos = marginLeft;
-            headers.forEach(header => {
-              let value = item[header] || '';
-              // Truncar texto si es necesario
-              const maxLength = Math.floor(colWidth / 2); // Aproximación
-              if (value.length > maxLength) {
-                value = value.substring(0, maxLength - 3) + '...';
-              }
-              doc.text(String(value), xPos, yPos);
-              xPos += colWidth;
-            });
-            yPos += lineHeight;
-          });
-        }
-      } else {
-        // Para resumen, usar una cuadrícula de 3 columnas
+      y = 44;
+      doc.setDrawColor(200, 195, 255);
+      doc.setLineWidth(0.3);
+      doc.line(ML, y, MR, y);
+      y += 6;
+
+      const headers = Object.keys(rows[0]);
+      const colW = (MR - ML) / headers.length;
+      const rowH = 7;
+
+      const drawHeader = () => {
+        doc.setFillColor(240, 237, 255);
+        doc.rect(ML, y, MR - ML, rowH, "F");
+        doc.setFontSize(8);
         doc.setFont("helvetica", "bold");
-        doc.text("MÉTRICAS DEL DASHBOARD", marginLeft, yPos);
-        yPos += lineHeight + 2;
-        
-        doc.setFont("helvetica", "normal");
-        
-        const entries = Object.entries(data);
-        const colWidth = (pageWidth - 30) / 3;
-        let xPos = marginLeft;
-        let colCount = 0;
-        
-        entries.forEach(([key, value]) => {
-          if (yPos > pageHeight - 20) {
-            doc.addPage();
-            yPos = 20;
-          }
-          
-          doc.text(`${key}: ${value}`, xPos, yPos);
-          
-          colCount++;
-          if (colCount % 3 === 0) {
-            yPos += lineHeight;
-            xPos = marginLeft;
-          } else {
-            xPos += colWidth;
-          }
+        doc.setTextColor(80, 60, 180);
+        headers.forEach((h, i) => {
+          doc.text(String(h), ML + i * colW + 2, y + 5);
         });
-      }
+        y += rowH;
+        doc.setDrawColor(180, 170, 240);
+        doc.line(ML, y, MR, y);
+        y += 1;
+      };
 
-      // Pie de página
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
+      drawHeader();
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+
+      rows.forEach((row, ri) => {
+        if (y + rowH > PH - 14) {
+          doc.addPage();
+          doc.setFillColor(124, 111, 247);
+          doc.rect(0, 0, PW, 10, "F");
+          doc.setFontSize(8);
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.text("Escuela experimental de niños para la música  —  " + label, ML, 7);
+          y = 16;
+          drawHeader();
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+        }
+
+        if (ri % 2 === 0) {
+          doc.setFillColor(250, 249, 255);
+          doc.rect(ML, y, MR - ML, rowH, "F");
+        }
+
+        doc.setTextColor(50, 50, 50);
+        headers.forEach((h, i) => {
+          const val = String(row[h] ?? "");
+          const maxCh = Math.floor(colW / 1.8);
+          const txt = val.length > maxCh ? val.slice(0, maxCh - 2) + "…" : val;
+          doc.text(txt, ML + i * colW + 2, y + 5);
+        });
+
+        doc.setDrawColor(235, 232, 255);
+        doc.line(ML, y + rowH, MR, y + rowH);
+        y += rowH;
+      });
+
+      const pages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pages; i++) {
         doc.setPage(i);
-        doc.setFontSize(9);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Página ${i} de ${pageCount}`, pageWidth - 40, pageHeight - 10);
+        doc.setFillColor(245, 243, 255);
+        doc.rect(0, PH - 10, PW, 10, "F");
+        doc.setFontSize(8);
+        doc.setTextColor(130, 120, 180);
+        doc.setFont("helvetica", "normal");
+        doc.text("Escuela experimental de niños para la música", ML, PH - 4);
+        doc.text(`Página ${i} de ${pages}`, MR - 20, PH - 4);
       }
 
-      doc.save(`${title}_${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch (error) {
-      console.error("Error exportando a PDF:", error);
-      alert("Error al exportar a PDF: " + error.message);
+      doc.save(`${title}_${new Date().toISOString().split("T")[0]}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert("Error al exportar a PDF: " + e.message);
     } finally {
-      setExportando(false);
+      setExportando(false); setExportType(null);
     }
   };
 
-  const handleExport = async (type) => {
-    if (!tieneDatosParaExportar()) {
-      alert("No hay datos disponibles para exportar en el período seleccionado");
-      return;
-    }
-
-    try {
-      let exportData = [];
-      let title = '';
-
-      switch(selectedKPI) {
-        case 'estudiantes':
-          exportData = alumnosFiltrados.map(alumno => ({
-            'Nombre': alumno?.nombre_completo || '',
-            'Grado': obtenerNombreGrado(alumno?.grado_a_matricular),
-            'Teléfono': alumno?.telefono_alumno || '',
-            'Email Encargado': alumno?.email_encargado || '',
-            'Fecha Matrícula': alumno?.fecha_matricula ? new Date(alumno.fecha_matricula).toLocaleDateString() : ''
-          }));
-          title = 'Estudiantes';
-          break;
-          
-        case 'personal':
-          const personalData = data.personal.map(p => ({
-            'Nombre': `${p?.nombres || ''} ${p?.apellidos || ''}`,
-            'Cargo': p?.cargo_asignacion?.cargo || '',
-            'Teléfono': p?.telefono || '',
-            'Estado': p?.estado || '',
-            'Área': p?.area_trabajo || ''
-          }));
-          
-          const directivaData = data.directiva.map(d => ({
-            'Nombre': d?.nombre || '',
-            'Cargo': d?.cargo || '',
-            'Teléfono': d?.telefono || '',
-            'Estado': d?.estado || '',
-            'Área': 'Directiva'
-          }));
-          
-          exportData = [...personalData, ...directivaData];
-          title = 'Personal';
-          break;
-          
-        case 'compras':
-          exportData = comprasFiltradas.map(c => ({
-            'Número': c?.numero || '',
-            'Estado': c?.estado || '',
-            'Fecha': c?.fecha ? new Date(c.fecha).toLocaleDateString() : '',
-            'Items': c?.items?.length || 0
-          }));
-          title = 'Compras';
-          break;
-          
-        default:
-          exportData = {
-            'Total Estudiantes': totalEstudiantes,
-            'Estudiantes (período)': totalEstudiantesPeriodo,
-            'Total Personal': totalPersonal,
-            'Personal Activo': personalActivo,
-            'Total Compras': totalCompras,
-            'Compras (período)': comprasMes,
-            'Total Donaciones': totalDonaciones,
-            'Donaciones (período)': donacionesMes,
-            'Total Bienes': safeLength(data.bienes),
-            'Libros Disponibles': librosDisponibles,
-            'Total Proveedores': totalProveedores,
-            'Proveedores Activos': proveedoresActivos,
-            'Próximas Actividades': actividadesProximas.length
-          };
-          title = 'Resumen_Dashboard';
-      }
-
-      if (type === 'excel') {
-        await exportToExcel(exportData, title);
-      } else {
-        await exportToPDF(exportData, title);
-      }
-    } catch (error) {
-      console.error("Error en exportación:", error);
-      alert("Error al exportar: " + error.message);
-    }
-  };
+  /* ── Saludo según hora en Honduras ── */
+  const horaHN = new Date().toLocaleString("es-HN", {
+    timeZone: "America/Tegucigalpa", hour: "numeric", hour12: false
+  });
+  const h = parseInt(horaHN);
+  const saludo = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
 
   if (cargando) return (
-    <div className="loader-container">
-      <div className="spinner"></div>
-      <p>Cargando Dashboard...</p>
+    <div className="home-loader">
+      <div className="home-loader-ring" />
+      <p>Cargando dashboard...</p>
     </div>
   );
 
+  /* ── KPI Cards config ── */
+  const kpis = [
+    {
+      icon: Users,
+      label: "Estudiantes matriculados",
+      value: alumnosPeriodo,
+      sub: `${totalAlumnos} registrados en total`,
+      tag: alumnosPeriodo > 0 ? `${pctAlumnos}% del total` : "Sin matrículas en el período",
+      color: "#7c6ff7",
+      bg: "#f3f0ff",
+    },
+    {
+      icon: UserCheck,
+      label: "Personal activo",
+      value: `${personalActivo}/${totalPersonal}`,
+      sub: `${safeLen(rawData.directiva)} directivos · ${safeLen(rawData.personal)} docentes`,
+      tag: `${pctPersonal}% activos`,
+      color: "#4a7cf5",
+      bg: "#eef3ff",
+    },
+    {
+      icon: ShoppingCart,
+      label: "Órdenes de compra",
+      value: comprasPeriodo,
+      sub: `L. ${fmt(montoComprasPeriodo)} monto en período`,
+      tag: `${totalCompras} órdenes en total`,
+      color: "#9b5ff5",
+      bg: "#f6f0ff",
+    },
+    {
+      icon: Package,
+      label: "Bienes ingresados",
+      value: bienesPeriodo,
+      sub: `${totalBienes} registrados · ${bienesActivos} activos`,
+      tag: `L. ${fmt(safe(rawData.bienes).reduce((s,b)=>s+(b.valor||0),0))} valor total`,
+      color: "#2baa8a",
+      bg: "#edfaf5",
+    },
+    {
+      icon: BookOpen,
+      label: "Biblioteca",
+      value: totalLibros,
+      sub: `${librosDisponibles} disponibles · ${librosPrestados} prestados`,
+      tag: `${totalLibros ? Math.round((librosDisponibles/totalLibros)*100) : 0}% disponibilidad`,
+      color: "#e07d35",
+      bg: "#fff5ed",
+    },
+    {
+      icon: Award,
+      label: "Proveedores",
+      value: proveedoresActivos,
+      sub: `de ${totalProveedores} registrados`,
+      tag: `${totalProveedores ? Math.round((proveedoresActivos/totalProveedores)*100) : 0}% activos`,
+      color: "#d95f91",
+      bg: "#fff0f6",
+    },
+  ];
+
   return (
-    <div className="dashboard-container">
-      {/* Loader de exportación */}
+    <div className="home-wrap">
+
+      {/* ── Overlay de exportación ── */}
       {exportando && (
-        <div className="export-loader-overlay">
-          <div className="export-loader-content">
-            <FiLoader className="export-spinner" />
-            <p>Generando reporte...</p>
+        <div className="home-export-overlay">
+          <div className="home-export-modal">
+            <Loader2 size={36} className="home-export-spin" color="#7c6ff7" />
+            <p>Generando {exportType === "excel" ? "Excel" : "PDF"}…</p>
             <small>Por favor espere</small>
           </div>
         </div>
       )}
 
-      {/* Header con filtros y exportación */}
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">
-          <span className="gradient-text">Panel de Control</span>
-        </h1>
-        
-        <div className="header-controls">
-          <div className="date-range">
-            <div className="date-input">
-              <FiCalendar className="input-icon" />
-              <DatePicker
-                selected={fechaInicio}
-                onChange={date => setFechaInicio(date)}
-                selectsStart
-                startDate={fechaInicio}
-                endDate={fechaFin}
-                maxDate={maxDate}
-                className="date-picker"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Fecha inicio"
-              />
-            </div>
-            <span className="date-separator">-</span>
-            <div className="date-input">
-              <FiCalendar className="input-icon" />
-              <DatePicker
-                selected={fechaFin}
-                onChange={date => setFechaFin(date)}
-                selectsEnd
-                startDate={fechaInicio}
-                endDate={fechaFin}
-                minDate={fechaInicio}
-                maxDate={maxDate}
-                className="date-picker"
-                dateFormat="dd/MM/yyyy"
-                placeholderText="Fecha fin"
-              />
-            </div>
+      {/* ── Header institucional ── */}
+      <div className="home-header">
+        <div className="home-header-left">
+          <div className="home-logo-wrap">
+            <img src={imageLogo} alt="Logo escuela" className="home-logo" />
           </div>
+          <div>
+            <p className="home-school-name">Escuela experimental de niños para la música</p>
+            <h1 className="home-title">
+              {saludo} — <span className="home-title-accent">Panel de Control</span>
+            </h1>
+            <p className="home-date">
+              {new Date().toLocaleDateString("es-HN", {
+                timeZone: "America/Tegucigalpa",
+                weekday: "long", day: "numeric", month: "long", year: "numeric"
+              })}
+            </p>
+          </div>
+        </div>
 
-          <div className="export-section">
-            <select 
-              className="kpi-select"
-              value={selectedKPI}
-              onChange={(e) => setSelectedKPI(e.target.value)}
+        {/* Controles */}
+        <div className="home-controls">
+          <div className="home-daterange">
+            <Calendar size={14} color="#7c6ff7" />
+            <DatePicker
+              selected={fechaInicio}
+              onChange={(d) => d && setFechaInicio(startOfDayHN(d))}
+              onChangeRaw={(e) => {
+                const parsed = parseDateManual(e.target.value);
+                if (parsed) setFechaInicio(startOfDayHN(parsed));
+              }}
+              selectsStart
+              startDate={fechaInicio}
+              endDate={fechaFin}
+              maxDate={new Date()}
+              className="home-datepicker"
+              dateFormat="dd/MM/yyyy"
+              placeholderText="Desde"
+            />
+            <span className="home-datesep">→</span>
+            <DatePicker
+              selected={fechaFin}
+              onChange={(d) => {
+                if (!d) return;
+                // Si la fecha elegida es anterior a fechaInicio, ajustar fechaInicio
+                const fin = endOfDayHN(d);
+                if (fin < fechaInicio) setFechaInicio(startOfDayHN(d));
+                setFechaFin(fin);
+              }}
+              onChangeRaw={(e) => {
+                const parsed = parseDateManual(e.target.value);
+                if (parsed) setFechaFin(endOfDayHN(parsed));
+              }}
+              selectsEnd
+              startDate={fechaInicio}
+              endDate={fechaFin}
+              maxDate={new Date()}
+              className="home-datepicker"
+              dateFormat="dd/MM/yyyy"
+              placeholderText="Hasta"
+            />
+            <button
+              className="home-btn-reset"
+              onClick={resetFechas}
+              title="Restablecer al inicio del año"
             >
-              <option value="all">Resumen General</option>
-              <option value="estudiantes">
-                Estudiantes {totalEstudiantesPeriodo > 0 ? `(${totalEstudiantesPeriodo})` : '(0)'}
-              </option>
-              <option value="personal">
-                Personal ({totalPersonal})
-              </option>
-              <option value="compras">
-                Compras {comprasMes > 0 ? `(${comprasMes})` : '(0)'}
-              </option>
-            </select>
+              <RotateCcw size={13} />
+            </button>
+          </div>
 
-            <div className="export-buttons">
-              <button 
-                className={`export-btn excel ${!tieneDatosParaExportar() ? 'disabled' : ''}`}
-                onClick={() => handleExport('excel')}
-                disabled={exportando || !tieneDatosParaExportar()}
-                title={!tieneDatosParaExportar() ? "No hay datos para exportar" : "Exportar a Excel"}
-              >
-                <FiDownload /> Excel
-              </button>
-              <button 
-                className={`export-btn pdf ${!tieneDatosParaExportar() ? 'disabled' : ''}`}
-                onClick={() => handleExport('pdf')}
-                disabled={exportando || !tieneDatosParaExportar()}
-                title={!tieneDatosParaExportar() ? "No hay datos para exportar" : "Exportar a PDF"}
-              >
-                <FiDownload /> PDF
-              </button>
+          <div className="home-export-row">
+            <button
+              className="home-btn home-btn-excel"
+              onClick={handleExcel}
+              disabled={exportando}
+            >
+              <Download size={14} /> Excel
+            </button>
+            <button
+              className="home-btn home-btn-pdf"
+              onClick={handlePDF}
+              disabled={exportando}
+            >
+              <Download size={14} /> PDF
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── KPI Grid ── */}
+      <div className="home-kpi-grid">
+        {kpis.map((k, i) => {
+          const Icon = k.icon;
+          return (
+            <div
+              key={i}
+              className="home-kpi-card"
+              style={{
+                "--kpi-color": k.color,
+                "--kpi-bg": k.bg,
+                animationDelay: `${i * 0.07}s`
+              }}
+            >
+              <div className="home-kpi-icon">
+                <Icon size={22} color={k.color} strokeWidth={1.8} />
+              </div>
+              <div className="home-kpi-body">
+                <span className="home-kpi-label">{k.label}</span>
+                <div className="home-kpi-value">{k.value}</div>
+                <span className="home-kpi-sub">{k.sub}</span>
+              </div>
+              <span className="home-kpi-tag">{k.tag}</span>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* KPI Cards */}
-      <div className="kpi-grid">
-        <div className="kpi-card gradient-purple">
-          <div className="kpi-icon-wrapper">
-            <FiUsers className="kpi-icon" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Estudiantes</span>
-            <h2 className="kpi-value">{totalEstudiantes}</h2>
-            <span className="kpi-subtext">
-              {totalEstudiantesPeriodo} en el período
-            </span>
-          </div>
-        </div>
-
-        <div className="kpi-card gradient-blue">
-          <div className="kpi-icon-wrapper">
-            <FiUserCheck className="kpi-icon" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Personal Activo</span>
-            <h2 className="kpi-value">{personalActivo}/{totalPersonal}</h2>
-            <span className="kpi-subtext">
-              {safeLength(data.directiva)} directivos
-            </span>
-          </div>
-        </div>
-
-        <div className="kpi-card gradient-purple-light">
-          <div className="kpi-icon-wrapper">
-            <FiShoppingCart className="kpi-icon" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Compras</span>
-            <h2 className="kpi-value">{comprasMes}</h2>
-            <span className="kpi-subtext">
-              del período ({totalCompras} total)
-            </span>
-          </div>
-        </div>
-
-        <div className="kpi-card gradient-blue-light">
-          <div className="kpi-icon-wrapper">
-            <FiDollarSign className="kpi-icon" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Donaciones</span>
-            <h2 className="kpi-value">{donacionesMes}</h2>
-            <span className="kpi-subtext">
-              del período ({totalDonaciones} total)
-            </span>
-          </div>
-        </div>
-
-        <div className="kpi-card gradient-purple-soft">
-          <div className="kpi-icon-wrapper">
-            <FiBox className="kpi-icon" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Bienes</span>
-            <h2 className="kpi-value">{safeLength(data.bienes)}</h2>
-            <span className="kpi-subtext">
-              {bienesPorEstado.find(e => e.name === "DISPONIBLE" || e.name === "ACTIVO")?.value || 0} disponibles
-            </span>
-          </div>
-        </div>
-
-        <div className="kpi-card gradient-blue-soft">
-          <div className="kpi-icon-wrapper">
-            <FiAward className="kpi-icon" />
-          </div>
-          <div className="kpi-content">
-            <span className="kpi-label">Proveedores</span>
-            <h2 className="kpi-value">{proveedoresActivos}/{totalProveedores}</h2>
-            <span className="kpi-subtext">
-              activos
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráficas */}
-      <div className="charts-grid">
+      {/* ── Gráficas ── */}
+      <div className="home-charts-grid">
         {bienesPorEstado.length > 0 && (
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3>Distribución de Bienes</h3>
-              <FiBox className="chart-icon" />
+          <div className="home-chart-card">
+            <div className="home-chart-header">
+              <h3>Bienes por estado</h3>
+              <Package size={16} color="#7c6ff7" />
             </div>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={bienesPorEstado}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label
-                  >
-                    {bienesPorEstado.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={bienesPorEstado}
+                  cx="50%" cy="50%"
+                  innerRadius={55} outerRadius={95}
+                  paddingAngle={4}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}
+                >
+                  {bienesPorEstado.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         )}
 
         {comprasPorEstado.length > 0 && (
-          <div className="chart-card">
-            <div className="chart-header">
-              <h3>Estado de Compras</h3>
-              <FiShoppingCart className="chart-icon" />
+          <div className="home-chart-card">
+            <div className="home-chart-header">
+              <h3>Órdenes de compra por estado</h3>
+              <ShoppingCart size={16} color="#7c6ff7" />
             </div>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={comprasPorEstado}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[5, 5, 0, 0]}>
-                    {comprasPorEstado.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={comprasPorEstado} barSize={36}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0edfb" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[6,6,0,0]}>
+                  {comprasPorEstado.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
 
         {dataTendencia.length > 0 && (
-          <div className="chart-card full-width">
-            <div className="chart-header">
-              <h3>Tendencia de Matrículas</h3>
-              <FiTrendingUp className="chart-icon" />
+          <div className="home-chart-card home-chart-full">
+            <div className="home-chart-header">
+              <h3>Tendencia de matrículas en el período</h3>
+              <TrendingUp size={16} color="#7c6ff7" />
             </div>
-            <div className="chart-container">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={dataTendencia}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="mes" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="matriculas" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={3}
-                    dot={{ fill: '#6366f1', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={dataTendencia}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0edfb" />
+                <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="matriculas"
+                  stroke="#7c6ff7"
+                  strokeWidth={2.5}
+                  dot={{ fill: "#7c6ff7", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         )}
       </div>
 
-      {/* Tablas de datos recientes */}
-      <div className="tables-grid">
+      {/* ── Tablas ── */}
+      <div className="home-tables-grid">
         {actividadesProximas.length > 0 && (
-          <div className="table-card">
-            <div className="table-header">
-              <h3>Próximas Actividades</h3>
-              <FiCalendar className="table-icon" />
+          <div className="home-table-card">
+            <div className="home-table-header">
+              <h3>Próximas actividades</h3>
+              <Calendar size={15} color="#7c6ff7" />
             </div>
-            <div className="table-container">
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th>Actividad</th>
-                    <th>Fecha</th>
-                    <th>Lugar</th>
+            <table className="home-table">
+              <thead>
+                <tr><th>Actividad</th><th>Fecha</th><th>Lugar</th></tr>
+              </thead>
+              <tbody>
+                {actividadesProximas.map(a => (
+                  <tr key={a._id}>
+                    <td>{a.nombre}</td>
+                    <td>{fmtDate(a.fecha)}</td>
+                    <td>{a.lugar || "—"}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {actividadesProximas.map(act => (
-                    <tr key={act._id}>
-                      <td>{act.nombre}</td>
-                      <td>{new Date(act.fecha).toLocaleDateString()}</td>
-                      <td>{act.lugar}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {data.compras.length > 0 && (
-          <div className="table-card">
-            <div className="table-header">
-              <h3>Últimas Compras</h3>
-              <FiShoppingCart className="table-icon" />
+        {safe(rawData.compras).length > 0 && (
+          <div className="home-table-card">
+            <div className="home-table-header">
+              <h3>Últimas órdenes de compra</h3>
+              <ShoppingCart size={15} color="#7c6ff7" />
             </div>
-            <div className="table-container">
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th>Número</th>
-                    <th>Estado</th>
-                    <th>Fecha</th>
+            <table className="home-table">
+              <thead>
+                <tr><th>Número</th><th>Estado</th><th>Monto</th><th>Fecha</th></tr>
+              </thead>
+              <tbody>
+                {safe(rawData.compras).slice(0, 6).map(c => (
+                  <tr key={c._id}>
+                    <td>{c.numero}</td>
+                    <td>
+                      <span className={`home-badge home-badge-${c.estado?.toLowerCase()}`}>
+                        {c.estado}
+                      </span>
+                    </td>
+                    <td>L. {fmt(montoOrden(c))}</td>
+                    <td>{fmtDate(c.fecha)}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {data.compras.slice(0, 5).map(compra => (
-                    <tr key={compra._id}>
-                      <td>{compra.numero}</td>
-                      <td>
-                        <span className={`status-badge ${compra.estado?.toLowerCase()}`}>
-                          {compra.estado}
-                        </span>
-                      </td>
-                      <td>{new Date(compra.fecha).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {data.libros.length > 0 && (
-          <div className="table-card">
-            <div className="table-header">
-              <h3>Biblioteca - Últimos Libros</h3>
-              <FiBook className="table-icon" />
+        {safe(rawData.libros).length > 0 && (
+          <div className="home-table-card">
+            <div className="home-table-header">
+              <h3>Biblioteca — últimos libros</h3>
+              <BookOpen size={15} color="#7c6ff7" />
             </div>
-            <div className="table-container">
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th>Título</th>
-                    <th>Autor</th>
-                    <th>Grado</th>
-                    <th>Estado</th>
+            <table className="home-table">
+              <thead>
+                <tr><th>Título</th><th>Autor</th><th>Estado</th></tr>
+              </thead>
+              <tbody>
+                {safe(rawData.libros).slice(0, 6).map(l => (
+                  <tr key={l._id}>
+                    <td>{l.titulo}</td>
+                    <td>{l.autor || "—"}</td>
+                    <td>
+                      <span className={`home-badge ${l.disponible ? "home-badge-activo" : "home-badge-borrador"}`}>
+                        {l.disponible ? "Disponible" : "Prestado"}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {data.libros.slice(0, 5).map(libro => (
-                    <tr key={libro._id}>
-                      <td>{libro.titulo}</td>
-                      <td>{libro.autor}</td>
-                      <td>{libro.grado}</td>
-                      <td>
-                        <span className={`status-badge ${libro.disponible ? 'disponible' : 'prestado'}`}>
-                          {libro.disponible ? 'Disponible' : 'Prestado'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
-      {/* Mensaje si no hay datos */}
-      {safeLength(data.alumnos) === 0 && 
-       safeLength(data.compras) === 0 && 
-       safeLength(data.bienes) === 0 && 
-       safeLength(data.actividades) === 0 && (
-        <div className="no-data-message">
-          <FiAlertCircle />
-          <p>No hay datos disponibles para mostrar</p>
+      {/* Sin datos */}
+      {!totalAlumnos && !totalCompras && !totalBienes && (
+        <div className="home-empty">
+          <AlertCircle size={28} color="#b0acd4" />
+          <p>No hay datos disponibles</p>
         </div>
       )}
     </div>

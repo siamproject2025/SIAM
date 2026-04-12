@@ -512,7 +512,7 @@ function App() {
                                     <button className="mm-btn mm-primary" onClick={()=>setShowCreateModal(true)}><IcoPlus/> Nueva Matrícula</button>
                                 </WithPermission>
                                 <WithPermission requiredPermissions={['ELIMINAR_MATRICULA']}>
-                                    <button className="mm-btn mm-danger" onClick={deleteSelectedStudents}><IcoTrash/> Eliminar ({selectedStudents.length})</button>
+                                    <button className="mm-btn mm-danger" onClick={deleteSelectedStudents}>Eliminar ({selectedStudents.length})</button>
                                 </WithPermission>
                             </div>
 
