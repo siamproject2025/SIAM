@@ -608,7 +608,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
               Cancelar
             </button>
             <button type="button" style={S.btn("#6C4FBF")} onClick={handleCrear}>
-              <Save size={15} /> Crear Orden
+              Guardar
             </button>
           </div>
 

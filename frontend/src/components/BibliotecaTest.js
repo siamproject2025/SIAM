@@ -556,7 +556,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                 background: "#6C4FBF", color: "#fff", fontFamily: "inherit",
               }}
             >
-              {libroEditando ? "Actualizar Libro" : "Subir Libro"}
+              {libroEditando ? "Guardar" : "Guardar"}
             </button>
           </div>
         </form>

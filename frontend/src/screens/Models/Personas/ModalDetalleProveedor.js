@@ -521,16 +521,16 @@ const ModalDetalleProveedor = ({
                 style={S.btn("#E74C3C")}
                 onClick={() => setShowConfirm(true)}
               >
-                <Trash2 size={15} /> Eliminar
+                Eliminar
               </button>
             )}
             <button type="button" style={S.btn("#E0D9F5", "#6C4FBF")} onClick={handleCerrar}>
-              <X size={15} /> Cancelar
+              Cancelar
             </button>
             <button type="submit" style={S.btn("#6C4FBF")}>
               {modoCrear
-                ? <><Plus  size={15} /> Crear Proveedor</>
-                : <><Save  size={15} /> Actualizar</>
+                ? <> Guardar</>
+                : <> Guardar</>
               }
             </button>
           </div>

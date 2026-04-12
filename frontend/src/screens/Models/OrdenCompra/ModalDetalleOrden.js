@@ -567,18 +567,19 @@ const ModalDetalleOrden = ({ orden, onClose, onUpdate, onDelete, proveedores = [
 
         {/* Footer — FIX: botón "Actualizar" es type="button" + onClick, NO submit de form */}
         <div className="dn-modal-footer">
-          <button type="button" style={S.btn("#E74C3C")} onClick={() => setShowConfirm(true)}>
-            <Trash2 size={15} /> Eliminar
-          </button>
+         
           <button type="button" style={S.btn("#2980B9")} onClick={handleDescargarPDF}>
             <Download size={15} /> PDF
+          </button>
+           <button type="button" style={S.btn("#E74C3C")} onClick={() => setShowConfirm(true)}>
+            Eliminar
           </button>
           <button type="button" style={S.btn("#E0D9F5", "#6C4FBF")} onClick={handleCerrar}>
             Cancelar
           </button>
           {/* FIX: onClick directo, no dependiente de form submit */}
           <button type="button" style={S.btn("#6C4FBF")} onClick={handleGuardar}>
-            <Save size={15} /> Actualizar
+            Guardar
           </button>
         </div>
 

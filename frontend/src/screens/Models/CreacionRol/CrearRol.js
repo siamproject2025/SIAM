@@ -618,14 +618,14 @@ function ModalRol({ mode, rol, onClose, onSave, onDelete, loading }) {
             <div>
               {mode === 'editar' && onDelete && (
                 <button type="button" className="rols-css-btn-footer-delete" onClick={() => onDelete(rol._id)} disabled={loading}>
-                  <Trash2 size={15} /> Eliminar
+                  Eliminar
                 </button>
               )}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="button" className="rols-css-btn-footer-cancel" onClick={handleClose} disabled={loading}>Cancelar</button>
               <button type="submit" className="rols-css-btn-footer-save" disabled={loading}>
-                {loading ? 'Guardando…' : mode === 'crear' ? 'Guardar' : 'Actualizar'}
+                {loading ? 'Guardando…' : mode === 'crear' ? 'Guardar' : 'Guardar'}
               </button>
             </div>
           </div>

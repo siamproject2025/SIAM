@@ -1,8 +1,3 @@
-// ============================================================
-// Landingpage.jsx — consume API real
-// GET /api/parametros sin token (ruta pública)
-// Fallback a localStorage si la API no responde
-// ============================================================
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useMotionValue, animate } from 'framer-motion';
@@ -19,34 +14,45 @@ import { PARAMS_KEY, DEFAULTS } from './Parametros';
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/parametros";
 
+// ── Hex a RGB ─────────────────────────────────────────────────
+const hexToRgb = (hex) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : '106, 17, 203';
+};
+
 // ── Hook para leer parámetros con fallback ────────────────────
 function useParametros() {
   const [params, setParams] = useState(() => {
-    // Arrancar con caché local si existe (evita flash de defaults)
     try {
       const s = localStorage.getItem(PARAMS_KEY);
-      return s ? { ...DEFAULTS, ...JSON.parse(s) } : { ...DEFAULTS };
+      const parsed = s ? JSON.parse(s) : {};
+      const merged = { ...DEFAULTS, ...parsed };
+      if (!Array.isArray(merged.faq)) merged.faq = [...DEFAULTS.faq];
+      return merged;
     } catch { return { ...DEFAULTS }; }
   });
 
   useEffect(() => {
-    // GET público — sin token
     axios.get(API_URL)
       .then(res => {
         const merged = { ...DEFAULTS, ...res.data };
+        if (!Array.isArray(merged.faq)) merged.faq = [...DEFAULTS.faq];
         setParams(merged);
         localStorage.setItem(PARAMS_KEY, JSON.stringify(merged));
       })
-      .catch(() => {
-        // API no disponible: quedarse con localStorage
-      });
+      .catch(() => {});
 
-    // Escuchar cambios desde otra pestaña (admin guardó)
     const handler = (e) => {
       if (e.key === PARAMS_KEY) {
         try {
           const s = e.newValue;
-          if (s) setParams({ ...DEFAULTS, ...JSON.parse(s) });
+          if (s) {
+            const merged = { ...DEFAULTS, ...JSON.parse(s) };
+            if (!Array.isArray(merged.faq)) merged.faq = [...DEFAULTS.faq];
+            setParams(merged);
+          }
         } catch {}
       }
     };
@@ -59,15 +65,13 @@ function useParametros() {
 
 // ── Número animado ────────────────────────────────────────────
 const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
-  const count   = useMotionValue(0);
+  const count = useMotionValue(0);
   const [display, setDisplay] = useState('0');
   useEffect(() => {
     const controls = animate(count, parseInt(to) || 0, {
       duration,
       onUpdate(latest) {
-        setDisplay(
-          suffix === '/7' ? '24/7' : `${Math.round(latest)}${suffix}`
-        );
+        setDisplay(suffix === '/7' ? '24/7' : `${Math.round(latest)}${suffix}`);
       },
     });
     return () => controls.stop();
@@ -79,17 +83,29 @@ const AnimatedNumber = ({ to, suffix = '', duration = 1.5 }) => {
 const App = () => {
   const P = useParametros();
 
-  const [activeFaq, setActiveFaq]     = useState(null);
+  // ── Aplicar colores dinámicos desde MongoDB ───────────────
+  useEffect(() => {
+    const root = document.documentElement;
+    const primary   = P.color_primario   || '#6a11cb';
+    const secondary = P.color_secundario || '#2575fc';
+
+    root.style.setProperty('--primary-color',   primary);
+    root.style.setProperty('--secondary-color',  secondary);
+    root.style.setProperty('--primary-rgb',   hexToRgb(primary));
+    root.style.setProperty('--secondary-rgb', hexToRgb(secondary));
+  }, [P.color_primario, P.color_secundario]);
+
+  const [activeFaq,    setActiveFaq]    = useState(null);
   const [flippedCards, setFlippedCards] = useState({});
-  const [activeSection, setActiveSection] = useState('inicio');
+  const [activeSection,setActiveSection]= useState('inicio');
   const navigate = useNavigate();
 
   const sectionRefs = {
-    inicio:    useRef(null),
-    proposito: useRef(null),
-    modulos:   useRef(null),
-    beneficios:useRef(null),
-    contacto:  useRef(null),
+    inicio:     useRef(null),
+    proposito:  useRef(null),
+    modulos:    useRef(null),
+    beneficios: useRef(null),
+    contacto:   useRef(null),
   };
 
   useEffect(() => {
@@ -110,7 +126,7 @@ const App = () => {
     { id:6, front:{ title:"Órdenes de Compra",        icon:<ShoppingCart size={32}/>, description:"Gestión completa del proceso de compras" },             back:{ title:"Órdenes de Compra",        features:["Generación de órdenes","Envío a proveedores","Recepción de productos","Seguimiento detallado","Cálculo de valores"] } },
   ];
 
-  const faqData = Array.isArray(P.faq) ? P.faq : DEFAULTS.faq;
+  const faqData = Array.isArray(P?.faq) ? P.faq : DEFAULTS.faq;
   const handleCardClick = id => setFlippedCards(p => ({ ...p, [id]: !p[id] }));
   const toggleFaq       = i  => setActiveFaq(activeFaq === i ? null : i);
   const scrollToSection = id => { sectionRefs[id].current.scrollIntoView({ behavior:'smooth' }); setActiveSection(id); };

@@ -314,13 +314,13 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
           {renderTabs()}
           <div className="dn-modal-footer">
             <button type="button" style={S.btn('#E74C3C')} onClick={() => setShowConfirm(true)}>
-              <Trash2 size={15} /> Eliminar
+              Eliminar
             </button>
             <button type="button" style={S.btn('#E0D9F5', '#6C4FBF')} onClick={handleCerrar}>
               Cancelar
             </button>
             <button type="submit" disabled={guardando} style={S.btn('#6C4FBF', '#fff', guardando)}>
-              <Save size={15} /> {guardando ? 'Guardando...' : 'Guardar Cambios'}
+              {guardando ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         </form>

@@ -18,6 +18,7 @@ import Notification from '../components/Notification';
 // ── Clave localStorage (caché) ────────────────────────────────
 export const PARAMS_KEY = 'siam_parametros';
 const API_URL = process.env.REACT_APP_API_URL + "/api/parametros";
+
 // ── Valores por defecto ───────────────────────────────────────
 export const DEFAULTS = {
   nombre_institucion:  'Escuela Experimental de Niños para la Música',
@@ -40,16 +41,15 @@ export const DEFAULTS = {
   stat_acceso:         '24',
   stat_estudiantes:    '500',
   faq: [
-    { question: '¿Qué es S.I.A.M.?',                   answer: 'S.I.A.M. es un Sistema Integrado Administrativo Musical diseñado para optimizar y automatizar los procesos clave de instituciones musicales, desde la matrícula hasta el control de inventario.' },
-    { question: '¿Qué problemas resuelve S.I.A.M.?',   answer: 'Resuelve problemas como procesos manuales de matrícula, desorganización en horarios, control limitado de inventario, falta de trazabilidad en compras y comunicación institucional dispersa.' },
-    { question: '¿Qué tecnologías utiliza S.I.A.M.?',  answer: 'Utiliza React y JavaScript en el frontend, Express.js en el backend, MongoDB como base de datos y APIs privadas seguras para integración.' },
+    { question: '¿Qué es S.I.A.M.?',                        answer: 'S.I.A.M. es un Sistema Integrado Administrativo Musical diseñado para optimizar y automatizar los procesos clave de instituciones musicales, desde la matrícula hasta el control de inventario.' },
+    { question: '¿Qué problemas resuelve S.I.A.M.?',        answer: 'Resuelve problemas como procesos manuales de matrícula, desorganización en horarios, control limitado de inventario, falta de trazabilidad en compras y comunicación institucional dispersa.' },
+    { question: '¿Qué tecnologías utiliza S.I.A.M.?',       answer: 'Utiliza React y JavaScript en el frontend, Express.js en el backend, MongoDB como base de datos y APIs privadas seguras para integración.' },
     { question: '¿Cómo mejora la eficiencia institucional?', answer: 'Aumenta en más del 70% la eficiencia en tareas administrativas, reduce errores en procesos críticos y proporciona acceso centralizado a información 24/7.' },
-    { question: '¿Quién puede utilizar S.I.A.M.?',     answer: 'Está diseñado para escuelas de música, conservatorios y cualquier institución educativa musical que necesite gestionar sus procesos administrativos y académicos.' },
+    { question: '¿Quién puede utilizar S.I.A.M.?',          answer: 'Está diseñado para escuelas de música, conservatorios y cualquier institución educativa musical que necesite gestionar sus procesos administrativos y académicos.' },
   ],
 };
 
 // ── Hook público para leer parámetros (landing + otros módulos) ──
-// Primero intenta la API, fallback a localStorage, fallback a DEFAULTS
 export function useParametros() {
   const [params, setParams] = useState(() => {
     try {
@@ -59,18 +59,14 @@ export function useParametros() {
   });
 
   useEffect(() => {
-    // Fetch público sin token (GET es abierto)
     axios.get(API_URL)
       .then(res => {
         const merged = { ...DEFAULTS, ...res.data };
         setParams(merged);
-        // Actualizar caché local
         localStorage.setItem(PARAMS_KEY, JSON.stringify(merged));
       })
-      .catch(() => {
-        // Si la API falla, quedarse con lo del localStorage
-      });
-    // Escuchar cambios desde otra pestaña ()
+      .catch(() => {});
+
     const handler = (e) => {
       if (e.key === PARAMS_KEY) {
         try {
@@ -127,7 +123,7 @@ const CSS = `
   .pm-preview-box { background:#F0ECFF; border:2px solid #C4B5E8; border-radius:12px; padding:16px 20px; }
   .pm-preview-title { font-size:.78rem; font-weight:700; color:#6C4FBF; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
   .pm-preview-landing { border-radius:10px; overflow:hidden; border:2px solid #E0D9F5; }
-  .pm-preview-bar { background:linear-gradient(135deg,#6C4FBF,#9B59B6); padding:8px 16px; display:flex; align-items:center; gap:8px; }
+  .pm-preview-bar { padding:8px 16px; display:flex; align-items:center; gap:8px; }
   .pm-preview-content { background:#fff; padding:16px; }
   .pm-preview-h1 { font-family:'Poppins',sans-serif; font-size:1rem; font-weight:800; color:#2D2250; margin-bottom:4px; }
   .pm-preview-p { font-size:.78rem; color:#7A6FA0; }
@@ -183,6 +179,13 @@ export default function Parametros() {
   const [notification, setNotification] = useState(null);
   const [showPreview, setShowPreview]   = useState(false);
 
+  // ── Aplicar colores dinámicos en tiempo real mientras se edita ──
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--primary-color', params.color_primario);
+    root.style.setProperty('--secondary-color', params.color_secundario);
+  }, [params.color_primario, params.color_secundario]);
+
   // ── Cargar desde API al montar ────────────────────────────
   useEffect(() => {
     axios.get(API_URL)
@@ -192,7 +195,6 @@ export default function Parametros() {
         localStorage.setItem(PARAMS_KEY, JSON.stringify(merged));
       })
       .catch(() => {
-        // Fallback a localStorage si la API no responde
         try {
           const s = localStorage.getItem(PARAMS_KEY);
           if (s) setParams({ ...DEFAULTS, ...JSON.parse(s) });
@@ -212,54 +214,53 @@ export default function Parametros() {
   const delFaq = (i) => set('faq', params.faq.filter((_, idx) => idx !== i));
 
   // ── Guardar en API ────────────────────────────────────────
-const handleSave = async () => {
-  setSaving(true);
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      setNotification({ message: "Sesión expirada", type: 'error' });
-      return;
-    }
-
-    const token = await user.getIdToken(true);
-    const res = await axios.put(API_URL, params, {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json' 
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        setNotification({ message: "Sesión expirada", type: 'error' });
+        return;
       }
-    });
 
-    const updated = { ...DEFAULTS, ...res.data };
-    setParams(updated);
-    localStorage.setItem(PARAMS_KEY, JSON.stringify(updated));
+      const token = await user.getIdToken(true);
+      const res = await axios.put(API_URL, params, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-    setSaved(true);
-    setDirty(false);
+      const updated = { ...DEFAULTS, ...res.data };
+      setParams(updated);
+      localStorage.setItem(PARAMS_KEY, JSON.stringify(updated));
 
-    // --- NOTIFICACIÓN PEQUEÑA (ESTILO TOAST) ---
-    const { default: Swal } = await import('sweetalert2');
-    const Toast = Swal.mixin({
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true,
-    });
+      // Aplicar colores inmediatamente tras guardar
+      const root = document.documentElement;
+      root.style.setProperty('--primary-color', updated.color_primario);
+      root.style.setProperty('--secondary-color', updated.color_secundario);
 
-    Toast.fire({
-      icon: 'success',
-      title: 'Configuración guardada exitosamente'
-    });
-    // -------------------------------------------
+      setSaved(true);
+      setDirty(false);
 
-    setTimeout(() => setSaved(false), 4000);
-  } catch (err) {
-    const msg = err.response?.data?.error || err.message || "Error al guardar";
-    setNotification({ message: msg, type: 'error' });
-  } finally {
-    setSaving(false);
-  }
-};
+      const { default: Swal } = await import('sweetalert2');
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+      Toast.fire({ icon: 'success', title: 'Configuración guardada exitosamente' });
+
+      setTimeout(() => setSaved(false), 4000);
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || "Error al guardar";
+      setNotification({ message: msg, type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ── Restaurar predeterminados ─────────────────────────────
   const handleReset = async () => {
@@ -275,7 +276,6 @@ const handleSave = async () => {
     setParams({ ...DEFAULTS });
     setDirty(true);
     setSaved(false);
-    
   };
 
   const TABS = [
@@ -386,7 +386,8 @@ const handleSave = async () => {
                   <div className="pm-preview-box" style={{marginTop:16}}>
                     <div className="pm-preview-title"><Eye size={13}/> Preview — Barra de navegación</div>
                     <div className="pm-preview-landing">
-                      <div className="pm-preview-bar">
+                      <div className="pm-preview-bar"
+                        style={{background:`linear-gradient(135deg,${params.color_primario},${params.color_secundario})`}}>
                         <span style={{color:'#fff',fontWeight:800,fontSize:'.85rem',display:'flex',alignItems:'center',gap:6}}>
                           <Music size={14}/> {params.siglas}
                         </span>
@@ -437,9 +438,9 @@ const handleSave = async () => {
                   <div className="pm-preview-box">
                     <div className="pm-preview-title"><Eye size={13}/> Preview — Sección Contacto</div>
                     <div className="pm-preview-contact">
-                      <div className="pm-preview-row"><Phone size={13} color="#6C4FBF"/><span>{params.telefono}</span></div>
-                      <div className="pm-preview-row"><Mail size={13} color="#6C4FBF"/><span>{params.correo}</span></div>
-                      <div className="pm-preview-row"><MapPin size={13} color="#6C4FBF"/><span>{params.direccion}</span></div>
+                      <div className="pm-preview-row"><Phone size={13} color={params.color_primario}/><span>{params.telefono}</span></div>
+                      <div className="pm-preview-row"><Mail size={13} color={params.color_primario}/><span>{params.correo}</span></div>
+                      <div className="pm-preview-row"><MapPin size={13} color={params.color_primario}/><span>{params.direccion}</span></div>
                     </div>
                   </div>
                 )}
@@ -526,7 +527,7 @@ const handleSave = async () => {
             {/* ══ Colores ══ */}
             {tab==='colores' && (
               <>
-                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Los colores se aplican en el gradiente del header, tabs y botones de toda la plataforma.</div>
+                <div className="pm-info-box"><Info size={15} style={{flexShrink:0,marginTop:1}}/>Los colores se aplican en tiempo real en toda la landing page al modificarlos aquí.</div>
                 <Sec icon={<Image size={18}/>} title="Colores Institucionales">
                   <div className="pm-grid">
                     {[
@@ -562,10 +563,10 @@ const handleSave = async () => {
       {/* Barra de acciones fija */}
       <div className="pm-action-bar">
         <button className="pm-btn pm-primary" onClick={handleSave} disabled={saving}>
-          {saving ? <><Loader size={15} className="spin"/> Guardando...</> : <><Save size={16}/> Guardar Cambios</>}
+          {saving ? <><Loader size={15} className="spin"/> Guardando...</> : <>Guardar Cambios</>}
         </button>
         <button className="pm-btn pm-ghost" onClick={handleReset} disabled={saving}>
-          <RotateCcw size={15}/> Restaurar predeterminados
+          Restaurar predeterminados
         </button>
         {dirty && !saving && <span style={{fontSize:'.82rem',color:'#b45309',fontWeight:700}}>⚠ Cambios sin guardar</span>}
         {saved && (

@@ -486,7 +486,7 @@ const ModalDetalleBien = ({ bien, onClose, onUpdate, onDelete, categoriasDisponi
               Cancelar
             </button>
             <button type="submit" style={S.btn('#6C4FBF')}>
-              Actualizar
+              Guardar
             </button>
           </div>
         </form>
