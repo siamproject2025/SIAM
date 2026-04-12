@@ -3,7 +3,7 @@ const router = express.Router();
 const controller = require('../Controllers/ordenCompra');
 const { authenticateUser } = require('../middleware/authMiddleWare');
 const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
-const Orden = require("../Models/OrdenCompra");
+const Orden = require("../Models/ordenCompra");
 const { uploadAdjuntos, procesarAdjuntos, manejarErroresMulter } = require('../middleware/uploadAdjuntosOrden');
 
 router.use(authenticateUser);

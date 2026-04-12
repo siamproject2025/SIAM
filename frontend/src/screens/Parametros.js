@@ -18,7 +18,6 @@ import Notification from '../components/Notification';
 // ── Clave localStorage (caché) ────────────────────────────────
 export const PARAMS_KEY = 'siam_parametros';
 const API_URL = process.env.REACT_APP_API_URL + "/api/parametros";
-
 // ── Valores por defecto ───────────────────────────────────────
 export const DEFAULTS = {
   nombre_institucion:  'Escuela Experimental de Niños para la Música',
@@ -71,8 +70,7 @@ export function useParametros() {
       .catch(() => {
         // Si la API falla, quedarse con lo del localStorage
       });
-
-    // Escuchar cambios desde otra pestaña (admin guardó)
+    // Escuchar cambios desde otra pestaña ()
     const handler = (e) => {
       if (e.key === PARAMS_KEY) {
         try {
