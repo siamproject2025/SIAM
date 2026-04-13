@@ -134,7 +134,10 @@ function App() {
 
             {/* ==================== MÓDULO DASHBOARD ==================== */}
   
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              
+            </Route>
             <Route path="/account"    element={<AccountSettings />} />
             <Route path="/contrasena" element={<ChangePasswordLogueado />} />
 
