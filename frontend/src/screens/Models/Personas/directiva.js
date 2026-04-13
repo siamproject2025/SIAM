@@ -21,6 +21,7 @@ import {
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import Notification from "../../../components/Notification";
 import * as XLSX from "xlsx";
+import WithPermission from '../../../components/Permisos/WithPermission';
 
 const API_URL       = process.env.REACT_APP_API_URL + "/api/directiva";
 const API_CATALOGOS = process.env.REACT_APP_API_URL + "/api/catalogos";
@@ -161,7 +162,7 @@ const Directiva = () => {
   const cargarMiembros = async () => {
     try {
       setLoading(true); loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Error al cargar");
       const data = await res.json();
@@ -219,7 +220,7 @@ const Directiva = () => {
     try {
       const user = auth.currentUser;
       if (!user) { showNotification("No autenticado", "error"); return; }
-      const token = await user.getIdToken();
+     const token = await user.getIdToken(true);
       const payload = {
         ...formData,
         fecha_registro: new Date(formData.fecha_registro),
@@ -252,7 +253,7 @@ const Directiva = () => {
       loadingController.start();
       const user = auth.currentUser;
       if (!user) throw new Error("No autenticado");
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const payload = {
         ...formData,
         fecha_registro: new Date(formData.fecha_registro),
@@ -278,7 +279,7 @@ const Directiva = () => {
     if (!miembroAEliminar) return;
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res = await fetch(`${API_URL}/${miembroAEliminar._id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
@@ -739,6 +740,7 @@ const Directiva = () => {
             <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
+             <WithPermission requiredPermissions={"CREAR_DIRECTIVA"}>
             <button style={S.btn("#6C4FBF")} onClick={() => {
               setFormData(formVacio()); setFotoPreview(null);
               setErrors({}); setTabActivo("info"); setHayCambios(false);
@@ -746,6 +748,7 @@ const Directiva = () => {
             }}>
               <Plus size={15} /> Nuevo Miembro
             </button>
+            </WithPermission>
           </div>
         </div>
 
@@ -893,10 +896,13 @@ const Directiva = () => {
                     {/* Acciones */}
                     <td>
                       <div className="bienes-action-buttons">
+                        <WithPermission requiredPermissions={"ACTUALIZAR_DIRECTIVA"}>
                         <button className="bienes-btn-icon edit" title="Editar"
                           onClick={() => handleOpenEditModal(m)}>
                           <Edit size={15} />
                         </button>
+                        </WithPermission>
+                         <WithPermission requiredPermissions={"ACTUALIZAR_DIRECTIVA"}>
                         <button className="bienes-btn-icon delete" title="Eliminar"
                           onClick={() => {
                             if (window.confirm(`¿Eliminar a "${m.nombre}"?`)) handleEliminarMiembro(m._id);
@@ -906,6 +912,7 @@ const Directiva = () => {
                             <path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
                           </svg>
                         </button>
+                        </WithPermission>
                       </div>
                     </td>
                   </tr>

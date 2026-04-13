@@ -72,7 +72,7 @@ const QuestionItem = ({ question, canAnswer, fetchQuestions, setGlobalNotificati
             setError("Usuario no autenticado");
             return;
         }
-        const token = await user.getIdToken(); //  Obtener token
+        const token = await user.getIdToken(true); //  Obtener token
 
         const postUrlCompleto = `${API_URL}/questions/${question._id}/answers`;
         

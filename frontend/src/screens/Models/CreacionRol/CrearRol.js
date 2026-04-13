@@ -44,7 +44,7 @@ const useAuth = () => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Usuario no autenticado');
-      return await user.getIdToken();
+      return await user.getIdToken(true);
     } catch (error) {
       return null;
     }
@@ -69,8 +69,8 @@ const GRUPOS_PERMISOS = {
   GESTION_DE_USUARIOS: ['VISUALIZAR_SEGURIDAD',        'CREAR_SEGURIDAD',        'ACTUALIZAR_SEGURIDAD',        'ELIMINAR_SEGURIDAD'],
   ROLES:               ['VISUALIZAR_ROLES',            'CREAR_ROLES',            'ACTUALIZAR_ROLES',            'ELIMINAR_ROLES'],
   SOLICITUDES:         ['VISUALIZAR_SOLICITUDES',      'CREAR_SOLICITUDES',      'ACTUALIZAR_SOLICITUDES',      'ELIMINAR_SOLICITUDES'],
-  AUDITORIA:           ['VISUALIZAR_AUDITORIA',        'CREAR_AUDITORIA',        'ACTUALIZAR_AUDITORIA',        'ELIMINAR_AUDITORIA'],
-  BACKUP:              ['VISUALIZAR_RESTORE',           'CREAR_RESTORE',           'ACTUALIZAR_RESTORE',        'ELIMINAR_RESTORE'],
+  AUDITORIA:           ['VISUALIZAR_AUDITORIA',                                  'ACTUALIZAR_AUDITORIA',        'ELIMINAR_AUDITORIA'],
+  BACKUP:              ['VISUALIZAR_RESTORE',           'CREAR_RESTORE',           'ACTUALIZAR_RESTORE'],
   DASHBOARD:           ['VISUALIZAR_DASHBOARD'],
   PAGINA_PRINCIPAL:    ['VISUALIZAR_PAGINA_PRINCIPAL', 'ACTUALIZAR_PAGINA_PRINCIPAL'],
   MANTENIMIENTOS :     ['VISUALIZAR_MANTENIMIENTOS',       'CREAR_MANTENIMIENTOS',   'ACTUALIZAR_MANTENIMIENTOS',   'ELIMINAR_MANTENIMIENTOS']
@@ -203,7 +203,7 @@ function App() {
   const handleEditarRol = (rol) => { setSelectedRol(rol); setModalMode('editar'); setShowModal(true); };
 
   const handleEliminarRol = async (id) => {
-    if (!window.confirm('¿Está seguro de eliminar este rol?')) return;
+
     setLoading(true);
     try {
       const token = await getToken();

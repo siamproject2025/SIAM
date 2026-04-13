@@ -9,6 +9,7 @@ import {
   ShieldOff, ShieldCheck, Pencil, RotateCcw, X, 
   Edit
 } from "lucide-react";
+import WithPermission from "../Permisos/WithPermission";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -141,7 +142,7 @@ const ModalAsignacion = ({ solicitud, onConfirmar, onCancelar, procesando }) => 
 
   const obtenerToken = async () => {
     const { auth } = await import("../authentication/Auth");
-    return auth.currentUser?.getIdToken();
+    return auth.currentUser?.getIdToken(true);
   };
 
   useEffect(() => {
@@ -264,7 +265,7 @@ const SolicitudesPanel = () => {
 
   const obtenerToken = async () => {
     const { auth } = await import("../authentication/Auth");
-    return auth.currentUser?.getIdToken();
+    return auth.currentUser?.getIdToken(true);
   };
 
   const toast = (icon, text) =>
@@ -611,16 +612,24 @@ const SolicitudesPanel = () => {
                         <ActionBtn color={theme.danger}  disabled={procesando === s._id} onClick={() => denegar(s._id)}       title="Denegar"><XIcon /></ActionBtn>
                       </>)}
                       {s.estado === "APROBADO" && (<>
+                       <WithPermission requiredPermissions={"ACTUALIZAR_SOLICITUDES"}>
                         <button  className="bienes-btn-icon edit"     disabled={procesando === s._id} onClick={() => abrirEdicionAsignacion(s)} title="Editar asignación"><Edit size={15}/></button>
+                        </WithPermission>
+                        <WithPermission requiredPermissions={"ACTUALIZAR_SOLICITUDES"}>
                         <ActionBtn color={theme.warning} disabled={procesando === s._id} onClick={() => bloquearUsuario(s)}        title="Bloquear usuario"><LockIcon /></ActionBtn>
+                        </WithPermission>
                       </>)}
                       {s.estado === "BLOQUEADO" && (
+                         <WithPermission requiredPermissions={"ACTUALIZAR_SOLICITUDES"}>
                         <ActionBtn color={theme.success} disabled={procesando === s._id} onClick={() => desbloquearUsuario(s)} title="Desbloquear usuario"><UnlockIcon /></ActionBtn>
+                        </WithPermission>
                       )}
                       {s.estado === "DENEGADO" && (
                         <ActionBtn color={theme.accent} disabled={procesando === s._id} onClick={() => reabrirSolicitud(s._id)} title="Reabrir solicitud"><ReabrirIcon /></ActionBtn>
                       )}
-                      <ActionBtn color={theme.accent} onClick={() => setDetalle(s)} title="Ver detalle"><EyeIcon /></ActionBtn>
+                       <WithPermission requiredPermissions={"ACTUALIZAR_SOLICITUDES"}>
+                        <ActionBtn color={theme.accent} onClick={() => setDetalle(s)} title="Ver detalle"><EyeIcon /></ActionBtn>
+                        </WithPermission>
                     </div>
                   </td>
                 </tr>

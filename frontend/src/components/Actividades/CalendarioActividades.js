@@ -14,6 +14,7 @@ import ModalCrearActividad from '../../screens/Models/Actividades/ModalCrearActi
 import ModalDetalleActividad from '../../screens/Models/Actividades/ModalDetalleActividad';
 import "../../styles/Models/Calendario.css";
 import Notification from "../Notification";
+import WithPermission from "../Permisos/WithPermission";
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/actividades";
 
@@ -113,8 +114,8 @@ const CalendarioActividades = forwardRef((props, ref) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-      const token = await user.getIdToken();
-      const res = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+        const token = await user.getIdToken(true); //  Obtener token
+          const res = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       const normalizadas = (res.data || []).map(a => ({
         ...a, color: a.color || getColorPorDefecto(a.nombre)
       }));
@@ -169,7 +170,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
     }
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       await axios.post(API_URL, { ...nueva, usuario: user.uid }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -186,7 +187,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
       mostrarNotificacion('Ya existe otra actividad en esa misma hora'); return;
     }
     try {
-      const token = await auth.currentUser.getIdToken();
+      const token = await auth.currentUser.getIdToken(true);
       const id = datos._id || datos.id;
       await axios.put(`${API_URL}/${id}`, datos, {
         headers: { Authorization: `Bearer ${token}` }
@@ -203,7 +204,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const handleEliminar = (id) => {
     mostrarConfirmacion('¿Seguro que deseas eliminar esta actividad?', async () => {
       try {
-        const token = await auth.currentUser.getIdToken();
+        const token = await auth.currentUser.getIdToken(true);
         await axios.delete(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         cerrarModal();
         cargarActividades();
@@ -278,6 +279,8 @@ const CalendarioActividades = forwardRef((props, ref) => {
       const evs = eventosFiltrados.filter(e => e.fecha?.split('T')[0] === f);
       const esHoy = f === isoFecha(new Date());
       celdas.push(
+     
+             
         <div key={f} className={`calendario-celda${esHoy?' hoy':''}`} onClick={() => handleDateClick(f)}>
           <div className="calendario-dia-numero">{f.split('-')[2]}</div>
           <div className="calendario-eventos">
@@ -297,7 +300,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
               <div style={{ fontSize:'.72rem', color:'#888', padding:'1px 4px' }}>+{evs.length-3} más</div>
             )}
           </div>
-        </div>
+        </div> 
       );
     });
     return (
@@ -857,9 +860,13 @@ const CalendarioActividades = forwardRef((props, ref) => {
       </div>
 
       {/* MODALES */}
+
+      
       {modal.visible && (
+          <WithPermission requiredPermissions={"ACTUALIZAR_ACTIVIDADES"}>
         <ModalDetalleActividad actividad={modal.content} onClose={cerrarModal}
           onUpdate={handleActualizar} onDelete={() => handleEliminar(modal.content._id)}/>
+          </WithPermission>
       )}
       {modalCrear.visible && (
         <ModalCrearActividad

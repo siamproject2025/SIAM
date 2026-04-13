@@ -37,7 +37,7 @@ const CambiarPasswordObligatorio = () => {
       await updatePassword(user, password);
 
       // 2. Marcar en MongoDB que ya cambió
-      const token = await user.getIdToken();
+const token = await user.getIdToken(true);
       await axios.patch(
         `${API_URL}/api/usuarios/password-cambiado`,
         {},

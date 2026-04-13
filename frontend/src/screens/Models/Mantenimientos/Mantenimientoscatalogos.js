@@ -11,6 +11,7 @@ import {
   CheckCircle, AlertCircle, Loader2, RefreshCw,
 } from "lucide-react";
 import "./Mantenimientoscatalogos.css";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 // ── Config ──────────────────────────────────────────────────
 const API = process.env.REACT_APP_API_URL + "/api/catalogos";
@@ -530,12 +531,14 @@ const MantenimientosCatalogos = () => {
               </button>
 
               {/* Nuevo */}
+              <WithPermission requiredPermissions={"CREAR_MANTENIMIENTOS"}>
               <button
                 className="mnt-btn mnt-btn--primary"
                 onClick={() => setModalForm({})}
               >
                 <Plus size={15} /> Nuevo
               </button>
+              </WithPermission>
             </div>
           </div>
 
@@ -603,6 +606,7 @@ const MantenimientosCatalogos = () => {
                         </td>
                         <td>
                           <div className="mnt-actions">
+                             <WithPermission requiredPermissions={"ACTUALIZAR_MANTENIMIENTOS"}>
                             <button
                               className="mnt-action-btn mnt-action-btn--edit"
                               onClick={() => setModalForm({ item })}
@@ -610,6 +614,8 @@ const MantenimientosCatalogos = () => {
                             >
                               <Edit2 size={14}/>
                             </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={"ELIMINAR_MANTENIMIENTOS"}>
                             <button
                               className="mnt-action-btn mnt-action-btn--del"
                               onClick={() => setModalDel(item)}
@@ -617,6 +623,7 @@ const MantenimientosCatalogos = () => {
                             >
                               <Trash2 size={14}/>
                             </button>
+                            </WithPermission>
                           </div>
                         </td>
                       </motion.tr>

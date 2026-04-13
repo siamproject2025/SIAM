@@ -20,6 +20,7 @@ import {
   Users, Package, Trash2, Edit
 } from "lucide-react";
 import ConfirmDialog from "../../../components/ConfirmDialog/ConfirmDialog";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 const API_URL = process.env.REACT_APP_API_URL + "/api/proveedores";
 
@@ -90,7 +91,7 @@ const Proveedores = () => {
     const cargar = async () => {
       try {
         loadingController.start();
-        const token = await auth.currentUser?.getIdToken();
+        const token = await auth.currentUser?.getIdToken(true);
         const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Error al obtener proveedores");
         setProveedores(await res.json());
@@ -177,7 +178,7 @@ const Proveedores = () => {
   const handleCrearProveedor = async (nuevo) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -195,7 +196,7 @@ const Proveedores = () => {
   const handleEditarProveedor = async (id, actualizado) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -214,7 +215,7 @@ const Proveedores = () => {
     const nombre = proveedores.find((p) => p._id === id)?.nombre;
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setProveedores((p) => p.filter((prov) => prov._id !== id));
@@ -392,9 +393,11 @@ const Proveedores = () => {
             <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
+             <WithPermission requiredPermissions={"CREAR_PROVEEDORES"}>
             <button style={S.btn("#6C4FBF")} onClick={() => setMostrarModalCrear(true)}>
               <Plus size={15} /> Nuevo Proveedor
             </button>
+            </WithPermission>
           </div>
         </div>
 
@@ -589,6 +592,7 @@ const Proveedores = () => {
                         {/* Acciones */}
                         <td>
                           <div className="bienes-action-buttons">
+                            <WithPermission requiredPermissions={"ACTUALIZAR_PROVEEDORES"}>
                             <button
                               className="bienes-btn-icon edit"
                               title="Editar"
@@ -596,6 +600,8 @@ const Proveedores = () => {
                             >
                               <Edit size={15} />
                             </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={"ELIMINAR_PROVEEDORES"}>
                             <button
                               className="bienes-btn-icon delete"
                               title="Eliminar"
@@ -609,7 +615,7 @@ const Proveedores = () => {
                                 <path d="M10 11v6M14 11v6" />
                                 <path d="M9 6V4h6v2" />
                               </svg>
-                            </button>
+                            </button></WithPermission>
                           </div>
                         </td>
                       </tr>

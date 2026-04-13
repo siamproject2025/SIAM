@@ -59,13 +59,11 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
 
     const verifyAccess = async () => {
       verificationInProgress.current = true;
-      console.log("🚀 INICIANDO VERIFICACIÓN DE ACCESO (una sola vez)");
       
       try {
         const user = auth.currentUser;
 
         if (!user) {
-          console.log("❌ No hay usuario autenticado");
           setAuthState({
             loading: false,
             isAuth: false,
@@ -79,7 +77,7 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
           return;
         }
 
-        const token = await user.getIdToken();
+       const token = await user.getIdToken(true);
 
         // 1. Obtener rol
         const roleResponse = await fetch(`${API_URL}/api/usuarios/role`, {
@@ -166,7 +164,6 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
           hasRequiredAccess = currentProps.allowedRoles.includes(userRole);
         }
 
-        console.log("📊 Acceso final:", hasRequiredAccess);
 
         setAuthState({
           loading: false,
@@ -203,7 +200,6 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (!user && !authState.loading && authState.isAuth) {
         // Usuario se deslogueó, resetear estado
-        console.log("🔄 Usuario deslogueado, reseteando estado");
         setAuthState({
           loading: false,
           isAuth: false,
@@ -215,7 +211,6 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
         hasVerified.current = false;
       } else if (user && hasVerified.current && !authState.isAuth) {
         // Usuario se logueó, resetear para verificar de nuevo
-        console.log("🔄 Usuario logueado, reiniciando verificación");
         hasVerified.current = false;
         verificationInProgress.current = false;
         setAuthState(prev => ({ ...prev, loading: true }));

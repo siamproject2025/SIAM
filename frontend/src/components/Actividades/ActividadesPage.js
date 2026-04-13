@@ -156,8 +156,8 @@ const Actividades = () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-      const token = await user.getIdToken();
-      const res   = await fetch(API_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+        const token = await user.getIdToken(true); //  Obtener token
+        const res   = await fetch(API_URL, { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) throw new Error('Error al obtener actividades');
       setActividades(await res.json());
     } catch (err) { console.error(err.message); }
@@ -223,7 +223,7 @@ const Actividades = () => {
 
 const handleCrearActividad = async (nueva) => {
   try {
-    const token = await auth.currentUser.getIdToken();
+    const token = await auth.currentUser.getIdToken(true);
     const res   = await fetch(API_URL, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -259,7 +259,7 @@ const handleCrearActividad = async (nueva) => {
     }*/
 
     try {
-      const token = await auth.currentUser.getIdToken();
+      const token = await auth.currentUser.getIdToken(true);
       const res   = await fetch(`${API_URL}/${id}`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -292,7 +292,7 @@ const handleCrearActividad = async (nueva) => {
     setShowConfirm(false);
     if (!actividadAEliminar) return;
     try {
-      const token = await auth.currentUser.getIdToken();
+      const token = await auth.currentUser.getIdToken(true);
       const res   = await fetch(`${API_URL}/${actividadAEliminar._id}`, {
         method:  'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
@@ -341,17 +341,22 @@ const handleCrearActividad = async (nueva) => {
               {formatearHora(actividad.fecha)}
             </div>
             <div className="act-card__btns" onClick={e => e.stopPropagation()}>
+              <WithPermission requiredPermissions={"ACTUALIZAR_ACTIVIDADES"}>
               <button  className="bienes-btn-icon edit" title="Editar"
                 onClick={() => setActividadSeleccionada(actividad)}>
                 <Edit size={13} />
               </button>
+              </WithPermission>
+
+                <WithPermission requiredPermissions={"ELIMINAR_ACTIVIDADES"}>
               <button className="act-ibtn act-ibtn--del" title="Eliminar"
                 onClick={() => handleEliminarActividad(actividad._id)}>
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
               </button>
+              </WithPermission>
             </div>
           </div>
-          <h4 className="act-card__nombre" onClick={() => setActividadSeleccionada(actividad)}>
+          <h4 className="act-card__nombre" >
             {actividad.nombre}
           </h4>
           <div className="act-card__meta">

@@ -48,7 +48,7 @@ const YEARS_OPT    = [CURRENT_YEAR + 1, CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_
 const getToken = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error('No estás autenticado.');
-    return user.getIdToken();
+    return user.getIdToken(true);
 };
 
 const buildFormData = (obj) => {

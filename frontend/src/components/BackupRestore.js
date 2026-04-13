@@ -8,6 +8,7 @@ import {
   FiRefreshCw, FiX
 } from "react-icons/fi";
 import "../styles/BackupRestore.css";
+import WithPermission from "./Permisos/WithPermission";
 
 export default function BackupRestore() {
   const [loading, setLoading] = useState(false);
@@ -28,48 +29,80 @@ export default function BackupRestore() {
   const getToken = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error("No autenticado");
-    return await user.getIdToken();
+    return await user.getIdToken(true);
   };
 
-  // ── DESCARGAR BACKUP ──────────────────────────────────────
-  const handleDescargarBackup = async () => {
-    try {
-      setLoading(true);
-      setLoadingType("backup");
-      setProgress(0);
-      showNotification("⏳ Generando backup de la base de datos...", "info");
+  // ── CREAR BACKUP ──────────────────────────────────────
+const handleDescargarBackup = async () => {
+  try {
+    setLoading(true);
+    setLoadingType("backup");
+    setProgress(0);
+    showNotification("⏳ Generando backup de la base de datos...", "info");
 
-      const token = await getToken();
+    const token = await getToken();
 
-      const response = await axios.get(`${API_URL}/crear`, {
-        headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob",
-        onDownloadProgress: (e) => {
-          if (e.total) setProgress(Math.round((e.loaded / e.total) * 100));
-        },
-      });
+    const response = await fetch(`${API_URL}/crear`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      window.URL.revokeObjectURL(url);
+    if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-      setProgress(100);
-      showNotification("Backup descargado exitosamente", "success");
-    } catch (error) {
-      showNotification(`❌ Error: ${error.response?.data?.error || error.message}`, "error");
-    } finally {
-      setLoading(false);
-      setLoadingType(null);
-      setTimeout(() => setProgress(0), 1000);
+    // Leer SSE igual que en restore
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        let parsed;
+        try { parsed = JSON.parse(line.slice(6)); } catch { continue; }
+
+        if (parsed.type === "progress") {
+          setProgress(parsed.percent);
+        } else if (parsed.type === "done") {
+          setProgress(100);
+
+          // ✅ Convertir base64 a archivo y descargar
+          const byteChars = atob(parsed.data);
+          const byteArray = new Uint8Array(byteChars.length);
+          for (let i = 0; i < byteChars.length; i++) {
+            byteArray[i] = byteChars.charCodeAt(i);
+          }
+          const blob = new Blob([byteArray], { type: "application/json" });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", parsed.filename);
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode.removeChild(link);
+          window.URL.revokeObjectURL(url);
+
+          showNotification(`✅ ${parsed.message} — ${parsed.total_documentos} documentos`, "success");
+        } else if (parsed.type === "error") {
+          throw new Error(parsed.message);
+        }
+      }
     }
-  };
+  } catch (error) {
+    showNotification(`❌ Error: ${error.message}`, "error");
+  } finally {
+    setLoading(false);
+    setLoadingType(null);
+    setTimeout(() => setProgress(0), 1000);
+  }
+};
 
-  // ── RESTAURAR BACKUP ──────────────────────────────────────
+  // ── EDITAR BACKUP ──────────────────────────────────────
   const handleRestaurarBackup = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -303,7 +336,8 @@ export default function BackupRestore() {
                 </motion.div>
               )}
             </AnimatePresence>
-
+            
+            <WithPermission requiredPermissions={"CREAR_BACKUP"}>
             <motion.button
               className="br-btn br-btn--primary"
               onClick={handleDescargarBackup}
@@ -316,9 +350,11 @@ export default function BackupRestore() {
                 : <><FiDownload /> Descargar Backup</>
               }
             </motion.button>
+            </WithPermission>
           </motion.div>
 
           {/* ── Card: Restaurar ─────────────────────────── */}
+          
           <motion.div
             className="br-card br-card--restore"
             initial={{ opacity: 0, y: 24 }}
@@ -335,8 +371,10 @@ export default function BackupRestore() {
             </p>
 
             <div className="br-upload-zone">
+              
               <FiFileText size={22} className="br-upload-ico" />
               <span>Arrastra un archivo o haz click</span>
+              <WithPermission requiredPermissions={"EDITAR_BACKUP"}>
               <label className={`br-btn br-btn--secondary ${loading ? "br-btn--disabled" : ""}`}>
                 {loadingType === "restore"
                   ? <><FiRefreshCw className="spin" /> Restaurando...</>
@@ -349,7 +387,7 @@ export default function BackupRestore() {
                   disabled={loading}
                   style={{ display: "none" }}
                 />
-              </label>
+              </label></WithPermission>
             </div>
             {/* Progreso de restauración */}
 <AnimatePresence>
@@ -406,7 +444,7 @@ export default function BackupRestore() {
             <p className="br-card-desc">
               Consulta el número de colecciones y documentos en tiempo real.
             </p>
-
+            
             <motion.button
               className="br-btn br-btn--teal"
               onClick={handleObtenerInfo}

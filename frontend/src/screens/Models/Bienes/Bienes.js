@@ -22,6 +22,7 @@ import {
   Package, 
   UserPlus
 } from 'lucide-react';
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 const API_URL        = process.env.REACT_APP_API_URL + "/api/bienes";
 const API_CATALOGOS  = process.env.REACT_APP_API_URL + "/api/catalogos";
@@ -104,7 +105,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
     const cargar = async () => {
       try {
         loadingController.start();
-        const token = await auth.currentUser?.getIdToken();
+        const token = await auth.currentUser?.getIdToken(true);
         const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Error al obtener bienes");
         setBienes(await res.json());
@@ -117,7 +118,6 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
   useEffect(() => {
   const cargarCatalogos = async () => {
     try {
-      console.log("1. URL a solicitar:", `${API_CATALOGOS}/bienes/categoria`);
 
       const resCat = await fetch(`${API_CATALOGOS}/bienes/categoria`);
       
@@ -267,7 +267,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
       if (!nuevo.estado)                     { showNotification("Seleccione un estado", "error");          return; }
       if (!nuevo.valor || nuevo.valor <= 0)  { showNotification("El valor debe ser mayor a 0", "error");  return; }
 
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const fd = new FormData();
       for (const k in nuevo) {
         if (k === "imagen" && nuevo[k]) fd.append("imagen", nuevo[k]);
@@ -315,7 +315,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
       return;
     }
 
-    const token = await auth.currentUser?.getIdToken();
+    const token = await auth.currentUser?.getIdToken(true);
     
     // Determinar si es FormData o JSON
     let body;
@@ -355,7 +355,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
     const nombre = bienes.find((b) => b._id === id)?.nombre;
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res   = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setBienes((p) => p.filter((b) => b._id !== id));
@@ -540,9 +540,11 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
             <button style={S.btn('#27AE60')} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
+              <WithPermission requiredPermissions={"CREAR_BIENES"}>
             <button style={S.btn('#6C4FBF')} onClick={() => setMostrarModalCrear(true)}>
-              <Plus size={15} /> Agregar ítem
+              <Plus size={15} /> Nuevo Bien
             </button>
+            </WithPermission>
           </div>
         </div>
 
@@ -759,6 +761,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
                       <td>
                         <div className="bienes-action-buttons">
                           
+                          <WithPermission requiredPermissions={"ACTUALIZAR_BIENES"}>
                           <button
                             className="bienes-btn-icon edit"
                             title="Editar"
@@ -766,6 +769,8 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
                           >
                             <Edit size={15} />
                           </button>
+                          </WithPermission>
+                            <WithPermission requiredPermissions={"ELIMINAR_BIENES"}>
                           <button
                             className="bienes-btn-icon delete"
                             title="Eliminar"
@@ -775,6 +780,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
                           >
                             <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                           </button>
+                          </WithPermission>
                         </div>
                       </td>
                     </tr>

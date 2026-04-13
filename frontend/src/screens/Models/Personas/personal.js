@@ -18,6 +18,7 @@ import Notification from "../../../components/Notification";
 import ModalCrearPersonal from "./Modalcrearpersonal";
 import ModalDetallePersonal from "./Modaldetallepersonal";
 import "../../../styles/Personal.css";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 const API_URL      = process.env.REACT_APP_API_URL + "/api/personal";
 const API_CATALOGOS = process.env.REACT_APP_API_URL + "/api/catalogos";
@@ -96,7 +97,7 @@ const Personal = () => {
     const cargar = async () => {
       try {
         loadingController.start();
-        const token = await auth.currentUser?.getIdToken();
+        const token = await auth.currentUser?.getIdToken(true);
         const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Error al obtener personal");
         setPersonal(await res.json());
@@ -205,7 +206,7 @@ const Personal = () => {
   const handleCrear = async (fd) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res   = await fetch(API_URL, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       const { data } = await res.json();
@@ -219,7 +220,7 @@ const Personal = () => {
   const handleActualizar = async (id, fd) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res   = await fetch(`${API_URL}/${id}`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       const { data } = await res.json();
@@ -234,7 +235,7 @@ const Personal = () => {
     const emp = personal.find(p => p._id === id);
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       const res   = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setPersonal(p => p.filter(e => e._id !== id));
@@ -348,7 +349,9 @@ const Personal = () => {
             )}
             <button style={S.btn('#E0D9F5','#6C4FBF')}  onClick={() => setMostrarAyuda(true)}><HelpCircle size={15}/> Ayuda</button>
             <button style={S.btn('#27ae60')} onClick={handleExcel}><Download size={15}/> Excel</button>
-            <button  style={S.btn('#6C4FBF')} onClick={() => setMostrarModalCrear(true)}><Plus size={15}/> Agregar empleado</button>
+            <WithPermission requiredPermissions={"CREAR_PERSONAL"}>
+            <button  style={S.btn('#6C4FBF')} onClick={() => setMostrarModalCrear(true)}><Plus size={15}/> Nuevo Empleado</button>
+            </WithPermission>  
           </div>
         </div>
 
@@ -494,14 +497,18 @@ const Personal = () => {
                     <td><span className={estadoBadge(emp.estado)}>{emp.estado}</span></td>
                     <td>
                       <div className="per-action-buttons">
+                         <WithPermission requiredPermissions={"ACTUALIZAR_PERSONAL"}>
                         <button className="per-btn-icon edit" title="Editar" onClick={() => setEmpleadoSelec(emp)}>
                           <Edit size={15}/>
                         </button>
+                        </WithPermission>
+                        <WithPermission requiredPermissions={"ELIMINAR_PERSONAL"}>
                         <button className="per-btn-icon delete" title="Eliminar" onClick={() => {
                           if (window.confirm(`¿Eliminar a "${emp.nombres} ${emp.apellidos}"?`)) handleEliminar(emp._id);
                         }}>
                           <Trash2 size={15}/>
                         </button>
+                        </WithPermission>
                       </div>
                     </td>
                   </tr>

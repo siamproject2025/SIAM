@@ -458,7 +458,7 @@ const ModalDetalleHorario = ({
   const obtenerGrados = async () => {
     try {
       const user  = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const res   = await axios.get(API_GRADOS, { headers: { Authorization: `Bearer ${token}` } });
       setGrados(res.data.items.map(item => ({
         _id:    item._id,
