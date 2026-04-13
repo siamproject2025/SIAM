@@ -25,9 +25,7 @@ exports.crearSolicitud = async (req, res) => {
 
     const solicitud = new Solicitud({
       nombre_solicitante: nombre_solicitante.toUpperCase().trim(),
-      email:              email.toLowerCase().trim(),
-      nombre_alumno:      nombre_alumno.toUpperCase().trim(),
-      grado:              grado.trim()
+      email:              email.toLowerCase().trim()
     });
 
     await solicitud.save();
