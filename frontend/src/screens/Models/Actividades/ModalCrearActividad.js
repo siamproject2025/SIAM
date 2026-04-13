@@ -160,7 +160,7 @@ const ModalCrearActividad = ({ onClose, onCreate, fechaInicial = null }) => {
               <button type="button" style={S.btn('#E0D9F5', '#6C4FBF')} onClick={onClose}>
                 Cancelar
               </button>
-                 <WithPermission requiredPermissions={"CREAR_ACTIVIDADES"}>
+                 <WithPermission requiredPermissions={["CREAR_ACTIVIDADES"]}>
              
               <button type="submit" style={S.btn('#6C4FBF')}>
                 Guardar

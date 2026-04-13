@@ -341,14 +341,14 @@ const handleCrearActividad = async (nueva) => {
               {formatearHora(actividad.fecha)}
             </div>
             <div className="act-card__btns" onClick={e => e.stopPropagation()}>
-              <WithPermission requiredPermissions={"ACTUALIZAR_ACTIVIDADES"}>
+              <WithPermission requiredPermissions={["ACTUALIZAR_ACTIVIDADES"]}>
               <button  className="bienes-btn-icon edit" title="Editar"
                 onClick={() => setActividadSeleccionada(actividad)}>
                 <Edit size={13} />
               </button>
               </WithPermission>
 
-                <WithPermission requiredPermissions={"ELIMINAR_ACTIVIDADES"}>
+                <WithPermission requiredPermissions={["ELIMINAR_ACTIVIDADES"]}>
               <button className="act-ibtn act-ibtn--del" title="Eliminar"
                 onClick={() => handleEliminarActividad(actividad._id)}>
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>

@@ -337,7 +337,7 @@ const handleDescargarBackup = async () => {
               )}
             </AnimatePresence>
             
-            <WithPermission requiredPermissions={"CREAR_BACKUP"}>
+            <WithPermission requiredPermissions={["CREAR_RESTORE"]}>
             <motion.button
               className="br-btn br-btn--primary"
               onClick={handleDescargarBackup}
@@ -374,7 +374,7 @@ const handleDescargarBackup = async () => {
               
               <FiFileText size={22} className="br-upload-ico" />
               <span>Arrastra un archivo o haz click</span>
-              <WithPermission requiredPermissions={"EDITAR_BACKUP"}>
+              <WithPermission requiredPermissions={["ACTUALIZAR_RESTORE"]}>
               <label className={`br-btn br-btn--secondary ${loading ? "br-btn--disabled" : ""}`}>
                 {loadingType === "restore"
                   ? <><FiRefreshCw className="spin" /> Restaurando...</>
