@@ -178,13 +178,12 @@ const handleEliminarActividad = (id) => {
   mostrarConfirmacion("¿Seguro que deseas eliminar esta actividad?", async () => {
     try {
       const token = await auth.currentUser.getIdToken();
-
       await axios.delete(`${API_URL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      cerrarModal(); // 👈 cerrar el modal de detalle
-      cargarActividades();
+      //cerrarModal();        // ✓ ya lo tienes
+      cargarActividades();  // ✓ ya lo tienes
       mostrarNotificacion("Actividad eliminada correctamente", "success");
 
     } catch (err) {
@@ -192,6 +191,7 @@ const handleEliminarActividad = (id) => {
     }
   });
 };
+
   // ===== FUNCIONES DE NAVEGACIÓN Y SOPORTE =====
   const actualizarProximosEventos = (todos) => {
     const hoy = new Date();
@@ -544,7 +544,10 @@ const handleEliminarActividad = (id) => {
           
       {/* MODALES */}
       {modal.visible && (
-        <ModalDetalleActividad actividad={modal.content} onClose={cerrarModal} onUpdate={handleActualizarActividad} onDelete={() => handleEliminarActividad(modal.content._id)} />
+        <ModalDetalleActividad actividad={modal.content} onClose={cerrarModal} onUpdate={handleActualizarActividad} onDelete={(id) => {
+        cerrarModal();                    // 👈 cierra modal PRIMERO
+        handleEliminarActividad(id);      // 👈 luego muestra el confirm bonito
+      }} />
       )}
       {modalCrear.visible && (
         <ModalCrearActividad onClose={() => setModalCrear({ visible: false, fechaInicial: null })} onCreate={handleCrearDesdeCalendario} fechaInicial={modalCrear.fechaInicial} />

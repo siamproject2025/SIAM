@@ -239,11 +239,13 @@ const Actividades = () => {
     }
   };
 
-  const handleEliminarActividad = (id) => {
-    const a = actividades.find(x => x._id === id);
-    setActividadAEliminar(a);
-    setShowConfirm(true);
-  };
+ const handleEliminarActividad = (id) => {
+  // Busca la actividad por id y guárdala
+  const actividad = actividades.find(a => a._id === id);
+  setActividadAEliminar(actividad);
+  setActividadSeleccionada(null); // 👈 cierra el modal de detalle
+  setShowConfirm(true);           // 👈 abre TU confirm bonito
+};
 
  const confirmarEliminacion = async () => {
     setShowConfirm(false);

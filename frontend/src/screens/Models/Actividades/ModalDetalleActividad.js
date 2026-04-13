@@ -26,9 +26,9 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
   };
 
   const handleEliminar = () => { 
-    if (window.confirm('¿Estás seguro de que deseas eliminar esta actividad?')) {
+  
       onDelete(actividad._id);
-    }
+    
   };
 
   const inp = {
