@@ -137,118 +137,206 @@ const ModalAsignacion = ({ solicitud, onConfirmar, onCancelar, procesando }) => 
   const [rolSelec,        setRolSelec]        = useState("");
   const [gradoSelec,      setGradoSelec]      = useState("");
   const [alumnoSelec,     setAlumnoSelec]     = useState("");
-  const [cargandoInit,    setCargandoInit]    = useState(true);
+  const [cargando,        setCargando]        = useState(true);
   const [cargandoAlumnos, setCargandoAlumnos] = useState(false);
+  const [error,           setError]           = useState("");
 
   const obtenerToken = async () => {
     const { auth } = await import("../authentication/Auth");
     return auth.currentUser?.getIdToken(true);
   };
 
+  // ── Cargar roles y grados ─────────────────────────────────────────────────
   useEffect(() => {
     const cargar = async () => {
+      setError("");
       try {
-        const token = await obtenerToken();
+        const token   = await obtenerToken();
         const headers = { Authorization: `Bearer ${token}` };
         const [resRoles, resGrados] = await Promise.all([
           axios.get(`${API_URL}/api/roles`,  { headers }),
           axios.get(`${API_URL}/api/grados`, { headers }),
         ]);
-        let gradosArray = Array.isArray(resGrados.data)
-          ? resGrados.data
-          : resGrados.data?.grados || resGrados.data?.data || [];
         setRoles(resRoles.data || []);
-        setGrados(gradosArray.filter(g => g.estado === "Activo"));
+        const listaGrados =
+          Array.isArray(resGrados.data)    ? resGrados.data :
+          resGrados.data?.grados           ? resGrados.data.grados :
+          resGrados.data?.data             ? resGrados.data.data :
+          resGrados.data?.items            ? resGrados.data.items : [];
+        setGrados(listaGrados.filter(g => g.estado === "Activo"));
       } catch (e) {
-        console.error("Error cargando modal aprobación:", e);
+        console.error("Error cargando datos:", e);
+        setError("Error al cargar roles/grados.");
       } finally {
-        setCargandoInit(false);
+        setCargando(false);
       }
     };
     cargar();
   }, []);
 
+  // ── Cargar alumnos: todos al montar, filtrados al cambiar grado ───────────
   useEffect(() => {
-    if (!gradoSelec) { setAlumnos([]); setAlumnoSelec(""); return; }
     const cargar = async () => {
       setCargandoAlumnos(true);
-      setAlumnoSelec("");
       try {
         const token = await obtenerToken();
-        const res = await axios.get(
-          `${API_URL}/api/matriculas?grado_a_matricular=${gradoSelec}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const lista = res.data?.data || res.data?.matriculas || res.data?.items || (Array.isArray(res.data) ? res.data : []);
+        const url = gradoSelec
+          ? `${API_URL}/api/matriculas?grado_a_matricular=${gradoSelec}`
+          : `${API_URL}/api/matriculas`;
+        const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+        const lista =
+          res.data?.data       ||
+          res.data?.matriculas ||
+          res.data?.items      ||
+          (Array.isArray(res.data) ? res.data : []);
         setAlumnos(lista);
       } catch (e) {
+        console.error("Error cargando alumnos:", e);
         setAlumnos([]);
       } finally {
         setCargandoAlumnos(false);
       }
     };
     cargar();
-  }, [gradoSelec]);
+  }, [gradoSelec]); // se ejecuta al montar Y al cambiar grado
 
-  const gradoNombre = (id) => grados.find(g => g._id === id)?.grado || "";
+  const handleConfirmar = () => {
+    if (!rolSelec) { setError("El rol es obligatorio."); return; }
+    onConfirmar({ rol: rolSelec, alumno_id: alumnoSelec || null });
+  };
 
   return (
-    <div style={styles.overlay} onClick={onCancelar}>
-      <div style={{ ...styles.modal, width: 540 }} onClick={e => e.stopPropagation()}>
-        <div style={styles.modalHeader}>
-          <h2 style={styles.modalTitulo}>Aprobar solicitud</h2>
-          <button style={styles.modalClose} onClick={onCancelar}>✕</button>
-        </div>
-        <div style={asigStyles.infoBox}>
-          <span style={asigStyles.infoItem}><strong>Solicitante:</strong> {solicitud.nombre_solicitante}</span>
-          <span style={asigStyles.infoItem}><strong>Correo:</strong> {solicitud.email}</span>
-        </div>
-        <div style={asigStyles.campo}>
-          <label style={asigStyles.label}>Rol <span style={{ color: theme.danger }}>*</span></label>
-          {cargandoInit ? <div style={asigStyles.cargando}><Spinner dark /> Cargando roles...</div> : (
-            <select style={asigStyles.select} value={rolSelec} onChange={e => setRolSelec(e.target.value)}>
-              <option value="">-- Seleccionar rol --</option>
-              {roles.map(r => <option key={r._id} value={r.nombre}>{r.nombre}</option>)}
-            </select>
-          )}
-        </div>
-        <div style={asigStyles.campo}>
-          <label style={asigStyles.label}>Filtrar por grado <span style={asigStyles.opcional}>(opcional)</span></label>
-          {cargandoInit ? <div style={asigStyles.cargando}><Spinner dark /> Cargando grados...</div> : (
-            <select style={asigStyles.select} value={gradoSelec} onChange={e => setGradoSelec(e.target.value)}>
-              <option value="">-- Todos los grados --</option>
-              {grados.map(g => <option key={g._id} value={g._id}>{g.grado} — Aula {g.aula}</option>)}
-            </select>
-          )}
-        </div>
-        <div style={asigStyles.campo}>
-          <label style={asigStyles.label}>Alumno <span style={asigStyles.opcional}>(opcional)</span></label>
-          {cargandoAlumnos ? <div style={asigStyles.cargando}><Spinner dark /> Cargando alumnos...</div> : (
-            <select style={asigStyles.select} value={alumnoSelec} onChange={e => setAlumnoSelec(e.target.value)}>
-              <option value="">-- Sin asignar alumno --</option>
-              {alumnos.map(a => {
-                const gNom = gradoNombre(typeof a.grado_a_matricular === "object" ? a.grado_a_matricular?._id || a.grado_a_matricular : a.grado_a_matricular);
-                return <option key={a._id} value={a._id}>{a.nombre_completo}{gNom ? ` — ${gNom}` : ""}</option>;
-              })}
-            </select>
-          )}
-          {!gradoSelec && <p style={asigStyles.hint}>Selecciona un grado para filtrar alumnos.</p>}
-        </div>
-        <div style={{ ...styles.modalActions, marginTop: 28 }}>
-          <button
-            style={{ ...styles.btnModal, background: rolSelec ? theme.success : "#9ca3af", cursor: rolSelec && !procesando ? "pointer" : "not-allowed", opacity: rolSelec ? 1 : 0.7 }}
-            disabled={!rolSelec || procesando}
-            onClick={() => onConfirmar({ rol: rolSelec, alumno_id: alumnoSelec || null })}
-          >
-            {procesando ? <Spinner /> : <CheckIcon />} Aprobar y asignar
+    <div style={mA.overlay} onClick={onCancelar}>
+      <div style={mA.modal} onClick={e => e.stopPropagation()}>
+
+        {/* ── Header ── */}
+        <div style={mA.header}>
+          <div style={mA.headerInner}>
+            <div style={mA.headerIcon}>
+              <CheckCircle size={22} color="white" />
+            </div>
+            <div>
+              <h2 style={mA.titulo}>Aprobar solicitud</h2>
+              <p style={mA.subtitulo}>Asigna un rol y alumno al nuevo usuario</p>
+            </div>
+          </div>
+          <button style={mA.closeBtn} onClick={onCancelar}>
+            <X size={18} color="rgba(255,255,255,0.8)" />
           </button>
-          <button style={{ ...styles.btnModal, background: "#6b7280" }} onClick={onCancelar} disabled={procesando}>Cancelar</button>
         </div>
+
+        {/* ── Body ── */}
+        <div style={mA.body}>
+
+          {/* Info solicitante */}
+          <div style={mA.infoBox}>
+            <div style={mA.infoRow}>
+              <span style={mA.infoLabel}>Solicitante</span>
+              <span style={mA.infoValue}>{solicitud.nombre_solicitante}</span>
+            </div>
+            <div style={mA.infoDivider} />
+            <div style={mA.infoRow}>
+              <span style={mA.infoLabel}>Correo</span>
+              <span style={mA.infoValue}>{solicitud.email}</span>
+            </div>
+          </div>
+
+          {cargando ? (
+            <div style={mA.cargandoBox}><Spinner dark /> Cargando datos...</div>
+          ) : (
+            <>
+              {/* Rol */}
+              <div style={mA.campo}>
+                <label style={mA.label}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Rol <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <select
+                  style={mA.select}
+                  value={rolSelec}
+                  onChange={e => setRolSelec(e.target.value)}
+                >
+                  <option value="">-- Seleccionar rol --</option>
+                  {roles.map(r => (
+                    <option key={r._id} value={r._id}>{r._id}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Grado filtro */}
+              <div style={mA.campo}>
+                <label style={mA.label}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                  Filtrar por grado <span style={mA.opcional}>(opcional)</span>
+                </label>
+                <select
+                  style={mA.select}
+                  value={gradoSelec}
+                  onChange={e => { setGradoSelec(e.target.value); setAlumnoSelec(""); }}
+                >
+                  <option value="">-- Todos los grados --</option>
+                  {grados.map(g => (
+                    <option key={g._id} value={g._id}>{g.grado} — Aula {g.aula}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Alumno */}
+              <div style={mA.campo}>
+                <label style={mA.label}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 6 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Alumno <span style={mA.opcional}>(opcional)</span>
+                </label>
+                {cargandoAlumnos ? (
+                  <div style={mA.cargandoBox}><Spinner dark /> Cargando alumnos...</div>
+                ) : (
+                  <select
+                    style={mA.select}
+                    value={alumnoSelec}
+                    onChange={e => setAlumnoSelec(e.target.value)}
+                  >
+                    <option value="">-- Sin asignar alumno --</option>
+                    {alumnos.map(a => (
+                      <option key={a._id} value={a._id}>{a.nombre_completo}</option>
+                    ))}
+                  </select>
+                )}
+                {!gradoSelec && (
+                  <p style={mA.hint}>Selecciona un grado para filtrar alumnos más fácilmente.</p>
+                )}
+              </div>
+
+              {error && (
+                <div style={mA.errorBox}>
+                  <X size={14} style={{ flexShrink: 0 }} /> {error}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* ── Footer ── */}
+        <div style={mA.footer}>
+          <button style={mA.btnCancelar} onClick={onCancelar} disabled={procesando}>
+            Cancelar
+          </button>
+          <button
+            style={{
+              ...mA.btnAprobar,
+              opacity: (!rolSelec || procesando || cargando) ? 0.6 : 1,
+              cursor:  (!rolSelec || procesando || cargando) ? "not-allowed" : "pointer",
+            }}
+            disabled={!rolSelec || procesando || cargando}
+            onClick={handleConfirmar}
+          >
+            {procesando ? <><Spinner /> Aprobando...</> : <><CheckIcon /> Aprobar y asignar</>}
+          </button>
+        </div>
+
       </div>
     </div>
   );
 };
-
 // ── Panel principal ───────────────────────────────────────────────────────────
 const SolicitudesPanel = () => {
   const [solicitudes,          setSolicitudes]          = useState([]);
@@ -860,5 +948,40 @@ const modalDetalle = {
   footer:      { display:"flex", justifyContent:"space-between", alignItems:"center", gap:10, padding:"16px 28px", borderTop:"1px solid #ede9fe", background:"#fafafa", flexShrink:0, flexWrap:"wrap" },
   btnCancelar: { display:"flex", alignItems:"center", gap:7, background:"#E0D9F5", color:"#6C4FBF", border:"none", borderRadius:8, padding:"9px 18px", fontWeight:600, fontSize:"0.875rem", cursor:"pointer" },
   btnAccion:   { display:"flex", alignItems:"center", gap:7, color:"#fff", border:"none", borderRadius:8, padding:"9px 18px", fontWeight:600, fontSize:"0.875rem", cursor:"pointer" },
+};
+
+const mA = {
+  overlay:     { position:"fixed", inset:0, background:"rgba(15,10,40,0.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1100, backdropFilter:"blur(4px)" },
+  modal:       { background:"#ffffff", borderRadius:16, width:540, maxWidth:"95vw", maxHeight:"90vh", overflow:"hidden", display:"flex", flexDirection:"column", boxShadow:"0 24px 64px rgba(108,79,191,0.2)" },
+
+  // Header verde para distinguir "aprobar" de "editar" (morado)
+  header:      { background:"linear-gradient(135deg, #059669 0%, #10b981 100%)", padding:"22px 28px", display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0 },
+  headerInner: { display:"flex", alignItems:"center", gap:14 },
+  headerIcon:  { width:44, height:44, borderRadius:12, background:"rgba(255,255,255,0.2)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 },
+  titulo:      { fontSize:"1.1rem", fontWeight:700, color:"#fff", margin:0 },
+  subtitulo:   { fontSize:"0.78rem", color:"rgba(255,255,255,0.75)", margin:"3px 0 0" },
+  closeBtn:    { background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, width:34, height:34, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" },
+
+  // Body
+  body:        { padding:"24px 28px", overflowY:"auto", flex:1 },
+  infoBox:     { background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:10, padding:"14px 18px", marginBottom:22 },
+  infoRow:     { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 0" },
+  infoDivider: { height:1, background:"#bbf7d0", margin:"4px 0" },
+  infoLabel:   { fontSize:"0.78rem", color:"#059669", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.05em" },
+  infoValue:   { fontSize:"0.875rem", color:"#1e1b4b", fontWeight:500 },
+
+  // Campos — idénticos a ModalEditarAsignacion
+  campo:       { marginBottom:18 },
+  label:       { display:"flex", alignItems:"center", fontSize:"0.78rem", fontWeight:600, color:"#5b21b6", textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:7 },
+  opcional:    { fontWeight:400, color:"#9ca3af", textTransform:"none", fontSize:"0.75rem", marginLeft:5 },
+  select:      { width:"100%", background:"#faf5ff", border:"1px solid #ddd6fe", borderRadius:8, padding:"9px 12px", fontSize:"0.875rem", color:"#1e1b4b", outline:"none", cursor:"pointer", boxSizing:"border-box" },
+  hint:        { margin:"6px 0 0", fontSize:"0.75rem", color:"#9ca3af" },
+  cargandoBox: { display:"flex", alignItems:"center", gap:8, color:"#7c3aed", fontSize:"0.85rem", padding:"10px 12px", background:"#faf5ff", borderRadius:8 },
+  errorBox:    { display:"flex", alignItems:"center", gap:8, background:"#fef2f2", border:"1px solid #fecaca", color:"#dc2626", borderRadius:8, padding:"10px 14px", fontSize:"0.85rem", marginTop:4 },
+
+  // Footer
+  footer:      { display:"flex", justifyContent:"flex-end", gap:10, padding:"16px 28px", borderTop:"1px solid #bbf7d0", background:"#fafafa", flexShrink:0 },
+  btnCancelar: { display:"flex", alignItems:"center", gap:7, background:"#E0D9F5", color:"#6C4FBF", border:"none", borderRadius:8, padding:"9px 18px", fontWeight:600, fontSize:"0.875rem", cursor:"pointer" },
+  btnAprobar:  { display:"flex", alignItems:"center", gap:7, background:"linear-gradient(135deg, #059669, #10b981)", color:"#fff", border:"none", borderRadius:8, padding:"9px 20px", fontWeight:600, fontSize:"0.875rem", transition:"opacity 0.15s" },
 };
 export default SolicitudesPanel;

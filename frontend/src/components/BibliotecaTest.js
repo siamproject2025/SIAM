@@ -24,7 +24,7 @@ import {
   FiTrash2, FiFile, FiArrowUp, FiArrowDown,
   FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight,
   FiAlertCircle, FiCheckCircle, FiInfo, FiUsers, FiEdit2,
-  FiClock, FiPlus, FiSave,
+  FiClock, FiPlus, FiSave, FiLoader,
 } from "react-icons/fi";
 import WithPermission from "./Permisos/WithPermission";
 
@@ -55,6 +55,20 @@ const TAB_DE_CAMPO = {
   archivo: "archivo",
 };
 
+// ── Spinner inline ────────────────────────────────────────
+const SpinnerInline = () => (
+  <span style={{
+    display: "inline-block", width: 14, height: 14,
+    border: "2px solid rgba(255,255,255,0.35)",
+    borderTop: "2px solid #fff",
+    borderRadius: "50%",
+    animation: "spin 0.7s linear infinite",
+    flexShrink: 0,
+  }}>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+  </span>
+);
+
 // ── Modal Crear / Editar Libro ────────────────────────────
 const ModalLibro = ({ onClose, onSave, libroEditando }) => {
   const formVacio = () => ({
@@ -70,6 +84,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
   const [intentoGuardar, setIntentoGuardar] = useState(false);
   const [tabActiva,      setTabActiva]      = useState("datos");
   const [hayCambios,     setHayCambios]     = useState(false);
+  const [guardando,      setGuardando]      = useState(false); // ← protección envíos múltiples
   const fileInputRef = useRef(null);
 
   const limpiarError = (name) => {
@@ -116,8 +131,12 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
     limpiarError("archivo");
   };
 
-  const handleGuardar = (e) => {
+  const handleGuardar = async (e) => {
     e.preventDefault();
+
+    // ── Evitar doble envío ──
+    if (guardando) return;
+
     setIntentoGuardar(true);
     const errs = validarLibro(form, !!libroEditando);
     if (Object.keys(errs).length > 0) {
@@ -126,8 +145,15 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
       if (TAB_DE_CAMPO[primer]) setTabActiva(TAB_DE_CAMPO[primer]);
       return;
     }
+
     setErrores({});
-    onSave(form);
+    setGuardando(true);
+    try {
+      await onSave(form);
+    } finally {
+      // Si onSave lanza error, liberamos el botón para que el usuario pueda reintentar
+      setGuardando(false);
+    }
   };
 
   const tabs = [
@@ -159,12 +185,19 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
               ? <><FiEdit2 size={18} /> Editar Libro</>
               : <><FiPlus size={18} /> Subir Nuevo Libro</>}
           </h3>
-          <button className="dn-modal-close" onClick={onClose}><FiX size={18} /></button>
+          <button className="dn-modal-close" onClick={onClose} disabled={guardando}><FiX size={18} /></button>
         </div>
 
         {/* Banner cambios sin guardar */}
-        {hayCambios && (
+        {hayCambios && !guardando && (
           <div className="dn-unsaved-banner">⚠️ Tienes cambios sin guardar</div>
+        )}
+
+        {/* Banner guardando */}
+        {guardando && (
+          <div className="dn-unsaved-banner" style={{ background: "linear-gradient(90deg,#6C4FBF,#9B59B6)", color: "#fff", gap: 10, display: "flex", alignItems: "center" }}>
+            <SpinnerInline /> Guardando, por favor espera...
+          </div>
         )}
 
         <form
@@ -180,6 +213,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                 type="button"
                 className={`dn-tab-btn${tabActiva === t.key ? " active" : ""}${tabTieneError(t.key) ? " has-error" : ""}`}
                 onClick={() => setTabActiva(t.key)}
+                disabled={guardando}
               >
                 {t.ico} {t.label}
                 {tabTieneError(t.key) && (
@@ -209,6 +243,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     onChange={handleChange}
                     placeholder="Título completo de la obra"
                     className={errores.titulo ? "dn-input-err" : ""}
+                    disabled={guardando}
                   />
                   {errores.titulo && <span className="dn-err-msg">{errores.titulo}</span>}
                 </div>
@@ -222,6 +257,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     onChange={handleChange}
                     placeholder="Apellido, Nombre"
                     className={errores.autor ? "dn-input-err" : ""}
+                    disabled={guardando}
                   />
                   {errores.autor && <span className="dn-err-msg">{errores.autor}</span>}
                 </div>
@@ -234,6 +270,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     value={form.autor_corporativo}
                     onChange={handleChange}
                     placeholder="Ej: UNESCO, OPS"
+                    disabled={guardando}
                   />
                 </div>
 
@@ -248,6 +285,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     placeholder="Ej: 2023"
                     min="1800"
                     max={new Date().getFullYear() + 1}
+                    disabled={guardando}
                   />
                 </div>
 
@@ -259,6 +297,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     value={form.edicion}
                     onChange={handleChange}
                     placeholder="Ej: 3ra edición"
+                    disabled={guardando}
                   />
                 </div>
 
@@ -270,6 +309,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     value={form.editorial}
                     onChange={handleChange}
                     placeholder="Nombre de la editorial"
+                    disabled={guardando}
                   />
                 </div>
 
@@ -284,6 +324,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     value={form.ciudad}
                     onChange={handleChange}
                     placeholder="Ej: Tegucigalpa, Honduras"
+                    disabled={guardando}
                   />
                 </div>
 
@@ -295,6 +336,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     value={form.isbn}
                     onChange={handleChange}
                     placeholder="978-..."
+                    disabled={guardando}
                   />
                 </div>
               </div>
@@ -317,6 +359,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     value={form.grado}
                     onChange={handleChange}
                     className={errores.grado ? "dn-input-err" : ""}
+                    disabled={guardando}
                   >
                     <option value="">— Selecciona un grado —</option>
                     {GRADOS.map(g => (
@@ -335,6 +378,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     onChange={handleChange}
                     placeholder="Ej: Matemática"
                     className={errores.clase ? "dn-input-err" : ""}
+                    disabled={guardando}
                   />
                   {errores.clase && <span className="dn-err-msg">{errores.clase}</span>}
                 </div>
@@ -349,6 +393,7 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     placeholder="Notas adicionales, resumen, recomendaciones..."
                     maxLength={1000}
                     rows={3}
+                    disabled={guardando}
                   />
                   <small className="dn-char">{(form.observacion || "").length}/1000</small>
                 </div>
@@ -371,7 +416,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                   border: "1.5px solid #c4b5f4",
                   borderRadius: 14, padding: "18px 22px", marginBottom: 18,
                 }}>
-                  {/* Ícono formato */}
                   <div style={{
                     width: 52, height: 52, borderRadius: 12, flexShrink: 0,
                     background: (libroEditando.extension || "").toLowerCase() === "epub"
@@ -382,8 +426,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                   }}>
                     <FiFileText size={24} color="white" />
                   </div>
-
-                  {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                       <span style={{
@@ -427,7 +469,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
               {/* ── Zona de subida ── */}
               <div className="dn-upload-area">
                 {form.archivo ? (
-                  /* Nuevo archivo seleccionado */
                   <div className="dn-preview-wrap">
                     <FiFileText size={48} color="#6C4FBF" />
                     <div className="dn-file-selected" style={{ justifyContent: "center", marginTop: 10 }}>
@@ -441,13 +482,19 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                         onChange={handleFile}
                         style={{ display: "none" }}
                         id="lib-archivo-replace"
+                        disabled={guardando}
                       />
-                      <label htmlFor="lib-archivo-replace" className="dn-btn-secondary">
+                      <label
+                        htmlFor="lib-archivo-replace"
+                        className="dn-btn-secondary"
+                        style={{ pointerEvents: guardando ? "none" : "auto", opacity: guardando ? 0.5 : 1 }}
+                      >
                         <FiUpload size={14} /> Cambiar archivo
                       </label>
                       <button
                         type="button"
                         className="dn-btn-danger-sm"
+                        disabled={guardando}
                         onClick={() => { setForm(p => ({ ...p, archivo: null })); setHayCambios(true); }}
                       >
                         <FiX size={14} /> Quitar
@@ -455,7 +502,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     </div>
                   </div>
                 ) : (
-                  /* Sin archivo nuevo seleccionado */
                   <div className="dn-upload-empty">
                     <FiUpload size={42} color="#9b59b6" style={{ marginBottom: "0.75rem" }} />
                     <p>
@@ -470,8 +516,13 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                       onChange={handleFile}
                       style={{ display: "none" }}
                       id="lib-archivo-upload"
+                      disabled={guardando}
                     />
-                    <label htmlFor="lib-archivo-upload" className="dn-btn-primary-sm">
+                    <label
+                      htmlFor="lib-archivo-upload"
+                      className="dn-btn-primary-sm"
+                      style={{ pointerEvents: guardando ? "none" : "auto", opacity: guardando ? 0.5 : 1 }}
+                    >
                       <FiUpload size={15} />
                       {libroEditando?.archivoUrl ? "Reemplazar archivo" : "Seleccionar archivo"}
                     </label>
@@ -492,8 +543,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
             <div className="dn-tab-content">
               <div className="dn-form-section-title">Auditoría del Libro</div>
               <div className="dn-audit-card">
-
-                {/* Creación */}
                 <div className="dn-audit-row">
                   <UserCheck size={16} className="dn-audit-ico" />
                   <div>
@@ -507,8 +556,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     </div>
                   </div>
                 </div>
-
-                {/* Última actualización */}
                 {(form.actualizado_por || form.actualizado_por_email || form.updatedAt) && (
                   <div className="dn-audit-row">
                     <Clock size={16} className="dn-audit-ico" />
@@ -523,8 +570,6 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
                     </div>
                   </div>
                 )}
-
-                {/* IDs */}
                 <div className="dn-audit-ids">
                   <small>ID del libro: <strong>{form._id}</strong></small>
                   {form.extension && <small>Formato: <strong>{form.extension.toUpperCase()}</strong></small>}
@@ -540,23 +585,35 @@ const ModalLibro = ({ onClose, onSave, libroEditando }) => {
               style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "10px 20px", borderRadius: 10, fontSize: ".86rem",
-                fontWeight: 700, border: "none", cursor: "pointer",
+                fontWeight: 700, border: "none",
+                cursor: guardando ? "not-allowed" : "pointer",
                 background: "#E0D9F5", color: "#6C4FBF", fontFamily: "inherit",
+                opacity: guardando ? 0.6 : 1,
               }}
               onClick={onClose}
+              disabled={guardando}
             >
-             Cancelar
+              Cancelar
             </button>
             <button
               type="submit"
               style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "10px 20px", borderRadius: 10, fontSize: ".86rem",
-                fontWeight: 700, border: "none", cursor: "pointer",
-                background: "#6C4FBF", color: "#fff", fontFamily: "inherit",
+                fontWeight: 700, border: "none",
+                cursor: guardando ? "not-allowed" : "pointer",
+                background: "linear-gradient(135deg, #6C4FBF, #9B59B6)",
+                color: "#fff", fontFamily: "inherit",
+                opacity: guardando ? 0.8 : 1,
+                minWidth: 120,
               }}
+              disabled={guardando}
             >
-              {libroEditando ? "Guardar" : "Guardar"}
+              {guardando ? (
+                <><SpinnerInline /> Guardando...</>
+              ) : (
+                libroEditando ? "Guardar cambios" : "Subir libro"
+              )}
             </button>
           </div>
         </form>
@@ -612,37 +669,34 @@ export default function BibliotecaTest() {
     setTimeout(() => setNotification(null), 3500);
   };
 
-  // ── Guardar (crear / editar) ──────────────────────────
+  // ── Guardar (crear / editar) — retorna promesa para que ModalLibro maneje guardando ──
   const handleSave = async (form) => {
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error("No autenticado");
-const token = await user.getIdToken(true);
-      const fd = new FormData();
+    const user = auth.currentUser;
+    if (!user) throw new Error("No autenticado");
+    const token = await user.getIdToken(true);
+    const fd = new FormData();
 
-      ["titulo", "autor", "autor_corporativo", "anio_publicacion", "ciudad",
-       "editorial", "edicion", "isbn", "grado", "clase", "observacion"].forEach(k => {
-        if (form[k]) fd.append(k, form[k]);
+    ["titulo", "autor", "autor_corporativo", "anio_publicacion", "ciudad",
+     "editorial", "edicion", "isbn", "grado", "clase", "observacion"].forEach(k => {
+      if (form[k]) fd.append(k, form[k]);
+    });
+    if (form.archivo) fd.append("archivo", form.archivo);
+
+    if (libroEditando) {
+      await axios.put(`${API_URL}/${libroEditando._id}`, fd, {
+        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
       });
-      if (form.archivo) fd.append("archivo", form.archivo);
-
-      if (libroEditando) {
-        await axios.put(`${API_URL}/${libroEditando._id}`, fd, {
-          headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
-        });
-        showNotif("Libro actualizado exitosamente", "success");
-      } else {
-        await axios.post(API_URL, fd, {
-          headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
-        });
-        showNotif("Libro subido exitosamente", "success");
-      }
-      setMostrarModal(false);
-      setLibroEditando(null);
-      cargarLibros();
-    } catch (err) {
-      showNotif(err.message || "Error al guardar", "error");
+      showNotif("Libro actualizado exitosamente", "success");
+    } else {
+      await axios.post(API_URL, fd, {
+        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+      });
+      showNotif("Libro subido exitosamente", "success");
     }
+
+    setMostrarModal(false);
+    setLibroEditando(null);
+    cargarLibros();
   };
 
   const confirmarEliminacion = async () => {
@@ -666,10 +720,8 @@ const token = await user.getIdToken(true);
   const clasesUnicas      = useMemo(() => [...new Set(libros.map(l => l.clase).filter(Boolean))].sort(), [libros]);
   const editorialesUnicas = useMemo(() => [...new Set(libros.map(l => l.editorial).filter(Boolean))].sort(), [libros]);
 
-  // FIX: filtro de formato usa campo `extension` (guardado en BD) en vez de archivoUrl
   const filteredItems = useMemo(() => {
     let r = [...libros];
-
     if (filterValue) {
       const t = filterValue.toLowerCase();
       r = r.filter(l =>
@@ -681,12 +733,9 @@ const token = await user.getIdToken(true);
         l.editorial?.toLowerCase().includes(t)
       );
     }
-
-    // FIX: usar l.extension en lugar de intentar parsear archivoUrl
     if (tipoFiltro !== "todos") {
       r = r.filter(l => (l.extension || "").toLowerCase() === tipoFiltro.toLowerCase());
     }
-
     if (filtroGrado) r = r.filter(l => l.grado === filtroGrado);
     if (filtroClase) r = r.filter(l => l.clase === filtroClase);
     if (filtroAutor) r = r.filter(l =>
@@ -696,7 +745,6 @@ const token = await user.getIdToken(true);
     if (filtroEdit) r = r.filter(l =>
       l.editorial?.toLowerCase().includes(filtroEdit.toLowerCase())
     );
-
     return r;
   }, [libros, filterValue, tipoFiltro, filtroGrado, filtroClase, filtroAutor, filtroEdit]);
 
@@ -736,8 +784,6 @@ const token = await user.getIdToken(true);
     setFiltroGrado(""); setFiltroClase(""); setFiltroAutor(""); setFiltroEdit("");
   };
 
-  // Estadísticas — se calculan sobre libros totales para los conteos fijos,
-  // y sobre filteredItems para el contador de "Libros filtrados"
   const totalLibros     = libros.length;
   const librosPDF       = libros.filter(l => (l.extension || "").toLowerCase() === "pdf").length;
   const librosEPUB      = libros.filter(l => (l.extension || "").toLowerCase() === "epub").length;
@@ -745,7 +791,6 @@ const token = await user.getIdToken(true);
     l => new Date(l.fechaCreacion) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   ).length;
 
-  // Primer stat: muestra total o cantidad filtrada si hay filtros activos
   const statPrincipalVal = hayFiltrosActivos ? filteredItems.length : totalLibros;
   const statPrincipalLbl = hayFiltrosActivos ? "Libros filtrados" : "Total Libros";
 
@@ -825,7 +870,6 @@ const token = await user.getIdToken(true);
       {/* ═══ BARRA DE ACCIONES ════════════════════════════════ */}
       <div className="biblioteca-action-area">
 
-        {/* Fila 1: búsqueda + botones */}
         <div className="biblioteca-action-bar">
           <div className="biblioteca-search-wrapper">
             <span className="biblioteca-search-icon"><FiSearch size={16} /></span>
@@ -866,7 +910,6 @@ const token = await user.getIdToken(true);
           </div>
         </div>
 
-        {/* Fila 2: pills de formato */}
         <div className="biblioteca-filters-bar">
           <div className="biblioteca-filter-group">
             <span className="biblioteca-filter-label"><FiFilter size={12} /> Formato:</span>
@@ -898,7 +941,6 @@ const token = await user.getIdToken(true);
           )}
         </div>
 
-        {/* Filtros avanzados colapsables */}
         <AnimatePresence>
           {mostrarFiltrosAvanzados && (
             <motion.div
@@ -910,33 +952,21 @@ const token = await user.getIdToken(true);
               <div className="biblioteca-advanced-filters">
                 <div className="biblioteca-adv-field">
                   <label>Grado</label>
-                  <select
-                    className="biblioteca-adv-select"
-                    value={filtroGrado}
-                    onChange={e => { setFiltroGrado(e.target.value); setPage(1); }}
-                  >
+                  <select className="biblioteca-adv-select" value={filtroGrado} onChange={e => { setFiltroGrado(e.target.value); setPage(1); }}>
                     <option value="">Todos</option>
                     {gradosUnicos.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="biblioteca-adv-field">
                   <label>Clase</label>
-                  <select
-                    className="biblioteca-adv-select"
-                    value={filtroClase}
-                    onChange={e => { setFiltroClase(e.target.value); setPage(1); }}
-                  >
+                  <select className="biblioteca-adv-select" value={filtroClase} onChange={e => { setFiltroClase(e.target.value); setPage(1); }}>
                     <option value="">Todas</option>
                     {clasesUnicas.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div className="biblioteca-adv-field">
                   <label>Editorial</label>
-                  <select
-                    className="biblioteca-adv-select"
-                    value={filtroEdit}
-                    onChange={e => { setFiltroEdit(e.target.value); setPage(1); }}
-                  >
+                  <select className="biblioteca-adv-select" value={filtroEdit} onChange={e => { setFiltroEdit(e.target.value); setPage(1); }}>
                     <option value="">Todas</option>
                     {editorialesUnicas.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
@@ -965,7 +995,6 @@ const token = await user.getIdToken(true);
       <div className="biblioteca-container-body">
         <div className="biblioteca-table-wrapper">
 
-          {/* Info resultados */}
           <div className="biblioteca-results-info">
             <span>
               Mostrando <strong>{items.length}</strong> de <strong>{sortedItems.length}</strong> libros
@@ -982,7 +1011,6 @@ const token = await user.getIdToken(true);
             </div>
           </div>
 
-          {/* Tabla */}
           <div className="biblioteca-table-scroll">
             {loading ? (
               <div className="biblioteca-loading">
@@ -1033,7 +1061,6 @@ const token = await user.getIdToken(true);
                     </tr>
                   ) : items.map(libro => (
                     <tr key={libro._id}>
-                      {/* Título */}
                       <td className="bib-titulo-cell">
                         <div className="titulo-wrapper">
                           <span className="file-icon-wrap">
@@ -1045,33 +1072,21 @@ const token = await user.getIdToken(true);
                           </div>
                         </div>
                       </td>
-
-                      {/* Autor */}
                       <td className="bib-autor-cell">
                         <div className="autor-principal">{libro.autor}</div>
                         {libro.autor_corporativo && (
                           <div className="autor-corp">{libro.autor_corporativo}</div>
                         )}
                       </td>
-
-                      {/* Año */}
                       <td className="bib-anio">
                         {libro.anio_publicacion || <span style={{ color: "#aaa" }}>—</span>}
                       </td>
-
-                      {/* Editorial */}
                       <td className="bib-editorial-cell">
                         <div className="editorial-nombre">{libro.editorial || "—"}</div>
                         {libro.ciudad && <div className="editorial-ciudad">{libro.ciudad}</div>}
                       </td>
-
-                      {/* Grado */}
                       <td><span className="bib-grado-badge">{libro.grado}</span></td>
-
-                      {/* Clase */}
                       <td><span className="bib-clase-badge">{libro.clase}</span></td>
-
-                      {/* Formato — usa extension igual que el filtro */}
                       <td style={{ textAlign: "center" }}>
                         {libro.extension
                           ? <span className={`formato-badge ${libro.extension.toLowerCase() === "epub" ? "epub" : "pdf"}`}>
@@ -1082,8 +1097,6 @@ const token = await user.getIdToken(true);
                             </span>
                         }
                       </td>
-
-                      {/* Acciones */}
                       <td>
                         <div className="bib-action-buttons">
                           {libro.archivoUrl && (
@@ -1100,7 +1113,7 @@ const token = await user.getIdToken(true);
                           )}
                           <WithPermission requiredPermissions={["ACTUALIZAR_BIBLIOTECA"]}>
                             <button
-                               className="bienes-btn-icon edit"
+                              className="bienes-btn-icon edit"
                               title="Editar metadatos"
                               onClick={() => { setLibroEditando(libro); setMostrarModal(true); }}
                             >
@@ -1109,11 +1122,16 @@ const token = await user.getIdToken(true);
                           </WithPermission>
                           <WithPermission requiredPermissions={["ELIMINAR_BIBLIOTECA"]}>
                             <button
-                               className="bienes-btn-icon delete"
+                              className="bienes-btn-icon delete"
                               title="Eliminar"
                               onClick={() => { setLibroAEliminar(libro); setShowConfirm(true); }}
                             >
-                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6l-1 14H6L5 6"/>
+                                <path d="M10 11v6M14 11v6"/>
+                                <path d="M9 6V4h6v2"/>
+                              </svg>
                             </button>
                           </WithPermission>
                         </div>
@@ -1125,7 +1143,6 @@ const token = await user.getIdToken(true);
             )}
           </div>
 
-          {/* Paginación */}
           {sortedItems.length > 0 && (
             <div className="biblioteca-pagination">
               <div className="biblioteca-pagination-info">
@@ -1135,19 +1152,11 @@ const token = await user.getIdToken(true);
                 de <strong>&nbsp;{sortedItems.length}</strong>
               </div>
               <div className="biblioteca-pagination-controls">
-                <button className="biblioteca-page-btn" onClick={() => setPage(1)} disabled={page === 1}>
-                  <FiChevronsLeft size={14} />
-                </button>
-                <button className="biblioteca-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
-                  <FiChevronLeft size={14} />
-                </button>
+                <button className="biblioteca-page-btn" onClick={() => setPage(1)} disabled={page === 1}><FiChevronsLeft size={14} /></button>
+                <button className="biblioteca-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}><FiChevronLeft size={14} /></button>
                 <span className="biblioteca-pages-text">Página {page} de {pages}</span>
-                <button className="biblioteca-page-btn" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>
-                  <FiChevronRight size={14} />
-                </button>
-                <button className="biblioteca-page-btn" onClick={() => setPage(pages)} disabled={page === pages}>
-                  <FiChevronsRight size={14} />
-                </button>
+                <button className="biblioteca-page-btn" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}><FiChevronRight size={14} /></button>
+                <button className="biblioteca-page-btn" onClick={() => setPage(pages)} disabled={page === pages}><FiChevronsRight size={14} /></button>
               </div>
             </div>
           )}

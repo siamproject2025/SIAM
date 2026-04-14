@@ -376,14 +376,7 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                       </td>
                     </tr>
                   </table>
-                  <p style="text-align:center;margin:0;">
-                    <a href="${process.env.FRONTEND_URL}/login"
-                      style="display:inline-block;background:#4f8ef7;color:#ffffff;
-                             text-decoration:none;padding:13px 32px;border-radius:8px;
-                             font-weight:600;font-size:14px;">
-                      Ingresar al sistema →
-                    </a>
-                  </p>
+                  
                 </td>
               </tr>
               <tr>
