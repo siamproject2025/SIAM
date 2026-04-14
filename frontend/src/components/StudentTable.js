@@ -46,7 +46,7 @@ const { userRole, cargando } = useUserRole();
   const obtenerGrados = async () => {
     try {
       const user = auth.currentUser;
-        const token = await user.getIdToken(true); //  Obtener token
+        const token = await user.getIdToken(); //  Obtener token
        const config = { 
         headers: { 
           Authorization: `Bearer ${token}` 

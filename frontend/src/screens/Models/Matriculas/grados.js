@@ -812,7 +812,7 @@ export default function GradosPage() {
   const fetchWithToken = async (url, options = {}) => {
     const user = auth.currentUser;
     if (!user) throw new Error("No autenticado");
-    const token = await user.getIdToken(true);
+    const token = await user.getIdToken();
     const res = await fetch(url, {
       ...options,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(options.headers || {}) },

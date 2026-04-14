@@ -97,7 +97,7 @@ const Personal = () => {
     const cargar = async () => {
       try {
         loadingController.start();
-        const token = await auth.currentUser?.getIdToken(true);
+        const token = await auth.currentUser?.getIdToken();
         const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Error al obtener personal");
         setPersonal(await res.json());
@@ -206,7 +206,7 @@ const Personal = () => {
   const handleCrear = async (fd) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res   = await fetch(API_URL, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       const { data } = await res.json();
@@ -220,7 +220,7 @@ const Personal = () => {
   const handleActualizar = async (id, fd) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res   = await fetch(`${API_URL}/${id}`, { method: "PUT", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       const { data } = await res.json();
@@ -235,7 +235,7 @@ const Personal = () => {
     const emp = personal.find(p => p._id === id);
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res   = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setPersonal(p => p.filter(e => e._id !== id));

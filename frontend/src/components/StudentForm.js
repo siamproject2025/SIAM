@@ -196,7 +196,7 @@ const StudentForm = ({ student, onSubmit, onCancel, onDelete, isEdit = false }) 
     try {
       setLoadingGrados(true);
       const user  = auth.currentUser;
-        const token = await user.getIdToken(true); 
+        const token = await user.getIdToken(); 
         
         const res   = await axios.get(API_GRADOS, { headers: { Authorization: `Bearer ${token}` } });
       setGrados(res.data.items.map(i => ({ _id: i._id, nombre: i.grado })));

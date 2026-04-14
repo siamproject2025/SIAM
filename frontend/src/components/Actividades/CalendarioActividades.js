@@ -114,7 +114,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-        const token = await user.getIdToken(true); //  Obtener token
+        const token = await user.getIdToken(); //  Obtener token
           const res = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       const normalizadas = (res.data || []).map(a => ({
         ...a, color: a.color || getColorPorDefecto(a.nombre)
@@ -170,7 +170,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
     }
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       await axios.post(API_URL, { ...nueva, usuario: user.uid }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -187,7 +187,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
       mostrarNotificacion('Ya existe otra actividad en esa misma hora'); return;
     }
     try {
-      const token = await auth.currentUser.getIdToken(true);
+      const token = await auth.currentUser.getIdToken();
       const id = datos._id || datos.id;
       await axios.put(`${API_URL}/${id}`, datos, {
         headers: { Authorization: `Bearer ${token}` }
@@ -204,7 +204,7 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const handleEliminar = (id) => {
     mostrarConfirmacion('¿Seguro que deseas eliminar esta actividad?', async () => {
       try {
-        const token = await auth.currentUser.getIdToken(true);
+        const token = await auth.currentUser.getIdToken();
         await axios.delete(`${API_URL}/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         cerrarModal();
         cargarActividades();

@@ -22,7 +22,7 @@ const UsuariosChart = ({ actualizar }) => {
     const obtenerUsuarios = async () => {
       try {
         const user = auth.currentUser;
-        const token = await user.getIdToken(true); //  Obtener token
+        const token = await user.getIdToken(); //  Obtener token
         const res = await axios.get(`${API_URL}/api/usuarios`, {
           headers: { Authorization: `Bearer ${token}` },
         });

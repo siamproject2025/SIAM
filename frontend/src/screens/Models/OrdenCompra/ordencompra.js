@@ -100,7 +100,7 @@ const OrdenCompra = () => {
 
   // ── Helper: obtener token ──────────────────────────────────
   const getToken = async () => {
-    const token = await auth.currentUser?.getIdToken(true);
+    const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error("Usuario no autenticado");
     return token;
   };

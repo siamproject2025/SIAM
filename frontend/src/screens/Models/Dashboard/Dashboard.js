@@ -131,7 +131,7 @@ const DashboardCards = () => {
         setLoading(true);
         const user = auth.currentUser;
         if (!user) return;
-        const token = await user.getIdToken(true);
+        const token = await user.getIdToken();
 
         let roles = [];
         try {

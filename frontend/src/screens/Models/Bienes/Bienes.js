@@ -105,7 +105,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
     const cargar = async () => {
       try {
         loadingController.start();
-        const token = await auth.currentUser?.getIdToken(true);
+        const token = await auth.currentUser?.getIdToken();
         const res   = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Error al obtener bienes");
         setBienes(await res.json());
@@ -267,7 +267,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
       if (!nuevo.estado)                     { showNotification("Seleccione un estado", "error");          return; }
       if (!nuevo.valor || nuevo.valor <= 0)  { showNotification("El valor debe ser mayor a 0", "error");  return; }
 
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const fd = new FormData();
       for (const k in nuevo) {
         if (k === "imagen" && nuevo[k]) fd.append("imagen", nuevo[k]);
@@ -315,7 +315,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
       return;
     }
 
-    const token = await auth.currentUser?.getIdToken(true);
+    const token = await auth.currentUser?.getIdToken();
     
     // Determinar si es FormData o JSON
     let body;
@@ -355,7 +355,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
     const nombre = bienes.find((b) => b._id === id)?.nombre;
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res   = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setBienes((p) => p.filter((b) => b._id !== id));

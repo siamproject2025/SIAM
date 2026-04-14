@@ -29,7 +29,7 @@ const LogoutButton = () => {
       const user = auth.currentUser;
       
       if (user) {
-const token = await user.getIdToken(true);        
+const token = await user.getIdToken();        
         // Llamar a la API de logout
         await axios.post(API_LOGOUT, {}, {
           headers: { 

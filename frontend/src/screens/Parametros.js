@@ -223,7 +223,7 @@ export default function Parametros() {
         return;
       }
 
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       const res = await axios.put(API_URL, params, {
         headers: {
           'Authorization': `Bearer ${token}`,

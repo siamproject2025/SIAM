@@ -174,7 +174,7 @@ const Donaciones = () => {
   const getToken = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error('No estás autenticado');
-    return user.getIdToken(true);
+    return user.getIdToken();
   };
 
   const getLocalDate = (utcDate) => {

@@ -91,7 +91,7 @@ const Proveedores = () => {
     const cargar = async () => {
       try {
         loadingController.start();
-        const token = await auth.currentUser?.getIdToken(true);
+        const token = await auth.currentUser?.getIdToken();
         const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Error al obtener proveedores");
         setProveedores(await res.json());
@@ -178,7 +178,7 @@ const Proveedores = () => {
   const handleCrearProveedor = async (nuevo) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -196,7 +196,7 @@ const Proveedores = () => {
   const handleEditarProveedor = async (id, actualizado) => {
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -215,7 +215,7 @@ const Proveedores = () => {
     const nombre = proveedores.find((p) => p._id === id)?.nombre;
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
       setProveedores((p) => p.filter((prov) => prov._id !== id));

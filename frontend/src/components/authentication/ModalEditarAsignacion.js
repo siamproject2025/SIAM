@@ -21,7 +21,7 @@ const ModalEditarAsignacion = ({ usuario, onGuardado, onCancelar }) => {
 
   const obtenerToken = async () => {
     const { auth } = await import("./Auth");
-    return auth.currentUser?.getIdToken(true);
+    return auth.currentUser?.getIdToken();
   };
 
   // ── Cargar roles y grados + precargar alumno actual ───────────────────────
