@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Calendar } from 'lucide-react';
+import WithPermission from '../../../components/Permisos/WithPermission';
 
 const getMinHN = () => {
   const ahora = new Date(Date.now() - 5 * 60 * 1000);
@@ -159,9 +160,13 @@ const ModalCrearActividad = ({ onClose, onCreate, fechaInicial = null }) => {
               <button type="button" style={S.btn('#E0D9F5', '#6C4FBF')} onClick={onClose}>
                 Cancelar
               </button>
+                 <WithPermission requiredPermissions={["CREAR_ACTIVIDADES"]}>
+             
               <button type="submit" style={S.btn('#6C4FBF')}>
                 Guardar
               </button>
+              </WithPermission>
+
             </div>
           </div>
         </form>

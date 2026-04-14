@@ -20,7 +20,7 @@ const useUserRole = () => {
                     return;
                 }
 
-                const token = await user.getIdToken();
+const token = await user.getIdToken(true);
                 const res = await axios.get(API_URL, {
                     headers: { Authorization: `Bearer ${token}` }
                 });

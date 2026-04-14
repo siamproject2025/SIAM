@@ -23,6 +23,7 @@ import {
   CheckCircle, Send, Package, XCircle,
   DollarSign
 } from "lucide-react";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
 const API_URL      = process.env.REACT_APP_API_URL + "/api/compras";
 const API_PROV_URL = process.env.REACT_APP_API_URL + "/api/proveedores";
@@ -99,7 +100,7 @@ const OrdenCompra = () => {
 
   // ── Helper: obtener token ──────────────────────────────────
   const getToken = async () => {
-    const token = await auth.currentUser?.getIdToken();
+    const token = await auth.currentUser?.getIdToken(true);
     if (!token) throw new Error("Usuario no autenticado");
     return token;
   };
@@ -493,9 +494,11 @@ if (fechaHasta) {
             <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
+            <WithPermission requiredPermissions={["CREAR_COMPRAS"]}>
             <button style={S.btn("#6C4FBF")} onClick={() => setMostrarModalCrear(true)}>
               <Plus size={15} /> Nueva Orden
             </button>
+            </WithPermission>
           </div>
         </div>
 
@@ -609,6 +612,7 @@ if (fechaHasta) {
                         </td>
                         <td>
                           <div className="bienes-action-buttons">
+                            <WithPermission requiredPermissions={["ACTUALIZAR_COMPRAS"]}>
                             <button
                               className="bienes-btn-icon edit"
                               title="Ver / Editar"
@@ -616,6 +620,8 @@ if (fechaHasta) {
                             >
                               <Edit size={15} />
                             </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={["ELIMINAR_COMPRAS"]}>
                             <button
                               className="bienes-btn-icon delete"
                               title="Eliminar"
@@ -623,6 +629,7 @@ if (fechaHasta) {
                             >
                               <Trash2 size={15} />
                             </button>
+                            </WithPermission>
                           </div>
                         </td>
                       </tr>

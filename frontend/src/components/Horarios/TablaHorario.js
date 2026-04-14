@@ -467,11 +467,12 @@ const BusquedaTablaHorarios = ({
           whileHover={{scale:1.04}} whileTap={{scale:.96}}>
           <HelpCircle size={15}/> Ayuda
         </motion.button>
-
+        <WithPermission requiredPermissions={["CREAR_HORARIOS"]}>
         <motion.button className="ht-btn ht-btn-primary" onClick={onCrearHorario}
           whileHover={{scale:1.04,y:-1}} whileTap={{scale:.96}}>
           <Plus size={15}/> Nuevo Horario
         </motion.button>
+        </WithPermission>
       </div>
 
       {/* Info row */}
@@ -572,10 +573,13 @@ const BusquedaTablaHorarios = ({
                       <Edit size={14}/> Editar
                     </button>
                   </WithPermission>
+                  
                   <div className="ht-action-sep"/>
+                   <WithPermission requiredPermissions={["ACTUALIZAR_HORARIOS"]}>
                   <button className="ht-action-btn alumnos" onClick={() => onDetalleAlumnos(horario._id)}>
                     <Users size={14}/> Alumnos
                   </button>
+                  </WithPermission>
                   <div className="ht-action-sep"/>
                   <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>
                     <button className="ht-action-btn del" onClick={() => onEliminarHorario(horario._id)}>

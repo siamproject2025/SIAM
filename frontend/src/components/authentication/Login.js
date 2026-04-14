@@ -45,8 +45,7 @@ const Login = () => {
       const user   = result.user;
       if (!user) return;
 
-      const token = await user.getIdToken();
-
+const token = await user.getIdToken(true);
       // Verificar si está aprobado o crear solicitud automática
       const res = await axios.post(
         `${API_URL}/api/usuarios/google-acceso`,
@@ -87,36 +86,43 @@ const Login = () => {
 
   // ── Login normal ──────────────────────────────────────────────────────────
   const handleLogin = async (data) => {
-    const email = data.email.toLowerCase().trim();
-    try {
-      const bloqueoRes = await axios.post(
-        `${API_URL}/api/usuarios/login`,
-        { email },
-        { validateStatus: (s) => s === 200 || s === 429 }
-      );
-      if (!bloqueoRes.data.permitido) {
-        toast("error", bloqueoRes.data.message || "Cuenta bloqueada temporalmente");
-        return;
-      }
-
-      const credential = await signInWithEmailAndPassword(auth, email, data.password);
-      const user = credential.user;
-
-      if (!user.emailVerified) {
-        await auth.signOut();
-        toast("error", "Verifica tu correo antes de iniciar sesión.");
-        return;
-      }
-
-      await axios.post(`${API_URL}/api/usuarios/login/exito`, { email });
-      toast("success", "Inicio de sesión exitoso");
-      navigate("/dashboard");
-
-    } catch (error) {
-      await auth.signOut().catch(() => {});
-      await handleLoginError(error, email);
+  const email = data.email.toLowerCase().trim();
+  try {
+    const bloqueoRes = await axios.post(
+      `${API_URL}/api/usuarios/login`,
+      { email },
+      { validateStatus: (s) => s === 200 || s === 429 }
+    );
+    if (!bloqueoRes.data.permitido) {
+      toast("error", bloqueoRes.data.message || "Cuenta bloqueada temporalmente");
+      return;
     }
-  };
+
+    const credential = await signInWithEmailAndPassword(auth, email, data.password);
+    const user = credential.user;
+
+    if (!user.emailVerified) {
+      await auth.signOut();
+      toast("error", "Verifica tu correo antes de iniciar sesión.");
+      return;
+    }
+
+    // ✅ Obtén el token y envíalo
+    const token = await user.getIdToken(true);
+    await axios.post(
+      `${API_URL}/api/usuarios/login/exito`,
+      { email },
+      { headers: { Authorization: `Bearer ${token}` } } // ✅ agregado
+    );
+
+    toast("success", "Inicio de sesión exitoso");
+    navigate("/dashboard");
+
+  } catch (error) {
+    await auth.signOut().catch(() => {});
+    await handleLoginError(error, email);
+  }
+};
 
   const handleLoginError = async (error, email) => {
     if (error.response?.status === 429) {

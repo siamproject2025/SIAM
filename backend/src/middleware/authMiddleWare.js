@@ -29,6 +29,37 @@ const authenticateUser = async (req, res, next) => {
     return res.status(403).json({ message: 'No autorizado. Token inválido o expirado.' });
   }
 };
+const authenticateIfPresent = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    req.user = null;
+    return next();
+  }
 
+  try {
+    const token = authHeader.split('Bearer ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    
+    const usuario = await Usuario.findOne({ authId: decodedToken.uid });
 
-module.exports = { authenticateUser };
+    if (usuario) {
+      // ✅ Existe en MongoDB — igual que authenticateUser
+      req.user = usuario;
+    } else {
+      // ✅ No existe en MongoDB pero sí en Firebase — usar datos del token
+      req.user = {
+        _id:      null,
+        username: decodedToken.name || decodedToken.email?.split('@')[0] || 'Desconocido',
+        email:    decodedToken.email || 'sin-email',
+        roles:    ['INVITADO'],
+      };
+    }
+
+    next();
+  } catch (error) {
+    req.user = null;
+    next();
+  }
+};
+module.exports = { authenticateUser, authenticateIfPresent };

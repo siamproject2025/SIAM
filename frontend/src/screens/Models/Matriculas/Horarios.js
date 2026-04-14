@@ -211,7 +211,7 @@ const Horarios = () => {
     try {
       loadingController.start();
       const user  = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
       const [resHorario, resAulas, resAlumnos, resDocentes] = await Promise.all([
@@ -255,7 +255,7 @@ const Horarios = () => {
   const clickDetalleAlumnosHandler = async (id) => {
     try {
       const user  = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const res   = await axios.get(`${API_HORARIO}/${id}`, { headers:{ Authorization:`Bearer ${token}` } });
       setHorarioSeleccionado(res.data);
       setMostrarModalDetalle(true);
@@ -266,7 +266,7 @@ const Horarios = () => {
   const clickDetalleHorarioHandler = async (id) => {
     try {
       const user  = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const res   = await axios.get(`${API_HORARIO}/${id}`, { headers:{ Authorization:`Bearer ${token}` } });
       setHorarioSeleccionado(res.data);
       setEsModalCreacion(false);
@@ -288,7 +288,7 @@ const Horarios = () => {
     try {
       loadingController.start();
       const user  = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       const headers = { Authorization:`Bearer ${token}`, "Content-Type":"application/json" };
       if (esCreacion) {
         const { _id, ...sin } = horario;
@@ -311,7 +311,7 @@ const Horarios = () => {
     try {
       loadingController.start();
       const user  = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       await axios.delete(`${API_HORARIO}/${id_horario}`, { headers:{ Authorization:`Bearer ${token}` } });
       showNotification("Horario eliminado exitosamente", "success");
       await obtenerHorarios();

@@ -3,11 +3,12 @@ const router = express.Router();
 const Auth = require("../Models/usuario_modelo");
 const Usuario = require("../Models/usuario_modelo"); // ← faltaba este import
 const usuarioController = require('../Controllers/usuario_controller');
-const { authenticateUser } = require('../middleware/authMiddleWare');
 const { checkRole, checkAccess } = require('../middleware/checkRole');
 const { checkPermission } = require('../middleware/checkPermission');
 const { registrarAuditoria, capturarDatosPrevios } = require('../middleware/auditoriaMiddleware');
 const solicitudController = require('../Controllers/solicitud_controller');
+const { authenticateUser, authenticateIfPresent } = require('../middleware/authMiddleWare');
+
 
 // ══════════════════════════════════════════
 //  SOLICITUDES
@@ -37,13 +38,17 @@ router.patch('/solicitudes/:id/resolver',
 
 // Crear usuario (público)
 router.post('/usuarios', usuarioController.crearUsuario);
+router.post("/usuarios/login", authenticateIfPresent, registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.loginUsuario);
+router.post("/usuarios/login/exito", authenticateIfPresent, registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.reiniciarIntentos);
 
 // Login y variantes — DEBEN ir antes de /usuarios/:id
-router.post("/usuarios/login", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.loginUsuario);
 router.post("/usuarios/login/fallo", usuarioController.registrarIntentoFallido);
-router.post("/usuarios/login/exito", registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.reiniciarIntentos);
 // Verificar acceso Google (público, se llama antes de navegar)
-router.post('/usuarios/google-acceso', usuarioController.loginOCrearSolicitudGoogle);
+router.post('/usuarios/google-acceso', 
+  authenticateIfPresent,
+  registrarAuditoria('USUARIOS', 'LOGIN'),
+  usuarioController.loginOCrearSolicitudGoogle
+);
 // Logout
 router.post('/usuarios/logout',
   authenticateUser,

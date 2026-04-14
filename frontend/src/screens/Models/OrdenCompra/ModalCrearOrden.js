@@ -107,7 +107,7 @@ const ModalCrearOrden = ({ onClose, onCreate }) => {
       try {
         const user = auth.currentUser;
         if (!user) throw new Error('Usuario no autenticado');
-        const token = await user.getIdToken();
+        const token = await user.getIdToken(true);
         const response = await fetch(API_PROV_URL, {
           headers: { Authorization: `Bearer ${token}` }
         });

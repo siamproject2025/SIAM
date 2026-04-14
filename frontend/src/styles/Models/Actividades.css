@@ -218,7 +218,6 @@
   cursor: pointer;
   transition: color .15s;
   word-break: break-word;
-  text-transform: uppercase;
 }
 
 .act-card:hover .act-card__nombre {

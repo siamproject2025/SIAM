@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { X, Save, Trash2, Edit, FileText, Clock, UserCheck } from 'lucide-react';
 import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
 import { auth } from '../../../components/authentication/Auth';
+import WithPermission from '../../../components/Permisos/WithPermission';
 
 const utcToHNInput = (utcStr) => {
   if (!utcStr) return '';
@@ -313,15 +314,21 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
         <form onSubmit={handleGuardar} noValidate>
           {renderTabs()}
           <div className="dn-modal-footer">
+               <WithPermission requiredPermissions={["ELIMINAR_ACTIVIDADES"]}>
+             
             <button type="button" style={S.btn('#E74C3C')} onClick={() => setShowConfirm(true)}>
               Eliminar
             </button>
+            </WithPermission>
             <button type="button" style={S.btn('#E0D9F5', '#6C4FBF')} onClick={handleCerrar}>
               Cancelar
             </button>
+               <WithPermission requiredPermissions={["ACTUALIZAR_ACTIVIDADES"]}>
+             
             <button type="submit" disabled={guardando} style={S.btn('#6C4FBF', '#fff', guardando)}>
               {guardando ? 'Guardando...' : 'Guardar'}
             </button>
+            </WithPermission>
           </div>
         </form>
 

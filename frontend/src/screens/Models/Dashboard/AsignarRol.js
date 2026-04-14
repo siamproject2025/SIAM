@@ -40,7 +40,7 @@ const AsignarRol = () => {
   const obtenerDatos = async () => {
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       
       const [usuariosRes, rolesRes] = await Promise.all([
         axios.get(`${API_URL}/api/usuarios`, {
@@ -51,7 +51,6 @@ const AsignarRol = () => {
         })
       ]);
       
-      console.log("Primer usuario:", usuariosRes.data.users[0]); // ← agrega esto
       
       setUsuarios(usuariosRes.data.users);
       setRoles(rolesRes.data);
@@ -68,7 +67,7 @@ const AsignarRol = () => {
   const asignarRol = async (id, nuevoRol) => {
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       await axios.put(
         `${API_URL}/api/usuarios/${id}/rol`,
         { roles: [nuevoRol] },
@@ -117,7 +116,7 @@ const AsignarRol = () => {
 
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true);
       await axios.delete(`${API_URL}/api/usuarios/${usuarioAEliminar._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -200,7 +199,7 @@ const AsignarRol = () => {
   const bloquearUsuario = async (usuario) => {
      try {
        const user = auth.currentUser;
-       const token = await user.getIdToken();
+       const token = await user.getIdToken(true);
        await axios.patch(`${API_URL}/api/usuarios/${usuario._id}/bloquear`, {},
          { headers: { Authorization: `Bearer ${token}` } });
        setMensaje(<span>✓ Usuario <strong>{usuario.username}</strong> bloqueado</span>);
@@ -215,7 +214,7 @@ const AsignarRol = () => {
    const desbloquearUsuario = async (usuario) => {
      try {
        const user = auth.currentUser;
-       const token = await user.getIdToken();
+       const token = await user.getIdToken(true);
        await axios.patch(`${API_URL}/api/usuarios/${usuario._id}/desbloquear`, {},
          { headers: { Authorization: `Bearer ${token}` } });
        setMensaje(<span>✓ Usuario <strong>{usuario.username}</strong> desbloqueado</span>);
