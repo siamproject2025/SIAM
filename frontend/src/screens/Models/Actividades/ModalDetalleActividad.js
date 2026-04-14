@@ -314,7 +314,7 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
         <form onSubmit={handleGuardar} noValidate>
           {renderTabs()}
           <div className="dn-modal-footer">
-               <WithPermission requiredPermissions={"ELIMINAR_ACTIVIDADES"}>
+               <WithPermission requiredPermissions={["ELIMINAR_ACTIVIDADES"]}>
              
             <button type="button" style={S.btn('#E74C3C')} onClick={() => setShowConfirm(true)}>
               Eliminar
@@ -323,7 +323,7 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
             <button type="button" style={S.btn('#E0D9F5', '#6C4FBF')} onClick={handleCerrar}>
               Cancelar
             </button>
-               <WithPermission requiredPermissions={"ACTUALIZAR_ACTIVIDADES"}>
+               <WithPermission requiredPermissions={["ACTUALIZAR_ACTIVIDADES"]}>
              
             <button type="submit" disabled={guardando} style={S.btn('#6C4FBF', '#fff', guardando)}>
               {guardando ? 'Guardando...' : 'Guardar'}

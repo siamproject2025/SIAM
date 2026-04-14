@@ -740,7 +740,7 @@ const Directiva = () => {
             <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
-             <WithPermission requiredPermissions={"CREAR_DIRECTIVA"}>
+             <WithPermission requiredPermissions={["CREAR_DIRECTIVA"]}>
             <button style={S.btn("#6C4FBF")} onClick={() => {
               setFormData(formVacio()); setFotoPreview(null);
               setErrors({}); setTabActivo("info"); setHayCambios(false);
@@ -896,13 +896,13 @@ const Directiva = () => {
                     {/* Acciones */}
                     <td>
                       <div className="bienes-action-buttons">
-                        <WithPermission requiredPermissions={"ACTUALIZAR_DIRECTIVA"}>
+                        <WithPermission requiredPermissions={["ACTUALIZAR_DIRECTIVA"]}>
                         <button className="bienes-btn-icon edit" title="Editar"
                           onClick={() => handleOpenEditModal(m)}>
                           <Edit size={15} />
                         </button>
                         </WithPermission>
-                         <WithPermission requiredPermissions={"ACTUALIZAR_DIRECTIVA"}>
+                         <WithPermission requiredPermissions={["ACTUALIZAR_DIRECTIVA"]}>
                         <button className="bienes-btn-icon delete" title="Eliminar"
                           onClick={() => {
                             if (window.confirm(`¿Eliminar a "${m.nombre}"?`)) handleEliminarMiembro(m._id);

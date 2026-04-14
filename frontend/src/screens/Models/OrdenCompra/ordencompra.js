@@ -494,7 +494,7 @@ if (fechaHasta) {
             <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
-            <WithPermission requiredPermissions={"CREAR_COMPRAS"}>
+            <WithPermission requiredPermissions={["CREAR_COMPRAS"]}>
             <button style={S.btn("#6C4FBF")} onClick={() => setMostrarModalCrear(true)}>
               <Plus size={15} /> Nueva Orden
             </button>
@@ -612,7 +612,7 @@ if (fechaHasta) {
                         </td>
                         <td>
                           <div className="bienes-action-buttons">
-                            <WithPermission requiredPermissions={"ACTUALIZAR_COMPRAS"}>
+                            <WithPermission requiredPermissions={["ACTUALIZAR_COMPRAS"]}>
                             <button
                               className="bienes-btn-icon edit"
                               title="Ver / Editar"
@@ -621,7 +621,7 @@ if (fechaHasta) {
                               <Edit size={15} />
                             </button>
                             </WithPermission>
-                            <WithPermission requiredPermissions={"ELIMINAR_COMPRAS"}>
+                            <WithPermission requiredPermissions={["ELIMINAR_COMPRAS"]}>
                             <button
                               className="bienes-btn-icon delete"
                               title="Eliminar"

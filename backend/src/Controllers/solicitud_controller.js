@@ -25,9 +25,7 @@ exports.crearSolicitud = async (req, res) => {
 
     const solicitud = new Solicitud({
       nombre_solicitante: nombre_solicitante.toUpperCase().trim(),
-      email:              email.toLowerCase().trim(),
-      nombre_alumno:      nombre_alumno.toUpperCase().trim(),
-      grado:              grado.trim()
+      email:              email.toLowerCase().trim()
     });
 
     await solicitud.save();
@@ -73,14 +71,12 @@ exports.loginOCrearSolicitudGoogle = async (req, res) => {
     }
 
     // 3. No existe solicitud → crear una automáticamente
-    const nuevaSolicitud = new Solicitud({
-      nombre_solicitante: (username || email).toUpperCase(),
-      email:              emailNorm,
-      nombre_alumno:      'N/A',
-      grado:              'N/A',
-      estado:             'PENDIENTE'
-    });
-    await nuevaSolicitud.save();
+        const nuevaSolicitud = new Solicitud({
+        nombre_solicitante: (username || email).toUpperCase(),
+        email:              emailNorm,
+        estado:             'PENDIENTE'
+      });
+          await nuevaSolicitud.save();
 
     return res.status(403).json({
       aprobado: false,

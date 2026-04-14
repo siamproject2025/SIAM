@@ -540,7 +540,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
             <button style={S.btn('#27AE60')} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
-              <WithPermission requiredPermissions={"CREAR_BIENES"}>
+              <WithPermission requiredPermissions={["CREAR_BIENES"]}>
             <button style={S.btn('#6C4FBF')} onClick={() => setMostrarModalCrear(true)}>
               <Plus size={15} /> Nuevo Bien
             </button>
@@ -761,7 +761,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
                       <td>
                         <div className="bienes-action-buttons">
                           
-                          <WithPermission requiredPermissions={"ACTUALIZAR_BIENES"}>
+                          <WithPermission requiredPermissions={["ACTUALIZAR_BIENES"]}>
                           <button
                             className="bienes-btn-icon edit"
                             title="Editar"
@@ -770,7 +770,7 @@ const [tiposAsignacion, setTiposAsignacion] = useState([]);
                             <Edit size={15} />
                           </button>
                           </WithPermission>
-                            <WithPermission requiredPermissions={"ELIMINAR_BIENES"}>
+                            <WithPermission requiredPermissions={["ELIMINAR_BIENES"]}>
                           <button
                             className="bienes-btn-icon delete"
                             title="Eliminar"

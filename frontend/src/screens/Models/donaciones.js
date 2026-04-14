@@ -766,7 +766,7 @@ const getColorAlmacen = () => '#9b59b6'
               whileHover={{scale:1.05}} whileTap={{scale:0.96}}>
               <HelpCircle size={16}/> Ayuda
             </motion.button>
-            <WithPermission requiredPermissions={"CREAR_DONACIONES"}>
+            <WithPermission requiredPermissions={["CREAR_DONACIONES"]}>
             <motion.button className="dn-btn-new" onClick={handleNuevaDonacion}
               whileHover={{scale:1.05}} whileTap={{scale:0.96}}>
               <Plus size={16}/> Nueva Donación
@@ -853,14 +853,14 @@ const getColorAlmacen = () => '#9b59b6'
                             </td>
                             <td style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}>
                               <div className="dn-acciones-cell">
-                                  <WithPermission requiredPermissions={"ACTUALIZAR_DONACIONES"}>
+                                  <WithPermission requiredPermissions={["ACTUALIZAR_DONACIONES"]}>
                                 <motion.button  className="bienes-btn-icon edit" title="Editar"
                                   onClick={()=>handleFilaClick(don)}
                                   whileHover={{scale:1.15}} whileTap={{scale:0.92}}>
                                   <Edit size={15}/>
                                 </motion.button>
                                 </WithPermission>
-                                <WithPermission requiredPermissions={"ELIMINAR_DONACIONES"}>
+                                <WithPermission requiredPermissions={["ELIMINAR_DONACIONES"]}>
                                 <motion.button  className="bienes-btn-icon delete"title="Eliminar"
                                   onClick={()=>prepararEliminacion(don)}
                                   whileHover={{scale:1.15}} whileTap={{scale:0.92}}>

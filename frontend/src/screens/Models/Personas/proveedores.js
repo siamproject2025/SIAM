@@ -393,7 +393,7 @@ const Proveedores = () => {
             <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
               <Download size={15} /> Excel
             </button>
-             <WithPermission requiredPermissions={"CREAR_PROVEEDORES"}>
+             <WithPermission requiredPermissions={["CREAR_PROVEEDORES"]}>
             <button style={S.btn("#6C4FBF")} onClick={() => setMostrarModalCrear(true)}>
               <Plus size={15} /> Nuevo Proveedor
             </button>
@@ -592,7 +592,7 @@ const Proveedores = () => {
                         {/* Acciones */}
                         <td>
                           <div className="bienes-action-buttons">
-                            <WithPermission requiredPermissions={"ACTUALIZAR_PROVEEDORES"}>
+                            <WithPermission requiredPermissions={["ACTUALIZAR_PROVEEDORES"]}>
                             <button
                               className="bienes-btn-icon edit"
                               title="Editar"
@@ -601,7 +601,7 @@ const Proveedores = () => {
                               <Edit size={15} />
                             </button>
                             </WithPermission>
-                            <WithPermission requiredPermissions={"ELIMINAR_PROVEEDORES"}>
+                            <WithPermission requiredPermissions={["ELIMINAR_PROVEEDORES"]}>
                             <button
                               className="bienes-btn-icon delete"
                               title="Eliminar"

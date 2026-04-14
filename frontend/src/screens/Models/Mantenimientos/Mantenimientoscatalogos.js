@@ -531,7 +531,7 @@ const MantenimientosCatalogos = () => {
               </button>
 
               {/* Nuevo */}
-              <WithPermission requiredPermissions={"CREAR_MANTENIMIENTOS"}>
+              <WithPermission requiredPermissions={["CREAR_MANTENIMIENTOS"]}>
               <button
                 className="mnt-btn mnt-btn--primary"
                 onClick={() => setModalForm({})}
@@ -606,7 +606,7 @@ const MantenimientosCatalogos = () => {
                         </td>
                         <td>
                           <div className="mnt-actions">
-                             <WithPermission requiredPermissions={"ACTUALIZAR_MANTENIMIENTOS"}>
+                             <WithPermission requiredPermissions={["ACTUALIZAR_MANTENIMIENTOS"]}>
                             <button
                               className="mnt-action-btn mnt-action-btn--edit"
                               onClick={() => setModalForm({ item })}
@@ -615,7 +615,7 @@ const MantenimientosCatalogos = () => {
                               <Edit2 size={14}/>
                             </button>
                             </WithPermission>
-                            <WithPermission requiredPermissions={"ELIMINAR_MANTENIMIENTOS"}>
+                            <WithPermission requiredPermissions={["ELIMINAR_MANTENIMIENTOS"]}>
                             <button
                               className="mnt-action-btn mnt-action-btn--del"
                               onClick={() => setModalDel(item)}

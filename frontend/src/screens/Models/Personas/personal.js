@@ -349,7 +349,7 @@ const Personal = () => {
             )}
             <button style={S.btn('#E0D9F5','#6C4FBF')}  onClick={() => setMostrarAyuda(true)}><HelpCircle size={15}/> Ayuda</button>
             <button style={S.btn('#27ae60')} onClick={handleExcel}><Download size={15}/> Excel</button>
-            <WithPermission requiredPermissions={"CREAR_PERSONAL"}>
+            <WithPermission requiredPermissions={["CREAR_PERSONAL"]}>
             <button  style={S.btn('#6C4FBF')} onClick={() => setMostrarModalCrear(true)}><Plus size={15}/> Nuevo Empleado</button>
             </WithPermission>  
           </div>
@@ -497,12 +497,12 @@ const Personal = () => {
                     <td><span className={estadoBadge(emp.estado)}>{emp.estado}</span></td>
                     <td>
                       <div className="per-action-buttons">
-                         <WithPermission requiredPermissions={"ACTUALIZAR_PERSONAL"}>
+                         <WithPermission requiredPermissions={["ACTUALIZAR_PERSONAL"]}>
                         <button className="per-btn-icon edit" title="Editar" onClick={() => setEmpleadoSelec(emp)}>
                           <Edit size={15}/>
                         </button>
                         </WithPermission>
-                        <WithPermission requiredPermissions={"ELIMINAR_PERSONAL"}>
+                        <WithPermission requiredPermissions={["ELIMINAR_PERSONAL"]}>
                         <button className="per-btn-icon delete" title="Eliminar" onClick={() => {
                           if (window.confirm(`¿Eliminar a "${emp.nombres} ${emp.apellidos}"?`)) handleEliminar(emp._id);
                         }}>
