@@ -340,19 +340,33 @@ const Horarios = () => {
   ), [horariosVisibles, gradoSeleccionado]);
 
   // ── Alumnos filtrados por grado del horario seleccionado ─
-  const alumnosFiltradosPorGrado = useMemo(() => {
-    if (!horarioSeleccionado) return alumnos;
+  // Reemplaza la función alumnosFiltradosPorGrado en Horarios.jsx
+const alumnosFiltradosPorGrado = useMemo(() => {
+    if (!horarioSeleccionado) return [];
+
     const aulaId = horarioSeleccionado.aula_id;
-    if (!aulaId) return alumnos;
-    const filtrados = alumnos.filter(a => {
-      const gradoAlumno = a.grado_a_matricular;
-      if (!gradoAlumno) return false;
-      return String(gradoAlumno) === String(aulaId) ||
-             (gradoAlumno?.$oid && gradoAlumno.$oid === String(aulaId)) ||
-             (aulaId?.$oid && String(gradoAlumno) === aulaId.$oid);
+    if (!aulaId) return [];
+
+    // Normalizar el ID del aula a string simple
+    const aulaIdStr = typeof aulaId === 'object'
+        ? (aulaId.$oid || String(aulaId))
+        : String(aulaId);
+
+    const filtrados = alumnos.filter(alumno => {
+        const gradoId = alumno.grado_a_matricular;
+        if (!gradoId) return false;
+
+        const gradoIdStr = typeof gradoId === 'object'
+            ? (gradoId.$oid || String(gradoId))
+            : String(gradoId);
+
+        return gradoIdStr === aulaIdStr;
     });
-    return filtrados.length > 0 ? filtrados : alumnos;
-  }, [horarioSeleccionado, alumnos]);
+
+    // Si no hay coincidencias (aula_id no mapea a grado), retornar vacío
+    // NO hacer fallback a todos los alumnos — eso fue el error original
+    return filtrados;
+}, [horarioSeleccionado, alumnos]);
 
   // ── Asignaturas y stats del grado ────────────────────────
   const asignaturasDelGrado = useMemo(() => (

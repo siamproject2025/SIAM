@@ -1,20 +1,5 @@
 // ============================================================
-// ModalDetalleHorario.jsx  — REDISEÑADO con patrón dn-*
-// Diseño idéntico al modal de Bienes/Donaciones:
-//   • Overlay + modal con clases dn-*
-//   • Pestañas: Detalle | Alumnos
-//   • Punto rojo animado en pestaña con errores
-//   • AnimatePresence + spring de framer-motion
-//
-// Funcionalidades conservadas al 100%:
-//   • Catálogo de asignaturas dinámico desde API
-//   • Toggle picker ↔ digitación manual de hora
-//   • Selector de grado con info completa
-//   • Asignación / eliminación de alumnos
-//   • Filtros de alumnos por grado y nombre
-//   • Seleccionar todos / deseleccionar todos
-//   • WithPermission en acciones críticas
-// ============================================================
+
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
