@@ -570,6 +570,408 @@
   animation: spin 1s linear infinite;
 }
 
+/*INTENTOS FALLIDOS*/
+
+/* =========================================================
+   AÑADIR al final de AsignarRol.css
+   ========================================================= */
+
+/* ── Botón Config Bloqueo (header) ── */
+.rol-btn-config {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.12);
+  border: 2px solid rgba(255,255,255,0.25);
+  padding: 10px 18px;
+  border-radius: 14px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
+}
+
+.rol-btn-config:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.45);
+  transform: translateY(-1px);
+}
+
+/* ── Edición de nombre inline ── */
+.rol-nombre-edit-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rol-nombre-input {
+  padding: 5px 10px;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  outline: none;
+  width: 160px;
+  transition: box-shadow 0.2s;
+}
+
+.rol-nombre-input:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+}
+
+.rol-nombre-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+}
+
+.rol-nombre-btn.save {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.rol-nombre-btn.save:hover {
+  background: #16a34a;
+  color: white;
+}
+
+.rol-nombre-btn.cancel {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.rol-nombre-btn.cancel:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+/* Botón lápiz inline (junto al nombre) */
+.rol-nombre-edit-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.rol-nombre-edit-btn:hover {
+  background: #f1f5f9;
+  color: #667eea;
+}
+
+/* ── Modal overlay ── */
+.cfg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+/* ── Modal card ── */
+.cfg-modal {
+  background: #ffffff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(102,126,234,0.1);
+  overflow: hidden;
+}
+
+/* Header del modal */
+.cfg-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px 24px 20px;
+  background: linear-gradient(135deg, #6C4FBF 0%, #9B59B6 100%);
+  color: white;
+  position: relative;
+}
+
+.cfg-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cfg-title {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.cfg-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.cfg-close {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cfg-close:hover {
+  background: rgba(255,255,255,0.28);
+}
+
+/* Body */
+.cfg-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cfg-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  padding: 24px 0;
+  color: #64748b;
+}
+
+/* Campo */
+.cfg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cfg-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.cfg-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cfg-input {
+  width: 110px;
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+}
+.cfg-input::-webkit-outer-spin-button,
+.cfg-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.cfg-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102,126,234,0.12);
+}
+
+.cfg-input-hint {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.cfg-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Resumen visual */
+.cfg-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(102,126,234,0.07) 0%, rgba(155,89,182,0.07) 100%);
+  border: 1.5px solid rgba(102,126,234,0.18);
+  border-radius: 16px;
+  padding: 16px 24px;
+}
+
+.cfg-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cfg-summary-val {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #6C4FBF;
+  line-height: 1.1;
+}
+
+.cfg-summary-lbl {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cfg-summary-sep {
+  font-size: 1.4rem;
+  color: #cbd5e1;
+  font-weight: 300;
+}
+
+/* Error */
+.cfg-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* Footer */
+.cfg-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 24px 24px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.cfg-btn-cancel {
+  padding: 10px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cfg-btn-cancel:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.cfg-btn-save {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 12px;
+  background:  #6C4FBF;
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 4px 14px rgba(102,126,234,0.35);
+}
+
+.cfg-btn-save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(102,126,234,0.45);
+}
+
+.cfg-btn-save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cfg-btn-save.success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 4px 14px rgba(16,185,129,0.35);
+}
+
+/* Spinners */
+.cfg-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.cfg-spinner-sm {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive modal ── */
+@media (max-width: 520px) {
+  .cfg-modal {
+    border-radius: 18px;
+  }
+  .cfg-header {
+    padding: 20px 18px 16px;
+  }
+  .cfg-body {
+    padding: 18px;
+  }
+  .cfg-footer {
+    padding: 12px 18px 18px;
+  }
+}
+
+/*FIN INTENTOS FALLIDOS*/
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

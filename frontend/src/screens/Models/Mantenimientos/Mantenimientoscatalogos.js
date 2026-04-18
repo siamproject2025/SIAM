@@ -296,18 +296,19 @@ const MantenimientosCatalogos = () => {
   }, []);
 
   // ── Carga datos ──────────────────────────────────────────
-  const cargar = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res  = await fetch(`${API}/${moduloActivo.key}/${tipoActivo.key}`);
-      const data = await res.json();
-      if (data.ok) setItems(data.data);
-    } catch {
-      toast("Error al cargar los datos", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [moduloActivo.key, tipoActivo.key, toast]);
+const cargar = useCallback(async () => {
+  setLoading(true);
+  try {
+    // ?activo=all para ver activos + inactivos en el mantenimiento
+    const res  = await fetch(`${API}/${moduloActivo.key}/${tipoActivo.key}?activo=all`);
+    const data = await res.json();
+    if (data.ok) setItems(data.data);
+  } catch {
+    toast("Error al cargar los datos", "error");
+  } finally {
+    setLoading(false);
+  }
+}, [moduloActivo.key, tipoActivo.key, toast]);
 
   useEffect(() => { cargar(); }, [cargar]);
 

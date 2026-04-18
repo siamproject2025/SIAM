@@ -49,10 +49,9 @@ const getColorPorDefecto = (nombre) => {
 };
 const isoFecha = (d) => {
   if (!d) return '';
-  // Ajustar a GMT-6 Honduras
-  const fechaLocal = new Date(d);
-  fechaLocal.setHours(fechaLocal.getHours() - 6);
-  return fechaLocal.toISOString().split('T')[0];
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Tegucigalpa'
+  }).format(new Date(d)); // devuelve "YYYY-MM-DD" directamente
 };
 // Devuelve el lunes de la semana que contiene la fecha
 const getLunesDeSemana = (date) => {
@@ -451,9 +450,16 @@ const CalendarioActividades = forwardRef((props, ref) => {
 
                   {/* Línea de hora actual */}
                   {esHoy && (() => {
-                    const now = new Date();
-                    const top = (now.getHours() + now.getMinutes()/60) * PX_POR_HORA;
-                    return (
+                    // ✅ FIX — extraer hora en zona Honduras
+                      const now = new Date();
+                      const horaHN = new Intl.DateTimeFormat('en-US', {
+                        timeZone: 'America/Tegucigalpa',
+                        hour: 'numeric', minute: 'numeric', hour12: false
+                      }).formatToParts(now);
+                      const hh = parseInt(horaHN.find(p => p.type === 'hour').value);
+                      const mm = parseInt(horaHN.find(p => p.type === 'minute').value);
+                      const top = (hh + mm / 60) * PX_POR_HORA;
+                                          return (
                       <div style={{ position:'absolute', left:0, right:0, top,
                         height:2, background:'#EF4444', zIndex:5, pointerEvents:'none' }}>
                         <div style={{ position:'absolute', left:-4, top:-4, width:8, height:8,
@@ -590,8 +596,15 @@ const CalendarioActividades = forwardRef((props, ref) => {
 
               {/* Línea de hora actual */}
               {esHoy && (() => {
+                // ✅ FIX — extraer hora en zona Honduras
                 const now = new Date();
-                const top = (now.getHours() + now.getMinutes()/60) * PX_POR_HORA;
+                const horaHN = new Intl.DateTimeFormat('en-US', {
+                  timeZone: 'America/Tegucigalpa',
+                  hour: 'numeric', minute: 'numeric', hour12: false
+                }).formatToParts(now);
+                const hh = parseInt(horaHN.find(p => p.type === 'hour').value);
+                const mm = parseInt(horaHN.find(p => p.type === 'minute').value);
+                const top = (hh + mm / 60) * PX_POR_HORA;
                 return (
                   <div style={{ position:'absolute', left:0, right:0, top,
                     height:2, background:'#EF4444', zIndex:5, pointerEvents:'none' }}>

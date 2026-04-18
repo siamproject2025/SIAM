@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Auth = require("../Models/usuario_modelo");
-const Usuario = require("../Models/usuario_modelo"); // ← faltaba este import
+const Usuario = require("../Models/usuario_modelo");
 const usuarioController = require('../Controllers/usuario_controller');
 const { checkRole, checkAccess } = require('../middleware/checkRole');
 const { checkPermission } = require('../middleware/checkPermission');
@@ -14,42 +14,52 @@ const { authenticateUser, authenticateIfPresent } = require('../middleware/authM
 //  SOLICITUDES
 // ══════════════════════════════════════════
 
-// Crear solicitud (público, sin token)
 router.post('/solicitudes', solicitudController.crearSolicitud);
 
-// Listar solicitudes — admin
 router.get('/solicitudes',
   authenticateUser,
   checkPermission('VISUALIZAR_SEGURIDAD'),
   solicitudController.listarSolicitudes
 );
 
-// Aprobar o denegar solicitud — admin
 router.patch('/solicitudes/:id/resolver',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
-  
   solicitudController.resolverSolicitud
+);
+
+// ══════════════════════════════════════════
+//  CONFIGURACIÓN DE BLOQUEO (parametrizable)
+// ══════════════════════════════════════════
+
+router.get('/config/bloqueo',
+  authenticateUser,
+  checkPermission('VISUALIZAR_SEGURIDAD'),
+  usuarioController.obtenerConfigBloqueo
+);
+
+router.put('/config/bloqueo',
+  authenticateUser,
+  checkPermission('ACTUALIZAR_SEGURIDAD'),
+  registrarAuditoria('SISTEMA', 'ACTUALIZAR_CONFIG'),
+  usuarioController.actualizarConfigBloqueo
 );
 
 // ══════════════════════════════════════════
 //  USUARIOS — rutas fijas ANTES de las con :id
 // ══════════════════════════════════════════
 
-// Crear usuario (público)
 router.post('/usuarios', usuarioController.crearUsuario);
 router.post("/usuarios/login", authenticateIfPresent, registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.loginUsuario);
 router.post("/usuarios/login/exito", authenticateIfPresent, registrarAuditoria('USUARIOS', 'LOGIN'), usuarioController.reiniciarIntentos);
-
-// Login y variantes — DEBEN ir antes de /usuarios/:id
 router.post("/usuarios/login/fallo", usuarioController.registrarIntentoFallido);
-// Verificar acceso Google (público, se llama antes de navegar)
-router.post('/usuarios/google-acceso', 
+
+router.post('/usuarios/google-acceso',
   authenticateIfPresent,
   registrarAuditoria('USUARIOS', 'LOGIN'),
   usuarioController.loginOCrearSolicitudGoogle
 );
-// Logout
+
 router.post('/usuarios/logout',
   authenticateUser,
   registrarAuditoria('USUARIOS', 'LOGOUT'),
@@ -64,6 +74,7 @@ router.post('/usuarios/logout',
     }
   }
 );
+
 router.patch('/solicitudes/:id/reabrir',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
@@ -71,10 +82,9 @@ router.patch('/solicitudes/:id/reabrir',
   registrarAuditoria('SOLICITUDES'),
   solicitudController.reabrirSolicitud
 );
-// Perfil del usuario actual — ANTES de /usuarios/:id
+
 router.get('/usuarios/mi-perfil', authenticateUser, async (req, res) => {
   try {
-    // ✅ req.user ya ES el usuario de MongoDB, no necesitas buscarlo
     const usuario = req.user;
     if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado.' });
     res.json({
@@ -86,10 +96,9 @@ router.get('/usuarios/mi-perfil', authenticateUser, async (req, res) => {
     res.status(500).json({ message: 'Error.' });
   }
 });
-// Marcar password cambiado — ANTES de /usuarios/:id
+
 router.patch('/usuarios/password-cambiado', authenticateUser, async (req, res) => {
   try {
-    // ✅ usar req.user._id en lugar de buscar por authId
     await Usuario.findByIdAndUpdate(
       req.user._id,
       { debe_cambiar_password: false }
@@ -100,12 +109,10 @@ router.patch('/usuarios/password-cambiado', authenticateUser, async (req, res) =
   }
 });
 
-// Obtener rol del usuario actual — ANTES de /usuarios/:id
 router.get("/usuarios/role", authenticateUser, (req, res) => {
   res.json({ role: req.user.roles[0] });
 });
 
-// Reportes — ANTES de /usuarios/:id
 router.get('/usuarios/reportes',
   authenticateUser,
   checkAccess({
@@ -118,7 +125,6 @@ router.get('/usuarios/reportes',
   }
 );
 
-// Listar todos los usuarios
 router.get('/usuarios',
   authenticateUser,
   checkPermission('VISUALIZAR_SEGURIDAD'),
@@ -129,7 +135,6 @@ router.get('/usuarios',
 //  USUARIOS — rutas con :id AL FINAL
 // ══════════════════════════════════════════
 
-// Asignar rol
 router.put('/usuarios/:id/rol',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
@@ -138,25 +143,31 @@ router.put('/usuarios/:id/rol',
   usuarioController.asignarRol
 );
 
-// Bloquear usuario
+// ── Actualizar username ──
+router.patch('/usuarios/:id/username',
+  authenticateUser,
+  checkPermission('ACTUALIZAR_USUARIOS'),
+  capturarDatosPrevios('USUARIOS'),
+  registrarAuditoria('USUARIOS'),
+  usuarioController.actualizarUsername
+);
+
 router.patch('/usuarios/:id/bloquear',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
-  capturarDatosPrevios('USUARIOS'), // ✅ agrega esto
+  capturarDatosPrevios('USUARIOS'),
   registrarAuditoria('USUARIOS'),
   solicitudController.bloquearUsuario
 );
 
-// Desbloquear usuario
 router.patch('/usuarios/:id/desbloquear',
   authenticateUser,
   checkPermission('ACTUALIZAR_SEGURIDAD'),
-  capturarDatosPrevios('USUARIOS'), // ✅ agrega esto
+  capturarDatosPrevios('USUARIOS'),
   registrarAuditoria('USUARIOS'),
   solicitudController.desbloquearUsuario
 );
 
-// Eliminar usuario
 router.delete('/usuarios/:id',
   authenticateUser,
   checkPermission('ELIMINAR_SEGURIDAD'),
@@ -172,4 +183,5 @@ router.patch('/usuarios/:id/asignacion',
   registrarAuditoria('USUARIOS'),
   usuarioController.actualizarAsignacion
 );
+
 module.exports = router;

@@ -72,8 +72,21 @@ exports.getByModulo = async (req, res) => {
 exports.getByModuloTipo = async (req, res) => {
   try {
     const { modulo, tipo } = req.params;
+
+    // Si viene ?activo=all  → sin filtro de estado
+    // Si viene ?activo=false → solo inactivos
+    // Por defecto (omitido)  → solo activos
+    const filtro = { modulo: modulo.toLowerCase(), tipo: tipo.toLowerCase() };
+
+    if (req.query.activo === undefined || req.query.activo === "true") {
+      filtro.activo = true;
+    } else if (req.query.activo === "false") {
+      filtro.activo = false;
+    }
+    // "all" → no se agrega filtro de activo
+
     const catalogos = await Catalogo
-      .find({ modulo: modulo.toLowerCase(), tipo: tipo.toLowerCase(), activo: true })
+      .find(filtro)
       .sort({ orden: 1, valor: 1 });
 
     ok(res, { data: catalogos, modulo, tipo });
