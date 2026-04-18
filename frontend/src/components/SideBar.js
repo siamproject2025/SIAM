@@ -160,7 +160,7 @@ const SideBar = () => {
           return; 
         }
         
-        const token = await user.getIdToken(true); 
+        const token = await user.getIdToken(); 
         
         let roles = [];
         try {

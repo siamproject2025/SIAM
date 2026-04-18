@@ -156,7 +156,7 @@ const Actividades = () => {
     try {
       const user = auth.currentUser;
       if (!user) return;
-        const token = await user.getIdToken(true); //  Obtener token
+        const token = await user.getIdToken(); //  Obtener token
         const res   = await fetch(API_URL, { headers: { 'Authorization': `Bearer ${token}` } });
       if (!res.ok) throw new Error('Error al obtener actividades');
       setActividades(await res.json());
@@ -223,7 +223,7 @@ const Actividades = () => {
 
 const handleCrearActividad = async (nueva) => {
   try {
-    const token = await auth.currentUser.getIdToken(true);
+    const token = await auth.currentUser.getIdToken();
     const res   = await fetch(API_URL, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -259,7 +259,7 @@ const handleCrearActividad = async (nueva) => {
     }*/
 
     try {
-      const token = await auth.currentUser.getIdToken(true);
+      const token = await auth.currentUser.getIdToken();
       const res   = await fetch(`${API_URL}/${id}`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -292,7 +292,7 @@ const handleCrearActividad = async (nueva) => {
     setShowConfirm(false);
     if (!actividadAEliminar) return;
     try {
-      const token = await auth.currentUser.getIdToken(true);
+      const token = await auth.currentUser.getIdToken();
       const res   = await fetch(`${API_URL}/${actividadAEliminar._id}`, {
         method:  'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

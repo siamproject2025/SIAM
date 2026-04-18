@@ -24,7 +24,7 @@ const WithPermissionNoRender = ({ requiredPermissions, children }) => {
           return;
         }
 
-        const token = await user.getIdToken(true);
+        const token = await user.getIdToken();
 
         const response = await fetch(
           `${process.env.REACT_APP_API_URL}/api/mis-permisos`,

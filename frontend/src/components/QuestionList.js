@@ -29,7 +29,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         }
 
         //  Obtener token JWT del usuario
-        const token = await user.getIdToken(true); //  Obtener token
+        const token = await user.getIdToken(); //  Obtener token
         //  Hacer la solicitud GET enviando el token en el header Authorization
         const res = await axios.get(`${API_URL}/questions`, {
             headers: {
@@ -63,7 +63,7 @@ const QuestionList = ({ canAnswer, canAsk }) => {
         //  Obtener token JWT del usuario autenticado
         const user = auth.currentUser;
         if (!user) throw new Error("Usuario no autenticado");
-        const token = await user.getIdToken(true); //  Obtener token
+        const token = await user.getIdToken(); //  Obtener token
         await axios.post(`${API_URL}/questions`, newQuestion, {
             headers: {
                 Authorization: `Bearer ${token}`,

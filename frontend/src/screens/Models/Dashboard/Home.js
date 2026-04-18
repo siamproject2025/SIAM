@@ -108,7 +108,7 @@ export default function Home() {
       try {
         const user = auth.currentUser;
         if (!user) return;
-        const token = await user.getIdToken(true);
+        const token = await user.getIdToken();
         const h = { Authorization: `Bearer ${token}` };
 
         const rs = await Promise.allSettled([

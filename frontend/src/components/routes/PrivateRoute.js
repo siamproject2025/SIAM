@@ -77,7 +77,7 @@ const PrivateRoute = ({ allowedRoles = [], requiredPermissions = [], mode = "OR"
           return;
         }
 
-       const token = await user.getIdToken(true);
+       const token = await user.getIdToken();
 
         // 1. Obtener rol
         const roleResponse = await fetch(`${API_URL}/api/usuarios/role`, {

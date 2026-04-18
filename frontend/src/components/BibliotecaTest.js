@@ -654,7 +654,7 @@ export default function BibliotecaTest() {
       loadingController.start();
       const user = auth.currentUser;
       if (!user) throw new Error("No autenticado");
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       const res = await axios.get(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       setLibros(res.data);
     } catch (err) {
@@ -673,7 +673,7 @@ export default function BibliotecaTest() {
   const handleSave = async (form) => {
     const user = auth.currentUser;
     if (!user) throw new Error("No autenticado");
-    const token = await user.getIdToken(true);
+    const token = await user.getIdToken();
     const fd = new FormData();
 
     ["titulo", "autor", "autor_corporativo", "anio_publicacion", "ciudad",
@@ -704,7 +704,7 @@ export default function BibliotecaTest() {
     if (!libroAEliminar) return;
     try {
       loadingController.start();
-      const token = await auth.currentUser.getIdToken(true);
+      const token = await auth.currentUser.getIdToken();
       await axios.delete(`${API_URL}/${libroAEliminar._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });

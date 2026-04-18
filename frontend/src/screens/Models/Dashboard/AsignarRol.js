@@ -40,7 +40,7 @@ const AsignarRol = () => {
   const obtenerDatos = async () => {
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       
       const [usuariosRes, rolesRes] = await Promise.all([
         axios.get(`${API_URL}/api/usuarios`, {
@@ -67,7 +67,7 @@ const AsignarRol = () => {
   const asignarRol = async (id, nuevoRol) => {
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       await axios.put(
         `${API_URL}/api/usuarios/${id}/rol`,
         { roles: [nuevoRol] },
@@ -116,7 +116,7 @@ const AsignarRol = () => {
 
     try {
       const user = auth.currentUser;
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       await axios.delete(`${API_URL}/api/usuarios/${usuarioAEliminar._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -199,7 +199,7 @@ const AsignarRol = () => {
   const bloquearUsuario = async (usuario) => {
      try {
        const user = auth.currentUser;
-       const token = await user.getIdToken(true);
+       const token = await user.getIdToken();
        await axios.patch(`${API_URL}/api/usuarios/${usuario._id}/bloquear`, {},
          { headers: { Authorization: `Bearer ${token}` } });
        setMensaje(<span>✓ Usuario <strong>{usuario.username}</strong> bloqueado</span>);
@@ -214,7 +214,7 @@ const AsignarRol = () => {
    const desbloquearUsuario = async (usuario) => {
      try {
        const user = auth.currentUser;
-       const token = await user.getIdToken(true);
+       const token = await user.getIdToken();
        await axios.patch(`${API_URL}/api/usuarios/${usuario._id}/desbloquear`, {},
          { headers: { Authorization: `Bearer ${token}` } });
        setMensaje(<span>✓ Usuario <strong>{usuario.username}</strong> desbloqueado</span>);

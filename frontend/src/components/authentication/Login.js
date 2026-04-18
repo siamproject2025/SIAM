@@ -45,7 +45,7 @@ const Login = () => {
       const user   = result.user;
       if (!user) return;
 
-const token = await user.getIdToken(true);
+const token = await user.getIdToken();
       // Verificar si está aprobado o crear solicitud automática
       const res = await axios.post(
         `${API_URL}/api/usuarios/google-acceso`,
@@ -108,7 +108,7 @@ const token = await user.getIdToken(true);
     }
 
     // ✅ Obtén el token y envíalo
-    const token = await user.getIdToken(true);
+    const token = await user.getIdToken();
     await axios.post(
       `${API_URL}/api/usuarios/login/exito`,
       { email },

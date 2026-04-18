@@ -143,7 +143,7 @@ const ModalAsignacion = ({ solicitud, onConfirmar, onCancelar, procesando }) => 
 
   const obtenerToken = async () => {
     const { auth } = await import("../authentication/Auth");
-    return auth.currentUser?.getIdToken(true);
+    return auth.currentUser?.getIdToken();
   };
 
   // ── Cargar roles y grados ─────────────────────────────────────────────────
@@ -353,7 +353,7 @@ const SolicitudesPanel = () => {
 
   const obtenerToken = async () => {
     const { auth } = await import("../authentication/Auth");
-    return auth.currentUser?.getIdToken(true);
+    return auth.currentUser?.getIdToken();
   };
 
   const toast = (icon, text) =>

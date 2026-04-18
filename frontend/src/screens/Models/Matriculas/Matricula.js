@@ -1,12 +1,6 @@
-// ============================================================
-// App.jsx — Módulo de Matrícula
-// FIX #6 ALTO    — Columna 'Año Actual' separada de 'Años Cursados'
-// FIX #7 CRÍTICO — Año en curso desde parámetros del sistema
-//                  (no el máximo de los datos — evita mostrar 2027)
-// ============================================================
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, UserCheck, UserPlus, Calendar, Settings } from 'lucide-react';
+import { Users, UserCheck, UserPlus, Calendar, Settings, Bus, User, Phone } from 'lucide-react';
 import '../../../styles/Matriculas.css';
 import StudentForm from '../../../components/StudentForm';
 import Modal from '../../../components/Modal';
@@ -21,24 +15,20 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
+
 const API_URL    = process.env.REACT_APP_API_URL + '/api/matriculas';
 const API_GRADOS = process.env.REACT_APP_API_URL + '/api/grados';
 
-// FIX #7 CRÍTICO: año en curso desde Parámetros del Sistema (localStorage)
-// No se calcula desde los datos — evita que una prematrícula de 2027
-// aparezca como "Año en Curso".
 const PARAMS_KEY = 'siam_parametros';
 const getAnioActual = () => {
     try {
         const stored = localStorage.getItem(PARAMS_KEY);
         if (stored) {
             const p = JSON.parse(stored);
-            if (p.anio_en_curso && !isNaN(parseInt(p.anio_en_curso))) {
-                return parseInt(p.anio_en_curso);
-            }
+            if (p.anio_en_curso && !isNaN(parseInt(p.anio_en_curso))) return parseInt(p.anio_en_curso);
         }
     } catch {}
-    return new Date().getFullYear(); // fallback al año real del sistema
+    return new Date().getFullYear();
 };
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -48,37 +38,24 @@ const YEARS_OPT    = [CURRENT_YEAR + 1, CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_
 const getToken = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error('No estás autenticado.');
-    return user.getIdToken(true);
+    return user.getIdToken();
 };
 
 const buildFormData = (obj) => {
     const fd = new FormData();
     const { _archivosDocumentos, ...rest } = obj;
-
     Object.entries(rest).forEach(([k, v]) => {
         if (v === null || v === undefined) return;
-        if (v instanceof File) {
-            // Imagen de perfil u otro archivo único
-            fd.append(k, v);
-        } else if (Array.isArray(v)) {
-            // Arrays que no son archivos (ya deben venir como JSON string desde el form)
-            fd.append(k, JSON.stringify(v));
-        } else {
-            fd.append(k, v);
-        }
+        if (v instanceof File) fd.append(k, v);
+        else if (Array.isArray(v)) fd.append(k, JSON.stringify(v));
+        else fd.append(k, v);
     });
-
-    // Archivos reales de documentos → campo 'documentos' múltiple
     if (Array.isArray(_archivosDocumentos)) {
-        _archivosDocumentos.forEach((file) => {
-            if (file instanceof File) fd.append('documentos', file);
-        });
+        _archivosDocumentos.forEach((file) => { if (file instanceof File) fd.append('documentos', file); });
     }
-
     return fd;
 };
 
-// ── Íconos ───────────────────────────────────────────────────
 const IcoEdit   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
 const IcoTrash  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/></svg>;
 const IcoEye    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
@@ -166,19 +143,21 @@ const CSS = `
   .mm-hist-row{display:flex;align-items:center;gap:10px;background:#FAF9FF;border-radius:10px;padding:10px 14px;border:1px solid #E0D9F5;margin-bottom:6px;flex-wrap:wrap;}
   .mm-hist-meta{margin-left:auto;font-size:.76rem;color:#7A6FA0;}
   .mm-audit{background:#FAF9FF;border-radius:10px;padding:10px 14px;margin-top:10px;font-size:.82rem;color:#7A6FA0;border-left:3px solid #C4B5E8;}
-  /* FIX #7: badge de año en curso claramente diferenciado */
-  .mm-anio-actual-badge { background:#27AE60; color:#fff; border-radius:6px; padding:3px 10px; font-size:.76rem; font-weight:800; display:inline-flex; align-items:center; gap:4px; }
-  .mm-anio-hist-badge   { background:#6C4FBF; color:#fff; border-radius:6px; padding:2px 8px; font-size:.72rem; font-weight:700; display:inline-block; cursor:pointer; }
+  .mm-anio-actual-badge{background:#27AE60;color:#fff;border-radius:6px;padding:3px 10px;font-size:.76rem;font-weight:800;display:inline-flex;align-items:center;gap:4px;}
+  .mm-anio-hist-badge{background:#6C4FBF;color:#fff;border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:700;display:inline-block;cursor:pointer;}
+  /* Snapshot panel */
+  .mm-snapshot-panel{background:#F0F7FF;border:1px solid #BFD7F0;border-radius:10px;padding:12px 14px;margin-top:12px;}
+  .mm-snapshot-title{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#1a6ea8;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+  .mm-snapshot-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+  .mm-snapshot-item{background:#fff;border-radius:8px;padding:8px 12px;border:1px solid #BFD7F0;}
+  .mm-snapshot-lbl{font-size:.68rem;font-weight:700;color:#5a8ab0;text-transform:uppercase;margin-bottom:2px;}
+  .mm-snapshot-val{font-size:.84rem;font-weight:600;color:#2D2250;}
   @media(max-width:700px){.mm-header{padding:18px 14px 22px;}.mm-body{padding:14px;}.mm-tabs{padding:0 8px;}.mm-stats{gap:8px;}}
 `;
 
-// ============================================================
 function App() {
     const navigate = useNavigate();
-
-    // FIX #7: año en curso desde parámetros, no desde los datos
     const [anioEnCurso, setAnioEnCurso] = useState(() => getAnioActual());
-
     const [activeTab, setActiveTab]               = useState('alumnos');
     const [students, setStudents]                 = useState([]);
     const [selectedStudents, setSelectedStudents] = useState([]);
@@ -203,14 +182,14 @@ function App() {
     const [page, setPage]                 = useState(1);
 
     const fetchGrados = async () => {
-        try {
-            const token = await getToken();
-            const res = await axios.get(API_GRADOS, { headers: { Authorization: `Bearer ${token}` } });
-            setGrados(res.data.items.map(i => ({ _id: i._id, nombre: i.grado })));
-        } catch {
-            setGrados([{_id:'1',nombre:'Primer Grado'},{_id:'2',nombre:'Segundo Grado'},{_id:'3',nombre:'Tercer Grado'},{_id:'4',nombre:'Cuarto Grado'},{_id:'5',nombre:'Quinto Grado'},{_id:'6',nombre:'Sexto Grado'}]);
-        }
-    };
+    try {
+        const token = await getToken();
+        const res = await axios.get(`${API_GRADOS}?limit=100`, { headers: { Authorization: `Bearer ${token}` } });
+        setGrados(res.data.items.map(i => ({ _id: i._id, nombre: i.grado })));
+    } catch {
+        setGrados([{_id:'1',nombre:'Primer Grado'},{_id:'2',nombre:'Segundo Grado'},{_id:'3',nombre:'Tercer Grado'},{_id:'4',nombre:'Cuarto Grado'},{_id:'5',nombre:'Quinto Grado'},{_id:'6',nombre:'Sexto Grado'}]);
+    }
+};
 
     const getNombreGrado = (id) => grados.find(x => x._id === id)?.nombre || id || 'N/A';
 
@@ -231,14 +210,12 @@ function App() {
 
     useEffect(() => { fetchStudents(); fetchGrados(); }, []);
 
-    // FIX #7: escuchar cambios en los parámetros del sistema
     useEffect(() => {
         const handler = (e) => { if (e.key === PARAMS_KEY) setAnioEnCurso(getAnioActual()); };
         window.addEventListener('storage', handler);
         return () => window.removeEventListener('storage', handler);
     }, []);
 
-    // Stats — FIX #7: usa anioEnCurso, no el máximo de los datos
     const totalEstudiantes   = students.length;
     const estudiantesActivos = students.filter(s => (s.estado||'activo') === 'activo').length;
     const estudiantesNuevos  = students.filter(s => {
@@ -246,7 +223,6 @@ function App() {
         return f > new Date(Date.now() - 30*24*60*60*1000);
     }).length;
 
-    // FIX #7: no calcular desde los datos — usar el parámetro configurado
     const uniqueAnios = [...new Set(
         students.flatMap(s => {
             const delHist = (s.historial_matriculas||[]).map(m => m.anio_matricula);
@@ -313,6 +289,7 @@ function App() {
             const token = await getToken();
             const res = await fetch(`${API_URL}/${alumno._id}/historial/${entrada._id}`, {
                 method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' },
+                // Solo enviamos estado y notas — el backend protege el snapshot
                 body: JSON.stringify({ estado_matricula: matData.estado_matricula, notas: matData.notas }),
             });
             const result = await res.json();
@@ -385,7 +362,8 @@ function App() {
     const pageItems  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
 
     const handleDeleteClick = (s) => {
-        Swal.fire({ title:'¿Eliminar?', text:`"${s.nombre_completo}"`, icon:'warning', showCancelButton:true, confirmButtonColor:'#E74C3C', cancelButtonColor:'#6C4FBF', confirmButtonText:'Sí', cancelButtonText:'Cancelar' }).then(r => { if (r.isConfirmed) deleteStudent(s); });
+        Swal.fire({ title:'¿Eliminar?', text:`"${s.nombre_completo}"`, icon:'warning', showCancelButton:true, confirmButtonColor:'#E74C3C', cancelButtonColor:'#6C4FBF', confirmButtonText:'Sí', cancelButtonText:'Cancelar' })
+            .then(r => { if (r.isConfirmed) deleteStudent(s); });
     };
 
     const handleTabChange = (t) => { setActiveTab(t); setSearch(''); setPage(1); setFilterEstado(''); setFilterGrado(''); setFilterAnio(''); };
@@ -402,13 +380,14 @@ function App() {
         doc.text(`Total: ${filtered.length}  |  Año en curso: ${anioEnCurso}  |  ${new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})}`,14,40);
         autoTable(doc,{
             startY:46,
-            head:[['Nombre','Documento','Edad','Grado','Año Actual','Años Cursados','Encargado','Estado']],
+            head:[['Nombre','Documento','Edad','Grado','Año Actual','Años Cursados','Encargado','Estado','Transporte']],
             body: filtered.map(s=>[
                 s.nombre_completo||'N/A', s.id_documento||'N/A', s.edad||'N/A',
                 getNombreGrado(s.grado_a_matricular),
                 s.anio_matricula||'N/A',
                 (s.historial_matriculas||[]).map(m=>m.anio_matricula).sort((a,b)=>a-b).join(', ')||'N/A',
                 s.nombre_encargado||'N/A', s.estado||'activo',
+                s.usa_transporte ? `Sí — ${s.transporte_ruta||''}` : 'No',
             ]),
             theme:'striped', styles:{fontSize:7,cellPadding:1.5},
             headStyles:{fillColor:[108,79,191],textColor:255,fontStyle:'bold',fontSize:8},
@@ -426,9 +405,12 @@ function App() {
             'Año Actual':s.anio_matricula||'N/A',
             'Años Cursados':(s.historial_matriculas||[]).map(m=>m.anio_matricula).sort((a,b)=>a-b).join(', ')||'N/A',
             'Estado':s.estado||'activo','Encargado':s.nombre_encargado||'N/A','Tel. Encargado':s.telefono_encargado||'N/A',
+            'Usa Transporte':s.usa_transporte?'Sí':'No',
+            'Ruta Transporte':s.transporte_ruta||'N/A',
+            'Conductor':s.transporte_conductor_nombre||'N/A',
         }));
         const ws = XLSX.utils.json_to_sheet(data);
-        ws['!cols'] = Array(10).fill({wch:22});
+        ws['!cols'] = Array(12).fill({wch:22});
         XLSX.utils.book_append_sheet(wb,ws,'Estudiantes');
         XLSX.writeFile(wb,`estudiantes_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
@@ -437,7 +419,6 @@ function App() {
         <div className="mm-wrap">
             <style>{CSS}</style>
 
-            {/* HEADER */}
             <motion.div className="mm-header" initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} transition={{duration:.5,type:'spring',stiffness:120}}>
                 <div className="mm-hi">
                     <div className="mm-ht">
@@ -448,14 +429,13 @@ function App() {
                             Gestión de Estudiantes
                         </motion.div>
                         <div style={{display:'flex',gap:8}}>
-                            {/* FIX #7: badge del año en curso claramente visible */}
                             <div style={{display:'flex',alignItems:'center',gap:6,background:'rgba(255,255,255,.2)',borderRadius:8,padding:'6px 12px',fontSize:'.82rem',fontWeight:700,color:'#fff'}}>
                                 <Calendar size={14}/> Año en curso: <strong>{anioEnCurso}</strong>
                             </div>
-                            <motion.button className="mm-btn-grados" onClick={()=>navigate('/grados')} initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.25}} whileHover={{scale:1.04}} whileTap={{scale:.96}}>
+                            <motion.button className="mm-btn-grados" onClick={()=>navigate('/grados')} whileHover={{scale:1.04}} whileTap={{scale:.96}}>
                                 <IcoBooks/> Grados
                             </motion.button>
-                            <motion.button className="mm-btn-grados" onClick={()=>navigate('/parametros')} initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.3}} whileHover={{scale:1.04}} whileTap={{scale:.96}}>
+                            <motion.button className="mm-btn-grados" onClick={()=>navigate('/parametros')} whileHover={{scale:1.04}} whileTap={{scale:.96}}>
                                 <Settings size={15}/> Parámetros
                             </motion.button>
                         </div>
@@ -468,7 +448,6 @@ function App() {
                             {ico:<Users size={18} color="white"/>,     val:totalEstudiantes,   lbl:'Total Estudiantes'},
                             {ico:<UserCheck size={18} color="white"/>, val:estudiantesActivos, lbl:'Activos'},
                             {ico:<UserPlus size={18} color="white"/>,  val:estudiantesNuevos,  lbl:'Nuevos (30 días)'},
-                            // FIX #7: mostrar el año configurado en parámetros, no el máximo de los datos
                             {ico:<Calendar size={18} color="white"/>,  val:anioEnCurso,        lbl:'Año en Curso'},
                         ].map((s,i)=>(
                             <motion.div key={i} className="mm-stat" whileHover={{scale:1.04,y:-2}} transition={{type:'spring',stiffness:300}}>
@@ -480,7 +459,6 @@ function App() {
                 </div>
             </motion.div>
 
-            {/* TABS */}
             <div className="mm-tabs">
                 <button className={`mm-tab${activeTab==='alumnos'?' active':''}`} onClick={()=>handleTabChange('alumnos')}><Users size={15}/> Alumnos</button>
                 <button className={`mm-tab${activeTab==='historial'?' active':''}`} onClick={()=>handleTabChange('historial')}><Calendar size={15}/> Historial por Año</button>
@@ -495,14 +473,13 @@ function App() {
                 )}
 
                 <AnimatePresence mode="wait">
-                    {/* ══ TAB ALUMNOS ══ */}
                     {activeTab === 'alumnos' && (
                         <motion.div key="alumnos" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} transition={{duration:.2}}>
                             <div className="mm-toolbar">
                                 <div className="mm-sw">
                                     <IcoSearch/>
                                     <input placeholder="Buscar por nombre, documento, encargado..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}/>
-                                    {search&&<button style={{border:'none',background:'white',cursor:'pointer',color:'#000000',fontSize:'1.1rem'}} onClick={()=>{setSearch('');setPage(1);}}>X</button>}
+                                    {search&&<button style={{border:'none',background:'white',cursor:'pointer',color:'#000',fontSize:'1.1rem'}} onClick={()=>{setSearch('');setPage(1);}}>×</button>}
                                 </div>
                                 <select className="mm-fsel" value={filterEstado} onChange={e=>{setFilterEstado(e.target.value);setPage(1);}}>
                                     <option value="">Todos los estados</option><option value="activo">Activo</option><option value="inactivo">Inactivo</option>
@@ -530,8 +507,9 @@ function App() {
                                     <table className="mm-tbl">
                                         <thead>
                                             <tr>
-                                                <th style={{width:40}}><input type="checkbox" checked={pageItems.length>0&&selectedStudents.length===pageItems.length} onChange={()=>{ if(selectedStudents.length===pageItems.length) setSelectedStudents([]); else setSelectedStudents(pageItems.map(s=>s._id)); }}/></th>
-                                                {/* FIX #6: columna 'Año Actual' separada de 'Años Cursados' */}
+                                                <th style={{width:40}}>
+                                                    <input type="checkbox" checked={pageItems.length>0&&selectedStudents.length===pageItems.length} onChange={()=>{ if(selectedStudents.length===pageItems.length) setSelectedStudents([]); else setSelectedStudents(pageItems.map(s=>s._id)); }}/>
+                                                </th>
                                                 {['Nombre Completo','Documento','Grado Actual','Año Actual','Años Cursados','Encargado','Estado','Acciones'].map(h=><th key={h}>{h}</th>)}
                                             </tr>
                                         </thead>
@@ -543,10 +521,13 @@ function App() {
                                                 return (
                                                     <tr key={s._id}>
                                                         <td><input type="checkbox" checked={selectedStudents.includes(s._id)} onChange={()=>setSelectedStudents(prev=>prev.includes(s._id)?prev.filter(id=>id!==s._id):[...prev,s._id])}/></td>
-                                                        <td><div className="mm-np">{s.nombre_completo}</div><div className="mm-ns">{s.edad} años · {s.genero}</div></td>
+                                                        <td>
+                                                            <div className="mm-np">{s.nombre_completo}</div>
+                                                            <div className="mm-ns">{s.edad} años · {s.genero}</div>
+                                                            {s.usa_transporte && <div style={{fontSize:'.72rem',color:'#1a6ea8',marginTop:2,display:'flex',alignItems:'center',gap:3}}><Bus size={11}/> {s.transporte_ruta||'Transporte'}</div>}
+                                                        </td>
                                                         <td>{s.id_documento}</td>
                                                         <td><span className="mm-badge bg-purple">{getNombreGrado(s.grado_a_matricular)}</span></td>
-                                                        {/* FIX #6: año actual en su propia columna — verde si es el año en curso */}
                                                         <td>
                                                             {s.anio_matricula ? (
                                                                 <span className={s.anio_matricula===anioEnCurso?'mm-anio-actual-badge':'mm-ybadge'}>
@@ -554,13 +535,12 @@ function App() {
                                                                 </span>
                                                             ) : <span style={{color:'#aaa',fontSize:'.8rem'}}>—</span>}
                                                         </td>
-                                                        {/* Años cursados del historial (solo anteriores) */}
                                                         <td>
                                                             <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
                                                                 {hist.length > 0 ? hist.map(m=>(
                                                                     <span key={m._id||m.anio_matricula} className="mm-anio-hist-badge"
                                                                         style={{ background: m.estado_matricula==='retirado'?'#E74C3C':m.estado_matricula==='prematricula'?'#F39C12':'#6C4FBF' }}
-                                                                        title={`${getNombreGrado(m.grado_a_matricular||m.grado)} · ${m.estado_matricula||'activa'}`}
+                                                                        title={`${getNombreGrado(m.grado_a_matricular||m.grado)} · ${m.estado_matricula||'activa'} — Clic para ver/editar`}
                                                                         onClick={()=>setEditingHistEntry({alumno:s,entrada:m})}>
                                                                         {m.anio_matricula}
                                                                     </span>
@@ -571,7 +551,7 @@ function App() {
                                                         <td><span className={`mm-badge ${(s.estado||'activo')==='activo'?'bg-green':'bg-red'}`}>{s.estado||'activo'}</span></td>
                                                         <td>
                                                             <div className="mm-ab">
-                                                                <button className="mm-ib ib-view" title="Ver" onClick={()=>{setDetailStudent(s);setShowDetailModal(true);}}><IcoEye/></button>
+                                                                <button className="mm-ib ib-view" title="Ver expediente" onClick={()=>{setDetailStudent(s);setShowDetailModal(true);}}><IcoEye/></button>
                                                                 <WithPermission requiredPermissions={['ACTUALIZAR_MATRICULA']}><button className="mm-ib ib-edit" onClick={()=>{setEditingStudent(s);setShowEditModal(true);}}><IcoEdit/></button></WithPermission>
                                                                 <WithPermission requiredPermissions={['CREAR_MATRICULA']}><button className="mm-ib ib-remat" title="Nuevo año" onClick={()=>{setRematAlumno(s);setShowRematModal(true);}}><IcoPlus/></button></WithPermission>
                                                                 <WithPermission requiredPermissions={['ACTUALIZAR_MATRICULA']}>
@@ -599,12 +579,11 @@ function App() {
                         </motion.div>
                     )}
 
-                    {/* ══ TAB HISTORIAL ══ */}
                     {activeTab === 'historial' && (
                         <motion.div key="historial" initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-10}} transition={{duration:.2}}>
                             <div className="mm-info-box">
-                                📋 Historial completo de años cursados por alumno.
-                                <strong style={{color:'#27AE60'}}> Verde</strong> = año actual ({anioEnCurso}),
+                                📋 Historial completo por alumno. Haz clic en un año para ver la "foto" del alumno en ese período (encargados, transporte, etc.) y editar su estado.
+                                <strong style={{color:'#27AE60'}}> Verde</strong> = año actual,
                                 <strong style={{color:'#6C4FBF'}}> morado</strong> = activa,
                                 <strong style={{color:'#F39C12'}}> naranja</strong> = prematrícula,
                                 <strong style={{color:'#E74C3C'}}> rojo</strong> = retirado.
@@ -631,7 +610,6 @@ function App() {
                                     <table className="mm-tbl">
                                         <thead>
                                             <tr>
-                                                {/* FIX #6: columna año actual separada */}
                                                 {['Alumno','Documento','Año Actual','Historial de Años','Grado Actual','Estado','Ver'].map(h=><th key={h}>{h}</th>)}
                                             </tr>
                                         </thead>
@@ -644,7 +622,6 @@ function App() {
                                                     <tr key={s._id}>
                                                         <td><div className="mm-np">{s.nombre_completo}</div><div className="mm-ns">{s.edad} años · {s.genero}</div></td>
                                                         <td>{s.id_documento}</td>
-                                                        {/* FIX #6: año actual en columna separada */}
                                                         <td>
                                                             {s.anio_matricula ? (
                                                                 <span className={s.anio_matricula===anioEnCurso?'mm-anio-actual-badge':'mm-ybadge'}>
@@ -659,11 +636,12 @@ function App() {
                                                                         <div key={m._id||i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
                                                                             <span className="mm-anio-hist-badge"
                                                                                 style={{ background: m.estado_matricula==='retirado'?'#E74C3C':m.estado_matricula==='prematricula'?'#F39C12':m.estado_matricula==='completada'?'#27AE60':'#6C4FBF', fontSize:'.75rem', padding:'3px 9px' }}
-                                                                                title="Clic para editar" onClick={()=>setEditingHistEntry({alumno:s,entrada:m})}>
+                                                                                title="Clic para ver snapshot / editar estado"
+                                                                                onClick={()=>setEditingHistEntry({alumno:s,entrada:m})}>
                                                                                 {m.anio_matricula}
                                                                             </span>
                                                                             <span style={{fontSize:'.65rem',color:'#7A6FA0',textAlign:'center',maxWidth:60,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                                                                                {getNombreGrado(m.grado_a_matricular||m.grado)?.split(' ').slice(0,2).join(' ')}
+                                                                                {(m.snapshot_grado_nombre || getNombreGrado(m.grado_a_matricular||m.grado))?.split(' ').slice(0,2).join(' ')}
                                                                             </span>
                                                                         </div>
                                                                     ))}
@@ -704,7 +682,17 @@ function App() {
                 {showRematModal&&rematAlumno&&<Modal key="remat" isOpen={showRematModal} onClose={()=>{setShowRematModal(false);setRematAlumno(null);}} title="Registrar Nuevo Año de Matrícula"><RematForm alumno={rematAlumno} grados={grados} onSubmit={crearNuevoAnio} onCancel={()=>{setShowRematModal(false);setRematAlumno(null);}}/></Modal>}
             </AnimatePresence>
             <AnimatePresence>
-                {editingHistEntry&&<Modal key="hist" isOpen={!!editingHistEntry} onClose={()=>setEditingHistEntry(null)} title={`Editar Matrícula ${editingHistEntry.entrada.anio_matricula}`}><HistEntradaForm entrada={editingHistEntry.entrada} alumno={editingHistEntry.alumno} getNombreGrado={getNombreGrado} onSubmit={editarEntradaHistorial} onCancel={()=>setEditingHistEntry(null)}/></Modal>}
+                {editingHistEntry&&(
+                    <Modal key="hist" isOpen={!!editingHistEntry} onClose={()=>setEditingHistEntry(null)} title={`Historial ${editingHistEntry.entrada.anio_matricula} — ${editingHistEntry.alumno.nombre_completo}`}>
+                        <HistEntradaForm
+                            entrada={editingHistEntry.entrada}
+                            alumno={editingHistEntry.alumno}
+                            getNombreGrado={getNombreGrado}
+                            onSubmit={editarEntradaHistorial}
+                            onCancel={()=>setEditingHistEntry(null)}
+                        />
+                    </Modal>
+                )}
             </AnimatePresence>
 
             {notification&&<Notification message={notification.message} type={notification.type} onClose={()=>setNotification(null)} duration={4000}/>}
@@ -712,14 +700,14 @@ function App() {
     );
 }
 
-// ── Sub-componentes (sin cambios funcionales) ────────────────
+// ── RematForm ────────────────────────────────────────────────
 function RematForm({ alumno, grados, onSubmit, onCancel }) {
     const hist = [...(alumno.historial_matriculas||[])].sort((a,b)=>a.anio_matricula-b.anio_matricula);
     const [fd, setFd] = useState({ grado_a_matricular: alumno.grado_a_matricular||'', anio_matricula: CURRENT_YEAR+1, estado_matricula:'activa', notas:'' });
     const [errs, setErrs] = useState({});
     const handle = (e) => { const{name,value}=e.target; setFd(p=>({...p,[name]:name==='anio_matricula'?parseInt(value):value})); if(errs[name]) setErrs(p=>{const n={...p};delete n[name];return n;}); };
     const validate = () => { const e={}; if(!fd.grado_a_matricular) e.grado_a_matricular='Seleccione un grado'; if(!fd.anio_matricula) e.anio_matricula='Seleccione el año'; setErrs(e); return !Object.keys(e).length; };
-    const fStyle = (err) => ({ padding:'10px 13px', border:`2px solid ${err?'#E74C3C':'#E0D9F5'}`, borderRadius:9, fontFamily:'inherit', fontSize:'.9rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%' });
+    const fStyle = (err) => ({ padding:'10px 13px', border:`2px solid ${err?'#E74C3C':'#E0D9F5'}`, borderRadius:9, fontFamily:'inherit', fontSize:'.9rem', color:'#2D2250', background: err ? '#FFF8F8' : '#FAF9FF', outline:'none', width:'100%' });
     return (
         <form onSubmit={e=>{e.preventDefault();if(validate())onSubmit(fd);}}>
             <div className="mm-remat-card">
@@ -730,7 +718,7 @@ function RematForm({ alumno, grados, onSubmit, onCancel }) {
                 </div>
                 {hist.length>0&&<div style={{marginTop:12}}><div style={{fontSize:'.73rem',fontWeight:700,color:'#7A6FA0',textTransform:'uppercase',marginBottom:6}}>Años registrados:</div><div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{hist.map(m=><span key={m._id||m.anio_matricula} className="mm-ybadge" style={{background:'#27AE60'}}>{m.anio_matricula}</span>)}</div></div>}
             </div>
-            <div className="mm-info-box">ℹ Se agregará al historial. Los años anteriores quedan intactos.</div>
+            <div className="mm-info-box">ℹ Al registrar un nuevo año se guardará automáticamente una "foto" del estado actual del alumno (encargados, transporte, dirección) en ese año. Los años anteriores quedan intactos.</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14,marginBottom:16}}>
                 <div style={{display:'flex',flexDirection:'column',gap:5}}>
                     <label style={{fontSize:'.77rem',fontWeight:700,color:'#7A6FA0',textTransform:'uppercase',letterSpacing:'.04em'}}>Año <span style={{color:'#E74C3C'}}>*</span></label>
@@ -753,37 +741,333 @@ function RematForm({ alumno, grados, onSubmit, onCancel }) {
             </div>
             <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:'1px solid #E0D9F5',marginTop:14}}>
                 <button type="button" className="mm-btn mm-ghost" onClick={onCancel}>Cancelar</button>
-                <button type="submit" className="mm-btn mm-primary">✓ Registrar</button>
+                <button type="submit" className="mm-btn mm-primary">✓ Registrar Año</button>
             </div>
         </form>
     );
 }
 
+// ── HistEntradaForm — con snapshot visible e inmutable ───────
+
 function HistEntradaForm({ entrada, alumno, getNombreGrado, onSubmit, onCancel }) {
-    const [fd, setFd] = useState({ estado_matricula: entrada.estado_matricula||'activa', notas: entrada.notas||'' });
-    const handle = (e) => setFd(p=>({...p,[e.target.name]:e.target.value}));
-    const fStyle = { padding:'10px 13px', border:'2px solid #E0D9F5', borderRadius:9, fontFamily:'inherit', fontSize:'.9rem', color:'#2D2250', background:'#FAF9FF', outline:'none', width:'100%' };
+    const [fd, setFd] = useState({
+        estado_matricula: entrada.estado_matricula || 'activa',
+        notas: entrada.notas || '',
+    });
+    const handle = (e) => setFd(p => ({ ...p, [e.target.name]: e.target.value }));
+
+    const fStyle = {
+        padding: '10px 13px', border: '2px solid #E0D9F5', borderRadius: 9,
+        fontFamily: 'inherit', fontSize: '.9rem', color: '#2D2250',
+        background: '#FAF9FF', outline: 'none', width: '100%',
+    };
+
+    const tieneSnapshot = entrada.snapshot_generado;
+
+    // ── Generador de PDF ─────────────────────────────────────
+    const descargarPDF = () => {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const anio = entrada.anio_matricula;
+        const nombre = entrada.snapshot_nombre_completo || alumno.nombre_completo;
+        const grado  = entrada.snapshot_grado_nombre || getNombreGrado(entrada.grado_a_matricular);
+
+        // Encabezado
+        try { doc.addImage('/Logo1.png', 'PNG', 15, 10, 20, 20); } catch {}
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16); doc.setTextColor(108, 79, 191);
+        doc.text('Escuela Experimental de Niños para la Música', 105, 18, { align: 'center' });
+        doc.setFontSize(11); doc.setTextColor(60, 60, 60);
+        doc.text(`Expediente Histórico — Año ${anio}`, 105, 26, { align: 'center' });
+        doc.setDrawColor(108, 79, 191); doc.line(14, 30, 196, 30);
+
+        let y = 38;
+        const sec = (titulo) => {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+            doc.setTextColor(108, 79, 191);
+            doc.text(titulo, 14, y); y += 2;
+            doc.setDrawColor(200, 185, 240); doc.line(14, y, 196, y); y += 5;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(50, 50, 50);
+        };
+        const row = (lbl, val) => {
+            if (!val && val !== false) return;
+            doc.setFont('helvetica', 'bold'); doc.text(`${lbl}:`, 16, y);
+            doc.setFont('helvetica', 'normal'); doc.text(String(val), 70, y);
+            y += 6;
+        };
+
+        sec('Datos personales');
+        row('Nombre completo', nombre);
+        row('Documento', entrada.snapshot_id_documento || alumno.id_documento);
+        row('Fecha de nacimiento', entrada.snapshot_fecha_nacimiento
+            ? new Date(entrada.snapshot_fecha_nacimiento).toLocaleDateString('es-ES') : '—');
+        row('Edad al matricularse', entrada.snapshot_edad ? `${entrada.snapshot_edad} años` : '—');
+        row('Género', entrada.snapshot_genero);
+        row('Dirección', entrada.snapshot_residencia || alumno.residencia_direccion);
+        row('Teléfono alumno', entrada.snapshot_telefono_alumno);
+        row('Escuela anterior', entrada.snapshot_escuela_anterior);
+        y += 3;
+
+        sec('Académico');
+        row('Grado', grado);
+        row('Año de matrícula', anio);
+        row('Estado', entrada.estado_matricula);
+        row('Fecha de matrícula', entrada.fecha_matricula
+            ? new Date(entrada.fecha_matricula).toLocaleDateString('es-ES') : '—');
+        if (entrada.notas) row('Notas', entrada.notas);
+        y += 3;
+
+        sec('Datos médicos');
+        row('Alergias', entrada.snapshot_alergias || 'Ninguna registrada');
+        row('Enfermedades', entrada.snapshot_enfermedades || 'Ninguna registrada');
+        row('Medicamentos', entrada.snapshot_medicamentos || 'Ninguno registrado');
+        row('Pediatra', entrada.snapshot_pediatra_nombre);
+        row('Tel. pediatra', entrada.snapshot_pediatra_telefono);
+        row('Vacunas al día', entrada.snapshot_vacunas_al_dia ? 'Sí' : 'No');
+        row('Contacto emergencia', entrada.snapshot_contacto_emergencia_nombre
+            ? `${entrada.snapshot_contacto_emergencia_nombre} — ${entrada.snapshot_contacto_emergencia_telefono || ''}` : '—');
+        y += 3;
+
+        sec(`Encargados (${(entrada.snapshot_encargados || []).length})`);
+        if (entrada.snapshot_encargados?.length) {
+            autoTable(doc, {
+                startY: y,
+                head: [['Encargado', 'Parentesco', 'Documento', 'Teléfono', 'Email']],
+                body: entrada.snapshot_encargados.map(e => [
+                    e.nombre_encargado, e.parentesco_encargado,
+                    e.id_documento_encargado, e.telefono_encargado, e.email_encargado || '—',
+                ]),
+                theme: 'striped',
+                styles: { fontSize: 8, cellPadding: 2 },
+                headStyles: { fillColor: [108, 79, 191], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [245, 242, 255] },
+                margin: { left: 14, right: 14 },
+            });
+            y = doc.lastAutoTable.finalY + 6;
+        }
+
+        const t = entrada.snapshot_transporte;
+        if (t) {
+            sec('Transporte');
+            row('Usa transporte', t.usa_transporte ? 'Sí' : 'No');
+            if (t.usa_transporte) {
+                row('Ruta', t.transporte_ruta);
+                row('Conductor', t.transporte_conductor_nombre);
+                row('Tel. conductor', t.transporte_conductor_telefono);
+                row('Placa', t.transporte_placa);
+                row('Empresa', t.transporte_empresa);
+                row('Punto de recogida', t.transporte_punto_recogida);
+                row('Observaciones', t.transporte_observaciones);
+            }
+        }
+
+        // Pie
+        doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+        doc.text(`Generado el ${new Date().toLocaleDateString('es-ES')} — documento histórico inmutable`, 105, 285, { align: 'center' });
+
+        doc.save(`expediente_${nombre.replace(/\s+/g,'_')}_${anio}.pdf`);
+    };
+
     return (
-        <form onSubmit={e=>{e.preventDefault();onSubmit(fd);}}>
+        <form onSubmit={e => { e.preventDefault(); onSubmit(fd); }}>
+
+            {/* Info del año */}
             <div className="mm-remat-card">
-                <div className="mm-remat-title">📋 Historial: {alumno.nombre_completo}</div>
+                <div className="mm-remat-title">
+                    📋 {alumno.nombre_completo} — Año {entrada.anio_matricula}
+                </div>
                 <div className="mm-remat-grid">
-                    <div className="mm-remat-item"><div className="mm-remat-lbl">Año</div><div className="mm-remat-val"><span className="mm-ybadge">{entrada.anio_matricula}</span></div></div>
-                    <div className="mm-remat-item"><div className="mm-remat-lbl">Grado</div><div className="mm-remat-val">{getNombreGrado(entrada.grado_a_matricular||entrada.grado)}</div></div>
+                    <div className="mm-remat-item">
+                        <div className="mm-remat-lbl">Grado</div>
+                        <div className="mm-remat-val">
+                            {entrada.snapshot_grado_nombre || getNombreGrado(entrada.grado_a_matricular)}
+                        </div>
+                    </div>
+                    <div className="mm-remat-item">
+                        <div className="mm-remat-lbl">Fecha de matrícula</div>
+                        <div className="mm-remat-val">
+                            {entrada.fecha_matricula
+                                ? new Date(entrada.fecha_matricula).toLocaleDateString('es-ES')
+                                : '—'}
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className="mm-info-box">ℹ Solo puedes cambiar el estado y las notas.</div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14,marginBottom:16}}>
-                <div style={{display:'flex',flexDirection:'column',gap:5}}>
-                    <label style={{fontSize:'.77rem',fontWeight:700,color:'#7A6FA0',textTransform:'uppercase',letterSpacing:'.04em'}}>Estado</label>
-                    <select style={fStyle} name="estado_matricula" value={fd.estado_matricula} onChange={handle}><option value="activa">Activa</option><option value="prematricula">Prematrícula</option><option value="completada">Completada</option><option value="retirado">Retirado</option></select>
+
+            {/* ── Snapshot SIEMPRE VISIBLE ── */}
+            {tieneSnapshot ? (
+                <div className="mm-snapshot-panel" style={{ marginBottom: 16 }}>
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        marginBottom: 12,
+                    }}>
+                        <div className="mm-snapshot-title" style={{ margin: 0 }}>
+                            📸 Datos registrados en {entrada.anio_matricula} — foto histórica inmutable
+                        </div>
+                        <button type="button"
+                            onClick={descargarPDF}
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6,
+                                padding: '6px 14px', background: '#6C4FBF', color: '#fff',
+                                border: 'none', borderRadius: 8, fontSize: '.82rem',
+                                fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                            }}>
+                            ⬇ Descargar PDF
+                        </button>
+                    </div>
+                    <div style={{ fontSize: '.75rem', color: '#5a8ab0', marginBottom: 12, fontStyle: 'italic' }}>
+                        Capturado automáticamente al registrar el año {entrada.anio_matricula}. No se puede modificar.
+                    </div>
+
+                    {/* Datos personales */}
+                    <div style={{ fontWeight: 700, color: '#1a6ea8', fontSize: '.78rem', textTransform: 'uppercase', marginBottom: 8 }}>
+                        Datos personales
+                    </div>
+                    <div className="mm-snapshot-grid" style={{ marginBottom: 14 }}>
+                        {[
+                            ['Nombre', entrada.snapshot_nombre_completo],
+                            ['Documento', entrada.snapshot_id_documento],
+                            ['Edad al matricularse', entrada.snapshot_edad ? `${entrada.snapshot_edad} años` : '—'],
+                            ['Género', entrada.snapshot_genero],
+                            ['Dirección', entrada.snapshot_residencia, true],
+                            ['Teléfono', entrada.snapshot_telefono_alumno],
+                            ['Escuela anterior', entrada.snapshot_escuela_anterior],
+                        ].map(([lbl, val, full]) => val ? (
+                            <div key={lbl} className="mm-snapshot-item" style={full ? { gridColumn: '1/-1' } : {}}>
+                                <div className="mm-snapshot-lbl">{lbl}</div>
+                                <div className="mm-snapshot-val">{val}</div>
+                            </div>
+                        ) : null)}
+                    </div>
+
+                    {/* Datos médicos */}
+                    {(entrada.snapshot_alergias || entrada.snapshot_enfermedades || entrada.snapshot_medicamentos || entrada.snapshot_pediatra_nombre) && (
+                        <>
+                            <div style={{ fontWeight: 700, color: '#1a6ea8', fontSize: '.78rem', textTransform: 'uppercase', marginBottom: 8 }}>
+                                Datos médicos
+                            </div>
+                            <div className="mm-snapshot-grid" style={{ marginBottom: 14 }}>
+                                {[
+                                    ['Alergias', entrada.snapshot_alergias || 'Ninguna'],
+                                    ['Enfermedades', entrada.snapshot_enfermedades || 'Ninguna'],
+                                    ['Medicamentos', entrada.snapshot_medicamentos || 'Ninguno', true],
+                                    ['Pediatra', entrada.snapshot_pediatra_nombre],
+                                    ['Tel. pediatra', entrada.snapshot_pediatra_telefono],
+                                    ['Vacunas al día', entrada.snapshot_vacunas_al_dia ? 'Sí' : 'No'],
+                                    ['Contacto emergencia',
+                                        entrada.snapshot_contacto_emergencia_nombre
+                                            ? `${entrada.snapshot_contacto_emergencia_nombre} — ${entrada.snapshot_contacto_emergencia_telefono || ''}`
+                                            : null],
+                                ].map(([lbl, val, full]) => val ? (
+                                    <div key={lbl} className="mm-snapshot-item" style={full ? { gridColumn: '1/-1' } : {}}>
+                                        <div className="mm-snapshot-lbl">{lbl}</div>
+                                        <div className="mm-snapshot-val">{val}</div>
+                                    </div>
+                                ) : null)}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Encargados */}
+                    {entrada.snapshot_encargados?.length > 0 && (
+                        <>
+                            <div style={{ fontWeight: 700, color: '#1a6ea8', fontSize: '.78rem', textTransform: 'uppercase', marginBottom: 8 }}>
+                                <User size={12} style={{ verticalAlign: 'middle', marginRight: 4 }}/>
+                                Encargados en {entrada.anio_matricula}
+                            </div>
+                            {entrada.snapshot_encargados.map((enc, i) => (
+                                <div key={i} className="mm-snapshot-grid" style={{ marginBottom: 10, padding: 8, background: '#fff', borderRadius: 8, border: '1px solid #BFD7F0' }}>
+                                    <div className="mm-snapshot-item" style={{ gridColumn: '1/-1' }}>
+                                        <div className="mm-snapshot-lbl">Encargado {i + 1}{i === 0 ? ' (Principal)' : ''}</div>
+                                        <div className="mm-snapshot-val">
+                                            {enc.nombre_encargado} — <em style={{ color: '#5a8ab0' }}>{enc.parentesco_encargado}</em>
+                                        </div>
+                                    </div>
+                                    <div className="mm-snapshot-item">
+                                        <div className="mm-snapshot-lbl">Teléfono</div>
+                                        <div className="mm-snapshot-val">{enc.telefono_encargado || '—'}</div>
+                                    </div>
+                                    <div className="mm-snapshot-item">
+                                        <div className="mm-snapshot-lbl">Documento</div>
+                                        <div className="mm-snapshot-val">{enc.id_documento_encargado || '—'}</div>
+                                    </div>
+                                    {enc.email_encargado && (
+                                        <div className="mm-snapshot-item" style={{ gridColumn: '1/-1' }}>
+                                            <div className="mm-snapshot-lbl">Email</div>
+                                            <div className="mm-snapshot-val">{enc.email_encargado}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </>
+                    )}
+
+                    {/* Transporte */}
+                    {entrada.snapshot_transporte && (
+                        <>
+                            <div style={{ fontWeight: 700, color: '#1a6ea8', fontSize: '.78rem', textTransform: 'uppercase', marginBottom: 8, marginTop: 8 }}>
+                                <Bus size={12} style={{ verticalAlign: 'middle', marginRight: 4 }}/>
+                                Transporte en {entrada.anio_matricula}
+                            </div>
+                            <div className="mm-snapshot-grid">
+                                <div className="mm-snapshot-item">
+                                    <div className="mm-snapshot-lbl">Usaba transporte</div>
+                                    <div className="mm-snapshot-val">{entrada.snapshot_transporte.usa_transporte ? 'Sí' : 'No'}</div>
+                                </div>
+                                {entrada.snapshot_transporte.usa_transporte && (<>
+                                    <div className="mm-snapshot-item">
+                                        <div className="mm-snapshot-lbl">Ruta</div>
+                                        <div className="mm-snapshot-val">{entrada.snapshot_transporte.transporte_ruta || '—'}</div>
+                                    </div>
+                                    <div className="mm-snapshot-item">
+                                        <div className="mm-snapshot-lbl">Conductor</div>
+                                        <div className="mm-snapshot-val">{entrada.snapshot_transporte.transporte_conductor_nombre || '—'}</div>
+                                    </div>
+                                    <div className="mm-snapshot-item">
+                                        <div className="mm-snapshot-lbl">Tel. conductor</div>
+                                        <div className="mm-snapshot-val">{entrada.snapshot_transporte.transporte_conductor_telefono || '—'}</div>
+                                    </div>
+                                    {entrada.snapshot_transporte.transporte_placa && (
+                                        <div className="mm-snapshot-item">
+                                            <div className="mm-snapshot-lbl">Placa</div>
+                                            <div className="mm-snapshot-val">{entrada.snapshot_transporte.transporte_placa}</div>
+                                        </div>
+                                    )}
+                                </>)}
+                            </div>
+                        </>
+                    )}
                 </div>
-                <div style={{display:'flex',flexDirection:'column',gap:5}}>
-                    <label style={{fontSize:'.77rem',fontWeight:700,color:'#7A6FA0',textTransform:'uppercase',letterSpacing:'.04em'}}>Notas</label>
-                    <textarea style={{...fStyle,resize:'vertical',minHeight:58}} name="notas" value={fd.notas} onChange={handle}/>
+            ) : (
+                <div style={{ background: '#FFF8E1', border: '1px solid #F39C12', borderRadius: 9, padding: '10px 14px', marginBottom: 14, fontSize: '.83rem', color: '#7B4F00' }}>
+                    ⚠ Este registro es anterior al sistema de snapshots — no tiene foto histórica guardada.
+                </div>
+            )}
+
+            {/* Campos editables */}
+            <div style={{ background: '#FFF8E1', border: '1px solid #F39C12', borderRadius: 9, padding: '10px 14px', marginBottom: 14, fontSize: '.83rem', color: '#7B4F00' }}>
+                ✏️ <strong>Solo puedes modificar el estado y las notas</strong> — el snapshot histórico nunca cambia.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 14, marginBottom: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#7A6FA0', textTransform: 'uppercase', letterSpacing: '.04em' }}>Estado de la matrícula</label>
+                    <select style={fStyle} name="estado_matricula" value={fd.estado_matricula} onChange={handle}>
+                        <option value="activa">Activa</option>
+                        <option value="prematricula">Prematrícula</option>
+                        <option value="completada">Completada</option>
+                        <option value="retirado">Retirado</option>
+                    </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#7A6FA0', textTransform: 'uppercase', letterSpacing: '.04em' }}>Notas u observaciones</label>
+                    <textarea style={{ ...fStyle, resize: 'vertical', minHeight: 58 }} name="notas" value={fd.notas} onChange={handle} placeholder="Observaciones adicionales..."/>
                 </div>
             </div>
-            <div style={{display:'flex',justifyContent:'flex-end',gap:10,paddingTop:16,borderTop:'1px solid #E0D9F5',marginTop:14}}>
+            {entrada.editado_por && (
+                <div style={{ fontSize: '.76rem', color: '#9CA3AF', marginBottom: 12 }}>
+                    Última edición: {entrada.editado_por} · {entrada.fecha_edicion ? new Date(entrada.fecha_edicion).toLocaleDateString('es-ES') : ''}
+                </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, paddingTop: 16, borderTop: '1px solid #E0D9F5', marginTop: 14 }}>
                 <button type="button" className="mm-btn mm-ghost" onClick={onCancel}>Cancelar</button>
                 <button type="submit" className="mm-btn mm-primary">✓ Guardar</button>
             </div>
@@ -791,13 +1075,32 @@ function HistEntradaForm({ entrada, alumno, getNombreGrado, onSubmit, onCancel }
     );
 }
 
+// ── AlumnoDetail — info completa incluyendo transporte ───────
 function AlumnoDetail({ alumno: a, onClose, getNombreGrado, anioEnCurso }) {
-    const DI = ({ lbl, val, full }) => (<div className="mm-di" style={full?{gridColumn:'1/-1'}:{}}><div className="mm-dl">{lbl}</div><div className="mm-dv">{val||'No especificado'}</div></div>);
+    const DI = ({ lbl, val, full }) => (
+        <div className="mm-di" style={full?{gridColumn:'1/-1'}:{}}>
+            <div className="mm-dl">{lbl}</div>
+            <div className="mm-dv">{val||'No especificado'}</div>
+        </div>
+    );
     const hist = [...(a.historial_matriculas||[])].sort((a,b)=>a.anio_matricula-b.anio_matricula);
     const badgeBg = (est) => ({activa:'#6C4FBF',prematricula:'#F39C12',completada:'#27AE60',retirado:'#E74C3C'}[est]||'#6C4FBF');
-    const encargados = a.encargados?.length ? a.encargados : [{ nombre_encargado: a.nombre_encargado, parentesco_encargado: a.parentesco_encargado, telefono_encargado: a.telefono_encargado, email_encargado: a.email_encargado }];
+    const encargados = a.encargados?.length ? a.encargados : [{
+        nombre_encargado: a.nombre_encargado, parentesco_encargado: a.parentesco_encargado,
+        telefono_encargado: a.telefono_encargado, email_encargado: a.email_encargado,
+        id_documento_encargado: a.id_documento_encargado,
+    }];
+
     return (
         <div>
+            {/* Foto del alumno */}
+            {a.imagen && (
+                <div style={{textAlign:'center',marginBottom:16}}>
+                    <img src={`data:image/png;base64,${a.imagen}`} alt={a.nombre_completo} style={{width:90,height:90,borderRadius:'50%',objectFit:'cover',border:'3px solid #6C4FBF'}}/>
+                </div>
+            )}
+
+            {/* Datos personales */}
             <div className="mm-dg">
                 <DI lbl="Nombre Completo" val={a.nombre_completo}/><DI lbl="Documento" val={a.id_documento}/>
                 <DI lbl="Fecha Nacimiento" val={a.fecha_nacimiento?new Date(a.fecha_nacimiento).toLocaleDateString('es-ES'):''}/>
@@ -805,36 +1108,93 @@ function AlumnoDetail({ alumno: a, onClose, getNombreGrado, anioEnCurso }) {
                 <DI lbl="Grado Actual" val={getNombreGrado(a.grado_a_matricular)}/>
                 <DI lbl="Año Actual" val={<span className={a.anio_matricula===anioEnCurso?'mm-anio-actual-badge':'mm-ybadge'}>{a.anio_matricula||'—'}</span>}/>
                 <DI lbl="Estado" val={<span className={`mm-badge ${(a.estado||'activo')==='activo'?'bg-green':'bg-red'}`}>{a.estado||'activo'}</span>}/>
+                <DI lbl="Teléfono" val={a.telefono_alumno}/>
                 <DI lbl="Dirección" val={a.residencia_direccion} full/>
+                {a.escuela_anterior && <DI lbl="Escuela Anterior" val={a.escuela_anterior}/>}
             </div>
-            {(a.alergias||a.enfermedades||a.medicamentos||a.pediatra_nombre||a.pediatra)&&(<>
-                <div className="mm-st">🏥 Datos Médicos</div>
-                <div className="mm-dg">
-                    <DI lbl="Alergias" val={a.alergias||'Ninguna'}/><DI lbl="Enfermedades" val={a.enfermedades||'Ninguna'}/>
-                    <DI lbl="Medicamentos" val={a.medicamentos||'Ninguno'} full/>
-                    <DI lbl="Pediatra" val={a.pediatra_nombre||a.pediatra}/><DI lbl="Tel. Pediatra" val={a.pediatra_telefono||'—'}/>
-                    <DI lbl="Vacunas al día" val={<span className={`mm-badge ${a.vacunas_al_dia?'bg-green':'bg-orange'}`}>{a.vacunas_al_dia?'Sí':'No'}</span>}/>
-                </div>
-            </>)}
-            <div className="mm-st">👨‍👩‍👦 Encargados ({encargados.length})</div>
+
+            {/* Datos médicos */}
+            {(a.alergias||a.enfermedades||a.medicamentos||a.pediatra_nombre||a.pediatra) && (
+                <>
+                    <div className="mm-st">🏥 Datos Médicos</div>
+                    <div className="mm-dg">
+                        <DI lbl="Alergias" val={a.alergias||'Ninguna'}/><DI lbl="Enfermedades" val={a.enfermedades||'Ninguna'}/>
+                        <DI lbl="Medicamentos" val={a.medicamentos||'Ninguno'} full/>
+                        <DI lbl="Pediatra" val={a.pediatra_nombre||a.pediatra}/><DI lbl="Tel. Pediatra" val={a.pediatra_telefono||'—'}/>
+                        <DI lbl="Vacunas al día" val={<span className={`mm-badge ${a.vacunas_al_dia?'bg-green':'bg-orange'}`}>{a.vacunas_al_dia?'Sí':'No'}</span>}/>
+                        {(a.contacto_emergencia_nombre) && (
+                            <DI lbl="Contacto Emergencia" val={`${a.contacto_emergencia_nombre} · ${a.contacto_emergencia_telefono||''}`} full/>
+                        )}
+                    </div>
+                </>
+            )}
+
+            {/* Encargados */}
+            <div className="mm-st"><User size={16}/>  Encargados ({encargados.length})</div>
             {encargados.map((enc, i) => (
                 <div key={i} className="mm-dg" style={{marginBottom:10,border:'1px solid #E0D9F5',borderRadius:10,padding:10}}>
                     <DI lbl={`Encargado ${i+1}${i===0?' (Principal)':''}`} val={enc.nombre_encargado} full/>
                     <DI lbl="Parentesco" val={enc.parentesco_encargado}/><DI lbl="Teléfono" val={enc.telefono_encargado}/>
+                    <DI lbl="Documento" val={enc.id_documento_encargado}/>
                     {enc.email_encargado&&<DI lbl="Email" val={enc.email_encargado} full/>}
                 </div>
             ))}
+
+            {/* Transporte */}
+            <div className="mm-st"><Bus size={16}/> Transporte</div>
+            {a.usa_transporte ? (
+                <div className="mm-dg">
+                    <DI lbl="Usa Transporte" val={<span className="mm-badge bg-green">Sí</span>}/>
+                    <DI lbl="Ruta" val={a.transporte_ruta}/>
+                    <DI lbl="Conductor" val={a.transporte_conductor_nombre}/><DI lbl="Tel. Conductor" val={a.transporte_conductor_telefono}/>
+                    {a.transporte_placa && <DI lbl="Placa" val={a.transporte_placa}/>}
+                    {a.transporte_empresa && <DI lbl="Empresa" val={a.transporte_empresa}/>}
+                    {a.transporte_punto_recogida && <DI lbl="Punto de Recogida" val={a.transporte_punto_recogida} full/>}
+                    {a.transporte_observaciones && <DI lbl="Observaciones" val={a.transporte_observaciones} full/>}
+                </div>
+            ) : (
+                <div style={{color:'#7A6FA0',fontSize:'.88rem',padding:'8px 0',display:'flex',alignItems:'center',gap:8}}>
+                    <Bus size={16}/> No utiliza servicio de transporte
+                </div>
+            )}
+
+            {/* Documentos */}
+            {a.documentos && a.documentos.length > 0 && (
+                <>
+                    <div className="mm-st">📎 Documentos ({a.documentos.length})</div>
+                    {a.documentos.map((doc, i) => (
+                        <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 12px',background:'#FAF9FF',borderRadius:9,border:'1px solid #E0D9F5',marginBottom:6}}>
+                            <span style={{fontSize:'1.1rem'}}>📄</span>
+                            <div style={{flex:1}}>
+                                <div style={{fontWeight:700,fontSize:'.86rem',color:'#2D2250'}}>{doc.tipo}</div>
+                                {doc.nombre && <div style={{fontSize:'.76rem',color:'#7A6FA0'}}>{doc.nombre}</div>}
+                            </div>
+                            {doc.archivoUrl && (
+                                <a href={doc.archivoUrl} target="_blank" rel="noopener noreferrer" style={{color:'#6C4FBF',fontWeight:700,fontSize:'.82rem',textDecoration:'none',background:'#EDE9FF',padding:'4px 10px',borderRadius:7}}>
+                                    Ver en Drive
+                                </a>
+                            )}
+                        </div>
+                    ))}
+                </>
+            )}
+
+            {/* Historial */}
             <div className="mm-st">📋 Historial de Matrículas</div>
             {hist.length > 0 ? hist.map((m,i)=>(
                 <div key={m._id||i} className="mm-hist-row">
                     <span className="mm-ybadge" style={{background:badgeBg(m.estado_matricula)}}>{m.anio_matricula}</span>
-                    <span style={{fontWeight:700}}>{getNombreGrado(m.grado_a_matricular||m.grado)}</span>
+                    <span style={{fontWeight:700}}>{m.snapshot_grado_nombre || getNombreGrado(m.grado_a_matricular||m.grado)}</span>
                     <span className="mm-badge" style={{background:'#F0F0F0',color:'#555',fontSize:'.73rem'}}>{m.estado_matricula||'activa'}</span>
                     {m.notas&&<span style={{fontSize:'.78rem',color:'#7A6FA0',fontStyle:'italic'}}>"{m.notas}"</span>}
+                    {m.snapshot_generado && <span style={{fontSize:'.72rem',background:'#E8F4FD',color:'#1a6ea8',borderRadius:5,padding:'1px 7px'}}>📸 con snapshot</span>}
                     <span className="mm-hist-meta">{m.fecha_matricula?new Date(m.fecha_matricula).toLocaleDateString('es-ES'):''} · {m.realizado_por||'sistema'}</span>
                 </div>
             )) : <div style={{color:'#7A6FA0',fontSize:'.88rem',padding:'8px 0'}}>Sin historial</div>}
-            <div style={{display:'flex',justifyContent:'flex-end',marginTop:20}}><button className="mm-btn mm-ghost" onClick={onClose}>Cerrar</button></div>
+
+            <div style={{display:'flex',justifyContent:'flex-end',marginTop:20}}>
+                <button className="mm-btn mm-ghost" onClick={onClose}>Cerrar</button>
+            </div>
         </div>
     );
 }

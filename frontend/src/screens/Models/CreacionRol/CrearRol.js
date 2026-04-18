@@ -44,7 +44,7 @@ const useAuth = () => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Usuario no autenticado');
-      return await user.getIdToken(true);
+      return await user.getIdToken();
     } catch (error) {
       return null;
     }

@@ -29,7 +29,7 @@ export default function BackupRestore() {
   const getToken = async () => {
     const user = auth.currentUser;
     if (!user) throw new Error("No autenticado");
-    return await user.getIdToken(true);
+    return await user.getIdToken();
   };
 
   // ── CREAR BACKUP ──────────────────────────────────────

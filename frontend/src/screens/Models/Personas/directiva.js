@@ -162,7 +162,7 @@ const Directiva = () => {
   const cargarMiembros = async () => {
     try {
       setLoading(true); loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Error al cargar");
       const data = await res.json();
@@ -220,7 +220,7 @@ const Directiva = () => {
     try {
       const user = auth.currentUser;
       if (!user) { showNotification("No autenticado", "error"); return; }
-     const token = await user.getIdToken(true);
+     const token = await user.getIdToken();
       const payload = {
         ...formData,
         fecha_registro: new Date(formData.fecha_registro),
@@ -253,7 +253,7 @@ const Directiva = () => {
       loadingController.start();
       const user = auth.currentUser;
       if (!user) throw new Error("No autenticado");
-      const token = await user.getIdToken(true);
+      const token = await user.getIdToken();
       const payload = {
         ...formData,
         fecha_registro: new Date(formData.fecha_registro),
@@ -279,7 +279,7 @@ const Directiva = () => {
     if (!miembroAEliminar) return;
     try {
       loadingController.start();
-      const token = await auth.currentUser?.getIdToken(true);
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`${API_URL}/${miembroAEliminar._id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` },
       });
