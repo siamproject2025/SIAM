@@ -6,9 +6,9 @@ const mailer = require('../config/mailer');
 // ─── Crear solicitud (público, sin auth) ──────────────────────────────────
 exports.crearSolicitud = async (req, res) => {
   try {
-    const { nombre_solicitante, email, nombre_alumno, grado } = req.body;
+    const { nombre_solicitante, email} = req.body;
 
-    if (!nombre_solicitante || !email || !nombre_alumno || !grado) {
+    if (!nombre_solicitante || !email ) {
       return res.status(400).json({ message: 'Todos los campos son obligatorios.' });
     }
 
@@ -25,9 +25,7 @@ exports.crearSolicitud = async (req, res) => {
 
     const solicitud = new Solicitud({
       nombre_solicitante: nombre_solicitante.toUpperCase().trim(),
-      email:              email.toLowerCase().trim(),
-      nombre_alumno:      nombre_alumno.toUpperCase().trim(),
-      grado:              grado.trim()
+      email:              email.toLowerCase().trim()
     });
 
     await solicitud.save();
@@ -73,14 +71,12 @@ exports.loginOCrearSolicitudGoogle = async (req, res) => {
     }
 
     // 3. No existe solicitud → crear una automáticamente
-    const nuevaSolicitud = new Solicitud({
-      nombre_solicitante: (username || email).toUpperCase(),
-      email:              emailNorm,
-      nombre_alumno:      'N/A',
-      grado:              'N/A',
-      estado:             'PENDIENTE'
-    });
-    await nuevaSolicitud.save();
+        const nuevaSolicitud = new Solicitud({
+        nombre_solicitante: (username || email).toUpperCase(),
+        email:              emailNorm,
+        estado:             'PENDIENTE'
+      });
+          await nuevaSolicitud.save();
 
     return res.status(403).json({
       aprobado: false,
@@ -380,14 +376,7 @@ const enviarCorreoAprobacion = async (email, nombre, password) => {
                       </td>
                     </tr>
                   </table>
-                  <p style="text-align:center;margin:0;">
-                    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/login"
-                      style="display:inline-block;background:#4f8ef7;color:#ffffff;
-                             text-decoration:none;padding:13px 32px;border-radius:8px;
-                             font-weight:600;font-size:14px;">
-                      Ingresar al sistema →
-                    </a>
-                  </p>
+                  
                 </td>
               </tr>
               <tr>

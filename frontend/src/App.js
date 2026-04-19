@@ -43,6 +43,7 @@ import CambiarPasswordObligatorio from './components/authentication/CambiarPassw
 // ── NUEVO: Módulo de Parámetros del Sistema ──────────────────
 import Parametros from './screens/Parametros';
 import BackupRestore from './components/BackupRestore';
+import MantenimientosCatalogos from './screens/Models/Mantenimientos/Mantenimientoscatalogos';
 
 const auth = getAuth(appFirebase);
 const API_URL = process.env.REACT_APP_API_URL;
@@ -115,7 +116,8 @@ function App() {
   return (
     <div className={`App ${appClass} ${user ? 'authenticated' : 'unauthenticated'}`}>
       {user && <NavBar />}
-      <ChatFlotanteConsultas />
+      {/*<ChatFlotanteConsultas />*/}
+      
 
       <div className="app-content">
         {user && <SideBar />}
@@ -130,16 +132,22 @@ function App() {
             <Route path="/ResetPasswordSeguro" element={<PublicRoute><ResetPasswordSeguro /></PublicRoute>} />
             <Route path="/verifyEmail"         element={<PublicRoute><VerifyEmail /></PublicRoute>} />
 
+            {/* ==================== MÓDULO DASHBOARD ==================== */}
+  
+            <Route element={<PrivateRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              
+            </Route>
             <Route path="/account"    element={<AccountSettings />} />
             <Route path="/contrasena" element={<ChangePasswordLogueado />} />
 
             {/* ==================== MÓDULO HOME ==================== */}
-            <Route element={<PrivateRoute />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />} >
               <Route path="/home" element={<Home />} />
             </Route>
 
             {/* ==================== MÓDULO SEGURIDAD ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SEGURIDAD"]} />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_SOLICITUDES"]} />}>
               <Route path="/seguridad"         element={<AsignarRol />} />
               <Route path="/admin/solicitudes" element={<SolicitudesPanel />} />
             </Route>
@@ -176,7 +184,7 @@ function App() {
 
             {/* ==================== MÓDULO AUDITORIA ==================== */}
             <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_AUDITORIA"]} />}>
-              <Route path='/bitacira' element={<Bitacora />} />
+              <Route path='/bitacora' element={<Bitacora />} />
             </Route>
 
             {/* ==================== MÓDULO BIBLIOTECA ==================== */}
@@ -209,13 +217,13 @@ function App() {
               <Route path="/admisiones" element={<Matricula />} />
             </Route>
 
-            {/* ==================== MÓDULO DASHBOARD ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
-              <Route path="/dashboard" element={<Dashboard />} />
+             {/* ==================== MÓDULO MATRICULA ==================== */}
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_MANTENIMIENTOS"]} />}>
+              <Route path="/mantenimientos" element={<MantenimientosCatalogos />} />
             </Route>
 
             {/* ==================== MÓDULO DASHBOARD ==================== */}
-            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_DASHBOARD"]} />}>
+            <Route element={<PrivateRoute requiredPermissions={["VISUALIZAR_RESTORE"]} />}>
               <Route path="/backup" element={<BackupRestore />} />
             </Route>
 

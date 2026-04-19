@@ -9,9 +9,10 @@
   --success: #4CAF50;
   --warning: #FF9800;
   --error: #F44336;
-  --gradient: linear-gradient(135deg, var(--primary), var(--secondary));
   --primary-color: #6a11cb;
   --secondary-color: #2575fc;
+  --primary-rgb:   106, 17, 203;
+  --secondary-rgb: 37, 117, 252;
   --accent-color: #ff4e50;
   --text-color: #333;
   --text-light: #666;
@@ -34,12 +35,11 @@ html {
   scroll-behavior: smooth;
 }
 
-
 body {
- font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
- line-height: 1.6;
- color: var(--text-color);
- overflow-x: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  overflow-x: hidden;
 }
 
 .landing-app {
@@ -64,7 +64,6 @@ body {
   z-index: 1000;
   padding: 15px 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-
 }
 
 .landing-nav-container {
@@ -83,13 +82,13 @@ body {
   font-size: 1.5rem;
 }
 
-.imgLanding img{
+.imgLanding img {
   content: "";
   width: 80vw;
   height: 95vh;
   margin: 200px;
   background-image: linear-gradient(to top, #22577a, transparent);
-   mask-image: linear-gradient(to right, transparent, black);
+  mask-image: linear-gradient(to right, transparent, black);
   -webkit-mask-image: linear-gradient(to right, transparent, black);
 }
 
@@ -129,7 +128,8 @@ body {
   align-items: center;
 }
 
-.landing-nav-link:hover, .landing-nav-link.active {
+.landing-nav-link:hover,
+.landing-nav-link.active {
   color: var(--primary-color);
 }
 
@@ -144,18 +144,22 @@ body {
   transition: var(--transition);
 }
 
-.landing-nav-link:hover::after, .landing-nav-link.active::after {
+.landing-nav-link:hover::after,
+.landing-nav-link.active::after {
   width: 100%;
 }
 
 /* Sección Hero */
 .landing-hero-section {
-  background: linear-gradient(to right, rgba(106, 17, 203, 0.15), rgba(102, 126, 234, 0.05));
+  background: linear-gradient(
+    to right,
+    rgba(var(--primary-rgb), 0.15),
+    rgba(var(--secondary-rgb), 0.05)
+  );
   min-height: 50vh;
   display: flex;
   align-items: center;
   padding: 0 5%;
-  
   position: relative;
   height: 95vh;
   overflow: hidden;
@@ -176,7 +180,7 @@ body {
 
 .landing-title-line {
   display: block;
-  background: var(--gradient);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -190,7 +194,7 @@ body {
 }
 
 .landing-cta-button {
-  background: var(--gradient);
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -198,7 +202,7 @@ body {
   font-weight: 600;
   border-radius: 50px;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3);
   transition: all 0.3s ease;
 }
 
@@ -223,45 +227,24 @@ body {
   animation: landing-float 6s ease-in-out infinite;
 }
 
-.element-1 {
-  top: 10%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.element-2 {
-  top: 20%;
-  right: 15%;
-  animation-delay: 1s;
-}
-
-.element-3 {
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 2s;
-}
-
-.element-4 {
-  bottom: 10%;
-  right: 10%;
-  animation-delay: 3s;
-}
+.element-1 { top: 10%; left: 10%; animation-delay: 0s; }
+.element-2 { top: 20%; right: 15%; animation-delay: 1s; }
+.element-3 { bottom: 20%; left: 20%; animation-delay: 2s; }
+.element-4 { bottom: 10%; right: 10%; animation-delay: 3s; }
 
 @keyframes landing-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
 }
 
 /* Secciones generales */
-/* Secciones generales */
 .section {
- padding: 50px 0;
-
- background: linear-gradient(to right, rgba(106, 17, 203, 0.15), rgba(102, 126, 234, 0.05)); 
+  padding: 50px 0;
+  background: linear-gradient(
+    to right,
+    rgba(var(--primary-rgb), 0.15),
+    rgba(var(--secondary-rgb), 0.05)
+  );
 }
 
 .landing-section-title {
@@ -321,7 +304,7 @@ body {
 
 .landing-problem-item {
   color: white;
-  background: #837df4;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
   display: flex;
   align-items: flex-start;
   padding: 10px;
@@ -331,7 +314,7 @@ body {
 
 .landing-problem-item:hover {
   color: black;
-  background: rgba(106, 17, 203, 0.05);
+  background: rgba(var(--primary-rgb), 0.05);
 }
 
 .landing-problem-icon {
@@ -400,7 +383,8 @@ body {
   transform: rotateY(180deg);
 }
 
-.landing-card-front, .landing-card-back {
+.landing-card-front,
+.landing-card-back {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -470,7 +454,11 @@ body {
 
 /* Beneficios Section */
 .landing-benefits {
-  background-color: var(--bg-light);
+  background: linear-gradient(
+    to right,
+    rgba(var(--primary-rgb), 0.08),
+    rgba(var(--secondary-rgb), 0.03)
+  );
 }
 
 .landing-benefits-content {
@@ -567,7 +555,7 @@ body {
   top: 10px;
   left: 20px;
   font-size: 5rem;
-  color: rgba(106, 17, 203, 0.1);
+  color: rgba(var(--primary-rgb), 0.1);
   font-family: Georgia, serif;
 }
 
@@ -655,7 +643,11 @@ body {
 
 /* Contacto Section */
 .landing-contact {
-  background-color: var(--bg-light);
+  background: linear-gradient(
+    to right,
+    rgba(var(--primary-rgb), 0.08),
+    rgba(var(--secondary-rgb), 0.03)
+  );
 }
 
 .landing-contact-content {
@@ -736,19 +728,19 @@ body {
   .landing-contact-content {
     grid-template-columns: 1fr;
   }
-  
+
   .landing-hero-visual {
     display: none;
   }
-  
+
   .landing-problems-list {
     grid-template-columns: 1fr;
   }
-  
+
   .landing-benefits-stats {
     grid-template-columns: 1fr;
   }
-  
+
   .landing-modules-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
@@ -758,15 +750,15 @@ body {
   .landing-nav-menu {
     display: none;
   }
-  
+
   .landing-hero-title {
     font-size: 3rem;
   }
-  
+
   .landing-section-title {
     font-size: 2rem;
   }
-  
+
   .landing-modules-grid {
     grid-template-columns: 1fr;
   }
@@ -776,23 +768,24 @@ body {
   .landing-hero-title {
     font-size: 2.5rem;
   }
-  
+
   .landing-hero-subtitle {
     font-size: 1rem;
   }
-  
+
   .section {
     padding: 70px 0;
   }
-  
-  .landing-card-front, .landing-card-back {
+
+  .landing-card-front,
+  .landing-card-back {
     padding: 20px;
   }
-  
+
   .landing-testimonial {
     padding: 25px;
   }
-  
+
   .landing-contact-item {
     padding: 20px;
   }

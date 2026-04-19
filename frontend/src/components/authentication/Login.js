@@ -17,13 +17,7 @@ import Swal from "sweetalert2";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const GRADOS = [
-  "Kínder", "Preparatoria",
-  "1ro Primaria", "2do Primaria", "3ro Primaria",
-  "4to Primaria", "5to Primaria", "6to Primaria",
-  "1ro Secundaria", "2do Secundaria", "3ro Secundaria",
-  "Empleado de la escuela"
-];
+
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -51,8 +45,7 @@ const Login = () => {
       const user   = result.user;
       if (!user) return;
 
-      const token = await user.getIdToken();
-
+const token = await user.getIdToken();
       // Verificar si está aprobado o crear solicitud automática
       const res = await axios.post(
         `${API_URL}/api/usuarios/google-acceso`,
@@ -93,36 +86,43 @@ const Login = () => {
 
   // ── Login normal ──────────────────────────────────────────────────────────
   const handleLogin = async (data) => {
-    const email = data.email.toLowerCase().trim();
-    try {
-      const bloqueoRes = await axios.post(
-        `${API_URL}/api/usuarios/login`,
-        { email },
-        { validateStatus: (s) => s === 200 || s === 429 }
-      );
-      if (!bloqueoRes.data.permitido) {
-        toast("error", bloqueoRes.data.message || "Cuenta bloqueada temporalmente");
-        return;
-      }
-
-      const credential = await signInWithEmailAndPassword(auth, email, data.password);
-      const user = credential.user;
-
-      if (!user.emailVerified) {
-        await auth.signOut();
-        toast("error", "Verifica tu correo antes de iniciar sesión.");
-        return;
-      }
-
-      await axios.post(`${API_URL}/api/usuarios/login/exito`, { email });
-      toast("success", "Inicio de sesión exitoso");
-      navigate("/dashboard");
-
-    } catch (error) {
-      await auth.signOut().catch(() => {});
-      await handleLoginError(error, email);
+  const email = data.email.toLowerCase().trim();
+  try {
+    const bloqueoRes = await axios.post(
+      `${API_URL}/api/usuarios/login`,
+      { email },
+      { validateStatus: (s) => s === 200 || s === 429 }
+    );
+    if (!bloqueoRes.data.permitido) {
+      toast("error", bloqueoRes.data.message || "Cuenta bloqueada temporalmente");
+      return;
     }
-  };
+
+    const credential = await signInWithEmailAndPassword(auth, email, data.password);
+    const user = credential.user;
+
+    if (!user.emailVerified) {
+      await auth.signOut();
+      toast("error", "Verifica tu correo antes de iniciar sesión.");
+      return;
+    }
+
+    // ✅ Obtén el token y envíalo
+    const token = await user.getIdToken();
+    await axios.post(
+      `${API_URL}/api/usuarios/login/exito`,
+      { email },
+      { headers: { Authorization: `Bearer ${token}` } } // ✅ agregado
+    );
+
+    toast("success", "Inicio de sesión exitoso");
+    navigate("/dashboard");
+
+  } catch (error) {
+    await auth.signOut().catch(() => {});
+    await handleLoginError(error, email);
+  }
+};
 
   const handleLoginError = async (error, email) => {
     if (error.response?.status === 429) {
@@ -153,9 +153,7 @@ const Login = () => {
     try {
       await axios.post(`${API_URL}/api/solicitudes`, {
         nombre_solicitante: data.nombre_solicitante,
-        email:              data.email_sol.toLowerCase().trim(),
-        nombre_alumno:      data.nombre_alumno,
-        grado:              data.grado
+        email:              data.email_sol.toLowerCase().trim()
       });
 
       Swal.fire({
@@ -303,39 +301,7 @@ const Login = () => {
                 )}
 
                 {/* Nombre del alumno */}
-                <input
-                  type="text"
-                  placeholder="Nombre del alumno"
-                  {...register("nombre_alumno", {
-                    required: "Este campo es obligatorio",
-                    pattern: {
-                      value:   /^[A-Z\s]+$/,
-                      message: "Solo se permiten letras y espacios"
-                    },
-                    onChange: (e) => {
-                      const val = e.target.value.toUpperCase().replace(/[^A-Z\s]/g, "");
-                      setValue("nombre_alumno", val, { shouldValidate: true });
-                    }
-                  })}
-                />
-                {errors.nombre_alumno && (
-                  <span className="loginMessage">{errors.nombre_alumno.message}</span>
-                )}
-
-                {/* Grado */}
-                <select
-                  {...register("grado", { required: "Selecciona un grado" })}
-                  defaultValue=""
-                >
-                  <option value="" disabled>Grado del alumno / Relación</option>
-                  {GRADOS.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-                {errors.grado && (
-                  <span className="loginMessage">{errors.grado.message}</span>
-                )}
-
+                
                 <div className="login-center-buttons">
                   <button type="submit" className="button" disabled={enviando}>
                     {enviando ? "Enviando..." : "Enviar solicitud"}

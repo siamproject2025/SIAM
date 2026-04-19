@@ -12,6 +12,7 @@ const API_URL = process.env.REACT_APP_API_URL;
 // ── Componente de inputs OTP (6 cajas individuales) ──────────────────────
 const OTPInput = ({ value, onChange }) => {
   const inputs = useRef([]);
+  
 
   const handleChange = (e, idx) => {
     const val = e.target.value.replace(/\D/g, "").slice(-1);
@@ -35,6 +36,7 @@ const OTPInput = ({ value, onChange }) => {
     const nextFocus = Math.min(pasted.length, 5);
     inputs.current[nextFocus]?.focus();
   };
+  
 
   return (
     <div className="otp-boxes" onPaste={handlePaste}>
@@ -67,9 +69,9 @@ const ResetPassword = () => {
   const [nuevaPass, setNuevaPass]     = useState("");
   const [confirmaPass, setConfirmaPass] = useState("");
   const [cargando, setCargando]       = useState(false);
-  const [showPass, setShowPass]       = useState(false);
   const [countdown, setCountdown]     = useState(0); // segundos para reenviar
-
+  const [showPass, setShowPass]         = useState(false);
+const [showConfirm, setShowConfirm]   = useState(false);
   // Countdown reenvío
   useEffect(() => {
     if (countdown <= 0) return;
@@ -182,7 +184,6 @@ const ResetPassword = () => {
       <div className="login-right">
         <div className="login-right-container">
           <div className="login-logo">
-            <img src={Logo} alt="Logo" />
           </div>
 
           {/* Stepper visual */}
@@ -271,47 +272,78 @@ const ResetPassword = () => {
             </div>
           )}
 
-          {/* ════ PASO 3: Nueva contraseña ════ */}
-          {paso === "nueva" && (
-            <div className="login-center">
-              <h2>Nueva contraseña</h2>
-              <p>Elige una contraseña segura de al menos 8 caracteres</p>
-              <form autoComplete="off" onSubmit={handleCambiarPassword}>
-                <div className="pass-input-div">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    placeholder="Nueva contraseña"
-                    value={nuevaPass}
-                    onChange={(e) => setNuevaPass(e.target.value)}
-                    required
-                  />
-                </div>
+         {/* ════ PASO 3: Nueva contraseña ════ */}
+{paso === "nueva" && (
+  <div className="login-center">
+    <h2>Nueva contraseña</h2>
+    <p>Elige una contraseña segura</p>
+    <form autoComplete="off" onSubmit={handleCambiarPassword}>
+ <div className="pass-input-div">
+  <input
+    type={showPass ? "text" : "password"}
+    placeholder="Nueva contraseña"
+    value={nuevaPass}
+    onKeyDown={(e) => e.key === " " && e.preventDefault()}
+    onChange={(e) => setNuevaPass(e.target.value.replace(/\s/g, ""))}
+    required
+  />
+  {/* ✅ Ojito en el primero también */}
+  <div className="messageWi" style={{ cursor: "pointer" }}
+    onClick={() => setShowPass((v) => !v)}>
+    {showPass ? "🙈" : "👁️"}
+  </div>
+</div>
 
-                <div className="pass-input-div">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    placeholder="Confirmar contraseña"
-                    value={confirmaPass}
-                    onChange={(e) => setConfirmaPass(e.target.value)}
-                    required
-                  />
-                  <div className="messageWi" style={{ cursor: "pointer" }}
-                    onClick={() => setShowPass((v) => !v)}>
-                    {showPass ? "🙈" : "👁️"}
-                  </div>
-                </div>
 
-                {/* Indicador de seguridad */}
-                <PasswordStrength password={nuevaPass} />
 
-                <div className="login-center-buttons">
-                  <button type="submit" className="button" disabled={cargando}>
-                    {cargando ? "Guardando..." : "Cambiar contraseña"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+      {/* ✅ Requisitos visuales */}
+      {nuevaPass.length > 0 && (
+        <ul className="password-requirements">
+          {[
+            { ok: nuevaPass.length >= 8,                             text: "Mínimo 8 caracteres" },
+            { ok: /[A-Z]/.test(nuevaPass),                          text: "Una letra mayúscula" },
+            { ok: /[a-z]/.test(nuevaPass),                          text: "Una letra minúscula" },
+            { ok: /[0-9]/.test(nuevaPass),                          text: "Un número" },
+            { ok: /[!@#$%^&*(),.?":{}|<>]/.test(nuevaPass),        text: "Un símbolo (!@#$%...)" },
+          ].map((req, i) => (
+            <li key={i} style={{ color: req.ok ? "#22c55e" : "#ef4444" }}>
+              {req.ok ? "✓" : "✗"} {req.text}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="pass-input-div">
+  <input
+    type={showConfirm ? "text" : "password"}
+    placeholder="Confirmar contraseña"
+    value={confirmaPass}
+    onKeyDown={(e) => e.key === " " && e.preventDefault()}
+    onChange={(e) => setConfirmaPass(e.target.value.replace(/\s/g, ""))}
+    required
+  />
+  {/* ✅ Estado independiente */}
+  <div className="messageWi" style={{ cursor: "pointer" }}
+    onClick={() => setShowConfirm((v) => !v)}>
+    {showConfirm ? "🙈" : "👁️"}
+  </div>
+</div>
+
+      <PasswordStrength password={nuevaPass} />
+
+      <div className="login-center-buttons">
+        <button
+          type="submit"
+          className="button"
+          // ✅ Deshabilitado hasta que se cumplan todos los requisitos
+          disabled={cargando || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])\S{8,}$/.test(nuevaPass)}
+        >
+          {cargando ? "Guardando..." : "Cambiar contraseña"}
+        </button>
+      </div>
+    </form>
+  </div>
+)}
         </div>
       </div>
 

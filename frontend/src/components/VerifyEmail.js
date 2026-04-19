@@ -19,7 +19,6 @@ const VerifyEmail = () => {
         const mode = queryParams.get("mode");
         const oobCode = queryParams.get("oobCode");
 
-        console.log("📍 Verificando email con código:", oobCode);
 
         if (!oobCode) {
           throw new Error("No se encontró código de verificación");
@@ -29,7 +28,6 @@ const VerifyEmail = () => {
         await applyActionCode(auth, oobCode);
         
         // ✅ SI LLEGAMOS AQUÍ, LA VERIFICACIÓN FUE EXITOSA
-        console.log("✅ Verificación exitosa!");
         
         setMessage("¡Correo verificado exitosamente!");
         setVerifying(false);

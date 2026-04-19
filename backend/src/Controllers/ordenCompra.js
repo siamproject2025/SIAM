@@ -1,181 +1,254 @@
+// Controllers/ordenCompraController.js
 const OrdenCompra = require("../Models/ordenCompra");
 
-// Crear una nueva orden
-exports.crearOrden = async (req, res) => {
-  try {
-    console.log('\n' + '='.repeat(60));
-    console.log('📦 INICIANDO CREACIÓN DE ORDEN');
-    console.log('='.repeat(60));
-    
-    // Manejar dos formatos:
-    // 1. JSON en header X-Orden-Data (base64) + FormData/archivos
-    // 2. JSON directo en body
-    
-    let datosOrden;
-    
-    // Intentar primero obtener datos del header
-    if (req.headers['x-orden-data']) {
-      console.log('📋 Decodificando datos desde header X-Orden-Data');
-      try {
-        const ordenDataBase64 = req.headers['x-orden-data'];
-        const ordenDataJson = Buffer.from(ordenDataBase64, 'base64').toString('utf-8');
-        datosOrden = JSON.parse(ordenDataJson);
-        console.log('✅ Datos decodificados del header exitosamente');
-      } catch (decodeErr) {
-        console.error('❌ Error decodificando header:', decodeErr.message);
-        return res.status(400).json({ error: 'Header X-Orden-Data inválido' });
-      }
-    } else if (req.body?.datos) {
-      // Si viene FormData con campo 'datos'
-      console.log('📋 Parseando FormData con datos JSON');
-      try {
-        datosOrden = JSON.parse(req.body.datos);
-        console.log('✅ JSON del FormData parseado exitosamente');
-      } catch (parseErr) {
-        console.error('❌ Error parseando JSON del FormData:', parseErr.message);
-        return res.status(400).json({ error: 'El campo datos debe ser un JSON válido' });
-      }
-    } else if (typeof req.body === 'object' && req.body !== null && Object.keys(req.body).length > 0) {
-      // Si viene JSON directo en el body
-      console.log('📊 Usando body como datos de orden (JSON directo)');
-      datosOrden = req.body;
-    } else {
-      console.error('❌ No se encontraron datos de orden');
-      return res.status(400).json({ error: 'No se encontraron datos de orden' });
-    }
-    
-    // Validar que datosOrden sea un objeto
-    if (!datosOrden || typeof datosOrden !== 'object') {
-      console.error('❌ datosOrden no es un objeto válido:', typeof datosOrden);
-      return res.status(400).json({ error: 'Datos de orden inválidos' });
-    }
-    
-    console.log('📊 Datos de orden recibidos:');
-    console.log('   Proveedor:', datosOrden.proveedor_id);
-    console.log('   Items:', datosOrden.items?.length || 0);
-    console.log('   Estado:', datosOrden.estado);
-    console.log('   Fecha:', datosOrden.fecha);
-    
-    // Desestructurar datos, EXCLUIR número (se genera automáticamente)
-    const { numero, ...datosLimpios } = datosOrden;
-    
-    // Agregar adjuntos si existen (vienen procesados desde middleware)
-    if (req.adjuntosProcessados && req.adjuntosProcessados.length > 0) {
-      console.log(`📎 Agregando ${req.adjuntosProcessados.length} adjunto(s)`);
-      datosLimpios.adjuntos = req.adjuntosProcessados;
-    }
-    
-    console.log('💾 Guardando orden en base de datos...');
-    
-    // Crear orden SIN el número (se generará en pre-save)
-    const nuevaOrden = new OrdenCompra(datosLimpios);
-    const ordenGuardada = await nuevaOrden.save();
-    console.log('✅ Orden guardada exitosamente:', ordenGuardada._id);
-    console.log('   Número generado:', ordenGuardada.numero);
+// ── Helper: detectar cambios campo a campo ───────────────────
+const detectarCambios = (anterior, nuevo) => {
+  if (!anterior || !nuevo) return { cambios: {}, descripcion: '' };
 
-    // Populate inmediatamente después de guardar
-    const ordenConProveedor = await OrdenCompra.findById(ordenGuardada._id)
-      .populate("proveedor_id", "nombre empresa")
-      .lean();
+  const ignorar = new Set([
+    '_id', '__v', 'fecha_creacion', 'fecha_actualizacion',
+    'creado_por', 'creado_por_email',
+    'actualizado_por', 'actualizado_por_email',
+    'createdAt', 'updatedAt'
+  ]);
 
-    console.log('='.repeat(60));
-    console.log('✨ ORDEN CREADA EXITOSAMENTE\n');
-    
-    // Retornar orden con número generado automáticamente
-    res.status(201).json({
-      ...ordenConProveedor,
-      mensaje: `Orden creada exitosamente con número: ${ordenConProveedor.numero} y ${req.adjuntosProcessados?.length || 0} adjunto(s)`
-    });
-  } catch (err) {
-    console.error('\n' + '='.repeat(60));
-    console.error('❌ ERROR EN CREARORDEN');
-    console.error('='.repeat(60));
-    console.error('Mensaje:', err.message);
-    console.error('Stack:', err.stack);
-    console.error('='.repeat(60) + '\n');
-    
-    // Limpiar archivos si hay error
-    if (req.files && Object.keys(req.files).length > 0) {
-      const fs = require('fs');
-      console.log('🗑️ Limpiando archivos por error...');
-      
-      // Con multer.fields(), los archivos están en req.files.adjuntos
-      const archivos = req.files.adjuntos || [];
-      archivos.forEach(file => {
-        try {
-          fs.unlinkSync(file.path);
-          console.log('  ✅ Eliminado:', file.path);
-        } catch (e) {
-          console.error('  ❌ Error eliminando archivo:', e.message);
-        }
-      });
+  const cambios = {};
+  const campos  = new Set([...Object.keys(anterior), ...Object.keys(nuevo)]);
+
+  for (const campo of campos) {
+    if (ignorar.has(campo)) continue;
+    if (JSON.stringify(anterior[campo]) !== JSON.stringify(nuevo[campo])) {
+      cambios[campo] = {
+        anterior: anterior[campo] ?? 'vacío',
+        nuevo:    nuevo[campo]    ?? 'vacío'
+      };
     }
-    
-    res.status(400).json({ error: err.message || 'Error desconocido al crear orden' });
   }
+
+  const descripcion = Object.entries(cambios)
+    .map(([c, v]) =>
+      `${c}: "${String(v.anterior).substring(0, 50)}" → "${String(v.nuevo).substring(0, 50)}"`)
+    .join('; ');
+
+  return { cambios, descripcion };
 };
 
+// ── Helper: extraer usuario del token ────────────────────────
+const getUserInfo = (req) => {
+  const u = req.user;
+  if (!u) return { id: 'sistema', email: 'sistema@escuela.edu' };
+  return {
+    id:    u._id || u.id || u.sub,
+    email: u.email || 'sistema@escuela.edu'
+  };
+};
 
-/*const OrdenCompra = require("../Models/ordenCompra");
-
+// ── GET /api/compras ─────────────────────────────────────────
 exports.getOrdenes = async (req, res) => {
   try {
     const ordenes = await OrdenCompra.find()
-      .populate("proveedor_id", "nombre"); 
+      .populate('proveedor_id', 'nombre empresa direccion telefono')
+      .sort({ createdAt: -1 });
     res.json(ordenes);
-  } catch (error) {
-    res.status(500).json({ message: "Error al obtener órdenes", error });
-  }
-};*/
-
-// Obtener todas las órdenes (con datos del proveedor)
-exports.obtenerOrdenes = async (req, res) => {
-  try {
-    const ordenes = await OrdenCompra.find()
-      .populate("proveedor_id", "nombre empresa")
-      .lean();
-
-    res.status(200).json(ordenes);
   } catch (err) {
-    console.error("Error al obtener órdenes:", err);
-    res.status(500).json({ error: err.message });
+    console.error('❌ getOrdenes:', err);
+    res.status(500).json({ message: "Error al obtener órdenes", error: err.message });
   }
 };
 
-// Actualizar una orden existente
-exports.actualizarOrden = async (req, res) => {
+// ── GET /api/compras/:id ─────────────────────────────────────
+exports.getOrdenById = async (req, res) => {
   try {
-    // Desestructurar datos, EXCLUIR número (no debe modificarse)
-    const { numero, _id, createdAt, ...datosActualizacion } = req.body;
-    
+    const orden = await OrdenCompra.findById(req.params.id)
+      .populate('proveedor_id', 'nombre empresa direccion telefono');
+    if (!orden) return res.status(404).json({ message: "Orden no encontrada" });
+    res.json(orden);
+  } catch (err) {
+    console.error('❌ getOrdenById:', err);
+    res.status(500).json({ message: "Error al buscar la orden", error: err.message });
+  }
+};
+
+// ── POST /api/compras ────────────────────────────────────────
+exports.createOrden = async (req, res) => {
+  try {
+    console.log('🚀 Creando orden de compra...');
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email} (${usuario.id})`);
+
+    const ordenData = {
+      ...req.body,
+      // Auditoría
+      creado_por:           usuario.id,
+      creado_por_email:     usuario.email,
+      fecha_creacion:       new Date(),
+      actualizado_por:      usuario.id,
+      actualizado_por_email:usuario.email,
+      fecha_actualizacion:  new Date()
+    };
+
+    const orden = await OrdenCompra.create(ordenData);
+
+    console.log(`✅ Orden creada por ${usuario.email}: ${orden.numero}`);
+
+    res.status(201).json({
+      success: true,
+      message: 'Orden de compra creada exitosamente',
+      data:    orden,
+      audit: {
+        creado_por:    usuario.email,
+        fecha_creacion:orden.fecha_creacion
+      }
+    });
+  } catch (err) {
+    console.error('❌ createOrden:', err);
+    res.status(400).json({
+      success: false,
+      message: 'Error al crear la orden',
+      error:   err.message
+    });
+  }
+};
+
+// ── PUT /api/compras/:id ─────────────────────────────────────
+exports.updateOrden = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email} | Actualizando orden ${id}`);
+
+    const ordenAnterior = await OrdenCompra.findById(id);
+    if (!ordenAnterior) {
+      return res.status(404).json({ message: "Orden no encontrada" });
+    }
+
+    // Campos permitidos para actualizar
+    const ordenData = {
+      ...(req.body.numero    !== undefined && { numero:       req.body.numero    }),
+      ...(req.body.estado    !== undefined && { estado:       req.body.estado    }),
+      ...(req.body.fecha     !== undefined && { fecha:        req.body.fecha     }),
+      ...(req.body.items     !== undefined && { items:        req.body.items     }),
+      ...(req.body.proveedor_id !== undefined && { proveedor_id: req.body.proveedor_id }),
+      // Auditoría
+      actualizado_por:       usuario.id,
+      actualizado_por_email: usuario.email,
+      fecha_actualizacion:   new Date()
+    };
+
+    // Detectar cambios para logging
+    const anteriorObj = ordenAnterior.toObject ? ordenAnterior.toObject() : ordenAnterior;
+    const { cambios, descripcion } = detectarCambios(anteriorObj, { ...anteriorObj, ...ordenData });
+
+    if (Object.keys(cambios).length > 0) {
+      console.log(`📝 Cambios por ${usuario.email}: ${descripcion}`);
+    } else {
+      console.log(`ℹ️ Sin cambios detectados (${usuario.email})`);
+    }
+
     const ordenActualizada = await OrdenCompra.findByIdAndUpdate(
-      req.params.id,
-      datosActualizacion,
+      id,
+      ordenData,
       { new: true, runValidators: true }
-    )
-      .populate("proveedor_id", "nombre empresa")
-      .lean();
+    ).populate('proveedor_id', 'nombre empresa direccion telefono');
 
-    if (!ordenActualizada) {
-      return res.status(404).json({ error: "Orden no encontrada" });
-    }
+    console.log(`✅ Orden ${ordenActualizada.numero} actualizada por ${usuario.email}`);
 
-    res.status(200).json(ordenActualizada);
+    res.status(200).json({
+      success: true,
+      message: 'Orden actualizada exitosamente',
+      data:    ordenActualizada,
+      audit: {
+        actualizado_por:      usuario.email,
+        fecha_actualizacion:  ordenActualizada.fecha_actualizacion,
+        cambios_realizados:   Object.keys(cambios).length,
+        detalles_cambios:     descripcion || 'Sin cambios significativos'
+      }
+    });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('❌ updateOrden:', err);
+    res.status(400).json({
+      success: false,
+      message: 'Error al actualizar la orden',
+      error:   err.message
+    });
   }
 };
 
-// Eliminar una orden
-exports.eliminarOrden = async (req, res) => {
+// ── DELETE /api/compras/:id ──────────────────────────────────
+exports.deleteOrden = async (req, res) => {
   try {
-    const ordenEliminada = await OrdenCompra.findByIdAndDelete(req.params.id);
+    console.log('🗑️ Eliminando orden...');
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email}`);
+
+    const ordenEliminada = await OrdenCompra.findById(req.params.id);
     if (!ordenEliminada) {
-      return res.status(404).json({ error: "Orden no encontrada" });
+      return res.status(404).json({ message: "Orden no encontrada" });
     }
-    res.status(200).json({ mensaje: "Orden eliminada correctamente" });
+
+    const datosEliminados = {
+      id:               ordenEliminada._id,
+      numero:           ordenEliminada.numero,
+      estado:           ordenEliminada.estado,
+      creado_por:       ordenEliminada.creado_por_email || ordenEliminada.creado_por,
+      fecha_creacion:   ordenEliminada.fecha_creacion,
+      ultima_actualizacion: ordenEliminada.fecha_actualizacion,
+      actualizado_por:  ordenEliminada.actualizado_por_email
+    };
+
+    console.log(`📋 Orden a eliminar: ${datosEliminados.numero}`);
+    console.log(`🗑️ Eliminado por: ${usuario.email}`);
+
+    await OrdenCompra.findByIdAndDelete(req.params.id);
+
+    console.log(`✅ Orden eliminada por ${usuario.email}`);
+
+    res.json({
+      success: true,
+      message: 'Orden eliminada correctamente',
+      data: { id: req.params.id, numero: datosEliminados.numero },
+      audit: {
+        eliminado_por:    usuario.email,
+        fecha_eliminacion:new Date(),
+        orden_eliminada:  datosEliminados
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message }); 
+    console.error('❌ deleteOrden:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar la orden',
+      error:   err.message
+    });
+  }
+};
+
+// ── GET /api/compras/:id/auditoria ───────────────────────────
+exports.getOrdenAuditoria = async (req, res) => {
+  try {
+    const orden = await OrdenCompra.findById(req.params.id);
+    if (!orden) return res.status(404).json({ message: "Orden no encontrada" });
+
+    res.json({
+      id:     orden._id,
+      numero: orden.numero,
+      estado: orden.estado,
+      creado: {
+        por:   orden.creado_por_email || orden.creado_por,
+        fecha: orden.fecha_creacion
+      },
+      ultima_actualizacion: {
+        por:   orden.actualizado_por_email || orden.actualizado_por,
+        fecha: orden.fecha_actualizacion
+      },
+      historial: {
+        fecha_creacion:           orden.fecha_creacion,
+        fecha_ultima_modificacion:orden.fecha_actualizacion || orden.fecha_creacion
+      }
+    });
+  } catch (err) {
+    console.error('❌ getOrdenAuditoria:', err);
+    res.status(500).json({ message: "Error al obtener auditoría", error: err.message });
   }
 };
 

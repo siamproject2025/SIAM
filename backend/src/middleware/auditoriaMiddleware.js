@@ -314,6 +314,7 @@ const registrarAuditoria = (modulo, accionPersonalizada = null) => {
   };
 };
 
+
 module.exports = {
   registrarAuditoria,
   capturarDatosPrevios,

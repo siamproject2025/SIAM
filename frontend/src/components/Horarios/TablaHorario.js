@@ -14,11 +14,10 @@ import {
   Filter, Download, X, Clock, BookOpen, GraduationCap,
   UserRound, ChevronRight
 } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "../../styles/Models/horarios.css";
-import { auth } from "../../components/authentication/Auth";
 import WithPermission from "../Permisos/WithPermission";
 
 // ── Paleta por día de semana ──────────────────────────────────
@@ -205,32 +204,14 @@ const CSS = `
 const BusquedaTablaHorarios = ({
   horarios,
   aulas,
+  docentes,           // ← recibido del padre, ya cargado
   onDetalleHorario,
   onDetalleAlumnos,
   onCrearHorario,
   onEliminarHorario,
 }) => {
-  const [filtros, setFiltros]           = useState({ busqueda:"", grado:"", aula:"" });
-  const [personal, setPersonal]         = useState([]);
-  const [loadingPersonal, setLoadingPersonal] = useState(false);
+  const [filtros, setFiltros]   = useState({ busqueda:"", grado:"" });
   const [mostrarAyuda, setMostrarAyuda] = useState(false);
-
-  useEffect(() => { cargarPersonal(); }, []);
-
-  const cargarPersonal = async () => {
-    try {
-      setLoadingPersonal(true);
-      const user  = auth.currentUser;
-      const token = await user.getIdToken();
-      const res = await fetch(process.env.REACT_APP_API_URL + "/api/personal", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setPersonal(Array.isArray(data) ? data : []);
-    } catch { setPersonal([]); }
-    finally   { setLoadingPersonal(false); }
-  };
 
   const normId = (id) => {
     if (!id) return null;
@@ -243,16 +224,12 @@ const BusquedaTablaHorarios = ({
     [...new Set(horarios.map(h => h.grado).filter(Boolean))].sort()
   ), [horarios]);
 
-  const aulasUnicas = useMemo(() => (
-    aulas.map(a => ({ id: normId(a._id), nombre: a.grado }))
-         .sort((a,b) => a.nombre.localeCompare(b.nombre))
-  ), [aulas]);
-
-  const nombreDocente = (docenteId) => {
+  // Nombre del docente directo desde prop (sin fetch interno)
+  const nombreDocente = useCallback((docenteId) => {
     if (!docenteId) return "Sin docente asignado";
-    const doc = personal.find(p => normId(p._id) === normId(docenteId));
-    return doc ? `${doc.nombres} ${doc.apellidos}` : "Docente no encontrado";
-  };
+    const doc = docentes.find(p => normId(p._id) === normId(docenteId));
+    return doc ? `${doc.nombres} ${doc.apellidos}` : "Sin docente asignado";
+  }, [docentes]);
 
   const horariosFiltrados = useMemo(() => (
     horarios.filter(h => {
@@ -263,14 +240,13 @@ const BusquedaTablaHorarios = ({
       const coincBus = !bus ||
         h.asignatura?.toLowerCase().includes(bus) ||
         h.grado?.toLowerCase().includes(bus) ||
-        aulaObj?.nombre?.toLowerCase().includes(bus) ||
+        aulaObj?.grado?.toLowerCase().includes(bus) ||
         nd.toLowerCase().includes(bus);
 
       const coincGrado = !filtros.grado || h.grado === filtros.grado;
-      const coincAula  = !filtros.aula  || normId(h.aula_id) === filtros.aula;
-      return coincBus && coincGrado && coincAula;
+      return coincBus && coincGrado;
     })
-  ), [horarios, filtros, aulas, personal]);
+  ), [horarios, filtros, aulas, nombreDocente]);
 
   // ── PDF — una página por grado, grado visible en cada hoja ──
   const descargarPDF = () => {
@@ -337,7 +313,7 @@ const BusquedaTablaHorarios = ({
 
       if (franjas.length === 0) {
         doc.setFont("helvetica","normal");
-        doc.setFontSize(10);
+        doc.setFontSize(12);
         doc.setTextColor(150);
         doc.text("Sin horarios registrados para este grado.", pageW/2, 60, { align:"center" });
         return;
@@ -375,8 +351,8 @@ const BusquedaTablaHorarios = ({
         body,
         theme: "grid",
         styles: {
-          fontSize:    7.5,
-          cellPadding: 3,
+          fontSize:    9,
+          cellPadding: 5,
           valign:      "middle",
           halign:      "center",
           lineColor:   [210,200,235],
@@ -390,21 +366,21 @@ const BusquedaTablaHorarios = ({
           fillColor:   [108,79,191],
           textColor:   255,
           fontStyle:   "bold",
-          fontSize:    8.5,
+          fontSize:    10,
           halign:      "center",
           cellPadding: 4,
         },
         columnStyles: {
           0: { cellWidth:24, fontStyle:"bold", fillColor:[240,236,255], textColor:[80,50,160] },
-          1: { cellWidth:34 },
-          2: { cellWidth:34 },
-          3: { cellWidth:34 },
-          4: { cellWidth:34 },
-          5: { cellWidth:34 },
-          6: { cellWidth:34 },
+          1: { cellWidth:39 },
+          2: { cellWidth:39 },
+          3: { cellWidth:39 },
+          4: { cellWidth:39 },
+          5: { cellWidth:39 },
+          6: { cellWidth:39 },
         },
         alternateRowStyles: { fillColor:[248,245,255] },
-        margin: { left:10, right:10 },
+        margin: { left:19, right:19 },
 
         // ── Encabezado en páginas extras del mismo grado ──────
         didDrawPage: (data) => {
@@ -446,8 +422,8 @@ const BusquedaTablaHorarios = ({
   };
 
   const setFiltro = (k, v) => setFiltros(p => ({ ...p, [k]: v }));
-  const limpiar   = () => setFiltros({ busqueda:"", grado:"", aula:"" });
-  const hayFiltro = filtros.busqueda || filtros.grado || filtros.aula;
+  const limpiar   = () => setFiltros({ busqueda:"", grado:"" });
+  const hayFiltro = filtros.busqueda || filtros.grado;
 
   // ── Render ────────────────────────────────────────────────
   return (
@@ -474,11 +450,6 @@ const BusquedaTablaHorarios = ({
           {gradosUnicos.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
 
-        <select className="ht-select" value={filtros.aula} onChange={e => setFiltro("aula",e.target.value)}>
-          <option value="">Todas las aulas</option>
-          {aulasUnicas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-        </select>
-
         {hayFiltro && (
           <button className="ht-btn ht-btn-ghost" onClick={limpiar}>
             <Filter size={15}/> Limpiar
@@ -496,11 +467,12 @@ const BusquedaTablaHorarios = ({
           whileHover={{scale:1.04}} whileTap={{scale:.96}}>
           <HelpCircle size={15}/> Ayuda
         </motion.button>
-
+        <WithPermission requiredPermissions={["CREAR_HORARIOS"]}>
         <motion.button className="ht-btn ht-btn-primary" onClick={onCrearHorario}
           whileHover={{scale:1.04,y:-1}} whileTap={{scale:.96}}>
           <Plus size={15}/> Nuevo Horario
         </motion.button>
+        </WithPermission>
       </div>
 
       {/* Info row */}
@@ -525,8 +497,11 @@ const BusquedaTablaHorarios = ({
           <p>Intenta cambiar los filtros o registra un nuevo horario.</p>
         </div>
       ) : (
-        <motion.div className="ht-grid"
-          initial="hidden" animate="visible"
+        <motion.div
+          key={filtros.grado + "|" + filtros.busqueda}
+          className="ht-grid"
+          initial="hidden"
+          animate="visible"
           variants={{ hidden:{}, visible:{ transition:{ staggerChildren:.06 } } }}>
 
           {horariosFiltrados.map((horario, i) => {
@@ -598,10 +573,13 @@ const BusquedaTablaHorarios = ({
                       <Edit size={14}/> Editar
                     </button>
                   </WithPermission>
+                  
                   <div className="ht-action-sep"/>
+                   <WithPermission requiredPermissions={["ACTUALIZAR_HORARIOS"]}>
                   <button className="ht-action-btn alumnos" onClick={() => onDetalleAlumnos(horario._id)}>
                     <Users size={14}/> Alumnos
                   </button>
+                  </WithPermission>
                   <div className="ht-action-sep"/>
                   <WithPermission requiredPermissions={["ELIMINAR_HORARIOS"]}>
                     <button className="ht-action-btn del" onClick={() => onEliminarHorario(horario._id)}>

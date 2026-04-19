@@ -191,7 +191,7 @@ useEffect(() => {
                 >
                   <option value="">-- Seleccionar rol --</option>
                   {roles.map(r => (
-                    <option key={r._id} value={r.nombre}>{r.nombre}</option>
+                    <option key={r._id} value={r._id}>{r._id}</option>
                   ))}
                 </select>
               </div>
@@ -250,7 +250,7 @@ useEffect(() => {
         {/* ── Footer con botones a la derecha ── */}
         <div style={s.footer}>
           <button style={s.btnCancelar} onClick={onCancelar} disabled={guardando}>
-            <X size={15} /> Cancelar
+            Cancelar
           </button>
           <button
             style={{ ...s.btnGuardar, opacity: (!rolSelec || guardando || cargando) ? 0.6 : 1, cursor: (!rolSelec || guardando || cargando) ? "not-allowed" : "pointer" }}
@@ -259,7 +259,7 @@ useEffect(() => {
           >
             {guardando
               ? <><Spinner /> Guardando...</>
-              : <><Save size={15} /> Guardar cambios</>
+              : <>Guardar</>
             }
           </button>
         </div>
@@ -310,7 +310,7 @@ const s = {
   // Footer
   footer:      { display:"flex", justifyContent:"flex-end", gap:10, padding:"16px 28px", borderTop:"1px solid #ede9fe", background:"#fafafa", flexShrink:0 },
   btnCancelar: { display:"flex", alignItems:"center", gap:7, background:"#E0D9F5", color:"#6C4FBF", border:"none", borderRadius:8, padding:"9px 18px", fontWeight:600, fontSize:"0.875rem", cursor:"pointer" },
-  btnGuardar:  { display:"flex", alignItems:"center", gap:7, background:"linear-gradient(135deg, #6C4FBF, #9B59B6)", color:"#fff", border:"none", borderRadius:8, padding:"9px 20px", fontWeight:600, fontSize:"0.875rem", transition:"opacity 0.15s" },
+  btnGuardar:  { display:"flex", alignItems:"center", gap:7, background:"linear-gradient(135deg, #6C4FBF)", color:"#fff", border:"none", borderRadius:8, padding:"9px 20px", fontWeight:600, fontSize:"0.875rem", transition:"opacity 0.15s" },
 };
 
 export default ModalEditarAsignacion;

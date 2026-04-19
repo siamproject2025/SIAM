@@ -1,80 +1,93 @@
+// Controllers/proveedoresController.js
+// Auditoría completa: creado_por, actualizado_por, fechas — igual que bienesController
 const Proveedor = require('../Models/proveedorModel');
 
-// Obtener todos los proveedores
+// ── Helper: detectar cambios ─────────────────────────────────
+const detectarCambios = (anterior, nuevo) => {
+  if (!anterior || !nuevo) return { cambios: null, descripcion: '' };
+
+  const camposIgnorar = [
+    '_id', '__v', 'fecha_creacion', 'fecha_actualizacion',
+    'creado_por', 'creado_por_email',
+    'actualizado_por', 'actualizado_por_email',
+    'createdAt', 'updatedAt',
+  ];
+
+  const cambios = {};
+  const todosLosCampos = new Set([...Object.keys(anterior), ...Object.keys(nuevo)]);
+
+  for (const campo of todosLosCampos) {
+    if (camposIgnorar.includes(campo)) continue;
+    if (JSON.stringify(anterior[campo]) !== JSON.stringify(nuevo[campo])) {
+      cambios[campo] = {
+        anterior: anterior[campo] ?? 'vacío',
+        nuevo:    nuevo[campo]    ?? 'vacío',
+      };
+    }
+  }
+
+  const descripcion = Object.keys(cambios)
+    .map(c => `${c}: "${String(cambios[c].anterior).substring(0, 50)}" → "${String(cambios[c].nuevo).substring(0, 50)}"`)
+    .join('; ');
+
+  return { cambios, descripcion };
+};
+
+// ── Helper: info del usuario desde token ─────────────────────
+const getUserInfo = (req) => {
+  const user = req.user;
+  if (!user) return { id: 'sistema', email: 'sistema@escuela.edu' };
+  return {
+    id:    user._id || user.id || user.sub,
+    email: user.email || 'sistema@escuela.edu',
+  };
+};
+
+// ── Obtener todos los proveedores ────────────────────────────
 const obtenerProveedores = async (req, res) => {
   try {
     const proveedores = await Proveedor.find().sort({ fecha_creacion: -1 });
     res.status(200).json(proveedores);
   } catch (error) {
-    console.error('Error al obtener proveedores:', error);
-    res.status(500).json({ 
-      message: 'Error al obtener los proveedores', 
-      error: error.message 
-    });
+    console.error('❌ Error al obtener proveedores:', error);
+    res.status(500).json({ message: 'Error al obtener los proveedores', error: error.message });
   }
 };
 
-// Obtener un proveedor por ID
+// ── Obtener un proveedor por ID ──────────────────────────────
 const obtenerProveedorPorId = async (req, res) => {
   try {
-    const { id } = req.params;
-    const proveedor = await Proveedor.findById(id);
-    
-    if (!proveedor) {
-      return res.status(404).json({ message: 'Proveedor no encontrado' });
-    }
-    
+    const proveedor = await Proveedor.findById(req.params.id);
+    if (!proveedor) return res.status(404).json({ message: 'Proveedor no encontrado' });
     res.status(200).json(proveedor);
   } catch (error) {
-    console.error('Error al obtener proveedor:', error);
-    res.status(500).json({ 
-      message: 'Error al obtener el proveedor', 
-      error: error.message 
-    });
+    console.error('❌ Error al obtener proveedor:', error);
+    res.status(500).json({ message: 'Error al obtener el proveedor', error: error.message });
   }
 };
 
-// Crear nuevo proveedor
+// ── Crear proveedor ──────────────────────────────────────────
 const crearProveedor = async (req, res) => {
   try {
+    console.log('🚀 Iniciando creación de proveedor...');
+    const usuario = getUserInfo(req);
+    console.log(`👤 Usuario: ${usuario.email} (${usuario.id})`);
+
     const {
-      id_proveedor,
-      nombre,
-      contacto,
-      email,
-      telefono,
-      empresa,
-      direccion,
-      ciudad,
-      pais,
-      sitio_web,
-      rtn,
-      tipo_proveedor,
-      estado,
-      calificacion,
-      notas,
-      condiciones_pago,
-      tiempo_entrega_promedio,
-      fecha_registro
+      id_proveedor, nombre, contacto, email, telefono, empresa,
+      direccion, ciudad, pais, sitio_web, rtn, tipo_proveedor,
+      estado, calificacion, notas, condiciones_pago,
+      tiempo_entrega_promedio, fecha_registro,
     } = req.body;
 
-    // Validar que no exista el id_proveedor
+    // Validar duplicado de id_proveedor
     const idExiste = await Proveedor.findOne({ id_proveedor });
-    if (idExiste) {
-      return res.status(400).json({ 
-        message: 'Ya existe un proveedor con este ID' 
-      });
-    }
+    if (idExiste) return res.status(400).json({ message: 'Ya existe un proveedor con este ID' });
 
-    // Validar que no exista el email
+    // Validar duplicado de email
     const emailExiste = await Proveedor.findOne({ email });
-    if (emailExiste) {
-      return res.status(400).json({ 
-        message: 'Ya existe un proveedor con este email' 
-      });
-    }
+    if (emailExiste) return res.status(400).json({ message: 'Ya existe un proveedor con este email' });
 
-    // Crear nuevo proveedor
     const nuevoProveedor = new Proveedor({
       id_proveedor,
       nombre,
@@ -93,160 +106,145 @@ const crearProveedor = async (req, res) => {
       notas,
       condiciones_pago,
       tiempo_entrega_promedio,
-      fecha_registro: fecha_registro || Date.now()
+      fecha_registro: fecha_registro || Date.now(),
+      // ── Auditoría ─────────────────────────────────────────
+      creado_por:          usuario.id,
+      creado_por_email:    usuario.email,
+      fecha_creacion:      new Date(),
+      actualizado_por:     usuario.id,
+      actualizado_por_email: usuario.email,
+      fecha_actualizacion: new Date(),
     });
 
-    const proveedorGuardado = await nuevoProveedor.save();
-    res.status(201).json(proveedorGuardado);
+    const guardado = await nuevoProveedor.save();
+    console.log(`✅ Proveedor creado por ${usuario.email}: ${guardado.nombre}`);
+
+    res.status(201).json(guardado);
   } catch (error) {
-    console.error('Error al crear proveedor:', error);
-    
+    console.error('❌ Error al crear proveedor:', error);
     if (error.name === 'ValidationError') {
-      const errores = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ 
-        message: 'Error de validación', 
-        errores 
-      });
+      const errores = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: 'Error de validación', errores });
     }
-    
-    res.status(500).json({ 
-      message: 'Error al crear el proveedor', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Error al crear el proveedor', error: error.message });
   }
 };
 
-// Actualizar proveedor
+// ── Actualizar proveedor ─────────────────────────────────────
 const actualizarProveedor = async (req, res) => {
   try {
     const { id } = req.params;
+    const usuario = getUserInfo(req);
+    console.log(`🔄 Actualización de proveedor por ${usuario.email}`);
+
+    const anterior = await Proveedor.findById(id);
+    if (!anterior) return res.status(404).json({ message: 'Proveedor no encontrado' });
+
     const datosActualizados = req.body;
 
-    // Si se está actualizando el id_proveedor, verificar que no exista
+    // Verificar unicidad de id_proveedor si se actualiza
     if (datosActualizados.id_proveedor) {
-      const idExiste = await Proveedor.findOne({ 
+      const idExiste = await Proveedor.findOne({
         id_proveedor: datosActualizados.id_proveedor,
-        _id: { $ne: id }
+        _id: { $ne: id },
       });
-      
-      if (idExiste) {
-        return res.status(400).json({ 
-          message: 'Ya existe un proveedor con este ID' 
-        });
-      }
+      if (idExiste) return res.status(400).json({ message: 'Ya existe un proveedor con este ID' });
     }
 
-    // Si se está actualizando el email, verificar que no exista
+    // Verificar unicidad de email si se actualiza
     if (datosActualizados.email) {
-      const emailExiste = await Proveedor.findOne({ 
+      const emailExiste = await Proveedor.findOne({
         email: datosActualizados.email,
-        _id: { $ne: id }
+        _id: { $ne: id },
       });
-      
-      if (emailExiste) {
-        return res.status(400).json({ 
-          message: 'Ya existe un proveedor con este email' 
-        });
-      }
+      if (emailExiste) return res.status(400).json({ message: 'Ya existe un proveedor con este email' });
     }
 
-    const proveedorActualizado = await Proveedor.findByIdAndUpdate(
+    // Agregar campos de auditoría
+    datosActualizados.actualizado_por       = usuario.id;
+    datosActualizados.actualizado_por_email = usuario.email;
+    datosActualizados.fecha_actualizacion   = new Date();
+
+    // Detectar y loguear cambios
+    const anteriorObj = anterior.toObject ? anterior.toObject() : anterior;
+    const { cambios, descripcion } = detectarCambios(anteriorObj, datosActualizados);
+    if (cambios && Object.keys(cambios).length > 0) {
+      console.log(`📝 Cambios por ${usuario.email}:`, descripcion);
+    } else {
+      console.log(`ℹ️ Sin cambios detectados en actualización por ${usuario.email}`);
+    }
+
+    const actualizado = await Proveedor.findByIdAndUpdate(
       id,
       datosActualizados,
-      { 
-        new: true, 
-        runValidators: true 
-      }
+      { new: true, runValidators: true }
     );
 
-    if (!proveedorActualizado) {
-      return res.status(404).json({ message: 'Proveedor no encontrado' });
-    }
-
-    res.status(200).json(proveedorActualizado);
+    console.log(`✅ Proveedor actualizado: ${actualizado.nombre}`);
+    res.status(200).json(actualizado);
   } catch (error) {
-    console.error('Error al actualizar proveedor:', error);
-    
+    console.error('❌ Error al actualizar proveedor:', error);
     if (error.name === 'ValidationError') {
-      const errores = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ 
-        message: 'Error de validación', 
-        errores 
-      });
+      const errores = Object.values(error.errors).map(e => e.message);
+      return res.status(400).json({ message: 'Error de validación', errores });
     }
-    
-    res.status(500).json({ 
-      message: 'Error al actualizar el proveedor', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Error al actualizar el proveedor', error: error.message });
   }
 };
 
-// Eliminar proveedor
+// ── Eliminar proveedor ───────────────────────────────────────
 const eliminarProveedor = async (req, res) => {
   try {
     const { id } = req.params;
-    const proveedorEliminado = await Proveedor.findByIdAndDelete(id);
+    const usuario = getUserInfo(req);
 
-    if (!proveedorEliminado) {
-      return res.status(404).json({ message: 'Proveedor no encontrado' });
-    }
+    const proveedor = await Proveedor.findById(id);
+    if (!proveedor) return res.status(404).json({ message: 'Proveedor no encontrado' });
 
-    res.status(200).json({ 
+    await Proveedor.findByIdAndDelete(id);
+    console.log(`🗑️ Proveedor "${proveedor.nombre}" eliminado por ${usuario.email}`);
+
+    res.status(200).json({
       message: 'Proveedor eliminado exitosamente',
-      proveedor: proveedorEliminado
+      proveedor,
+      audit: {
+        eliminado_por:   usuario.email,
+        fecha_eliminacion: new Date(),
+      },
     });
   } catch (error) {
-    console.error('Error al eliminar proveedor:', error);
-    res.status(500).json({ 
-      message: 'Error al eliminar el proveedor', 
-      error: error.message 
-    });
+    console.error('❌ Error al eliminar proveedor:', error);
+    res.status(500).json({ message: 'Error al eliminar el proveedor', error: error.message });
   }
 };
 
-// Buscar proveedores por estado
+// ── Buscar por estado ────────────────────────────────────────
 const buscarPorEstado = async (req, res) => {
   try {
-    const { estado } = req.params;
-    const proveedores = await Proveedor.find({ estado }).sort({ fecha_creacion: -1 });
+    const proveedores = await Proveedor.find({ estado: req.params.estado }).sort({ fecha_creacion: -1 });
     res.status(200).json(proveedores);
   } catch (error) {
-    console.error('Error al buscar por estado:', error);
-    res.status(500).json({ 
-      message: 'Error al buscar por estado', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Error al buscar por estado', error: error.message });
   }
 };
 
-// Buscar proveedores por tipo
+// ── Buscar por tipo ──────────────────────────────────────────
 const buscarPorTipo = async (req, res) => {
   try {
-    const { tipo } = req.params;
-    const proveedores = await Proveedor.find({ tipo_proveedor: tipo }).sort({ fecha_creacion: -1 });
+    const proveedores = await Proveedor.find({ tipo_proveedor: req.params.tipo }).sort({ fecha_creacion: -1 });
     res.status(200).json(proveedores);
   } catch (error) {
-    console.error('Error al buscar por tipo:', error);
-    res.status(500).json({ 
-      message: 'Error al buscar por tipo', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Error al buscar por tipo', error: error.message });
   }
 };
 
-// Buscar proveedores por calificación
+// ── Buscar por calificación ──────────────────────────────────
 const buscarPorCalificacion = async (req, res) => {
   try {
-    const { calificacion } = req.params;
-    const proveedores = await Proveedor.find({ calificacion: Number(calificacion) }).sort({ fecha_creacion: -1 });
+    const proveedores = await Proveedor.find({ calificacion: Number(req.params.calificacion) }).sort({ fecha_creacion: -1 });
     res.status(200).json(proveedores);
   } catch (error) {
-    console.error('Error al buscar por calificación:', error);
-    res.status(500).json({ 
-      message: 'Error al buscar por calificación', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Error al buscar por calificación', error: error.message });
   }
 };
 
@@ -258,5 +256,5 @@ module.exports = {
   eliminarProveedor,
   buscarPorEstado,
   buscarPorTipo,
-  buscarPorCalificacion
+  buscarPorCalificacion,
 };

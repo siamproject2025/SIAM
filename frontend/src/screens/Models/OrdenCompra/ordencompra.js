@@ -1,1359 +1,667 @@
-import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { motion } from 'framer-motion';
-import ModalCrearOrden from "./ModalCrearOrden";
+// ============================================================
+// OrdenCompra.js — Módulo de Órdenes de Compra
+// Fixes:
+//  - handleCrearOrden: acepta (datos, esFormData) de ModalCrearOrden
+//  - handleEditarOrden: usa fetch PUT con JSON limpio
+//  - handleEliminarOrden: cierra el modal de detalle al eliminar
+//  - handleCrearOrden: refresca lista con populate correcto
+// ============================================================
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import ModalCrearOrden   from "./ModalCrearOrden";
 import ModalDetalleOrden from "./ModalDetalleOrden";
-import '../../../styles/Models/ordencompra.css';
-import { auth } from "../../../components/authentication/Auth";
-import ConfirmDialog from '../../../components/ConfirmDialog/ConfirmDialog';
+import Notification      from "../../../components/Notification";
+import * as XLSX         from "xlsx";
+import "../../../styles/Models/Bienes.css";
+import "../../../styles/Models/ordencompra.css";
+import { auth }              from "../../../components/authentication/Auth";
 import { loadingController } from "../../../api/loadingController";
+import { motion }            from "framer-motion";
+import ConfirmDialog         from "../../../components/ConfirmDialog/ConfirmDialog";
+import {
+  ShoppingCart, Search, HelpCircle, Plus,
+  Download, Filter, Edit, Trash2,
+  CheckCircle, Send, Package, XCircle,
+  DollarSign
+} from "lucide-react";
+import WithPermission from "../../../components/Permisos/WithPermission";
 
-import { Calendar as RSCalendar } from 'rsuite';
-import 'rsuite/dist/rsuite.min.css';
+const API_URL      = process.env.REACT_APP_API_URL + "/api/compras";
+const API_PROV_URL = process.env.REACT_APP_API_URL + "/api/proveedores";
 
-import { 
-  Search,
-  Plus,
-  Award,
-  FileText,
-  Truck,
-  Star,
-  Calendar,
-  DollarSign,
-  Filter,
-} from 'lucide-react';
-
-
-
-//Calendario
-
-
-// Iconos SVG
-const ChevronDownIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="m6 9 6 6 6-6"/>
-  </svg>
-);
-
-const DotsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="5" r="1" fill="currentColor"/>
-    <circle cx="12" cy="12" r="1" fill="currentColor"/>
-    <circle cx="12" cy="19" r="1" fill="currentColor"/>
-  </svg>
-);
-
-const API_URL = process.env.REACT_APP_API_URL+"/api/compras";
-
-
-
-const OrdenCompra = () => {
-  // Estados principales
-  const [ordenes, setOrdenes] = useState([]);
-  const [proveedores, setProveedores] = useState([]);
-  const [filterValue, setFilterValue] = useState("");
-  const [statusFilter, setStatusFilter] = useState(new Set(["all"]));
-  const [visibleColumns, setVisibleColumns] = useState(new Set(["numero", "proveedor", "fecha", "items", "total", "estado", "acciones"]));
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortDescriptor, setSortDescriptor] = useState({ column: "fecha", direction: "descending" });
-  const [page, setPage] = useState(1);
-  const [showColumnMenu, setShowColumnMenu] = useState(false);
-   const [notification, setNotification] = useState(null);
-  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
-  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
-const [showStatusMenu, setShowStatusMenu] = useState(false);
-  const [fechaInicio, setFechaInicio] = useState(new Date(new Date().setDate(1)));
-  const [fechaFin, setFechaFin] = useState(new Date());
-
-  //Dialogo de eliminación
-  const [ordenAEliminar, setOrdenAEliminar] = useState(null);
-const [showConfirm, setShowConfirm] = useState(false);
-
-const [showActionMenu, setShowActionMenu] = useState(null);
-const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
-
-const [openCal, setOpenCal] = useState(null); // 'desde' | 'hasta' | null
-
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) {
-      setShowStatusMenu(false);
-    }
-    if (columnMenuRef.current && !columnMenuRef.current.contains(event.target)) {
-      setShowColumnMenu(false);
-    }
-    // ← Para el action menu usamos clase en lugar de ref
-    if (!event.target.closest('.action-wrapper') && !event.target.closest('.action-menu')) {
-      setShowActionMenu(null);
-    }
-    if (!event.target.closest('.date-range-filters')) {
-  setOpenCal(null);
-}
-  };
-
-  document.addEventListener('mousedown', handleClickOutside);
-  return () => document.removeEventListener('mousedown', handleClickOutside);
-}, []);
-
-  // Referencias para cerrar menús al hacer clic fuera
-  const statusMenuRef = useRef(null);
-  const columnMenuRef = useRef(null);
-  const actionMenuRef = useRef(null);
-
-  // Columnas disponibles
-  const columns = [
-    { name: "NÚMERO", uid: "numero", sortable: true },
-    { name: "PROVEEDOR", uid: "proveedor", sortable: true },
-    { name: "FECHA", uid: "fecha", sortable: true },
-    { name: "ITEMS", uid: "items", sortable: true },
-    { name: "TOTAL", uid: "total", sortable: true },
-    { name: "ESTADO", uid: "estado", sortable: true },
-    { name: "ACCIONES", uid: "acciones", sortable: false }
-  ];
-
-  const statusOptions = [
-    { name: "Todos", uid: "all" },
-    { name: "Borrador", uid: "BORRADOR" },
-    { name: "Enviada", uid: "ENVIADA" },
-    { name: "Recibida", uid: "RECIBIDA" },
-    { name: "Cerrada", uid: "CERRADA" }
-  ];
-
-  // Notificaciones
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
-  
-  const handleToggleMenu = (e, ordenId) => {
-  console.log('click recibido', ordenId); // ← agregar
-  
-  if (showActionMenu === ordenId) {
-    setShowActionMenu(null);
-    return;
-  }
-
-  const btn = e.currentTarget;
-  const rect = btn.getBoundingClientRect();
-  console.log('rect:', rect); // ← agregar
-  console.log('window.innerHeight:', window.innerHeight); // ← agregar
-  
-  const menuHeight = 100;
-  const spaceBelow = window.innerHeight - rect.bottom;
-
-  const top = spaceBelow < menuHeight
-    ? rect.top - menuHeight
-    : rect.bottom + 6;
-
-  setMenuPosition({
-    top,
-    left: rect.right - 160,
-  });
-
-  console.log('menuPosition calculado:', { top, left: rect.right - 160 }); // ← agregar
-  setShowActionMenu(ordenId);
+const S = {
+  btn: (bg, col = "#fff") => ({
+    display: "inline-flex", alignItems: "center", gap: 7,
+    padding: "10px 20px", borderRadius: 10, fontSize: ".86rem",
+    fontWeight: 700, border: "none", cursor: "pointer",
+    background: bg, color: col, fontFamily: "inherit", transition: "all .18s"
+  })
 };
 
-  //  Cargar proveedores
-  useEffect(() => {
-    
-    const cargarProveedores = async () => {
-    const user = auth.currentUser;
-     
-     try {
-      loadingController.start();
-      const user = auth.currentUser;
-      
-      if (!user) throw new Error('Usuario no autenticado');
-      const token = await user.getIdToken();
+const ChevronDown = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+const formatFecha = (fecha) => {
+  if (!fecha || fecha === "null") return "No registrado";
+  try {
+    const date = new Date(fecha);
+    if (isNaN(date.getTime())) return "No registrado";
+    // UTC a GMT-6 Honduras (America/Tegucigalpa)
+    const offsetMs = -6 * 60 * 60 * 1000;
+    const local = new Date(date.getTime() + offsetMs);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(local.getUTCDate())}/${pad(local.getUTCMonth() + 1)}/${local.getUTCFullYear()} ${pad(local.getUTCHours())}:${pad(local.getUTCMinutes())}`;
+  } catch {
+    return "No registrado";
+  }
+};
+
+const columns = [
+  { name: "NÚMERO",    uid: "numero",    sortable: true  },
+  { name: "PROVEEDOR", uid: "proveedor", sortable: true  },
+  { name: "FECHA",     uid: "fecha",     sortable: true  },
+  { name: "ÍTEMS",     uid: "items",     sortable: false },
+  { name: "TOTAL",     uid: "total",     sortable: true  },
+  { name: "ESTADO",    uid: "estado",    sortable: true  },
+  { name: "ACCIONES",  uid: "acciones",  sortable: false },
+];
+
+const estadosOptions = [
+  { name: "Todos",    uid: "all"      },
+  { name: "Borrador", uid: "BORRADOR" },
+  { name: "Enviada",  uid: "ENVIADA"  },
+  { name: "Recibida", uid: "RECIBIDA" },
+  { name: "Cerrada",  uid: "CERRADA"  },
+];
 
 
-      const res = await fetch(process.env.REACT_APP_API_URL+'/api/proveedores', {
-        headers: {
-          Authorization: `Bearer ${token}` //  Token agregado
-        }
-      });
 
-      if (!res.ok) throw new Error('Error al cargar proveedores');
-      const data = await res.json();
-      setProveedores(data.filter(p => p.estado === 'ACTIVO'));
-    } catch (err) {
-      console.error('Error al cargar proveedores:', err);
-      showNotification(err.message || 'Error al cargar proveedores', 'error');
-    }finally {
-      loadingController.stop(); //  detiene el loader
-    }
+const ROWS = 15;
+
+const OrdenCompra = () => {
+  const [ordenes,           setOrdenes]           = useState([]);
+  const [proveedores,       setProveedores]       = useState([]);
+  const [filterValue,       setFilterValue]       = useState("");
+  const [estadoFiltro,      setEstadoFiltro]      = useState("all");
+  const [sortDesc,          setSortDesc]          = useState({ column: "fecha", direction: "descending" });
+  const [page,              setPage]              = useState(1);
+  const [mostrarModalCrear, setMostrarModalCrear] = useState(false);
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState(null);
+  const [notification,      setNotification]      = useState(null);
+  const [mostrarAyuda,      setMostrarAyuda]      = useState(false);
+  const [fechaDesde,        setFechaDesde]        = useState("");
+  const [fechaHasta,        setFechaHasta]        = useState("");
+  const [ordenAEliminar,    setOrdenAEliminar]    = useState(null);
+  const [showConfirm,       setShowConfirm]       = useState(false);
+
+  const estadoMenuRef = useRef(null);
+
+  // ── Helper: obtener token ──────────────────────────────────
+  const getToken = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error("Usuario no autenticado");
+    return token;
   };
 
-  cargarProveedores();
-}, []);
+  // Función auxiliar para obtener fecha local YYYY-MM-DD
+const getLocalDate = (utcDate) => {
+  if (!utcDate) return "";
+  const date = new Date(utcDate);
+  // Ajustar a GMT-6 (Honduras)
+  const offsetMs = -6 * 60 * 60 * 1000;
+  const localDate = new Date(date.getTime() + offsetMs);
+  return localDate.toISOString().split('T')[0];
+};
 
 
-
-  //  Cargar órdenes
-useEffect(() => {
-  const cargarOrdenes = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Usuario no autenticado');
-      const token = await user.getIdToken();
-
-      const res = await fetch(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}` //  Token agregado
-        }
-      });
-
-      if (!res.ok) throw new Error('Error al cargar órdenes');
-      const data = await res.json();
-      setOrdenes(data);
-    } catch (err) {
-      console.error('Error al cargar órdenes:', err);
-      showNotification(err.message || 'Error al cargar órdenes', 'error');
-    }
-  };
-  
-  cargarOrdenes();
-}, []);
-
-  // Cerrar menús al hacer clic fuera
+  // ── Carga inicial ──────────────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (statusMenuRef.current && !statusMenuRef.current.contains(event.target)) {
-        setShowStatusMenu(false);
-      }
-      if (columnMenuRef.current && !columnMenuRef.current.contains(event.target)) {
-        setShowColumnMenu(false);
-      }
-      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
-        setShowActionMenu(null);
+    const cargar = async () => {
+      try {
+        loadingController.start();
+        const token = await getToken();
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const [resOrd, resProv] = await Promise.all([
+          fetch(API_URL,      { headers }),
+          fetch(API_PROV_URL, { headers })
+        ]);
+
+        if (!resOrd.ok)  throw new Error("Error al obtener órdenes");
+        if (!resProv.ok) throw new Error("Error al obtener proveedores");
+
+        const [dataOrd, dataProv] = await Promise.all([resOrd.json(), resProv.json()]);
+        setOrdenes(dataOrd);
+        setProveedores(dataProv.filter(p => p.estado === "ACTIVO"));
+      } catch (err) {
+        console.error(err);
+        showNotification(err.message || "Error al cargar datos", "error");
+      } finally {
+        loadingController.stop();
       }
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    cargar();
   }, []);
 
-  // Calcular estadísticas
-  const totalOrdenes = ordenes.length;
-  const ordenesBorrador = ordenes.filter(o => o.estado === "BORRADOR").length;
-  const ordenesEnviadas = ordenes.filter(o => o.estado === "ENVIADA").length;
-  const ordenesRecibidas = ordenes.filter(o => o.estado === "RECIBIDA").length;
-  const ordenesCerradas = ordenes.filter(o => o.estado === "CERRADA").length;
-  const valorTotal = ordenes.reduce((sum, orden) => {
-    const totalOrden = orden.items?.reduce((sumItem, item) => sumItem + item.cantidad * item.costoUnit, 0) || 0;
-    return sum + totalOrden;
-  }, 0);
+  // Cierre dropdown al click fuera
+  useEffect(() => {
+    const fn = (e) => {
+      if (estadoMenuRef.current && !estadoMenuRef.current.contains(e.target));
+    };
+    document.addEventListener("mousedown", fn);
+    return () => document.removeEventListener("mousedown", fn);
+  }, []);
 
-  // Filtrado
-  const filteredItems = useMemo(() => {
-    let filtered = [...ordenes];
-
+  // ── Métricas + filtrado ────────────────────────────────────
+  const { filteredItems, metrics } = useMemo(() => {
+    let f = [...ordenes];
     if (filterValue) {
-      filtered = filtered.filter(orden =>
-        orden.numero?.toLowerCase().includes(filterValue.toLowerCase()) ||
-        orden.proveedor_id?.nombre?.toLowerCase().includes(filterValue.toLowerCase())
+      const q = filterValue.toLowerCase();
+      f = f.filter(o =>
+        o.numero?.toLowerCase().includes(q) ||
+        o.proveedor_id?.nombre?.toLowerCase().includes(q) ||
+        o.proveedor_id?.empresa?.toLowerCase().includes(q) ||
+        o.estado?.toLowerCase().includes(q)
       );
     }
+    if (estadoFiltro !== "all") f = f.filter(o => o.estado === estadoFiltro);
+   if (fechaDesde) {
+  f = f.filter(o => getLocalDate(o.fecha) >= fechaDesde);
+}
+if (fechaHasta) {
+  f = f.filter(o => getLocalDate(o.fecha) <= fechaHasta);
+}
+    return {
+      filteredItems: f,
+      metrics: {
+        borrador: ordenes.filter(o => o.estado === "BORRADOR").length,
+        enviada:  ordenes.filter(o => o.estado === "ENVIADA").length,
+        recibida: ordenes.filter(o => o.estado === "RECIBIDA").length,
+        cerrada:  ordenes.filter(o => o.estado === "CERRADA").length,
+        total:    ordenes.length,
+      }
+    };
+  }, [ordenes, filterValue, estadoFiltro, fechaDesde, fechaHasta]);
 
-    if (!statusFilter.has("all")) {
-      filtered = filtered.filter(orden => statusFilter.has(orden.estado));
-    }
-
-    // Filtrado por rango de fechas
-    filtered = filtered.filter(orden => {
-      if (!orden.fecha) return false;
-      const fecha = new Date(orden.fecha);
-      const inicio = new Date(fechaInicio);
-      const fin = new Date(fechaFin);
-      // Ajustar fin a fin del día
-      fin.setHours(23, 59, 59, 999);
-      return fecha >= inicio && fecha <= fin;
-    });
-
-    return filtered;
-  }, [ordenes, filterValue, statusFilter, fechaInicio, fechaFin]);
-
-  // Ordenamiento
+  // ── Ordenamiento + paginación ──────────────────────────────
   const sortedItems = useMemo(() => {
+    if (!sortDesc.column) return filteredItems;
     return [...filteredItems].sort((a, b) => {
-      let first = a[sortDescriptor.column];
-      let second = b[sortDescriptor.column];
-
-      if (sortDescriptor.column === "total") {
-        first = a.items?.reduce((sum, item) => sum + item.cantidad * item.costoUnit, 0) || 0;
-        second = b.items?.reduce((sum, item) => sum + item.cantidad * item.costoUnit, 0) || 0;
+      let x, y;
+      if (sortDesc.column === "total") {
+        x = a.items?.reduce((s, i) => s + i.cantidad * i.costoUnit, 0) || 0;
+        y = b.items?.reduce((s, i) => s + i.cantidad * i.costoUnit, 0) || 0;
+      } else if (sortDesc.column === "proveedor") {
+        x = a.proveedor_id?.nombre || "";
+        y = b.proveedor_id?.nombre || "";
+      } else {
+        x = a[sortDesc.column];
+        y = b[sortDesc.column];
       }
-
-      if (sortDescriptor.column === "items") {
-        first = a.items?.length || 0;
-        second = b.items?.length || 0;
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
+      const c = x < y ? -1 : x > y ? 1 : 0;
+      return sortDesc.direction === "descending" ? -c : c;
     });
-  }, [filteredItems, sortDescriptor]);
+  }, [filteredItems, sortDesc]);
 
-  // Paginación
-  const pages = Math.ceil(sortedItems.length / rowsPerPage) || 1;
-  const items = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return sortedItems.slice(start, start + rowsPerPage);
-  }, [page, sortedItems, rowsPerPage]);
+  const pages        = Math.ceil(sortedItems.length / ROWS) || 1;
+  const currentItems = useMemo(() => {
+    const s = (page - 1) * ROWS;
+    return sortedItems.slice(s, s + ROWS);
+  }, [page, sortedItems]);
 
-  // Handlers
-  const handleSort = (columnKey) => {
-    if (!columns.find(c => c.uid === columnKey)?.sortable) return;
-    setSortDescriptor(prev => ({
-      column: columnKey,
-      direction: prev.column === columnKey && prev.direction === "ascending" ? "descending" : "ascending"
+  const handleSort = (uid) => {
+    const col = columns.find(c => c.uid === uid);
+    if (!col?.sortable) return;
+    setSortDesc(p => ({
+      column:    uid,
+      direction: p.column === uid && p.direction === "ascending" ? "descending" : "ascending"
     }));
   };
 
-  const handleStatClick = (estado) => {
-    if (estado === "all") {
-      setStatusFilter(new Set(["all"]));
-    } else {
-      setStatusFilter(new Set([estado]));
-    }
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleCrearOrden = async (formDataOAdjuntos, datosOrden) => {
-  try {
-    // Manejar dos formatos:
-    // 1. formDataOAdjuntos es FormData (con archivos), datosOrden es el objeto
-    // 2. formDataOAdjuntos es null (sin archivos), datosOrden es el objeto
-    
-    let nuevaOrden;
-    let tieneAdjuntos = false;
-    
-    if (formDataOAdjuntos === null) {
-      // Sin adjuntos - usar JSON directo
-      console.log('📊 Sin adjuntos - JSON directo');
-      nuevaOrden = datosOrden;
-    } else {
-      // Con adjuntos - FormData con archivos
-      console.log('📎 Con adjuntos - FormData');
-      tieneAdjuntos = true;
-      nuevaOrden = datosOrden;
-    }
+  // ── Helper: recargar lista completa con populate ───────────
+  const recargarOrdenes = async (token) => {
+    const res = await fetch(API_URL, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error("Error al recargar órdenes");
+    return res.json();
+  };
 
-    // Validaciones (nota: número se auto-genera en el backend)
-    if (!nuevaOrden?.proveedor_id || nuevaOrden.proveedor_id.trim() === '') {
-      showNotification('El ID del proveedor es obligatorio', 'error');
-      return;
-    }
-    if (!nuevaOrden?.items || nuevaOrden.items.length === 0) {
-      showNotification('Debe agregar al menos un ítem a la orden', 'error');
-      return;
-    }
+  // ── CRUD ───────────────────────────────────────────────────
 
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
+  /**
+   * FIX PRINCIPAL: ModalCrearOrden llama onCreate(datos, esFormData)
+   *  - Si esFormData === true: datos ya es un FormData listo para enviar
+   *  - Si esFormData === false: datos es un objeto plano → enviar como JSON
+   */
+  const handleCrearOrden = async (datos, esFormData) => {
+    try {
+      loadingController.start();
+      const token = await getToken();
 
-    const config = {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'X-Orden-Data': btoa(JSON.stringify(nuevaOrden))  // Base64 encoded JSON en header
-      }
-    };
-
-    // Si hay adjuntos, enviar FormData; si no, enviar JSON
-    if (tieneAdjuntos && formDataOAdjuntos) {
-      console.log('🚀 Enviando con FormData (adjuntos)');
-      config.body = formDataOAdjuntos;
-    } else {
-      console.log('🚀 Enviando JSON directo (sin adjuntos)');
-      config.headers['Content-Type'] = 'application/json';
-      config.body = JSON.stringify(nuevaOrden);
-    }
-
-    console.log('🚀 Enviando orden:', { 
-      tieneAdjuntos, 
-      bodyType: tieneAdjuntos ? 'FormData' : 'JSON'
-    });
-
-    const res = await fetch(API_URL, config);
-    console.log('📊 Respuesta recibida:', res.status, res.statusText);
-
-    if (!res.ok) {
-      let errorMessage = `Error ${res.status}: ${res.statusText}`;
-      
-      try {
-        const contentType = res.headers?.get?.('content-type') || '';
-        console.log('📋 Content-Type:', contentType);
-        
-        if (contentType.includes('application/json')) {
-          const errorData = await res.json();
-          console.log('📄 Error JSON:', errorData);
-          errorMessage = errorData?.error || errorData?.message || errorMessage;
-        } else {
-          const text = await res.text();
-          console.error('❌ Respuesta no-JSON:', text.substring(0, 500));
-          errorMessage = `Error del servidor: ${text.substring(0, 100)}`;
-        }
-      } catch (parseErr) {
-        console.error('Error parseando respuesta de error:', parseErr);
-      }
-      
-      throw new Error(errorMessage);
-    }
-
-    const ordenCreada = await res.json();
-    setOrdenes([...ordenes, ordenCreada]);
-    setMostrarModalCrear(false);
-    showNotification(`Orden "${ordenCreada.numero}" creada exitosamente`, 'success');
-  } catch (err) {
-    console.error('❌ Error completo:', err.message || err);
-    showNotification(err?.message || 'Error al crear la orden', 'error');
-  }
-};
-
-const handleEditarOrden = async (ordenActualizada) => {
-  try {
-    if (!ordenActualizada.numero.trim()) {
-      showNotification('El número de orden es obligatorio', 'error');
-      return;
-    }
-    if (!ordenActualizada.items || ordenActualizada.items.length === 0) {
-      showNotification('La orden debe tener al menos un ítem', 'error');
-      return;
-    }
-
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const ordenParaEnviar = {
-      ...ordenActualizada,
-      fecha: ordenActualizada.fecha || new Date().toISOString().split('T')[0]
-    };
-
-    const res = await fetch(`${API_URL}/${ordenActualizada._id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` //  Token agregado
-      },
-      body: JSON.stringify(ordenParaEnviar)
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al editar la orden');
-    }
-
-    const actualizada = await res.json();
-    setOrdenes(ordenes.map(o => o._id === actualizada._id ? actualizada : o));
-    setOrdenSeleccionada(null);
-    showNotification(`Orden "${actualizada.numero}" actualizada exitosamente`, 'success');
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al editar la orden', 'error');
-  }
-};
-
-const handleEliminarOrden = (id) => {
-  const orden = ordenes.find(o => o._id === id);
-  setOrdenAEliminar(orden);
-  setShowConfirm(true);
-};
-
-const confirmarEliminacionOrden = async () => {
-  setShowConfirm(false);
-  if (!ordenAEliminar) return;
-
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Usuario no autenticado');
-    const token = await user.getIdToken();
-
-    const res = await fetch(`${API_URL}/${ordenAEliminar._id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Error al eliminar la orden');
-    }
-
-    setOrdenes(ordenes.filter(o => o._id !== ordenAEliminar._id));
-    setOrdenSeleccionada(null);
-    setShowActionMenu(null);
-    showNotification(`Orden "${ordenAEliminar.numero}" eliminada exitosamente`, 'success');
-    setOrdenAEliminar(null);
-  } catch (err) {
-    console.error(err.message);
-    showNotification(err.message || 'Error al eliminar la orden', 'error');
-  }
-};
-
-const cancelarEliminacionOrden = () => {
-  setShowConfirm(false);
-  setOrdenAEliminar(null);
-};
-
-
-
-  const toggleStatusFilter = (status) => {
-    const newSet = new Set(statusFilter);
-    if (status === "all") {
-      setStatusFilter(new Set(["all"]));
-    } else {
-      newSet.delete("all");
-      if (newSet.has(status)) {
-        newSet.delete(status);
+      let fetchOptions;
+      if (esFormData) {
+        // Multipart/form-data — NO poner Content-Type, el navegador lo añade con boundary
+        fetchOptions = {
+          method:  "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body:    datos  // datos ya es FormData
+        };
       } else {
-        newSet.add(status);
+        // JSON puro
+        fetchOptions = {
+          method:  "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(datos)
+        };
       }
-      setStatusFilter(newSet.size === 0 ? new Set(["all"]) : newSet);
+
+      const res = await fetch(API_URL, fetchOptions);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || json.error || "Error al crear la orden");
+
+      // Recargar para obtener populate de proveedor
+      const nuevasOrdenes = await recargarOrdenes(token);
+      setOrdenes(nuevasOrdenes);
+      setMostrarModalCrear(false);
+      showNotification(`Orden "${json.data?.numero || ""}" creada exitosamente`, "success");
+    } catch (err) {
+      console.error("❌ handleCrearOrden:", err);
+      showNotification(err.message || "Error al crear la orden", "error");
+    } finally {
+      loadingController.stop();
     }
   };
 
-  const toggleColumnVisibility = (columnUid) => {
-    const newSet = new Set(visibleColumns);
-    if (columnUid === "acciones") return;
-    
-    if (newSet.has(columnUid)) {
-      if (newSet.size > 2) {
-        newSet.delete(columnUid);
-      }
-    } else {
-      newSet.add(columnUid);
+  /**
+   * FIX: Limpia campos que no deben ir en el PUT
+   * (adjuntos, recepciones, _id, __v, timestamps Mongoose no tocar)
+   */
+  const handleEditarOrden = async (id, actualizado) => {
+    try {
+      loadingController.start();
+      const token = await getToken();
+
+      // Construir payload limpio: solo campos editables
+      const payload = {
+        numero:       actualizado.numero,
+        estado:       actualizado.estado,
+        fecha:        actualizado.fecha,
+        items:        actualizado.items,
+        proveedor_id: typeof actualizado.proveedor_id === "object"
+                        ? actualizado.proveedor_id?._id
+                        : actualizado.proveedor_id,
+      };
+
+      const res = await fetch(`${API_URL}/${id}`, {
+        method:  "PUT",
+        headers: {
+          Authorization:  `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || json.error || "Error al actualizar");
+
+      // FIX: El backend devuelve { data } con populate ya cargado
+      const ordenActualizada = json.data;
+      setOrdenes(p => p.map(o => (o._id === ordenActualizada._id ? ordenActualizada : o)));
+      setOrdenSeleccionada(null);
+      showNotification(`Orden "${ordenActualizada.numero}" actualizada exitosamente`, "success");
+    } catch (err) {
+      console.error("❌ handleEditarOrden:", err);
+      showNotification(err.message || "Error al actualizar la orden", "error");
+    } finally {
+      loadingController.stop();
     }
-    setVisibleColumns(newSet);
   };
 
-  const visibleColumnsArray = useMemo(() => {
-    return columns.filter(col => visibleColumns.has(col.uid));
-  }, [visibleColumns]);
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('es-HN', {
-      style: 'currency',
-      currency: 'HNL',
-      minimumFractionDigits: 2
-    }).format(amount);
+  const handleEliminarOrden = (id) => {
+    const orden = ordenes.find(o => o._id === id);
+    setOrdenAEliminar(orden);
+    setShowConfirm(true);
   };
 
-  const getEstadoBadgeClass = (estado) => {
-    const clases = {
-      'BORRADOR': 'estado-badge estado-borrador',
-      'ENVIADA': 'estado-badge estado-enviada',
-      'RECIBIDA': 'estado-badge estado-recibida',
-      'CERRADA': 'estado-badge estado-cerrada'
-    };
-    return clases[estado] || 'estado-badge';
+  const confirmarEliminacion = async () => {
+    if (!ordenAEliminar) return;
+    try {
+      loadingController.start();
+      const token = await getToken();
+      const res = await fetch(`${API_URL}/${ordenAEliminar._id}`, {
+        method:  "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || json.error || "Error al eliminar");
+      setOrdenes(p => p.filter(o => o._id !== ordenAEliminar._id));
+      // FIX: cerrar el modal de detalle si estaba abierto para esa orden
+      if (ordenSeleccionada?._id === ordenAEliminar._id) setOrdenSeleccionada(null);
+      showNotification(`Orden "${ordenAEliminar.numero}" eliminada exitosamente`, "success");
+    } catch (err) {
+      showNotification(err.message || "Error al eliminar la orden", "error");
+    } finally {
+      loadingController.stop();
+      setShowConfirm(false);
+      setOrdenAEliminar(null);
+    }
   };
 
+  // ── Excel ──────────────────────────────────────────────────
+  const handleExportarExcel = () => {
+    if (filteredItems.length === 0) { showNotification("No hay órdenes para exportar.", "error"); return; }
+    const data = filteredItems.map((o, i) => ({
+      "N°":        i + 1,
+      "Número":    o.numero,
+      "Proveedor": o.proveedor_id?.nombre || "—",
+      "Empresa":   o.proveedor_id?.empresa || "—",
+      "Fecha":     o.fecha ? new Date(o.fecha).toLocaleDateString("es-HN") : "—",
+      "Ítems":     o.items?.length || 0,
+      "Total (L.)":Number(o.items?.reduce((s, i) => s + i.cantidad * i.costoUnit, 0) || 0)
+                     .toLocaleString("es-HN"),
+      "Estado":    o.estado,
+      "Creado por":o.creado_por_email || "—",
+      "Creación":  o.fecha_creacion ? new Date(o.fecha_creacion).toLocaleDateString("es-HN") : "—",
+      "Actualizado por": o.actualizado_por_email || "—",
+      "Actualización":   o.fecha_actualizacion
+                           ? new Date(o.fecha_actualizacion).toLocaleDateString("es-HN")
+                           : "—",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data, { origin: "A6" });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.sheet_add_aoa(ws, [
+      ["ESCUELA EXPERIMENTAL DE NIÑOS PARA LA MÚSICA"],
+      ["SISTEMA INTEGRADO ADMINISTRATIVO MUSICAL - S.I.A.M."],
+      [""], ["LISTA DE ÓRDENES DE COMPRA"], [""],
+    ], { origin: "A1" });
+    ws["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 11 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 11 } },
+      { s: { r: 3, c: 0 }, e: { r: 3, c: 11 } },
+    ];
+    ws["!cols"] = [{ wch: 5 }, { wch: 14 }, { wch: 22 }, { wch: 22 },
+                   { wch: 12 }, { wch: 8 }, { wch: 14 }, { wch: 12 },
+                   { wch: 24 }, { wch: 14 }, { wch: 24 }, { wch: 14 }];
+    const fecha = new Date().toLocaleDateString("es-HN");
+    XLSX.utils.book_append_sheet(wb, ws, "Ordenes");
+    XLSX.writeFile(wb, `Ordenes_Compra_${fecha.replace(/\//g, "-")}.xlsx`);
+  };
+
+  // ── Helpers UI ─────────────────────────────────────────────
+  const fmtCurrency = (v) =>
+    new Intl.NumberFormat("es-HN", { style: "currency", currency: "HNL", minimumFractionDigits: 2 }).format(v || 0);
+
+  const fmtFecha = (iso) => {
+    if (!iso) return "—";
+    const [y, m, d] = iso.slice(0, 10).split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  const estadoBadgeClass = (e) => ({
+    BORRADOR: "estado-badge estado-inactivo",
+    ENVIADA:  "estado-badge estado-prestamo",
+    RECIBIDA: "estado-badge estado-mantenimiento",
+    CERRADA:  "estado-badge estado-activo",
+  }[e] || "estado-badge");
+
+  const pageNums = () => {
+    const nums = [];
+    for (let i = Math.max(1, page - 2); i <= Math.min(pages, page + 2); i++) nums.push(i);
+    return nums;
+  };
+
+  // ── Render ─────────────────────────────────────────────────
   return (
-    <div className="orden-compra-container">
-      {/*  ENCABEZADO MEJORADO */}
-      <motion.div 
-        className="orden-header"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
-      >
-        <motion.div
-          className="header-gradient"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-          style={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            padding: "2.5rem",
-            borderRadius: "20px",
-            boxShadow: "0 10px 30px rgba(102, 126, 234, 0.3)",
-            position: "relative",
-            overflow: "hidden"
-          }}
-        >
-          {/* Patrón de fondo */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-            opacity: 0.3
-          }} />
+    <div className="bienes-app">
 
-          <div className="header-content" style={{ position: "relative", zIndex: 2 }}>
-            <motion.h2
-              initial={{ opacity: 0, x: -50 }}
+      {/* ── HEADER ── */}
+      <motion.div
+        className="mm-header"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, type: "spring", stiffness: 120 }}
+      >
+        <div className="mm-hi">
+          <div className="mm-ht">
+            <motion.div
+              className="mm-htitle"
+              initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              style={{
-                fontSize: "2.8rem",
-                color: "white",
-                marginBottom: "0.5rem",
-                fontWeight: 800,
-                textShadow: "0 2px 10px rgba(0,0,0,0.2)",
-                letterSpacing: "-0.5px",
-                display: "flex",
-                alignItems: "center",
-                gap: "1rem"
-              }}
+              transition={{ delay: 0.15 }}
             >
-              <motion.div
+              <motion.span
                 initial={{ rotate: -180, scale: 0 }}
                 animate={{ rotate: 0, scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.3 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
               >
-                <FileText size={36} fill="white" color="white" />
-              </motion.div>
-              Sistema de Órdenes de Compra
-              <motion.div
-                animate={{ 
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1]
-                }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 5 }}
-                style={{ marginLeft: 'auto' }}
-              >
-                <Truck size={32} color="white" />
-              </motion.div>
-            </motion.h2>
-            
-            <motion.p
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              style={{
-                color: "rgba(255, 255, 255, 0.9)",
-                fontSize: "1.2rem",
-                marginBottom: 0,
-                fontWeight: 500,
-                textShadow: "0 1px 5px rgba(0,0,0,0.1)"
-              }}
-            >
-              Gestiona y controla todas tus órdenes de compra de manera eficiente y profesional
-            </motion.p>
-
-              
-
-            <motion.div 
-              className="header-stats"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              style={{
-                display: "flex",
-                gap: "2rem",
-                marginTop: "1.5rem",
-                flexWrap: "wrap"
-              }}
-            >
-              
-              <motion.div
-  className="stat-item"
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-  onClick={() => handleStatClick("BORRADOR")}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    color: "rgba(255, 255, 255, 0.9)",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div className="stat-icon" style={{
-    background: "rgba(255, 255, 255, 0.2)",
-    color: "rgba(255, 255, 255, 0.9)",
-    padding: "0.5rem",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}>
-    <Award size={20} color="white" />
-  </div>
-  <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {ordenesBorrador}
-    </div>
-    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Órdenes Borrador
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className="stat-item"
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-  onClick={() => handleStatClick("ENVIADA")}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div className="stat-icon" style={{
-    background: "rgba(255, 255, 255, 0.2)",
-    padding: "0.5rem",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}>
-    <Award size={20} color="white" />
-  </div>
-  <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {ordenesEnviadas}
-    </div>
-    <div className="stat-label" style={{color:"white", fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Órdenes Enviadas
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className="stat-item"
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-  onClick={() => handleStatClick("RECIBIDA")}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div className="stat-icon" style={{
-    background: "rgba(255, 255, 255, 0.2)",
-    padding: "0.5rem",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}>
-    <Award size={20} color="white" />
-  </div>
-  <div className="stat-text" style={{ color:"white",color: "white" }}>
-    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {ordenesRecibidas}
-    </div>
-    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Órdenes Recibidas
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className="stat-item"
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300, delay: 0.1 }}
-  onClick={() => handleStatClick("CERRADA")}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer"
-  }}
->
-  <div className="stat-icon" style={{
-    background: "rgba(255, 255, 255, 0.2)",
-    padding: "0.5rem",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center"
-  }}>
-    <Award size={20} color="white" />
-  </div>
-  <div className="stat-text" style={{ color: "white" }}>
-    <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-      {ordenesCerradas}
-    </div>
-    <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-      Órdenes Cerradas
-    </div>
-  </div>
-</motion.div>
-
-<motion.div
-  className="stat-item"
-  whileHover={{ scale: 1.05, y: -2 }}
-  transition={{ type: "spring", stiffness: 300 }}
-  onClick={() => handleStatClick("all")} //  al hacer clic muestra todas las órdenes
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    background: "rgba(255, 255, 255, 0.15)",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "12px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
-    cursor: "pointer" //  indica que es clickeable
-  }}
->
-  <div
-    className="stat-icon"
-    style={{
-      background: "rgba(255, 255, 255, 0.2)",
-      padding: "0.5rem",
-      borderRadius: "10px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center"
-    }}
-  >
-    <FileText size={20} color="white" />
-  </div>
-  <div className="stat-text" style={{ color: "white" }}>
-    <div
-      className="stat-value"
-      style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}
-    >
-      {totalOrdenes}
-    </div>
-    <div
-      className="stat-label"
-      style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}
-    >
-      Total Órdenes
-    </div>
-  </div>
-</motion.div>
-
-              <motion.div 
-                className="stat-item"
-                whileHover={{ scale: 1.05, y: -2 }}
-                transition={{ type: "spring", stiffness: 300, delay: 0.2 }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  padding: "0.75rem 1.25rem",
-                  borderRadius: "12px",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)"
-                }}
-              >
-                <div className="stat-icon" style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "0.5rem",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}>
-                  <DollarSign size={20} color="white" />
-                </div>
-                <div className="stat-text" style={{ color: "white" }}>
-                  <div className="stat-value" style={{ color:"white",fontSize: "1.3rem", fontWeight: 700, lineHeight: 1 }}>
-                    {formatCurrency(valorTotal)}
-                  </div>
-                  <div className="stat-label" style={{ color:"white",fontSize: "0.85rem", opacity: 0.9, marginTop: "2px" }}>
-                    Valor Total
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <motion.div 
-              className="floating-icons"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              style={{
-                position: "absolute",
-                top: "20px",
-                right: "30px",
-                display: "flex",
-                gap: "15px",
-                zIndex: 3
-              }}
-            >
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0]
-                }}
-                transition={{ 
-                  duration: 4, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "12px",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)"
-                }}
-              >
-                <Calendar size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -15, 0],
-                  rotate: [0, -8, 8, 0]
-                }}
-                transition={{ 
-                  duration: 3.5, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "12px",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)"
-                }}
-              >
-                <Filter size={20} color="white" />
-              </motion.div>
-              <motion.div 
-                className="floating-icon"
-                animate={{ 
-                  y: [0, -12, 0],
-                  rotate: [0, 10, -10, 0]
-                }}
-                transition={{ 
-                  duration: 4.2, 
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1
-                }}
-                style={{
-                  background: "rgba(255, 255, 255, 0.2)",
-                  padding: "12px",
-                  borderRadius: "50%",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255, 255, 255, 0.3)"
-                }}
-              >
-                <Star size={20} color="white" />
-              </motion.div>
+                <ShoppingCart size={34} color="white" fill="white" />
+              </motion.span>
+              Órdenes de Compra
             </motion.div>
           </div>
-        </motion.div>
 
-        {/* BARRA DE BÚSQUEDA Y FILTROS MEJORADA */}
-        <motion.div 
-          className="orden-top-content"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.5 }}
-          style={{ marginTop: "2rem" }}
-        >
-          <div className="orden-filters-row">
-            {/* Search */}
-            <div className="search-container" style={{ position: 'relative', flex: 1 }}>
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666', zIndex: 2 }}
-              >
-                <Search size={18} />
-              </motion.div>
-              <input
-                type="text"
-                placeholder="Buscar por número o proveedor..."
-                value={filterValue}
-                onChange={(e) => setFilterValue(e.target.value)}
-                className="search-input"
-                style={{
-                  width: '100%',
-                  padding: '0.8rem 1rem',
-                  paddingLeft: '40px',
-                  border: '2px solid #e0e0e0',
-                  borderRadius: '8px',
-                  fontSize: '1rem',
-                  transition: 'all 0.3s ease'
-                }}
-              />
-              {filterValue && (
-                <button 
-                  className="search-clear"
-                  onClick={() => setFilterValue('')}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: '#666',
-                    cursor: 'pointer'
-                  }}
-                >
-                  
-                </button>
-              )}
-            </div>
+          <motion.p className="mm-sub" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+            Gestiona y controla todas las órdenes de compra de manera eficiente
+          </motion.p>
 
-            {/* Date Range Filter */}
-           {/* Date Range Filter */}
-<div className="date-range-filters">
-  <Calendar size={18} color="#666" />
-
-  {/* Campo Desde */}
-  <div style={{ position: 'relative' }}>
-    <div
-      className="date-picker-input"
-      style={{ cursor: 'pointer', userSelect: 'none' }}
-      onClick={() => setOpenCal(openCal === 'desde' ? null : 'desde')}
-    >
-      {fechaInicio
-        ? `${String(fechaInicio.getDate()).padStart(2,'0')}/${String(fechaInicio.getMonth()+1).padStart(2,'0')}/${fechaInicio.getFullYear()}`
-        : <span style={{ color: '#999' }}>Desde</span>
-      }
-    </div>
-    {openCal === 'desde' && (
-      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200 }}>
-        <RSCalendar
-          compact
-          onSelect={date => {
-            setFechaInicio(date);
-            setOpenCal(null);
-          }}
-          value={fechaInicio}
-          style={{ width: 280, borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
-        />
-      </div>
-    )}
-  </div>
-
-  <span style={{ color: '#999' }}>—</span>
-
-  {/* Campo Hasta */}
-  <div style={{ position: 'relative' }}>
-    <div
-      className="date-picker-input"
-      style={{ cursor: 'pointer', userSelect: 'none' }}
-      onClick={() => setOpenCal(openCal === 'hasta' ? null : 'hasta')}
-    >
-      {fechaFin
-        ? `${String(fechaFin.getDate()).padStart(2,'0')}/${String(fechaFin.getMonth()+1).padStart(2,'0')}/${fechaFin.getFullYear()}`
-        : <span style={{ color: '#999' }}>Hasta</span>
-      }
-    </div>
-    {openCal === 'hasta' && (
-      <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, zIndex: 200 }}>
-        <RSCalendar
-          compact
-          onSelect={date => {
-            setFechaFin(date);
-            setOpenCal(null);
-          }}
-          value={fechaFin}
-          style={{ width: 280, borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
-        />
-      </div>
-    )}
-  </div>
-</div>
-
-            {/* Status Filter */}
-            <div 
-              className="dropdown-wrapper-compras" 
-              ref={statusMenuRef}
-              style={{ position: 'relative' }}
-            >
-              <motion.button
-                className="filter-button-estado-compra"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowStatusMenu(!showStatusMenu)}
-                style={{
-                  padding: '0.8rem 1.5rem',
-                  background: '#667eea',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}
-              >
-                <Filter size={16} />
-                Estado
-                <ChevronDownIcon />
-              </motion.button>
-              {showStatusMenu && (
-                <div className="dropdown-menu-compra">
-                  {statusOptions.map(status => (
-                    <div
-                      key={status.uid}
-                      onClick={() => toggleStatusFilter(status.uid)}
-                      className={`dropdown-item ${statusFilter.has(status.uid) ? 'active' : ''}`}
-                    >
-                      <span className="checkbox">{statusFilter.has(status.uid) ? '' : ''}</span>
-                      {status.name}
-                    </div>
-                  ))}
+          <motion.div className="mm-stats" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+            {[
+              { ico: <ShoppingCart size={18} color="white" />, val: filteredItems.length,  lbl: filteredItems.length === ordenes.length ? "Total Órdenes" : "Órdenes filtradas" },
+              { ico: <Send         size={18} color="white" />, val: metrics.enviada,       lbl: "Enviadas"  },
+              { ico: <Package      size={18} color="white" />, val: metrics.recibida,      lbl: "Recibidas" },
+              { ico: <DollarSign   size={18} color="white" />, val: `L. ${filteredItems.reduce((s, o) => s + (o.items?.reduce((a, i) => a + i.cantidad * i.costoUnit, 0) || 0), 0).toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, lbl: "Valor Total" },
+            ].map((s, i) => (
+              <motion.div key={i} className="mm-stat" whileHover={{ scale: 1.04, y: -2 }} transition={{ type: "spring", stiffness: 300 }}>
+                <div className="mm-stat-ico">{s.ico}</div>
+                <div>
+                  <div className="mm-stat-val">{s.val}</div>
+                  <div className="mm-stat-lbl">{s.lbl}</div>
                 </div>
-              )}
-            </div>
-
-            {/* New Order Button */}
-            <motion.button
-              className="btn-nueva-orden"
-              onClick={() => setMostrarModalCrear(true)}
-              whileHover={{ 
-                scale: 1.08, 
-                boxShadow: "0 6px 20px rgba(102, 126, 234, 0.4)",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 300 }}
-              style={{
-                padding: '0.8rem 1.5rem',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
-            >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <Plus size={18} />
               </motion.div>
-              Nueva Orden
-            </motion.button>
-          </div>
-
-          <div className="orden-meta-row">
-            <span className="orden-count">Total: {sortedItems.length} órdenes</span>
-            <div className="rows-per-page">
-              <span>Filas por página:</span>
-              <select
-                value={rowsPerPage}
-                onChange={(e) => {
-                  setRowsPerPage(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="rows-select"
-              >
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-              </select>
-            </div>
-          </div>
-        </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </motion.div>
 
-      {/* El resto del código (tabla, paginación, modales) se mantiene igual */}
-      <div className="table-container">
-        <div className="table-wrapper">
-          <table className="orden-table">
-            <thead>
-              <tr>
-                {visibleColumnsArray.map(column => (
-                  <th
-                    key={column.uid}
-                    onClick={() => handleSort(column.uid)}
-                    className={column.sortable ? 'sortable' : ''}
-                  >
-                    <div className="th-content">
-                      {column.name}
-                      {column.sortable && sortDescriptor.column === column.uid && (
-                        <span className="sort-icon">
-                          {sortDescriptor.direction === "ascending" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={visibleColumnsArray.length} className="empty-state">
-                    <div className="empty-content">
-                      <span className="empty-icon"></span>
-                      <p>No se encontraron órdenes</p>
-                      <small>Intenta ajustar los filtros o crea una nueva orden</small>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                items.map((orden) => {
-                  const total = orden.items?.reduce((sum, item) => sum + item.cantidad * item.costoUnit, 0) || 0;
-                  const itemsCount = orden.items?.length || 0;
-                  const totalProductos = orden.items?.reduce((sum, item) => sum + item.cantidad, 0) || 0;
-
-                  return (
-                    <tr key={orden._id} className="table-row">
-                      {visibleColumns.has("numero") && (
-                        <td className="cell-numero">{orden.numero}</td>
-                      )}
-                      {visibleColumns.has("proveedor") && (
-                        <td className="cell-proveedor" title={orden.proveedor_id?.empresa || "Sin empresa"}>
-  {orden.proveedor_id?.nombre || "Sin proveedor"}
-</td>
-                      )}
-                      {visibleColumns.has("fecha") && (
-                        <td className="cell-fecha">
-                          {orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-ES', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          }) : '—'}
-                        </td>
-                      )}
-                      {visibleColumns.has("items") && (
-                        <td className="cell-items">
-                          <div className="items-info">
-                            <span className="items-count">{itemsCount} {itemsCount === 1 ? 'ítem' : 'ítems'}</span>
-                            <span className="items-total">({totalProductos} unidades)</span>
-                          </div>
-                        </td>
-                      )}
-                      {visibleColumns.has("total") && (
-                        <td className="cell-total">{formatCurrency(total)}</td>
-                      )}
-                      {visibleColumns.has("estado") && (
-                        <td className="cell-estado">
-                          <span className={getEstadoBadgeClass(orden.estado)}>
-                            {orden.estado}
-                          </span>
-                        </td>
-                      )}
-                    
-                        {visibleColumns.has("acciones") && (
-  <td className="cell-acciones">
-    <div className="action-buttons-row">
-      <button
-        onClick={() => setOrdenSeleccionada(orden)}
-        className="action-btn-edit"
-        title="Ver / Editar"
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-      </button>
-      <button
-        onClick={() => handleEliminarOrden(orden._id)}
-        className="action-btn-delete"
-        title="Eliminar"
-      >
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-          <path d="M10 11v6"/><path d="M14 11v6"/>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-        </svg>
-      </button>
-    </div>
-  </td>
-)}                   
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      {/* ── BARRA DE ACCIONES ── */}
+      <div className="bienes-action-area">
+        <div className="bienes-action-bar">
+          <div className="bienes-search-wrapper">
+            <span className="bienes-search-icon"><Search size={16} /></span>
+            <input
+              type="text"
+              className="bienes-search-input"
+              placeholder="Buscar por número, proveedor, estado..."
+              value={filterValue}
+              onChange={(e) => { setFilterValue(e.target.value); setPage(1); }}
+            />
+            {filterValue && (
+              <button className="bienes-search-clear" onClick={() => setFilterValue("")}>×</button>
+            )}
+          </div>
+          <div className="bienes-bar-buttons">
+            <button style={S.btn("#E0D9F5", "#6C4FBF")} onClick={() => setMostrarAyuda(true)}>
+              <HelpCircle size={15} /> Ayuda
+            </button>
+            <button style={S.btn("#27AE60")} onClick={handleExportarExcel}>
+              <Download size={15} /> Excel
+            </button>
+            <WithPermission requiredPermissions={["CREAR_COMPRAS"]}>
+            <button style={S.btn("#6C4FBF")} onClick={() => setMostrarModalCrear(true)}>
+              <Plus size={15} /> Nueva Orden
+            </button>
+            </WithPermission>
+          </div>
         </div>
 
-        {/* Pagination */}
-        {items.length > 0 && (
-          <div className="pagination-container">
-            <div className="pagination-info">
-              Mostrando {((page - 1) * rowsPerPage) + 1} - {Math.min(page * rowsPerPage, sortedItems.length)} de {sortedItems.length}
-            </div>
-            
-            <div className="pagination-controls">
-              <button
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-                className="pagination-button"
-                title="Primera página"
-              >
-                ⟪
-              </button>
-              <button
-                onClick={() => setPage(Math.max(1, page - 1))}
-                disabled={page === 1}
-                className="pagination-button"
-              >
-                ← Anterior
-              </button>
-              
-              <span className="pagination-pages">
-                Página {page} de {pages}
-              </span>
-              
-              <button
-                onClick={() => setPage(Math.min(pages, page + 1))}
-                disabled={page === pages}
-                className="pagination-button"
-              >
-                Siguiente →
-              </button>
-              <button
-                onClick={() => setPage(pages)}
-                disabled={page === pages}
-                className="pagination-button"
-                title="Última página"
-              >
-                ⟫
-              </button>
+        {/* Filtros */}
+        <div className="bienes-filters-bar">
+          <div className="bienes-filter-group">
+            <span className="bienes-filter-label"><Filter size={13} /> Estado:</span>
+            <div className="bienes-filter-pills">
+              {estadosOptions.map(op => (
+                <button
+                  key={op.uid}
+                  className={`bienes-pill${estadoFiltro === op.uid ? " active" : ""}`}
+                  onClick={() => { setEstadoFiltro(op.uid); setPage(1); }}
+                >
+                  {op.name}
+                </button>
+              ))}
             </div>
           </div>
-        )}
+
+          <div className="bienes-filter-group">
+            <span className="bienes-filter-label">Fecha orden:</span>
+            <div className="bienes-date-range">
+              <input type="date" className="bienes-date-input" value={fechaDesde}
+                onChange={(e) => { setFechaDesde(e.target.value); setPage(1); }} title="Desde" />
+              <span className="bienes-date-sep">→</span>
+              <input type="date" className="bienes-date-input" value={fechaHasta}
+                onChange={(e) => { setFechaHasta(e.target.value); setPage(1); }} title="Hasta" />
+              {(fechaDesde || fechaHasta) && (
+                <button className="bienes-date-clear"
+                  onClick={() => { setFechaDesde(""); setFechaHasta(""); setPage(1); }}>×</button>
+              )}
+            </div>
+          </div>
+
+          {(estadoFiltro !== "all" || fechaDesde || fechaHasta) && (
+            <button className="bienes-clear-filters"
+              onClick={() => { setEstadoFiltro("all"); setFechaDesde(""); setFechaHasta(""); setPage(1); }}>
+              ✕ Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* ── TABLA ── */}
+      <div className="bienes-container">
+        <div className="bienes-table-wrapper">
+          <div className="bienes-results-info">
+            <span>
+              Mostrando <strong>{Math.min((page - 1) * ROWS + 1, sortedItems.length)}</strong>–<strong>{Math.min(page * ROWS, sortedItems.length)}</strong> de <strong>{sortedItems.length}</strong> órdenes
+              {filterValue && <span className="filtrado-tag"> · filtrado de {ordenes.length}</span>}
+            </span>
+          </div>
 
-      {/* Modales */}
+          <div className="bienes-table-scroll">
+            <table className="bienes-table">
+              <thead>
+                <tr>
+                  {columns.map(col => (
+                    <th
+                      key={col.uid}
+                      className={col.sortable ? "sortable" : ""}
+                      onClick={() => handleSort(col.uid)}
+                    >
+                      {col.name}
+                      {col.sortable && sortDesc.column === col.uid && (
+                        <span className="sort-arrow">{sortDesc.direction === "ascending" ? " ↑" : " ↓"}</span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={columns.length} className="bienes-no-results">
+                      <div className="bienes-empty-state">
+                        <ShoppingCart size={40} color="#ccc" />
+                        <p>No se encontraron órdenes con los filtros actuales</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  currentItems.map(orden => {
+                    const total = orden.items?.reduce((s, i) => s + i.cantidad * i.costoUnit, 0) || 0;
+                    return (
+                      <tr key={orden._id}>
+                        <td className="bienes-td-codigo">
+                          <span className="codigo-chip">{orden.numero}</span>
+                        </td>
+                        <td>
+                          <div className="bienes-nombre-cell">
+                            <div className="nombre">{orden.proveedor_id?.nombre || "Sin proveedor"}</div>
+                            {orden.proveedor_id?.empresa && (
+                              <div className="descripcion-preview">{orden.proveedor_id.empresa}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="bienes-td-fecha">{formatFecha(orden.fecha)}</td>
+                        <td>
+                          <div className="bienes-asignado-cell">
+                            <div className="asignado-nombre">{orden.items?.length || 0} ítem(s)</div>
+                            <div className="asignado-tipo">
+                              {orden.items?.reduce((s, i) => s + i.cantidad, 0) || 0} unidades
+                            </div>
+                          </div>
+                        </td>
+                        <td className="bienes-td-valor">{fmtCurrency(total)}</td>
+                        <td>
+                          <span className={estadoBadgeClass(orden.estado)}>{orden.estado}</span>
+                        </td>
+                        <td>
+                          <div className="bienes-action-buttons">
+                            <WithPermission requiredPermissions={["ACTUALIZAR_COMPRAS"]}>
+                            <button
+                              className="bienes-btn-icon edit"
+                              title="Ver / Editar"
+                              onClick={() => setOrdenSeleccionada(orden)}
+                            >
+                              <Edit size={15} />
+                            </button>
+                            </WithPermission>
+                            <WithPermission requiredPermissions={["ELIMINAR_COMPRAS"]}>
+                            <button
+                              className="bienes-btn-icon delete"
+                              title="Eliminar"
+                              onClick={() => handleEliminarOrden(orden._id)}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                            </WithPermission>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginación */}
+          <div className="bienes-pagination">
+            <div className="bienes-pagination-info">Página <strong>{page}</strong> de <strong>{pages}</strong></div>
+            <div className="bienes-pagination-controls">
+              <button className="bienes-page-btn" onClick={() => setPage(1)} disabled={page === 1}>«</button>
+              <button className="bienes-page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>‹</button>
+              {pageNums().map(n => (
+                <button key={n} className={`bienes-page-btn${page === n ? " active" : ""}`} onClick={() => setPage(n)}>{n}</button>
+              ))}
+              <button className="bienes-page-btn" onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>›</button>
+              <button className="bienes-page-btn" onClick={() => setPage(pages)} disabled={page === pages}>»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Modales CRUD ── */}
       {mostrarModalCrear && (
         <ModalCrearOrden
           onClose={() => setMostrarModalCrear(false)}
           onCreate={handleCrearOrden}
-          ordenesExistentes={ordenes}
+          proveedores={proveedores}
         />
       )}
 
@@ -1363,32 +671,71 @@ const cancelarEliminacionOrden = () => {
           onClose={() => setOrdenSeleccionada(null)}
           onUpdate={handleEditarOrden}
           onDelete={handleEliminarOrden}
+          proveedores={proveedores}
         />
       )}
 
-{showConfirm && (
-  <ConfirmDialog
-    message={`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}" del proveedor "${ordenAEliminar?.proveedor_id?.nombre || 'Sin proveedor'}"?`}
-    onConfirm={confirmarEliminacionOrden}
-    onCancel={cancelarEliminacionOrden}
-    visible={showConfirm}
-  />
-)}
+      {showConfirm && (
+        <ConfirmDialog
+          message={`¿Seguro que deseas eliminar la orden "${ordenAEliminar?.numero}"?`}
+          onConfirm={confirmarEliminacion}
+          onCancel={() => { setShowConfirm(false); setOrdenAEliminar(null); }}
+          visible={showConfirm}
+        />
+      )}
 
-
-      {/* Notification */}
       {notification && (
-        <div className={`notification notification-${notification.type}`}>
-          <span className="notification-icon">
-            {notification.type === 'success' ? '' : notification.type === 'error' ? '' : 'ℹ'}
-          </span>
-          {notification.message}
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      {/* ── Modal Ayuda ── */}
+      {mostrarAyuda && (
+        <div className="bienes-modal-overlay">
+          <div className="bienes-modal sm">
+            <div className="bienes-modal-header">
+              <h3 className="bienes-modal-title"><ShoppingCart size={20} /> Ayuda – Órdenes de Compra</h3>
+              <button className="bienes-modal-close" onClick={() => setMostrarAyuda(false)}>✕</button>
+            </div>
+            <div className="bienes-modal-body">
+              <div className="bienes-help-section">
+                <div className="bienes-help-title">Funcionalidades principales</div>
+                <ul className="bienes-help-list">
+                  <li><strong>Número autogenerado:</strong> Formato ORD-000001</li>
+                  <li><strong>Proveedor:</strong> Selecciona de la lista de proveedores activos</li>
+                  <li><strong>Ítems:</strong> Agrega y edita productos con cantidad y costo unitario</li>
+                  <li><strong>PDF:</strong> Descarga la orden en formato PDF</li>
+                  <li><strong>Auditoría:</strong> Registro de quién creó y modificó cada orden</li>
+                  <li><strong>Excel:</strong> Exporta el listado completo con datos de auditoría</li>
+                </ul>
+              </div>
+              <div className="bienes-help-section">
+                <div className="bienes-help-title">Estados de órdenes</div>
+                <div className="bienes-estados-grid">
+                  {[
+                    { label: "BORRADOR – En proceso de elaboración" },
+                    { label: "ENVIADA – Enviada al proveedor"       },
+                    { label: "RECIBIDA – Mercancía recibida"        },
+                    { label: "CERRADA – Proceso finalizado"         },
+                  ].map((s, i) => (
+                    <div key={i} className="bienes-estado-item">{s.label}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="bienes-modal-footer">
+              <button style={S.btn("#6C4FBF")} onClick={() => setMostrarAyuda(false)}>
+                Cerrar Ayuda
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
-  
 };
-
 
 export default OrdenCompra;

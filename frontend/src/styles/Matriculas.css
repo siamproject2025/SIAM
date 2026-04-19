@@ -403,9 +403,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: 0.8rem 1.5rem;
   border-bottom: 1px solid var(--gray-light);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #6C4FBF 0%, #9B59B6 100%);
   color: white;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
@@ -536,9 +536,7 @@
     font-size: 1rem;
   }
   
-  .main-content {
-    padding: 1rem 0;
-  }
+
   
   .student-table {
     display: block;

@@ -56,21 +56,45 @@ async function insertManyInBatches(db, collectionName, documents, batchSize = 20
 // CREAR BACKUP
 // ============================================================
 exports.crearBackup = async (req, res) => {
+  // ── SSE setup ──────────────────────────────────────────
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
   try {
     console.log("📦 [BACKUP] Iniciando...");
     const db = await getDB();
     const collections = await db.listCollections().toArray();
+    const colsFiltradas = collections.filter(c => !c.name.startsWith("system."));
+    const total = colsFiltradas.length;
+
+    send({ type: "progress", message: "Conectando a la base de datos...", percent: 0 });
 
     const backupData = {};
     let totalDocs = 0;
 
-    for (const col of collections) {
-      if (col.name.startsWith("system.")) continue;
+    for (let i = 0; i < colsFiltradas.length; i++) {
+      const col = colsFiltradas[i];
+      const percent = Math.round(((i + 1) / total) * 90); // 0% → 90%
+
+      send({
+        type: "progress",
+        message: `Exportando: ${col.name}`,
+        percent,
+        current: i + 1,
+        total,
+      });
+
       const docs = await db.collection(col.name).find({}).toArray();
       backupData[col.name] = EJSON.serialize(docs);
       totalDocs += docs.length;
       console.log(`  ✓ ${col.name}: ${docs.length} documentos`);
     }
+
+    send({ type: "progress", message: "Generando archivo JSON...", percent: 95 });
 
     const backupComplete = {
       metadata: {
@@ -83,19 +107,26 @@ exports.crearBackup = async (req, res) => {
       data: backupData,
     };
 
-    const filename = `backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.end(Buffer.from(JSON.stringify(backupComplete), "utf-8"));
+    const jsonString = JSON.stringify(backupComplete);
+    const base64 = Buffer.from(jsonString, "utf-8").toString("base64");
+
+    send({
+      type: "done",
+      message: "Backup generado exitosamente",
+      percent: 100,
+      total_documentos: totalDocs,
+      colecciones: Object.keys(backupData).length,
+      filename: `backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+      data: base64, // ✅ enviamos el archivo como base64
+    });
 
     console.log(`✅ [BACKUP] Completado: ${totalDocs} documentos`);
   } catch (error) {
     console.error("❌ [BACKUP] Error:", error);
-    // Si falló la conexión, resetear el singleton para que el próximo intento reconecte
     clientInstance = null;
-    if (!res.headersSent) {
-      res.status(500).json({ success: false, error: error.message });
-    }
+    send({ type: "error", message: error.message });
+  } finally {
+    res.end();
   }
 };
 

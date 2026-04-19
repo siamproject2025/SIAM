@@ -35,11 +35,12 @@ html{
 .main-content {
   flex: 1;
   overflow-y: auto;
-  
+  min-height: 100vh;
 }
 .btn{
   padding: 10px!important;
 }
+
 
 
 .App-logo {

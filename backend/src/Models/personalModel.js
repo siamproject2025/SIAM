@@ -53,11 +53,7 @@ const personalSchema = new mongoose.Schema({
   // ── Contrato y estado ─────────────────────────────────
   tipo_contrato: {
     type: String,
-    required: [true, 'El tipo de contrato es obligatorio'],
-    enum: {
-      values: ['TIEMPO_COMPLETO', 'MEDIO_TIEMPO', 'TEMPORAL', 'HONORARIOS', 'PRACTICANTE'],
-      message: '{VALUE} no es un tipo de contrato válido'
-    }
+    required: [true, 'El tipo de contrato es obligatorio']
   },
   estado: {
     type: String,
@@ -111,14 +107,10 @@ const personalSchema = new mongoose.Schema({
     cargo: {
       type: String,
       required: [true, 'El cargo es obligatorio'],
-      enum: {
-        values: ['DOCENTE', 'DIRECTOR', 'LIMPIEZA', 'GUARDIA', 'SERVICIO_SOCIAL'],
-        message: 'Cargo no válido'
-      }
+    
     },
     horario_preferido: {
       type: String,
-      enum: ['MATUTINO', 'VESPERTINO', 'NOCTURNO', 'ROTATIVO', 'FLEXIBLE']
     },
     fecha_asignacion: {
       type: Date,
@@ -130,7 +122,6 @@ const personalSchema = new mongoose.Schema({
   documentacion: [{
     tipo_documento: {
       type: String,
-      enum: ['DPI', 'PASAPORTE', 'LICENCIA', 'ANTECEDENTES', 'TITULO', 'CERTIFICADO', 'CONTRATO', 'OTRO'],
       required: true
     },
     descripcion:   { type: String, maxlength: [500, 'La descripción no puede exceder 500 caracteres'] },

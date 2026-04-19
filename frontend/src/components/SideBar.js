@@ -104,7 +104,7 @@ const estructuraSidebar = [
     grupos: [
       {
         label: "Personalización",
-        modulos: ["Pagina principal"]
+        modulos: ["Pagina principal","Mantenimientos"]
       }
     ]
   }
@@ -128,8 +128,9 @@ const moduloAPermiso = {
   "Auditoria": "VISUALIZAR_AUDITORIA",
   "Dashboard": "VISUALIZAR_DASHBOARD",
   "Roles": "VISUALIZAR_ROLES",
-  "Pagina principal": "VISUALIZAR_SEGURIDAD",
-  "Backup y restore": "VISUALIZAR_SEGURIDAD",
+  "Pagina principal": "VISUALIZAR_PAGINA_PRINCIPAL",
+  "Backup y restore": "VISUALIZAR_RESTORE",
+  "Mantenimientos": "VISUALIZAR_MANTENIMIENTOS",
 };
 
 const SideBar = () => {
@@ -155,13 +156,11 @@ const SideBar = () => {
         setLoading(true);
         const user = auth.currentUser;
         if (!user) { 
-          console.log("❌ No hay usuario autenticado");
           setLoading(false); 
           return; 
         }
         
-        const token = await user.getIdToken();
-        console.log("🔑 Token obtenido para sidebar");
+        const token = await user.getIdToken(); 
         
         let roles = [];
         try {
@@ -170,7 +169,6 @@ const SideBar = () => {
           });
           roles = rolesRes.data.role ? [rolesRes.data.role] : (rolesRes.data.roles || []);
           setUserRoles(roles);
-          console.log("✅ Roles del usuario:", roles);
         } catch (roleError) {
           console.error("Error al obtener roles:", roleError);
         }
@@ -182,7 +180,6 @@ const SideBar = () => {
           });
           permisos = permisosRes.data.permisos || [];
           setUserPermissions(permisos);
-          console.log("✅ Permisos del usuario:", permisos);
         } catch (permError) {
           console.error("Error al obtener permisos:", permError);
         }
@@ -191,7 +188,6 @@ const SideBar = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        console.log("📦 Módulos recibidos del backend:", modulosRes.data.modulos.map(m => m.titulo));
         
         let modulosFiltrados = [];
         
@@ -222,7 +218,6 @@ const SideBar = () => {
           }
         });
         
-        console.log("Módulos autorizados:", modulosFiltrados.map(m => m.titulo));
         setModulos(modulosFiltrados);
         
       } catch (err) {

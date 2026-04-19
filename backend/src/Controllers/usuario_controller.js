@@ -1,9 +1,24 @@
-const Auth     = require('../../src/Models/usuario_modelo');
-const Solicitud = require('../../src/Models/solicitud_modelo');
-const argon2   = require('argon2');
-const admin    = require('../config/firebaseAdmin');
+const Auth         = require('../../src/Models/usuario_modelo');
+const Solicitud    = require('../../src/Models/solicitud_modelo');
+const SistemaConfig = require('../../src/Models/sistema_config_modelo');
+const argon2       = require('argon2');
+const admin        = require('../config/firebaseAdmin');
 
-// ─── Listar usuarios ──────────────────────────────────────────────────────
+// ─── Helper: obtener config de bloqueo ───────────────────────────────────────
+async function getBloqueoConfig() {
+  let config = await SistemaConfig.findOne({ clave: 'bloqueo' });
+  if (!config) {
+    // Crear documento con valores por defecto si no existe
+    config = await SistemaConfig.create({
+      clave: 'bloqueo',
+      max_intentos_fallidos: 4,
+      minutos_bloqueo: 10,
+    });
+  }
+  return config;
+}
+
+// ─── Listar usuarios ──────────────────────────────────────────────────────────
 exports.listarUsuario = async (req, res) => {
   try {
     const usuarios = await Auth.find({}, { password: 0 });
@@ -14,7 +29,7 @@ exports.listarUsuario = async (req, res) => {
   }
 };
 
-// ─── Crear usuario ────────────────────────────────────────────────────────
+// ─── Crear usuario ────────────────────────────────────────────────────────────
 exports.crearUsuario = async (req, res) => {
   try {
     const { authId, email, username, password_hash, roles } = req.body;
@@ -30,7 +45,8 @@ exports.crearUsuario = async (req, res) => {
     if (password_hash) {
       userData.password_hash = await argon2.hash(password_hash);
     }
-    userData.roles = "PADRE";
+    // ← Sin rol por defecto; se asigna posteriormente desde el admin
+    userData.roles = [];
 
     const auth = new Auth(userData);
     await auth.save();
@@ -40,13 +56,12 @@ exports.crearUsuario = async (req, res) => {
   }
 };
 
-// ─── Login con Google: verificar acceso o crear solicitud ────────────────
+// ─── Login con Google: verificar acceso o crear solicitud ────────────────────
 exports.loginOCrearSolicitudGoogle = async (req, res) => {
   try {
     const { email, username } = req.body;
     const emailNorm = email.toLowerCase().trim();
 
-    // 1. ¿Ya existe como usuario aprobado en MongoDB?
     const usuarioExiste = await Auth.findOne({ email: emailNorm });
     if (usuarioExiste) {
       if (usuarioExiste.estado === 'BLOQUEADO') {
@@ -58,7 +73,6 @@ exports.loginOCrearSolicitudGoogle = async (req, res) => {
       return res.status(200).json({ aprobado: true });
     }
 
-    // 2. ¿Ya tiene solicitud?
     const solicitudExiste = await Solicitud.findOne({ email: emailNorm });
     if (solicitudExiste) {
       const msgs = {
@@ -73,7 +87,6 @@ exports.loginOCrearSolicitudGoogle = async (req, res) => {
       });
     }
 
-    // 3. Crear solicitud automática
     const nuevaSolicitud = new Solicitud({
       nombre_solicitante: (username || email).toUpperCase(),
       email:              emailNorm,
@@ -94,7 +107,7 @@ exports.loginOCrearSolicitudGoogle = async (req, res) => {
   }
 };
 
-// ─── Asignar rol ──────────────────────────────────────────────────────────
+// ─── Asignar rol ──────────────────────────────────────────────────────────────
 exports.asignarRol = async (req, res) => {
   try {
     const { id }    = req.params;
@@ -121,7 +134,7 @@ exports.asignarRol = async (req, res) => {
   }
 };
 
-// ─── Eliminar usuario ─────────────────────────────────────────────────────
+// ─── Eliminar usuario ─────────────────────────────────────────────────────────
 exports.eliminarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
@@ -145,7 +158,7 @@ exports.eliminarUsuario = async (req, res) => {
   }
 };
 
-// ─── Login: verificar si está bloqueado ───────────────────────────────────
+// ─── Login: verificar si está bloqueado ──────────────────────────────────────
 exports.loginUsuario = async (req, res) => {
   const { email } = req.body;
   try {
@@ -167,30 +180,38 @@ exports.loginUsuario = async (req, res) => {
   }
 };
 
-// ─── Registrar intento fallido ────────────────────────────────────────────
+// ─── Registrar intento fallido (usa config parametrizable) ───────────────────
 exports.registrarIntentoFallido = async (req, res) => {
   const { email } = req.body;
   try {
     const usuario = await Auth.findOne({ email });
     if (!usuario) return res.sendStatus(200);
 
+    const config = await getBloqueoConfig();
     usuario.intentos_fallidos += 1;
 
-    if (usuario.intentos_fallidos >= 4) {
-      usuario.bloqueado_hasta = new Date(Date.now() + 10 * 60000);
+    if (usuario.intentos_fallidos >= config.max_intentos_fallidos) {
+      usuario.bloqueado_hasta   = new Date(Date.now() + config.minutos_bloqueo * 60000);
+      usuario.intentos_fallidos = 0; // reiniciar contador tras bloqueo
       await usuario.save();
-      return res.status(429).json({ message: "Usuario bloqueado por 10 minutos." });
+      return res.status(429).json({
+        message: `Usuario bloqueado por ${config.minutos_bloqueo} minutos.`
+      });
     }
 
     await usuario.save();
-    res.json({ message: "Intento fallido registrado." });
+    res.json({
+      message:         "Intento fallido registrado.",
+      intentos:        usuario.intentos_fallidos,
+      max_intentos:    config.max_intentos_fallidos
+    });
   } catch (error) {
     console.error("Error en registrarIntentoFallido:", error);
     res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
-// ─── Reiniciar intentos tras login exitoso ────────────────────────────────
+// ─── Reiniciar intentos tras login exitoso ────────────────────────────────────
 exports.reiniciarIntentos = async (req, res) => {
   const { email } = req.body;
   try {
@@ -208,53 +229,117 @@ exports.reiniciarIntentos = async (req, res) => {
   }
 };
 
-// ─── Actualizar rol y/o alumno de un usuario existente ───────────────────
-  exports.actualizarAsignacion = async (req, res) => {
-    try {
-      const { id }             = req.params;
-      const { rol, alumno_id } = req.body;
+// ─── Actualizar rol y/o alumno de un usuario existente ───────────────────────
+exports.actualizarAsignacion = async (req, res) => {
+  try {
+    const { id }             = req.params;
+    const { rol, alumno_id } = req.body;
 
-      const usuario = await Auth.findById(id);
-      if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado.' });
+    const usuario = await Auth.findById(id);
+    if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado.' });
 
-      // Actualizar rol si viene
-      if (rol) {
-        usuario.roles = [rol];
-      }
-
-      // Actualizar alumno si viene — permite null para des-asignar
-      if (alumno_id !== undefined) {
-        if (alumno_id === null || alumno_id === '') {
-          usuario.alumno = null;
-        } else {
-          const mongoose = require('mongoose');
-          if (!mongoose.Types.ObjectId.isValid(alumno_id)) {
-            return res.status(400).json({ message: 'alumno_id inválido.' });
-          }
-          usuario.alumno = alumno_id;
-        }
-      }
-
-      await usuario.save();
-
-      // Sincronizar rol_asignado y alumno_asignado en la solicitud también
-      const Solicitud = require('../Models/solicitud_modelo');
-      const updateSolicitud = {};
-      if (rol)               updateSolicitud.rol_asignado    = rol;
-      if (alumno_id !== undefined) updateSolicitud.alumno_asignado = alumno_id || null;
-
-      if (Object.keys(updateSolicitud).length > 0) {
-        await Solicitud.findOneAndUpdate(
-          { email: usuario.email },
-          updateSolicitud
-        );
-      }
-
-      res.json({ message: 'Asignación actualizada correctamente.', usuario });
-
-    } catch (error) {
-      console.error('Error al actualizar asignación:', error);
-      res.status(500).json({ message: 'Error al actualizar asignación.' });
+    if (rol) {
+      usuario.roles = [rol];
     }
-  };
 
+    if (alumno_id !== undefined) {
+      if (alumno_id === null || alumno_id === '') {
+        usuario.alumno = null;
+      } else {
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(alumno_id)) {
+          return res.status(400).json({ message: 'alumno_id inválido.' });
+        }
+        usuario.alumno = alumno_id;
+      }
+    }
+
+    await usuario.save();
+
+    const updateSolicitud = {};
+    if (rol)                     updateSolicitud.rol_asignado    = rol;
+    if (alumno_id !== undefined) updateSolicitud.alumno_asignado = alumno_id || null;
+
+    if (Object.keys(updateSolicitud).length > 0) {
+      await Solicitud.findOneAndUpdate({ email: usuario.email }, updateSolicitud);
+    }
+
+    res.json({ message: 'Asignación actualizada correctamente.', usuario });
+
+  } catch (error) {
+    console.error('Error al actualizar asignación:', error);
+    res.status(500).json({ message: 'Error al actualizar asignación.' });
+  }
+};
+
+// ─── Actualizar username ──────────────────────────────────────────────────────
+exports.actualizarUsername = async (req, res) => {
+  try {
+    const { id }       = req.params;
+    const { username } = req.body;
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ message: 'El nombre de usuario no puede estar vacío.' });
+    }
+
+    // Verificar duplicado
+    const duplicado = await Auth.findOne({ username: username.trim(), _id: { $ne: id } });
+    if (duplicado) {
+      return res.status(400).json({ message: 'Ese nombre de usuario ya está en uso.' });
+    }
+
+    const usuario = await Auth.findByIdAndUpdate(
+      id,
+      { username: username.trim().toUpperCase() },
+      { new: true }
+    );
+
+    if (!usuario) return res.status(404).json({ message: 'Usuario no encontrado.' });
+
+    res.json({ message: 'Username actualizado correctamente.', usuario });
+  } catch (error) {
+    console.error('Error al actualizar username:', error);
+    res.status(500).json({ message: 'Error al actualizar username.' });
+  }
+};
+
+// ─── Obtener config de bloqueo ────────────────────────────────────────────────
+exports.obtenerConfigBloqueo = async (req, res) => {
+  try {
+    const config = await getBloqueoConfig();
+    res.json({
+      max_intentos_fallidos: config.max_intentos_fallidos,
+      minutos_bloqueo:       config.minutos_bloqueo
+    });
+  } catch (error) {
+    console.error('Error al obtener config:', error);
+    res.status(500).json({ message: 'Error al obtener configuración.' });
+  }
+};
+
+// ─── Actualizar config de bloqueo ─────────────────────────────────────────────
+exports.actualizarConfigBloqueo = async (req, res) => {
+  try {
+    const { max_intentos_fallidos, minutos_bloqueo } = req.body;
+
+    if (
+      typeof max_intentos_fallidos !== 'number' || max_intentos_fallidos < 1 ||
+      typeof minutos_bloqueo !== 'number'       || minutos_bloqueo < 1
+    ) {
+      return res.status(400).json({
+        message: 'Valores inválidos. Deben ser números positivos.'
+      });
+    }
+
+    const config = await SistemaConfig.findOneAndUpdate(
+      { clave: 'bloqueo' },
+      { max_intentos_fallidos, minutos_bloqueo },
+      { new: true, upsert: true }
+    );
+
+    res.json({ message: 'Configuración actualizada.', config });
+  } catch (error) {
+    console.error('Error al actualizar config:', error);
+    res.status(500).json({ message: 'Error al actualizar configuración.' });
+  }
+};

@@ -1,13 +1,12 @@
 // ============================================================
 // Controllers/MatriculaController.js
 //
-// CAMBIOS:
-// FIX #1 ALTO   — Documentos subidos a Google Drive (igual que biblioteca)
-//                 Los docs ya NO se guardan como base64 en MongoDB.
-//                 Se guarda: { tipo, nombre, archivoUrl, nombreArchivo }
-// FIX #2 ALTO   — deleteMatricula elimina también los archivos en Drive
-// FIX #3 MEDIO  — updateMatricula sube nuevos docs a Drive y elimina
-//                 los que el frontend ya no incluye en la lista
+// CAMBIOS vs versión anterior:
+// - crearMatricula: guarda snapshot de encargados + transporte en la 1ª entrada del historial
+// - agregarMatricula: guarda snapshot del estado actual del alumno al crear nuevo año
+// - editarEntradaHistorial: solo modifica estado/notas — el snapshot NUNCA se toca
+// - updateMatricula: actualiza datos actuales del alumno (no toca historial)
+// - Campos de transporte manejados en create y update
 // ============================================================
 const Estudiante = require('../Models/Estudiante');
 const mongoose   = require('mongoose');
@@ -17,7 +16,6 @@ const { PassThrough } = require('stream');
 const path       = require('path');
 require('dotenv').config();
 
-// ── Google Drive auth (igual que bibliotecaController) ───────
 const oAuth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -26,8 +24,6 @@ const oAuth2Client = new google.auth.OAuth2(
 oAuth2Client.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
 const drive = google.drive({ version: 'v3', auth: oAuth2Client });
 
-// Carpeta de Drive para documentos de matrícula
-// Puedes usar la misma que biblioteca o crear una distinta en .env
 const DOCS_FOLDER_ID = process.env.GOOGLE_DRIVE_DOCS_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID;
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -45,65 +41,94 @@ const procesarImagen = async (file) => {
     return { imagen: buf.toString('base64'), tipo_imagen: 'image/jpeg' };
 };
 
-// Parsea un valor JSON si viene como string (FormData envía todo como texto)
 const parsearJSON = (valor) => {
     if (!valor) return null;
     if (typeof valor === 'object') return valor;
     try { return JSON.parse(valor); } catch { return null; }
 };
 
-/**
- * Sube un archivo (multer file object) a Google Drive.
- * Devuelve { archivoUrl, nombreArchivo }
- */
 const subirDocADrive = async (file, tipo) => {
     const { v4: uuidv4 } = await import('uuid');
     const extension   = path.extname(file.originalname).toLowerCase();
     const nombreUnico = `matricula_${tipo}_${uuidv4()}${extension}`;
-
-    const fileMetadata = {
-        name:    nombreUnico,
-        parents: [DOCS_FOLDER_ID],
-    };
+    const fileMetadata = { name: nombreUnico, parents: [DOCS_FOLDER_ID] };
     const media = {
         mimeType: file.mimetype,
         body: (() => { const s = new PassThrough(); s.end(file.buffer); return s; })(),
     };
-
-    const response = await drive.files.create({
-        requestBody: fileMetadata,
-        media,
-        fields: 'id, webViewLink',
-    });
-
-    return {
-        archivoUrl:    response.data.webViewLink,
-        nombreArchivo: nombreUnico,
-    };
+    const response = await drive.files.create({ requestBody: fileMetadata, media, fields: 'id, webViewLink' });
+    return { archivoUrl: response.data.webViewLink, nombreArchivo: nombreUnico };
 };
 
-/**
- * Elimina un archivo de Drive a partir de su webViewLink.
- * Falla silenciosamente si el archivo ya no existe.
- */
 const eliminarDocDeDrive = async (archivoUrl) => {
     if (!archivoUrl) return;
-    // El fileId está en la URL: /file/d/{fileId}/view
     const match = archivoUrl.match(/\/d\/([\w-]+)/);
     const fileId = match ? match[1] : archivoUrl.match(/[-\w]{25,}/)?.[0];
     if (!fileId) return;
     try { await drive.files.delete({ fileId }); } catch (_) { /* ignorar */ }
 };
 
+/**
+ * Construye el snapshot a guardar en una entrada del historial.
+ * Captura el estado ACTUAL del alumno en el momento de crear el año.
+ * Este snapshot es INMUTABLE — nunca se modifica después.
+ */
+// Reemplaza la función construirSnapshot existente
+const construirSnapshot = (estudiante, gradoNombre) => ({
+    // Datos personales
+    snapshot_nombre_completo:     estudiante.nombre_completo     || '',
+    snapshot_fecha_nacimiento:    estudiante.fecha_nacimiento    || null,
+    snapshot_edad:                estudiante.edad                || null,
+    snapshot_genero:              estudiante.genero              || '',
+    snapshot_id_documento:        estudiante.id_documento        || '',
+    snapshot_residencia:          estudiante.residencia_direccion|| '',
+    snapshot_telefono_alumno:     estudiante.telefono_alumno     || '',
+    snapshot_escuela_anterior:    estudiante.escuela_anterior    || '',
+
+    // Datos médicos
+    snapshot_alergias:            estudiante.alergias            || '',
+    snapshot_enfermedades:        estudiante.enfermedades        || '',
+    snapshot_medicamentos:        estudiante.medicamentos        || '',
+    snapshot_pediatra_nombre:     estudiante.pediatra_nombre     || estudiante.pediatra || '',
+    snapshot_pediatra_telefono:   estudiante.pediatra_telefono   || '',
+    snapshot_vacunas_al_dia:      estudiante.vacunas_al_dia      || false,
+    snapshot_contacto_emergencia_nombre:   estudiante.contacto_emergencia_nombre   || '',
+    snapshot_contacto_emergencia_telefono: estudiante.contacto_emergencia_telefono || '',
+
+    // Encargados
+    snapshot_encargados: (estudiante.encargados || []).map(e => ({
+        nombre_encargado:       e.nombre_encargado       || '',
+        parentesco_encargado:   e.parentesco_encargado   || '',
+        id_documento_encargado: e.id_documento_encargado || '',
+        telefono_encargado:     e.telefono_encargado     || '',
+        email_encargado:        e.email_encargado        || '',
+        es_principal:           e.es_principal           || false,
+    })),
+
+    // Transporte
+    snapshot_transporte: {
+        usa_transporte:                estudiante.usa_transporte                ?? false,
+        transporte_ruta:               estudiante.transporte_ruta               || '',
+        transporte_conductor_nombre:   estudiante.transporte_conductor_nombre   || '',
+        transporte_conductor_telefono: estudiante.transporte_conductor_telefono || '',
+        transporte_placa:              estudiante.transporte_placa              || '',
+        transporte_empresa:            estudiante.transporte_empresa            || '',
+        transporte_punto_recogida:     estudiante.transporte_punto_recogida     || '',
+        transporte_observaciones:      estudiante.transporte_observaciones      || '',
+    },
+
+    // Académico
+    snapshot_grado_nombre: gradoNombre || '',
+    snapshot_generado:     true,
+});
+
 // ─────────────────────────────────────────────
 // POST /api/matriculas
-// Crear nuevo alumno con primera matrícula
 // ─────────────────────────────────────────────
 exports.crearMatricula = async (req, res) => {
     try {
         const body = req.body;
 
-        // Verificar duplicado
         const existe = await Estudiante.findOne({ id_documento: body.id_documento });
         if (existe) {
             return res.status(400).json({
@@ -112,23 +137,9 @@ exports.crearMatricula = async (req, res) => {
             });
         }
 
-        // Procesar imagen de perfil
-        // Con upload.fields(), la imagen llega en req.files['imagen'][0]
         const imagenFile = req.files && req.files['imagen'] ? req.files['imagen'][0] : null;
         const imgData = await procesarImagen(imagenFile);
 
-        // Primera entrada del historial
-        const primeraMatricula = {
-            anio_matricula:     parseInt(body.anio_matricula) || new Date().getFullYear(),
-            grado_a_matricular: body.grado_a_matricular,
-            fecha_matricula:    new Date(),
-            estado_matricula:   body.estado_matricula || 'activa',
-            notas:              body.notas || '',
-            realizado_por:      body.creado_por || req.user?.email || 'sistema'
-        };
-
-        // ── Encargados ───────────────────────────────────────
-        // El frontend envía encargados como JSON string dentro de FormData
         let encargados = parsearJSON(body.encargados) || [];
         if (!encargados.length && body.nombre_encargado) {
             encargados = [{
@@ -141,38 +152,79 @@ exports.crearMatricula = async (req, res) => {
             }];
         }
 
-        // ── FIX #1: Documentos → subir a Google Drive ───────
-        // req.files['documentos'] contiene los archivos reales.
-        // body.documentosMeta contiene un JSON array con el tipo de cada doc
-        // (el índice coincide con el orden de req.files['documentos']).
+        // Datos de transporte
+        const transporteData = {
+            usa_transporte:               body.usa_transporte === 'true' || body.usa_transporte === true,
+            transporte_ruta:              body.transporte_ruta               || '',
+            transporte_conductor_nombre:  body.transporte_conductor_nombre   || '',
+            transporte_conductor_telefono:body.transporte_conductor_telefono || '',
+            transporte_placa:             body.transporte_placa              || '',
+            transporte_empresa:           body.transporte_empresa            || '',
+            transporte_punto_recogida:    body.transporte_punto_recogida     || '',
+            transporte_observaciones:     body.transporte_observaciones      || '',
+        };
+
+        // Buscar nombre del grado para el snapshot
+        let gradoNombreSnapshot = '';
+        try {
+            const Grado = mongoose.model('Grado');
+            const g = await Grado.findById(body.grado_a_matricular);
+            gradoNombreSnapshot = g?.grado || '';
+        } catch (_) {}
+
+        // En crearMatricula, reemplaza la llamada a construirSnapshot:
+const snapshotData = {
+    nombre_completo: body.nombre_completo,
+    fecha_nacimiento: body.fecha_nacimiento,
+    edad: body.edad,
+    genero: body.genero,
+    id_documento: body.id_documento,
+    residencia_direccion: body.residencia_direccion,
+    telefono_alumno: body.telefono_alumno,
+    escuela_anterior: body.escuela_anterior,
+    alergias: body.alergias,
+    enfermedades: body.enfermedades,
+    medicamentos: body.medicamentos,
+    pediatra_nombre: body.pediatra_nombre,
+    pediatra_telefono: body.pediatra_telefono,
+    vacunas_al_dia: body.vacunas_al_dia,
+    contacto_emergencia_nombre: body.contacto_emergencia_nombre,
+    contacto_emergencia_telefono: body.contacto_emergencia_telefono,
+    encargados,
+    usa_transporte: transporteData.usa_transporte,
+    ...transporteData,
+};
+const snapshot = construirSnapshot(snapshotData, gradoNombreSnapshot);
+
+        const primeraMatricula = {
+    anio_matricula:     parseInt(body.anio_matricula) || new Date().getFullYear(),
+    grado_a_matricular: body.grado_a_matricular,
+    fecha_matricula:    new Date(),
+    estado_matricula:   body.estado_matricula || 'activa',
+    notas:              body.notas || '',
+    realizado_por:      body.creado_por || req.user?.email || 'sistema',
+    // Sin snapshot — se generará cuando se registre el siguiente año
+    snapshot_generado: false,
+};
+        // Documentos → Drive
         const archivosDoc  = (req.files && req.files['documentos']) ? req.files['documentos'] : [];
         const metaDocRaw   = parsearJSON(body.documentosMeta) || [];
-        // También soportamos documentos ya subidos (edición): vienen como JSON en body.documentos
         const docsExistentes = parsearJSON(body.documentos) || [];
-
         const documentosSubidos = [];
-
         for (let i = 0; i < archivosDoc.length; i++) {
             const file = archivosDoc[i];
             const tipo = metaDocRaw[i]?.tipo || 'otro';
             const driveData = await subirDocADrive(file, tipo);
-            documentosSubidos.push({
-                tipo,
-                nombre:       file.originalname,
-                archivoUrl:   driveData.archivoUrl,
-                nombreArchivo: driveData.nombreArchivo,
-            });
+            documentosSubidos.push({ tipo, nombre: file.originalname, archivoUrl: driveData.archivoUrl, nombreArchivo: driveData.nombreArchivo });
         }
-
-        // Combinar los existentes (sin archivo nuevo) + los recién subidos
-        const documentos = [...docsExistentes, ...documentosSubidos];
 
         const estudianteData = {
             ...body,
             ...imgData,
+            ...transporteData,
             historial_matriculas: [primeraMatricula],
             encargados,
-            documentos,
+            documentos: [...docsExistentes, ...documentosSubidos],
         };
 
         // Sincronizar campos legacy con el encargado principal
@@ -186,20 +238,12 @@ exports.crearMatricula = async (req, res) => {
         }
 
         const estudiante = await Estudiante.create(estudianteData);
-
-        res.status(201).json({
-            success: true,
-            message: 'Matrícula creada exitosamente.',
-            data: estudiante
-        });
+        res.status(201).json({ success: true, message: 'Matrícula creada exitosamente.', data: estudiante });
 
     } catch (error) {
         console.error('Error en crearMatricula:', error);
         if (error.code === 11000 && error.keyPattern?.id_documento) {
-            return res.status(400).json({
-                success: false,
-                message: 'El número de identidad ya está registrado (duplicado).'
-            });
+            return res.status(400).json({ success: false, message: 'El número de identidad ya está registrado (duplicado).' });
         }
         if (error.name === 'ValidationError') {
             const msgs = Object.values(error.errors).map(e => e.message);
@@ -211,7 +255,8 @@ exports.crearMatricula = async (req, res) => {
 
 // ─────────────────────────────────────────────
 // POST /api/matriculas/:id/matricular
-// Agregar un nuevo año al historial (usa $push)
+// Agregar un nuevo año al historial
+// IMPORTANTE: guarda snapshot del estado actual antes de agregar
 // ─────────────────────────────────────────────
 exports.agregarMatricula = async (req, res) => {
     try {
@@ -227,41 +272,62 @@ exports.agregarMatricula = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Estudiante no encontrado.' });
         }
 
+        const anioNuevo = parseInt(anio_matricula);
+
         const yaExiste = estudiante.historial_matriculas.some(
-            m => m.anio_matricula === parseInt(anio_matricula)
+            m => m.anio_matricula === anioNuevo
         );
         if (yaExiste) {
             return res.status(400).json({
                 success: false,
-                message: `Este alumno ya tiene una matrícula registrada para el año ${anio_matricula}. Edítala desde el historial.`
+                message: `Este alumno ya tiene una matrícula registrada para el año ${anioNuevo}.`
             });
         }
 
-        const nuevaEntrada = {
-            anio_matricula:     parseInt(anio_matricula),
-            grado_a_matricular: grado_a_matricular,
+        // Nombre del grado actual (el que está cerrando) para el snapshot
+        let gradoNombreActual = '';
+        try {
+            const Grado = mongoose.model('Grado');
+            const g = await Grado.findById(estudiante.grado_a_matricular);
+            gradoNombreActual = g?.grado || '';
+        } catch (_) {}
+
+        // Construir snapshot del estado ACTUAL antes de agregar el nuevo año
+        const snapshot = construirSnapshot(estudiante, gradoNombreActual);
+
+        // Buscar la entrada del año actual del alumno para guardarle el snapshot
+        const anioActualAlumno = estudiante.anio_matricula;
+        const entradaActual = estudiante.historial_matriculas.find(
+            m => m.anio_matricula === anioActualAlumno
+        );
+
+        // Si existe la entrada del año actual y aún no tiene snapshot, agregárselo
+        if (entradaActual && !entradaActual.snapshot_generado) {
+            Object.keys(snapshot).forEach(k => {
+                entradaActual[k] = snapshot[k];
+            });
+        }
+
+        // Agregar nueva entrada SIN snapshot
+        estudiante.historial_matriculas.push({
+            anio_matricula:     anioNuevo,
+            grado_a_matricular,
             fecha_matricula:    new Date(),
             estado_matricula:   estado_matricula || 'activa',
             notas:              notas || '',
-            realizado_por:      realizado_por || req.user?.email || 'sistema'
-        };
+            realizado_por:      realizado_por || req.user?.email || 'sistema',
+            snapshot_generado:  false,
+        });
 
-        const actualizado = await Estudiante.findByIdAndUpdate(
-            id,
-            {
-                $push: { historial_matriculas: nuevaEntrada },
-                $set:  {
-                    grado_a_matricular: grado_a_matricular,
-                    anio_matricula:     parseInt(anio_matricula),
-                    actualizado_por:    realizado_por || req.user?.email || 'sistema'
-                }
-            },
-            { new: true, runValidators: false }
-        );
+        // NO actualizamos grado_a_matricular ni anio_matricula del documento raíz
+        estudiante.actualizado_por = realizado_por || req.user?.email || 'sistema';
+
+        // Guardar todo en una sola operación — Mongoose maneja el array completo
+        const actualizado = await estudiante.save();
 
         res.status(200).json({
             success: true,
-            message: `Matrícula ${anio_matricula} registrada exitosamente. El historial anterior se conserva intacto.`,
+            message: `Prematrícula ${anioNuevo} registrada. Snapshot del año ${anioActualAlumno} guardado.`,
             data: actualizado
         });
 
@@ -270,22 +336,27 @@ exports.agregarMatricula = async (req, res) => {
         res.status(500).json({ success: false, message: 'Error al registrar la matrícula.', error: error.message });
     }
 };
-
 // ─────────────────────────────────────────────
 // PUT /api/matriculas/:id/historial/:matriculaId
 // Editar UNA entrada del historial
+// SOLO modifica: estado_matricula y notas
+// El snapshot NUNCA se toca — es la "foto histórica" del año
 // ─────────────────────────────────────────────
 exports.editarEntradaHistorial = async (req, res) => {
     try {
         const { id, matriculaId } = req.params;
         const { estado_matricula, notas } = req.body;
 
+        // Nota: INTENCIONALMENTE no actualizamos snapshot_* ni grado
+        // Solo el estado operativo y notas son editables
         const actualizado = await Estudiante.findOneAndUpdate(
             { _id: id, 'historial_matriculas._id': matriculaId },
             {
                 $set: {
                     'historial_matriculas.$.estado_matricula': estado_matricula,
-                    'historial_matriculas.$.notas':            notas
+                    'historial_matriculas.$.notas':            notas,
+                    'historial_matriculas.$.editado_por':      req.user?.email || 'sistema',
+                    'historial_matriculas.$.fecha_edicion':    new Date(),
                 }
             },
             { new: true }
@@ -309,15 +380,10 @@ exports.getAllMatriculas = async (req, res) => {
     try {
         const { grado_a_matricular } = req.query;
         let filtro = {};
-
         if (grado_a_matricular && grado_a_matricular !== 'undefined' && grado_a_matricular !== '') {
-            try {
-                filtro.grado_a_matricular = new mongoose.Types.ObjectId(grado_a_matricular);
-            } catch {
-                return res.status(400).json({ success: false, message: 'ID de grado no válido' });
-            }
+            try { filtro.grado_a_matricular = new mongoose.Types.ObjectId(grado_a_matricular); }
+            catch { return res.status(400).json({ success: false, message: 'ID de grado no válido' }); }
         }
-
         const estudiantes = await Estudiante.find(filtro).sort({ fecha_matricula: -1 });
         res.status(200).json({ success: true, count: estudiantes.length, data: estudiantes });
     } catch (error) {
@@ -341,17 +407,12 @@ exports.getMatriculaById = async (req, res) => {
 // ─────────────────────────────────────────────
 // PUT /api/matriculas/:id
 // Actualizar expediente — NO toca el historial
-// FIX #3: sube nuevos documentos a Drive y elimina los removidos
 // ─────────────────────────────────────────────
 exports.updateMatricula = async (req, res) => {
     try {
         const body = { ...req.body };
+        delete body.historial_matriculas; // Proteger historial
 
-        // Proteger el historial
-        delete body.historial_matriculas;
-
-        // Procesar imagen de perfil si viene
-        // Con upload.fields(), la imagen llega en req.files['imagen'][0]
         const imagenFile = req.files && req.files['imagen'] ? req.files['imagen'][0] : null;
         if (imagenFile) {
             const imageSharp = sharp(imagenFile.buffer).resize({ width: 600, height: 600, fit: 'inside', withoutEnlargement: true });
@@ -360,7 +421,6 @@ exports.updateMatricula = async (req, res) => {
             body.tipo_imagen = 'image/jpeg';
         }
 
-        // ── Encargados ───────────────────────────────────────
         const encargados = parsearJSON(body.encargados) || [];
         if (encargados.length > 0) {
             body.encargados = encargados;
@@ -372,28 +432,24 @@ exports.updateMatricula = async (req, res) => {
             body.email_encargado        = p.email_encargado;
         }
 
-        // ── FIX #3: Documentos → Drive ───────────────────────
-        // docsExistentes: documentos que el usuario NO eliminó (ya tienen archivoUrl)
-        // archivosDoc:    archivos nuevos que el usuario adjuntó en esta edición
+        // Transporte
+        if (body.usa_transporte !== undefined) {
+            body.usa_transporte = body.usa_transporte === 'true' || body.usa_transporte === true;
+        }
+
+        // Documentos → Drive
         const docsExistentes = parsearJSON(body.documentos) || [];
         const archivosDoc    = (req.files && req.files['documentos']) ? req.files['documentos'] : [];
         const metaDocRaw     = parsearJSON(body.documentosMeta) || [];
 
-        // Subir los archivos nuevos a Drive
         const docsNuevos = [];
         for (let i = 0; i < archivosDoc.length; i++) {
             const file = archivosDoc[i];
             const tipo = metaDocRaw[i]?.tipo || 'otro';
             const driveData = await subirDocADrive(file, tipo);
-            docsNuevos.push({
-                tipo,
-                nombre:        file.originalname,
-                archivoUrl:    driveData.archivoUrl,
-                nombreArchivo: driveData.nombreArchivo,
-            });
+            docsNuevos.push({ tipo, nombre: file.originalname, archivoUrl: driveData.archivoUrl, nombreArchivo: driveData.nombreArchivo });
         }
 
-        // Detectar documentos eliminados por el usuario y borrarlos de Drive
         const estudianteActual = await Estudiante.findById(req.params.id).lean();
         if (estudianteActual) {
             const urlsExistentes = new Set(docsExistentes.map(d => d.archivoUrl).filter(Boolean));
@@ -411,7 +467,6 @@ exports.updateMatricula = async (req, res) => {
         );
 
         if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
-
         res.status(200).json({ success: true, message: 'Datos del estudiante actualizados exitosamente.', data: estudiante });
 
     } catch (error) {
@@ -422,18 +477,14 @@ exports.updateMatricula = async (req, res) => {
 
 // ─────────────────────────────────────────────
 // DELETE /api/matriculas/:id
-// FIX #2: también elimina los archivos en Drive
 // ─────────────────────────────────────────────
 exports.deleteMatricula = async (req, res) => {
     try {
         const estudiante = await Estudiante.findByIdAndDelete(req.params.id);
         if (!estudiante) return res.status(404).json({ success: false, message: 'Estudiante no encontrado' });
-
-        // Eliminar todos los documentos del alumno en Drive
         for (const doc of (estudiante.documentos || [])) {
             await eliminarDocDeDrive(doc.archivoUrl);
         }
-
         res.status(200).json({ success: true, message: 'Matrícula eliminada exitosamente.', data: estudiante });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error al eliminar la matrícula.', error: error.message });

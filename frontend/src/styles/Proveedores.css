@@ -519,20 +519,13 @@
 
 /* ===== NOTIFICACIONES ===== */
 .notification {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  color: var(--white);
-  font-weight: 500;
-  animation: notification-slide 0.3s ease-out;
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    max-width: 400px;
+    animation: slideInRight 0.3s ease-out;
+  }
 
 @keyframes notification-slide {
   from {
