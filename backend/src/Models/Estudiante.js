@@ -81,7 +81,7 @@ snapshot_contacto_emergencia_telefono: { type: String, default: '' },
 const EncargadoSchema = new mongoose.Schema({
   nombre_encargado:       { type: String, required: true },
   parentesco_encargado:   { type: String, required: true },
-  id_documento_encargado: { type: String, required: true, default: '' },
+  id_documento_encargado: { type: String, required: false, default: '' },
   telefono_encargado:     { type: String, required: true },
   email_encargado:        { type: String, default: '' },
   es_principal:           { type: Boolean, default: false }
