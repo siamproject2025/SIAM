@@ -159,27 +159,21 @@ const CalendarioActividades = forwardRef((props, ref) => {
   const mostrarNotificacion = (message, type = 'error') =>
     setNotification({ visible:true, message, type });
 
-  const mostrarConfirmacion = (message, onConfirm) =>
-    setConfirmacion({ visible:true, message, onConfirm });
-
-  // ── CRUD ───────────────────────────────────────────────────────
-  const handleCrear = async (nueva) => {
-    if (existeConflicto(nueva.fecha)) {
-      mostrarNotificacion('Ya existe una actividad en esa fecha y hora'); return;
-    }
+  } catch (err) {
+    alert("Error al actualizar");
+  }
+};
+const handleEliminarActividad = (id) => {
+  mostrarConfirmacion("¿Seguro que deseas eliminar esta actividad?", async () => {
     try {
-      const user = auth.currentUser;
-      const token = await user.getIdToken();
-      await axios.post(API_URL, { ...nueva, usuario: user.uid }, {
+      const token = await auth.currentUser.getIdToken();
+      await axios.delete(`${API_URL}/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setModalCrear({ visible:false, fechaInicial:null });
-      cargarActividades();
-      mostrarNotificacion('✓ Actividad creada', 'success');
-    } catch (err) {
-      mostrarNotificacion(err?.response?.data?.message || 'Error al guardar', 'error');
-    }
-  };
+
+      //cerrarModal();        // ✓ ya lo tienes
+      cargarActividades();  // ✓ ya lo tienes
+      mostrarNotificacion("Actividad eliminada correctamente", "success");
 
   const handleActualizar = async (datos) => {
     if (existeConflicto(datos.fecha, datos._id)) {
@@ -198,6 +192,14 @@ const CalendarioActividades = forwardRef((props, ref) => {
       mostrarNotificacion(err?.response?.data?.message || 'Error al actualizar', 'error');
       throw err;
     }
+  });
+};
+
+  // ===== FUNCIONES DE NAVEGACIÓN Y SOPORTE =====
+  const actualizarProximosEventos = (todos) => {
+    const hoy = new Date();
+    const futuros = todos.filter(e => new Date(e.fecha) >= hoy).sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+    setProximosEventos(futuros.slice(0, 10));
   };
 
   const handleEliminar = (id) => {
@@ -876,10 +878,10 @@ const CalendarioActividades = forwardRef((props, ref) => {
 
       
       {modal.visible && (
-          <WithPermission requiredPermissions={"ACTUALIZAR_ACTIVIDADES"}>
-        <ModalDetalleActividad actividad={modal.content} onClose={cerrarModal}
-          onUpdate={handleActualizar} onDelete={() => handleEliminar(modal.content._id)}/>
-          </WithPermission>
+        <ModalDetalleActividad actividad={modal.content} onClose={cerrarModal} onUpdate={handleActualizarActividad} onDelete={(id) => {
+        cerrarModal();                    // 👈 cierra modal PRIMERO
+        handleEliminarActividad(id);      // 👈 luego muestra el confirm bonito
+      }} />
       )}
       {modalCrear.visible && (
         <ModalCrearActividad

@@ -91,11 +91,10 @@ const ModalDetalleActividad = ({ actividad, onClose, onUpdate, onDelete }) => {
     if (errorServidor) setErrorServidor('');
   };
 
-  const tabTieneError = (key) => Object.keys(errores).some(c => TAB_DE_CAMPO[c] === key);
-
-  const handleCerrar = () => {
-    if (hayCambios) setShowConfirmCerrar(true);
-    else onClose();
+  const handleEliminar = () => { 
+  
+      onDelete(actividad._id);
+    
   };
 
   const handleChange = (e) => {
